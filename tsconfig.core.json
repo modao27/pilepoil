@@ -1,0 +1,9 @@
+{
+  "//": "Garde-fou : src/core se compile sans DOM ni bibliothèque d'interface.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": []
+  },
+  "include": ["src/core/**/*.ts"]
+}

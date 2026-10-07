@@ -1,0 +1,2630 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calepinage carrelage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6EBEE; --panel:#F8FAFA; --ink:#15232C; --muted:#5A6A74; --line:#CDD5DA; --field:#FFFFFF;
+  --accent:#2747C9; --accent-ink:#FFFFFF; --cut:#F0BE45; --thin:#D9472B; --sheet:#FFFFFF; --tile:#EDF1F3; --tline:#3A4A55; --reuse:#7CC79A;
+  --sans:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --cond:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E161B; --panel:#152027; --ink:#E4EBEF; --muted:#93A3AC; --line:#2A3943; --field:#0F1A20;
+    --accent:#8299FF; --accent-ink:#0E161B; --cut:#C99A2E; --thin:#F06A4E; --sheet:#1A262E; --tile:#24343E; --tline:#9FB0BA; --reuse:#3F8F63;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E161B; --panel:#152027; --ink:#E4EBEF; --muted:#93A3AC; --line:#2A3943; --field:#0F1A20;
+  --accent:#8299FF; --accent-ink:#0E161B; --cut:#C99A2E; --thin:#F06A4E; --sheet:#1A262E; --tile:#24343E; --tline:#9FB0BA; --reuse:#3F8F63;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45}
+.app{max-width:1320px;margin:0 auto;padding:16px}
+header h1{font-family:var(--cond);font-weight:600;font-size:2.1rem;line-height:1.05;margin:0}
+header p{margin:.25rem 0 0;color:var(--muted);max-width:66ch}
+.layout{display:grid;gap:16px;margin-top:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){
+  .layout{grid-template-columns:350px minmax(0,1fr);align-items:start}
+  .controls{order:1}
+  .stage{order:2;position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.controls{display:grid;gap:12px}
+fieldset{border:0;margin:0;padding:0}
+legend{font-weight:600;font-size:1.02rem;padding:0;margin-bottom:8px}
+legend .zn{font-weight:500;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row + .row{margin-top:10px}
+label{display:block;font-size:.86rem;color:var(--muted)}
+label span{display:block;margin-bottom:3px}
+input[type=number],select{
+  width:100%;font:inherit;font-size:1rem;color:var(--ink);background:var(--field);
+  border:1px solid var(--line);border-radius:7px;padding:8px 10px;min-height:42px;
+}
+input:disabled{opacity:.45}
+input[type=color]{width:100%;height:42px;padding:3px;border:1px solid var(--line);border-radius:7px;background:var(--field)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chips button{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer}
+.chips button:hover{border-color:var(--accent)}
+.btn{font:inherit;font-size:.88rem;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:7px;padding:6px 11px;min-height:38px;cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.zones{display:flex;flex-wrap:wrap;gap:6px}
+.zones .z{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:40px;text-align:left;line-height:1.15}
+.zones .z small{display:block;color:var(--muted);font-size:.74rem}
+.zones .z[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.zones .z[aria-pressed="true"] small{color:var(--accent)}
+.patterns{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.patterns button{
+  font:inherit;font-size:.72rem;line-height:1.1;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;
+  padding:6px 2px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:60px
+}
+.patterns button svg{width:32px;height:23px}
+.patterns button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+.hint{font-size:.82rem;color:var(--muted);margin:8px 0 0}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--field)}
+.seg button{font:inherit;font-size:.92rem;border:0;background:transparent;color:var(--ink);padding:7px 14px;cursor:pointer;min-height:38px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.legend{display:flex;gap:12px;font-size:.82rem;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;border:1px solid var(--tline);vertical-align:-1px;margin-right:4px;border-radius:2px}
+.wrap{background:var(--sheet);border:1px solid var(--line);border-radius:8px;overflow:hidden;position:relative}
+canvas{display:block;width:100%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+canvas.dragging{cursor:grabbing}
+.err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--thin);font-weight:500;background:var(--sheet)}
+.err.on{display:flex}
+.info{margin:8px 2px 0;font-size:.92rem;min-height:1.4em}
+.note{margin:4px 2px 0;font-size:.88rem;color:var(--thin)}
+.note:empty{display:none}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+@media (min-width:600px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (min-width:1150px){.stats{grid-template-columns:repeat(7,minmax(0,1fr))}}
+.stat{border-top:2px solid var(--line);padding-top:6px}
+.stat b{display:block;font-family:var(--cond);font-weight:600;font-size:1.6rem;line-height:1.1}
+.stat small{color:var(--muted);font-size:.8rem}
+.stat.warn b{color:var(--thin)}
+.tablewrap{overflow-x:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:520px}
+caption{text-align:left;font-weight:600;padding-bottom:6px}
+th{font-weight:500;color:var(--muted);text-align:left;padding:5px 6px;border-bottom:2px solid var(--accent)}
+td{padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right}
+td.n{font-family:var(--cond);font-size:1.05rem;font-weight:600}
+.check{display:flex;gap:8px;align-items:center;color:var(--ink);font-size:.92rem;margin-top:10px;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--accent);margin:0;flex:none}
+.sub{font-size:.86rem;color:var(--muted);margin:14px 0 6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sub button{font:inherit;font-size:.8rem;border:0;background:none;color:var(--accent);cursor:pointer;padding:4px}
+.sw{display:flex;flex-wrap:wrap;gap:7px;align-items:center;min-height:34px}
+.sw .c{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;position:relative;padding:0}
+.sw .c[aria-pressed="true"]{border-color:var(--panel);box-shadow:0 0 0 2px var(--accent)}
+.sw.manage .c::after{content:"×";position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;background:var(--thin);color:#fff;font-size:13px;line-height:18px;text-align:center}
+.sw .add{width:34px;height:34px;border-radius:50%;border:1.5px dashed var(--muted);background:none;color:var(--muted);font-size:1.2rem;line-height:1;cursor:pointer;padding:0}
+.sw .empty{font-size:.82rem;color:var(--muted)}
+details{margin-top:12px;font-size:.88rem}
+summary{cursor:pointer;font-weight:600;padding:6px 0}
+.cutlist h4{margin:10px 0 4px;font-size:.9rem}
+.cutlist ol{margin:0;padding-left:0;list-style:none;columns:2 220px;column-gap:20px}
+.cutlist li{padding:2px 0;break-inside:avoid}
+.cutlist li b{font-family:var(--cond);font-weight:600;color:var(--accent);margin-right:4px}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;border:1px solid var(--tline);vertical-align:-1px;margin-right:5px}
+.cmp{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.cmp h3{margin:0 0 10px;font-size:1.05rem}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--field);display:flex;flex-direction:column;gap:6px;min-width:0}
+.card .tag{font-family:var(--cond);font-weight:600;color:var(--accent);font-size:1.1rem}
+.card img{width:100%;border-radius:5px;border:1px solid var(--line);display:block;aspect-ratio:4/3;object-fit:cover;background:var(--sheet)}
+.card input[type=text]{width:100%;font:inherit;font-size:.9rem;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.card .empty{font-size:.86rem;color:var(--muted);padding:18px 0;text-align:center}
+.card .btns{margin-top:2px}
+td.better{color:#2e8b57} td.worse{color:var(--thin)}
+.glue{margin-top:12px;border-left:3px solid var(--accent);background:var(--field);border-radius:0 7px 7px 0;padding:9px 11px;font-size:.9rem}
+.glue b{font-family:var(--cond);font-weight:600;font-size:1.15rem;color:var(--accent)}
+.glue .dbl{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600;background:var(--thin);color:#fff;vertical-align:2px}
+.glue .sgl{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600;background:var(--reuse);color:#10301f;vertical-align:2px}
+.glue small{display:block;color:var(--muted);margin-top:4px}
+.surfbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.surfbar button{flex:none;font:inherit;font-size:.88rem;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;min-height:36px;white-space:nowrap}
+.surfbar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+input.price{width:92px;min-height:34px;padding:4px 6px;font-size:.9rem;text-align:right}
+input[type=text].txt{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:8px 10px;min-height:42px}
+.photo{display:flex;gap:10px;align-items:center;margin-top:8px}
+.photo img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+tfoot td{font-weight:600;border-top:2px solid var(--accent)}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+.paste{margin-top:8px;border:1.5px dashed var(--line);border-radius:8px;padding:12px;font-size:.86rem;color:var(--muted);text-align:center;min-height:44px;-webkit-user-select:text;user-select:text;outline:none}
+.paste:focus{border-color:var(--accent)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Calepinage carrelage</h1>
+    <p>Découpez la surface en zones, choisissez un motif par zone et faites glisser le motif sur le plan pour placer les coupes.</p>
+  </header>
+
+  <main class="layout">
+    <section class="stage panel" aria-label="Plan de pose">
+      <div class="surfbar" id="surfBar" role="group" aria-label="Surfaces du projet"></div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Vue">
+          <button type="button" data-view="plan" aria-pressed="true">Plan</button>
+          <button type="button" data-view="render" aria-pressed="false">Rendu</button>
+          <button type="button" data-view="persp" aria-pressed="false">Perspective</button>
+        </div>
+        <div class="seg hide" id="persBtns" role="group" aria-label="Contenu de la perspective">
+          <button type="button" data-pm="surface" aria-pressed="true">Surface</button>
+          <button type="button" data-pm="room" aria-pressed="false">Pièce</button>
+        </div>
+        <div class="seg hide" id="camBtns" role="group" aria-label="Point de vue">
+          <button type="button" data-cam="face">Face</button>
+          <button type="button" data-cam="biais">Biais</button>
+          <button type="button" data-cam="haut">Plongée</button>
+        </div>
+        <div class="legend" id="legend">
+          <span><i style="background:var(--tile)"></i>Entier</span>
+          <span><i style="background:var(--cut)"></i>Coupé</span>
+          <span><i style="background:var(--reuse)"></i>Taillé dans une chute</span>
+          <span><i style="background:var(--thin)"></i>Coupe fine</span>
+          <span><i style="background:none;border:0;border-bottom:3px solid var(--thin);border-radius:0;height:8px;width:16px"></i>Coupe apparente</span>
+        </div>
+      </div>
+      <div class="wrap" id="wrap">
+        <canvas id="cv" aria-label="Calepinage de la surface. Glisser pour déplacer le motif, toucher un carreau pour ses dimensions."></canvas>
+        <div class="err" id="err"></div>
+      </div>
+      <p class="info" id="info"></p>
+      <p class="note" id="note"></p>
+      <div class="stats">
+        <div class="stat"><b id="sArea">–</b><small>Surface</small></div>
+        <div class="stat"><b id="sFull">–</b><small>Carreaux entiers</small></div>
+        <div class="stat"><b id="sCut">–</b><small>Pièces coupées</small></div>
+        <div class="stat"><b id="sReuse">–</b><small>Taillées dans les chutes</small></div>
+        <div class="stat" id="sThinBox"><b id="sThin">–</b><small>Coupes fines</small></div>
+        <div class="stat" id="sVisBox"><b id="sVis">–</b><small>Coupes apparentes</small></div>
+        <div class="stat"><b id="sMin">–</b><small>Coupe la plus étroite</small></div>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <caption id="cap">Commande</caption>
+          <thead><tr><th>Carreau</th><th class="n">Posés</th><th class="n">Nécessaires</th><th class="n">À commander</th><th class="n">m²</th><th class="n">Cartons</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <caption>Encollage (indicatif)</caption>
+          <thead><tr><th>Zone</th><th>Carreau</th><th>Spatule crantée</th><th>Encollage</th><th class="n">Colle estimée</th></tr></thead>
+          <tbody id="glueBody"></tbody>
+        </table>
+      </div>
+      <p class="hint">Repères issus du NF DTU 52.2 et des fiches techniques de mortiers-colles, pour une pose intérieure sur support plan. La fiche du mortier-colle choisi et la notice du fabricant de carreaux restent prioritaires.</p>
+      <div class="tablewrap">
+        <table>
+          <caption>Liste d'achat</caption>
+          <thead><tr><th>Article</th><th>Quantité</th><th class="n">Prix unitaire</th><th class="n">Total</th></tr></thead>
+          <tbody id="shopBody"></tbody>
+          <tfoot><tr><td colspan="3">Total estimé</td><td class="n" id="shopTotal">–</td></tr></tfoot>
+        </table>
+      </div>
+      <p class="hint">Quantités arrondies au conditionnement, marge de casse incluse. Joint : (L + l) / (L × l) × épaisseur × largeur de joint × 1,6. Croisillons, cales, primaire et silicone sont des estimations. Saisissez vos prix pour obtenir le total.</p>
+      <details id="cutwrap">
+        <summary id="cutsum">Plan de découpe</summary>
+        <div class="cutlist" id="cutlist"></div>
+      </details>
+      <div class="cmp">
+        <h3>Comparer deux scénarios</h3>
+        <div class="cards">
+          <div class="card" id="cardA"></div>
+          <div class="card" id="cardB"></div>
+        </div>
+        <div class="tablewrap"><table id="cmpTable" class="hide">
+          <thead><tr><th>Critère</th><th class="n" id="cmpHA">A</th><th class="n" id="cmpHB">B</th><th class="n">Écart</th></tr></thead>
+          <tbody id="cmpBody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <fieldset class="panel">
+        <legend>Projet et pièce</legend>
+        <label><span>Nom de la surface active</span><input id="sName" type="text" class="txt" maxlength="40"></label>
+        <div class="btns">
+          <button type="button" class="btn" id="sAdd">Ajouter une surface</button>
+          <button type="button" class="btn" id="sDel">Supprimer cette surface</button>
+        </div>
+        <div class="sub"><span>Pièce complète (4 murs et sol)</span></div>
+        <div class="row">
+          <label><span>Longueur (cm)</span><input id="roomL" type="number" inputmode="decimal" min="50" step="1"></label>
+          <label><span>Largeur (cm)</span><input id="roomW" type="number" inputmode="decimal" min="50" step="1"></label>
+        </div>
+        <div class="row">
+          <label><span>Hauteur sous plafond (cm)</span><input id="roomH" type="number" inputmode="decimal" min="50" step="1"></label>
+          <label><span>Hauteur carrelée des murs (cm)</span><input id="roomT" type="number" inputmode="decimal" min="10" step="1"></label>
+        </div>
+        <div class="row" style="margin-top:0">
+          <label class="check"><input type="checkbox" data-rs="A" checked>Mur A (fond)</label>
+          <label class="check"><input type="checkbox" data-rs="B" checked>Mur B (droite)</label>
+        </div>
+        <div class="row" style="margin-top:0">
+          <label class="check"><input type="checkbox" data-rs="C" checked>Mur C (face)</label>
+          <label class="check"><input type="checkbox" data-rs="D" checked>Mur D (gauche)</label>
+        </div>
+        <label class="check"><input type="checkbox" data-rs="F" checked>Sol</label>
+        <div class="btns"><button type="button" class="btn primary" id="roomGo">Créer ou mettre à jour la pièce</button></div>
+        <p class="hint" id="roomHint">Les murs reprennent le carrelage de la surface active. Les chutes servent d'une surface à l'autre et la commande couvre toute la pièce.</p>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend>Surface</legend>
+        <label style="margin-bottom:10px"><span>Type de surface</span>
+          <select id="kind"><option value="wall">Mur</option><option value="floor">Sol</option></select>
+        </label>
+        <div class="row">
+          <label><span>Longueur (cm)</span><input id="surfL" type="number" inputmode="decimal" min="1" step="1"></label>
+          <label><span>Largeur / hauteur (cm)</span><input id="surfW" type="number" inputmode="decimal" min="1" step="1"></label>
+        </div>
+        <div class="row">
+          <label><span>Joint (mm)</span><input id="joint" type="number" inputmode="decimal" min="0" step="0.5"></label>
+          <label><span>Marge de casse (%)</span><input id="margin" type="number" inputmode="decimal" min="0" step="1"></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="panel" id="foldPanel">
+        <legend>Angles du mur</legend>
+        <div class="zones" id="foldList"></div>
+        <div id="foldForm">
+          <div class="row" style="margin-top:12px">
+            <label><span>Position depuis la gauche (cm)</span><input id="fX" type="number" inputmode="decimal" min="1" step="1"></label>
+            <label><span>Angle de la pièce (°)</span><input id="fA" type="number" inputmode="decimal" min="30" max="170" step="1"></label>
+          </div>
+          <label style="margin-top:10px"><span>Type</span>
+            <select id="fT"><option value="in">Angle rentrant (coin de pièce)</option><option value="out">Angle sortant (arête)</option></select>
+          </label>
+          <label class="check" id="fCovWrap"><input type="checkbox" id="fCov">Arête protégée (profilé d'angle)</label>
+          <div class="btns"><button type="button" class="btn" id="fDel">Supprimer</button></div>
+        </div>
+        <div class="btns"><button type="button" class="btn" id="fAdd">Ajouter un angle</button></div>
+        <p class="hint" id="fHint">Le carrelage se poursuit d'un mur à l'autre et les carreaux sont coupés dans l'angle. Glissez la ligne d'angle sur le plan pour la déplacer.</p>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend>Réservations</legend>
+        <div class="zones" id="resList"></div>
+        <div id="resForm">
+          <div class="row" style="margin-top:12px">
+            <label><span>Largeur (cm)</span><input id="rW" type="number" inputmode="decimal" min="1" step="1"></label>
+            <label><span>Hauteur (cm)</span><input id="rH" type="number" inputmode="decimal" min="1" step="1"></label>
+          </div>
+          <div class="row">
+            <label><span>Depuis le bord gauche (cm)</span><input id="rX" type="number" inputmode="decimal" min="0" step="1"></label>
+            <label><span>Allège depuis le bas (cm)</span><input id="rS" type="number" inputmode="decimal" min="0" step="1"></label>
+          </div>
+          <label style="margin-top:10px"><span>Type</span>
+            <select id="rType"><option value="window">Fenêtre</option><option value="door">Porte</option><option value="socket">Prise, interrupteur</option><option value="trap">Trappe de visite</option><option value="tub">Baignoire, receveur</option><option value="other">Autre (niche, meuble)</option></select>
+          </label>
+          <label id="rProjWrap" style="margin-top:10px"><span>Avancée dans la pièce (cm)</span><input id="rP" type="number" inputmode="decimal" min="10" step="1"></label>
+          <label class="check"><input type="checkbox" id="rCov">Bords recouverts (profilé, plaque, habillage)</label>
+          <div id="rRevWrap">
+          <div class="sub"><span>Tableaux carrelés</span></div>
+          <div class="row">
+            <label><span>Profondeur du tableau (cm)</span><input id="rD" type="number" inputmode="decimal" min="0" step="0.5"></label>
+            <div></div>
+          </div>
+          <div class="row" style="margin-top:0">
+            <label class="check"><input type="checkbox" data-rv="L">Gauche</label>
+            <label class="check"><input type="checkbox" data-rv="R">Droite</label>
+          </div>
+          <div class="row" style="margin-top:0">
+            <label class="check"><input type="checkbox" data-rv="T">Linteau (haut)</label>
+            <label class="check"><input type="checkbox" data-rv="B">Appui (bas)</label>
+          </div>
+          </div>
+          <p class="hint" id="rHint"></p>
+          <div class="btns">
+            <button type="button" class="btn" id="rCenter">Centrer horizontalement</button>
+            <button type="button" class="btn" id="rDel">Supprimer</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <label><span>Type à ajouter</span>
+            <select id="rNewType"><option value="window">Fenêtre</option><option value="door">Porte</option><option value="socket">Prise, interrupteur</option><option value="trap">Trappe de visite</option><option value="tub">Baignoire, receveur</option><option value="other">Autre (niche, meuble)</option></select>
+          </label>
+          <div style="display:flex;align-items:flex-end"><button type="button" class="btn" id="rAdd" style="width:100%">Ajouter</button></div>
+        </div>
+        <p class="hint">Sur le plan, glissez une fenêtre pour la déplacer.</p>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend>Plinthes en carrelage</legend>
+        <div class="row">
+          <label><span>Longueur à couvrir (cm)</span><input id="pLen" type="number" inputmode="decimal" min="0" step="1"></label>
+          <label><span>Hauteur (cm)</span><input id="pH" type="number" inputmode="decimal" min="1" step="0.5"></label>
+        </div>
+        <div class="row">
+          <label><span>Carreau utilisé</span><select id="pZone"></select></label>
+          <div></div>
+        </div>
+        <div class="btns">
+          <button type="button" class="btn" id="pPer">Périmètre de la surface</button>
+          <button type="button" class="btn" id="pW">Longueur de la surface</button>
+          <button type="button" class="btn" id="pOff">Pas de plinthe</button>
+        </div>
+        <p class="hint" id="pHint"></p>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend>Zones</legend>
+        <label style="margin-bottom:10px"><span>Découpage</span>
+          <select id="split">
+            <option value="h">Bandes empilées (haut vers bas)</option>
+            <option value="v">Bandes côte à côte (gauche vers droite)</option>
+          </select>
+        </label>
+        <div class="zones" id="zones"></div>
+        <div class="row" style="margin-top:12px">
+          <label><span id="zSizeLbl">Hauteur</span><input id="zSize" type="number" inputmode="decimal" min="0" step="1"></label>
+          <label><span>Unité</span>
+            <select id="zUnit">
+              <option value="rows">Rangées</option>
+              <option value="cm">cm</option>
+              <option value="rest">Reste de la surface</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint" id="zHint"></p>
+        <div class="btns">
+          <button type="button" class="btn" id="zAdd">Ajouter une zone</button>
+          <button type="button" class="btn" id="zUp">Monter</button>
+          <button type="button" class="btn" id="zDown">Descendre</button>
+          <button type="button" class="btn" id="zDel">Supprimer</button>
+        </div>
+        <div class="btns">
+          <button type="button" class="btn" id="tpl">Modèle : 3 rangées, bâtons rompus, 3 rangées</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend>Découpe et chutes</legend>
+        <label class="check"><input type="checkbox" id="reuse">Réutiliser les chutes de coupe</label>
+        <label style="margin-top:10px"><span>Sens du carreau</span>
+          <select id="orient">
+            <option value="free">Sans sens (rotation libre)</option>
+            <option value="180">Veinage ou nuance (demi-tour seulement)</option>
+            <option value="none">Motif orienté (aucune rotation)</option>
+          </select>
+        </label>
+        <div class="sub"><span>Bords de la surface cachés (plinthe, angle, meuble)</span></div>
+        <div class="row"><label class="check"><input type="checkbox" data-hid="T">Haut</label><label class="check"><input type="checkbox" data-hid="B">Bas</label></div>
+        <div class="row" style="margin-top:0"><label class="check"><input type="checkbox" data-hid="L">Gauche</label><label class="check"><input type="checkbox" data-hid="R">Droite</label></div>
+        <label class="check"><input type="checkbox" id="jcov">Jonctions entre zones recouvertes (listel, profilé)</label>
+        <label class="check"><input type="checkbox" id="nums">Afficher les numéros de coupe sur le plan</label>
+        <div class="row" style="margin-top:10px">
+          <label><span>Perte par coupe (mm)</span><input id="kerf" type="number" inputmode="decimal" min="0" step="0.5"></label>
+          <label><span>Chute minimale gardée (mm)</span><input id="minr" type="number" inputmode="decimal" min="1" step="5"></label>
+        </div>
+        <p class="hint">Les pièces restent face émaillée dessus, jamais retournées. Chaque bord en contact avec un carreau voisin est un bord d'usine : les coupes vont contre les bords cachés. Une coupe sur un bord visible est signalée en rouge. Les pièces de même numéro sortent du même carreau.</p>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend>Carreau <span class="zn"></span></legend>
+        <div class="row">
+          <label><span id="tileLLbl">Longueur (mm)</span><input id="tileL" type="number" inputmode="decimal" min="10" step="1"></label>
+          <label><span>Largeur (mm)</span><input id="tileW" type="number" inputmode="decimal" min="10" step="1"></label>
+        </div>
+        <div class="row">
+          <label><span>m² par carton</span><input id="box" type="number" inputmode="decimal" min="0" step="0.01"></label>
+          <label><span>Épaisseur (mm)</span><input id="th" type="number" inputmode="decimal" min="3" step="0.5"></label>
+        </div>
+        <div class="chips" id="presets">
+          <button type="button" data-t="200x200">200×200</button>
+          <button type="button" data-t="300x600">300×600</button>
+          <button type="button" data-t="600x600">600×600</button>
+          <button type="button" data-t="600x1200">600×1200</button>
+          <button type="button" data-t="75x300">75×300 métro</button>
+          <button type="button" data-t="74x300">74×300</button>
+          <button type="button" data-t="150x900">150×900 lame</button>
+        </div>
+        <p class="hint" id="tHint"></p>
+        <div class="glue" id="glueBox"></div>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend>Motif <span class="zn"></span></legend>
+        <div class="patterns" role="group" aria-label="Motif" id="patterns"></div>
+        <div class="row" style="margin-top:10px">
+          <label><span>Orientation</span>
+            <select id="angle">
+              <option value="0">0° (parallèle)</option>
+              <option value="90">90° (tourné)</option>
+              <option value="45">45° (diagonale)</option>
+              <option value="30">30°</option>
+              <option value="60">60°</option>
+            </select>
+          </label>
+          <label><span>Départ</span>
+            <select id="start">
+              <option value="corner">Angle de la zone</option>
+              <option value="tile">Centré sur carreau</option>
+              <option value="joint">Centré sur joint</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label><span>Décalage horizontal (mm)</span><input id="offX" type="number" inputmode="decimal" step="5"></label>
+          <label><span>Décalage vertical (mm)</span><input id="offY" type="number" inputmode="decimal" step="5"></label>
+        </div>
+        <div class="btns"><button type="button" class="btn" id="recenter">Remettre à zéro le décalage</button></div>
+        <div class="sub"><span>Optimiser le départ</span></div>
+        <label><span>Priorité</span>
+          <select id="optGoal">
+            <option value="thin">Éviter les coupes fines et apparentes</option>
+            <option value="tiles">Le moins de carreaux possible</option>
+            <option value="bal">Équilibré</option>
+            <option value="sym">Coupes symétriques</option>
+          </select>
+        </label>
+        <div class="btns">
+          <button type="button" class="btn primary" id="optZone">Optimiser cette zone</button>
+          <button type="button" class="btn" id="optAll">Toutes les zones</button>
+          <button type="button" class="btn" id="optUndo" disabled>Annuler</button>
+        </div>
+        <p class="hint" id="optStatus"></p>
+        <p class="hint">Sur le plan, appuyez et glissez dans une zone pour déplacer son motif.</p>
+      </fieldset>
+
+      <fieldset class="panel">
+        <legend>Rendu <span class="zn"></span></legend>
+        <div class="row">
+          <label><span>Couleur carreau</span><input id="c1" type="color"></label>
+          <label><span>Mélange</span>
+            <select id="mix">
+              <option value="uni">Uni</option>
+              <option value="alt">Alterné</option>
+              <option value="rand">Aléatoire</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" id="c2row">
+          <label><span>Couleur 2</span><input id="c2" type="color"></label>
+          <label><span>Le nuancier remplit</span>
+            <select id="target"><option value="c1">Couleur 1</option><option value="c2">Couleur 2</option></select>
+          </label>
+        </div>
+        <div class="sub"><span>Photo du carreau réel</span></div>
+        <div class="photo">
+          <img id="phPrev" class="hide" alt="Photo du carreau">
+          <input type="file" id="phFile" accept="image/*" class="vh" aria-label="Photo du carreau">
+          <label for="phFile" class="btn" id="phPick" role="button" tabindex="0">Choisir une photo</label>
+          <button type="button" class="btn hide" id="phDel">Retirer</button>
+        </div>
+        <div class="paste" id="phPaste" contenteditable="true" role="textbox" aria-label="Zone pour coller une image" inputmode="none">Ou appuyez longuement ici puis « Coller » une image copiée depuis vos photos</div>
+        <p class="hint" id="phMsg"></p>
+        <label class="check"><input type="checkbox" id="phRot">Retourner au hasard (variation entre carreaux)</label>
+        <p class="hint">Cadrez la photo sur la face d'un seul carreau. Elle est appliquée dans les vues Rendu et Perspective.</p>
+        <div class="sub"><span>Mes couleurs de carreau</span><button type="button" data-manage="tiles">Gérer</button></div>
+        <div class="sw" id="swTiles"></div>
+        <div class="row" style="margin-top:12px">
+          <label><span>Couleur joint</span><input id="grout" type="color"></label>
+          <label><span>Variation de teinte</span>
+            <select id="shade">
+              <option value="0">Aucune</option>
+              <option value="0.06">Légère</option>
+              <option value="0.14">Marquée (zellige)</option>
+            </select>
+          </label>
+        </div>
+        <div class="sub"><span>Mes couleurs de joint</span><button type="button" data-manage="grouts">Gérer</button></div>
+        <div class="sw" id="swGrouts"></div>
+        <div class="btns" style="margin-top:14px">
+          <button type="button" class="btn" id="cCopy">Copier les couleurs</button>
+          <button type="button" class="btn" id="cPaste" disabled>Coller sur cette zone</button>
+          <button type="button" class="btn" id="cAll">Appliquer à toutes les zones</button>
+        </div>
+      </fieldset>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('wrap');
+const KEY = 'calepinage-v2';
+const S2 = Math.SQRT2, S3 = Math.sqrt(3);
+
+const PAT = [
+  ['grid','Droit'],['half','Décalé ½'],['third','Décalé ⅓'],['quarter','Décalé ¼'],['rand','Aléatoire'],
+  ['herring','Bâtons rompus'],['chevron','Hongrie'],['basket','Vannerie'],['hex','Hexagone'],['octo','Octogone']
+];
+const PATNAME = {grid:'droit',half:'décalé ½',third:'décalé ⅓',quarter:'décalé ¼',rand:'décalé aléatoire',
+  herring:'bâtons rompus',chevron:'point de Hongrie',basket:'vannerie',hex:'hexagone',octo:'octogone et cabochon'};
+
+/* ---------- icônes ---------- */
+const frame = '<rect x="1" y="1" width="32" height="22"/>';
+const hexIcon = () => { let d=''; const R=4.6; for(let i=0;i<5;i++) for(let k=0;k<3;k++){ const cx=3+i*R*1.5, cy=3+k*R*S3+(i&1?R*S3/2:0); if(cy>22) continue; d+='M'; for(let t=0;t<6;t++){ const a=t*Math.PI/3; d+=(cx+R*Math.cos(a)).toFixed(1)+' '+(cy+R*Math.sin(a)).toFixed(1)+(t<5?'L':'Z'); } } return '<path d="'+d+'"/>'; };
+const octIcon = () => { let d=''; const S=10, c=2.93; for(let i=0;i<3;i++) for(let k=0;k<2;k++){ const x=2+i*S, y=2+k*S; d+=`M${x+c} ${y}L${x+S-c} ${y}L${x+S} ${y+c}L${x+S} ${y+S-c}L${x+S-c} ${y+S}L${x+c} ${y+S}L${x} ${y+S-c}L${x} ${y+c}Z`; } return '<path d="'+d+'"/>'; };
+const ICON = {
+  grid: frame+'<path d="M12 1v22M23 1v22M1 12h32"/>',
+  half: frame+'<path d="M1 8.3h32M1 15.7h32M12 1v7.3M23 1v7.3M6.5 8.3v7.4M17.5 8.3v7.4M28.5 8.3v7.4M12 15.7V23M23 15.7V23"/>',
+  third: frame+'<path d="M1 8.3h32M1 15.7h32M12 1v7.3M23 1v7.3M8.3 8.3v7.4M19.3 8.3v7.4M30.3 8.3v7.4M4.7 15.7V23M15.7 15.7V23M26.7 15.7V23"/>',
+  quarter: frame+'<path d="M1 8.3h32M1 15.7h32M12 1v7.3M23 1v7.3M3.8 8.3v7.4M14.8 8.3v7.4M25.8 8.3v7.4M6.5 15.7V23M17.5 15.7V23M28.5 15.7V23"/>',
+  rand: frame+'<path d="M1 8.3h32M1 15.7h32M9 1v7.3M22 1v7.3M15 8.3v7.4M28 8.3v7.4M5 15.7V23M19 15.7V23"/>',
+  herring: frame+'<path d="M1 12l6-6 6 6 6-6 6 6 6-6M1 19l6-6 6 6 6-6 6 6 6-6M7 6v7M19 6v7M31 6v7M13 12v7M25 12v7"/>',
+  chevron: frame+'<path d="M1 7l8-5 8 5 8-5 8 5M1 14l8-5 8 5 8-5 8 5M1 21l8-5 8 5 8-5 8 5M9 1v22M17 1v22M25 1v22"/>',
+  basket: frame+'<path d="M12 1v22M23 1v22M1 12h32M1 6.5h11M17.5 1v11M23 6.5h10M6.5 12v11M12 17.5h11M28 12v11"/>',
+  hex: hexIcon(),
+  octo: octIcon()
+};
+
+/* ---------- état ---------- */
+let uc = 1;
+const uid = () => 'z' + Date.now().toString(36) + (uc++);
+function defZone(o){
+  return Object.assign({id:uid(), size:3, unit:'rest', pattern:'half', a:600, b:300, angle:0, start:'corner',
+    dx:0, dy:0, c1:'#d8cfc2', c2:'#3f5a6b', mix:'uni', grout:'#8f8a83', box:1.44, th:9, photo:null, photoRot:true}, o || {});
+}
+let st = {W:3000, H:2400, j:3, split:'h', margin:10, shade:0.06, view:'plan', zones:[defZone()], sel:0,
+  reuse:true, orient:'free', nums:true, kerf:2, minr:20, target:'c1', hid:{T:true,B:true,L:true,R:true}, jcov:false, res:[], rsel:0, plinth:{len:0, h:80, zone:0}, optGoal:'thin', kind:'wall', folds:[], fsel:0};
+const defFold = o => Object.assign({id:uid(), x:1500, type:'in', ang:90, cov:true}, o || {});
+let fpick = false;
+const SKEY = 'calepinage-scenarios';
+let scen = {A:null, B:null};
+const CAMS = {room:{face:[0,.4,1.35], biais:[.7,.7,1.3], haut:[.3,1.35,1.15]}, wall:{face:[0,.05,1.2], biais:[.65,.12,1.15], haut:[.25,.6,1.3]}, floor:{face:[0,.8,1.2], biais:[.6,.55,1.15], haut:[0,1.45,1.05]}};
+let cam = {yaw:.65, pitch:.12, dist:1.15};
+const defRes = o => Object.assign({id:uid(), type:'window', w:1000, h:1200, x:1000, sill:900, cov:true, depth:0, proj:700, rv:{L:true,R:true,T:true,B:false}}, o || {});
+const RTYPES = {
+  window:{name:'Fenêtre', code:'F', d:{w:1000, h:1200, sill:900}},
+  door:{name:'Porte', code:'Po', d:{w:830, h:2040, sill:0}},
+  socket:{name:'Prise', code:'Pr', d:{w:80, h:80, sill:1100}},
+  trap:{name:'Trappe', code:'T', d:{w:300, h:300, sill:300}},
+  tub:{name:'Baignoire', code:'B', d:{w:1700, h:560, sill:0, proj:700}},
+  other:{name:'Réservation', code:'R', d:{w:500, h:500, sill:500}}
+};
+const rName = (r, i) => (RTYPES[r.type] || RTYPES.other).name + ' ' + (i+1);
+const rCode = (r, i) => (RTYPES[r.type] || RTYPES.other).code + (i+1);
+const hasReveal = r => r.type === 'window' || r.type === 'door';
+let rpick = false;
+const KEY3 = 'calepinage-v3';
+const GLOBALK = ['margin','shade','view','reuse','orient','nums','kerf','minr','target','optGoal'];
+let proj = {surfaces:[st], active:0, room:null, prices:{}, photos:{}};
+let persMode = 'surface';
+const sCache = {};
+const DEFST = () => ({W:3000, H:2400, j:3, split:'h', margin:10, shade:0.06, view:'plan', zones:[defZone()], sel:0,
+  reuse:true, orient:'free', nums:true, kerf:2, minr:20, target:'c1', hid:{T:true,B:true,L:true,R:true}, jcov:false, res:[], rsel:0,
+  plinth:{len:0, h:80, zone:0}, optGoal:'thin', kind:'wall', folds:[], fsel:0, name:'Surface 1', role:null});
+function normSurface(o){
+  o = o || {};
+  const s = Object.assign(DEFST(), o);
+  s.zones = (Array.isArray(o.zones) && o.zones.length ? o.zones : [{}]).map(z => defZone(Object.assign({grout: o.grout || '#8f8a83'}, z)));
+  delete s.grout;
+  if(!o.orient) s.orient = o.rot === false ? '180' : 'free';
+  delete s.rot;
+  s.res = (Array.isArray(o.res) ? o.res : []).map(r => defRes(r));
+  s.folds = (Array.isArray(o.folds) ? o.folds : []).map(f => defFold(f));
+  s.plinth = Object.assign({len:0, h:80, zone:0}, o.plinth || {});
+  s.hid = Object.assign({T:true,B:true,L:true,R:true}, o.hid || {});
+  s.sel = Math.min(Math.max(0, s.sel|0), s.zones.length-1);
+  s.rsel = Math.min(Math.max(0, s.rsel|0), Math.max(0, s.res.length-1));
+  s.fsel = Math.min(Math.max(0, s.fsel|0), Math.max(0, s.folds.length-1));
+  return s;
+}
+const sName = i => (proj.surfaces[i] && proj.surfaces[i].name) || ('Surface ' + (i+1));
+const multiS = () => proj.surfaces.length > 1;
+const PKEY = 'calepinage-nuancier';
+let pal = {tiles:['#d8cfc2','#f1ede6','#3f5a6b','#2f2f31'], grouts:['#f2f0eb','#c9c4bb','#8f8a83','#3d3d3f']};
+let manage = {tiles:false, grouts:false}, clipC = null;
+let model = null, xf = null, pick = -1;
+const cur = () => st.zones[st.sel];
+
+const fmt = (n, d=1) => n.toLocaleString('fr-FR', {maximumFractionDigits:d});
+const cm = mm => fmt(mm/10, 1);
+const mmf = v => fmt(Math.round(v*10)/10, 1);
+const num = id => { const v = parseFloat(String($(id).value).replace(',', '.')); return isFinite(v) ? v : NaN; };
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const hash = i => { let h = Math.imul(i + 0x9e37, 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822507) >>> 0; h ^= h >>> 13; return h >>> 0; };
+
+function save(){ try{ localStorage.setItem(KEY3, JSON.stringify(proj)); }catch(e){ const n = $('note'); if(n) n.textContent = 'Stockage local plein : retirez une photo de carreau ou un scénario.'; } }
+function savePal(){ try{ localStorage.setItem(PKEY, JSON.stringify(pal)); }catch(e){} }
+function loadPal(){ try{ const o = JSON.parse(localStorage.getItem(PKEY) || 'null'); if(o && Array.isArray(o.tiles) && Array.isArray(o.grouts)) pal = o; }catch(e){} }
+function load(){
+  try{
+    const p3 = JSON.parse(localStorage.getItem(KEY3) || 'null');
+    if(p3 && Array.isArray(p3.surfaces) && p3.surfaces.length){
+      proj = {surfaces: p3.surfaces.map(normSurface), active: Math.min(Math.max(0, p3.active|0), p3.surfaces.length-1), room: p3.room || null, prices: p3.prices || {}, photos: p3.photos || {}};
+    } else {
+      const o = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if(o && Array.isArray(o.zones) && o.zones.length) proj.surfaces = [normSurface(o)];
+      else proj.surfaces = [normSurface(st)];
+    }
+  }catch(e){ proj.surfaces = [normSurface(st)]; }
+  st = proj.surfaces[proj.active];
+}
+function area(p){ let s=0; for(let i=0;i<p.length;i++){ const a=p[i], b=p[(i+1)%p.length]; s += a[0]*b[1]-b[0]*a[1]; } return Math.abs(s)/2; }
+function sarea(p){ let s=0; for(let i=0;i<p.length;i++){ const a=p[i], b=p[(i+1)%p.length]; s += a[0]*b[1]-b[0]*a[1]; } return s/2; }
+function inset(p, d){
+  if(d <= 0) return p;
+  const pts = sarea(p) < 0 ? p.slice().reverse() : p, n = pts.length, L = [];
+  for(let i=0;i<n;i++){
+    const P = pts[i], Q = pts[(i+1)%n], dx = Q[0]-P[0], dy = Q[1]-P[1], l = Math.hypot(dx,dy);
+    L.push([P[0] - dy/l*d, P[1] + dx/l*d, dx, dy]);
+  }
+  const out = [];
+  for(let i=0;i<n;i++){
+    const a = L[(i-1+n)%n], b = L[i], den = a[2]*b[3] - a[3]*b[2];
+    if(Math.abs(den) < 1e-12){ out.push([b[0], b[1]]); continue; }
+    const t = ((b[0]-a[0])*b[3] - (b[1]-a[1])*b[2]) / den;
+    out.push([a[0] + t*a[2], a[1] + t*a[3]]);
+  }
+  return sarea(out) > 0 ? out : [];
+}
+function clip(pts, W, H){ return clipB(pts, 0, W, 0, H); }
+function clipB(pts, X0, X1, Y0, Y1){
+  const ix = (P,Q,X) => { const t=(X-P[0])/(Q[0]-P[0]); return [X, P[1]+t*(Q[1]-P[1])]; };
+  const iy = (P,Q,Y) => { const t=(Y-P[1])/(Q[1]-P[1]); return [P[0]+t*(Q[0]-P[0]), Y]; };
+  const edges = [[p=>p[0]>=X0,(P,Q)=>ix(P,Q,X0)],[p=>p[0]<=X1,(P,Q)=>ix(P,Q,X1)],[p=>p[1]>=Y0,(P,Q)=>iy(P,Q,Y0)],[p=>p[1]<=Y1,(P,Q)=>iy(P,Q,Y1)]];
+  let out = pts;
+  for(const [inside, inter] of edges){
+    const src = out; out = [];
+    for(let i=0;i<src.length;i++){
+      const P = src[(i+src.length-1)%src.length], Q = src[i], qi = inside(Q), pi = inside(P);
+      if(qi){ if(!pi) out.push(inter(P,Q)); out.push(Q); } else if(pi) out.push(inter(P,Q));
+    }
+    if(!out.length) return out;
+  }
+  return out;
+}
+function bbox(p){ let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity; for(const q of p){ if(q[0]<x0)x0=q[0]; if(q[0]>x1)x1=q[0]; if(q[1]<y0)y0=q[1]; if(q[1]>y1)y1=q[1]; } return [x0,x1,y0,y1]; }
+
+/* ---------- réemploi des chutes ----------
+   Face émaillée : jamais de retournement (seulement rotations selon le sens du carreau).
+   Bords d'usine : chaque côté de pièce en contact avec un carreau voisin (req) doit venir
+   d'un bord d'usine de la chute. Les chutes rectangulaires mémorisent leurs bords d'usine (f). */
+const E = 0.5, SIDES = ['L','R','T','B'];
+function insideConvex(q, poly){
+  const o = sarea(poly) >= 0 ? 1 : -1;
+  for(let i=0;i<poly.length;i++){
+    const A = poly[i], B = poly[(i+1)%poly.length], dx = B[0]-A[0], dy = B[1]-A[1], l = Math.hypot(dx,dy);
+    if(l < 1e-9) continue;
+    if(o*(dx*(q[1]-A[1]) - dy*(q[0]-A[0]))/l < -E) return false;
+  }
+  return true;
+}
+function interiorEdges(P, W, H){
+  const out = [], on = (A,B) => (Math.abs(A[0])<E && Math.abs(B[0])<E) || (Math.abs(A[0]-W)<E && Math.abs(B[0]-W)<E) || (Math.abs(A[1])<E && Math.abs(B[1])<E) || (Math.abs(A[1]-H)<E && Math.abs(B[1]-H)<E);
+  for(let i=0;i<P.length;i++){ const A = P[i], B = P[(i+1)%P.length]; if(!on(A,B) && Math.hypot(B[0]-A[0],B[1]-A[1]) > E) out.push([A,B]); }
+  return out;
+}
+const rots = () => st.orient==='free' ? [0,1,2,3] : st.orient==='180' ? [0,2] : [0];
+function rotReq(q, r){ for(let i=0;i<r;i++) q = {L:q.B, T:q.L, R:q.T, B:q.R}; return q; }
+function axis(nA, nB, len, olen, fA, fB){
+  if(nA && nB) return (Math.abs(len-olen) < E && fA && fB) ? ['a'] : null;
+  if(nA) return fA ? ['a'] : null;
+  if(nB) return fB ? ['b'] : null;
+  return fA && !fB ? ['b','a'] : ['a','b'];
+}
+function cutRect(O, sx, sy, w, h, k, tile){
+  const fxn = sx==='a' ? O.f.L : O.f.R, fxf = sx==='a' ? O.f.R : O.f.L;
+  const fyn = sy==='a' ? O.f.T : O.f.B, fyf = sy==='a' ? O.f.B : O.f.T;
+  const mk = (rw, rh, xn, xf, yn, yf) => ({type:'rect', w:rw, h:rh, area:rw*rh, tile,
+    f:{L: sx==='a'?xn:xf, R: sx==='a'?xf:xn, T: sy==='a'?yn:yf, B: sy==='a'?yf:yn}});
+  const ok = r => r.w > 0 && r.h > 0 && Math.min(r.w, r.h) >= st.minr;
+  const V = [mk(O.w-w-k, O.h, false, fxf, fyn, fyf), mk(w, O.h-h-k, fxn, false, false, fyf)].filter(ok);
+  const Hh = [mk(O.w, O.h-h-k, fxn, fxf, false, fyf), mk(O.w-w-k, h, false, fxf, fyn, false)].filter(ok);
+  const sc = o => o.reduce((m,r) => { const nf = SIDES.filter(x=>r.f[x]).length; return Math.max(m, r.area*(1+nf*0.02)); }, 0);
+  return sc(V) >= sc(Hh) ? V : Hh;
+}
+function placeRect(pw, ph, req, O, k){
+  let best = null;
+  for(const r of rots()){
+    const w = r%2 ? ph : pw, h = r%2 ? pw : ph, q = rotReq(req, r);
+    if(w > O.w+E || h > O.h+E) continue;
+    const xs = axis(q.L, q.R, w, O.w, O.f.L, O.f.R), ys = axis(q.T, q.B, h, O.h, O.f.T, O.f.B);
+    if(!xs || !ys) continue;
+    for(const sx of xs) for(const sy of ys){
+      const rems = cutRect(O, sx, sy, Math.min(w,O.w), Math.min(h,O.h), k, O.tile);
+      const score = rems.reduce((m,x) => Math.max(m, x.area*(1+SIDES.filter(d=>x.f[d]).length*0.02)), 0) + rems.reduce((t,x)=>t+x.area,0)*1e-3;
+      if(!best || score > best.score) best = {rems, score};
+    }
+  }
+  return best;
+}
+function placePoly(pc, s, W, H){
+  if(pc.rect){
+    for(const r of rots()){
+      const w = r%2 ? pc.ph : pc.pw, h = r%2 ? pc.pw : pc.ph, q = rotReq(pc.req, r);
+      if(w > W+E || h > H+E) continue;
+      for(const [x,y] of [[0,0],[W-w,0],[0,H-h],[W-w,H-h]]){
+        const on = {L:x<E, R:x+w>W-E, T:y<E, B:y+h>H-E};
+        if(SIDES.some(d => q[d] && !on[d])) continue;
+        if([[x,y],[x+w,y],[x+w,y+h],[x,y+h]].every(p => insideConvex(p, s.poly))) return true;
+      }
+    }
+    return false;
+  }
+  if(pc.tf.every(q => insideConvex(q, s.poly))) return true;
+  if(st.orient !== 'none' && pc.tf.every(q => insideConvex([W-q[0], H-q[1]], s.poly))) return true;
+  return false;
+}
+function complement(pc, W, H, k, tile){
+  const ie = interiorEdges(pc.tf, W, H);
+  if(ie.length !== 1) return null;
+  const [A,B] = ie[0], dx = B[0]-A[0], dy = B[1]-A[1], l = Math.hypot(dx,dy);
+  const C = pc.tf.reduce((t,q) => [t[0]+q[0]/pc.tf.length, t[1]+q[1]/pc.tf.length], [0,0]);
+  const sg = Math.sign(dx*(C[1]-A[1]) - dy*(C[0]-A[0])) || 1;
+  const f = X => -sg*(dx*(X[1]-A[1]) - dy*(X[0]-A[0]))/l - k;
+  const rect = [[0,0],[W,0],[W,H],[0,H]], out = [];
+  for(let i=0;i<4;i++){
+    const P = rect[(i+3)%4], Q = rect[i], fp = f(P), fq = f(Q);
+    if(fq >= 0){ if(fp < 0){ const t = fp/(fp-fq); out.push([P[0]+t*(Q[0]-P[0]), P[1]+t*(Q[1]-P[1])]); } out.push(Q); }
+    else if(fp >= 0){ const t = fp/(fp-fq); out.push([P[0]+t*(Q[0]-P[0]), P[1]+t*(Q[1]-P[1])]); }
+  }
+  if(out.length >= 3){ const b = bbox(out); if(Math.min(b[1]-b[0], b[3]-b[2]) >= st.minr) return [{type:'poly', poly:out, area:area(out), tile}]; }
+  return [];
+}
+function clipHalf(poly, f){
+  const out = [];
+  for(let i=0;i<poly.length;i++){
+    const P = poly[(i+poly.length-1)%poly.length], Q = poly[i], fp = f(P), fq = f(Q);
+    if(fq >= 0){ if(fp < 0){ const t = fp/(fp-fq); out.push([P[0]+t*(Q[0]-P[0]), P[1]+t*(Q[1]-P[1])]); } out.push(Q); }
+    else if(fp >= 0){ const t = fp/(fp-fq); out.push([P[0]+t*(Q[0]-P[0]), P[1]+t*(Q[1]-P[1])]); }
+  }
+  return out;
+}
+function symAngles(shape){
+  const all = shape==='hex' ? [0,1,2,3,4,5].map(k => k*Math.PI/3) : shape==='octo' ? [0,1,2,3,4,5,6,7].map(k => k*Math.PI/4) : [0, Math.PI];
+  if(st.orient === 'none') return [0];
+  if(st.orient === '180') return all.filter(a => a === 0 || Math.abs(a-Math.PI) < 1e-6);
+  return all;
+}
+function polyComplement(P, T, k){
+  const onT = (A,B) => T.some((C,i) => { const D = T[(i+1)%T.length], dx = D[0]-C[0], dy = D[1]-C[1], l = Math.hypot(dx,dy);
+    return Math.abs(dx*(A[1]-C[1]) - dy*(A[0]-C[0]))/l < E && Math.abs(dx*(B[1]-C[1]) - dy*(B[0]-C[0]))/l < E; });
+  const ie = [];
+  for(let i=0;i<P.length;i++){ const A = P[i], B = P[(i+1)%P.length]; if(Math.hypot(B[0]-A[0],B[1]-A[1]) > E && !onT(A,B)) ie.push([A,B]); }
+  if(ie.length !== 1) return null;
+  const [A,B] = ie[0], dx = B[0]-A[0], dy = B[1]-A[1], l = Math.hypot(dx,dy);
+  const C = P.reduce((t,q) => [t[0]+q[0]/P.length, t[1]+q[1]/P.length], [0,0]);
+  const sg = Math.sign(dx*(C[1]-A[1]) - dy*(C[0]-A[0])) || 1;
+  const out = clipHalf(T, X => -sg*(dx*(X[1]-A[1]) - dy*(X[0]-A[0]))/l - k);
+  if(out.length < 3) return null;
+  const b = bbox(out);
+  return Math.min(b[1]-b[0], b[3]-b[2]) >= st.minr ? out : null;
+}
+function polyReuse(g, newTile){
+  const k = Math.max(0, st.kerf || 0), stock = [];
+  const ar = pc => pc.pparts.reduce((t,p) => t+area(p), 0);
+  g.cuts.slice().sort((a,b) => ar(b)-ar(a)).forEach(pc => {
+    const angs = symAngles(pc.shape);
+    const fits = poly => angs.some(an => { const c = Math.cos(an), s2 = Math.sin(an);
+      return pc.pparts.every(p => p.every(q => insideConvex([q[0]*c - q[1]*s2, q[0]*s2 + q[1]*c], poly))); });
+    let bi = -1, bA = Infinity;
+    stock.forEach((s0,i) => { if(s0.area < bA && fits(s0.poly)){ bi = i; bA = s0.area; } });
+    if(bi >= 0){ const s0 = stock.splice(bi,1)[0]; s0.tile.pieces.push(pc); pc.src = s0.tile; pc.reused = true; return; }
+    const t = newTile(); t.pieces.push(pc); pc.src = t; pc.reused = false;
+    if(pc.pparts.length === 1){ const rem = polyComplement(pc.pparts[0], pc.tpoly, k); if(rem) stock.push({poly:rem, area:area(rem), tile:t}); }
+  });
+}
+function dims(pc){ if(pc.rect) return [pc.pw, pc.ph]; const b = bbox(pc.tf); return [b[1]-b[0], b[3]-b[2]]; }
+function planCuts(pieces){
+  const groups = new Map();
+  pieces.forEach(pc => {
+    let g = groups.get(pc.key);
+    if(!g){ g = {key:pc.key, shape:pc.shape, W:pc.tW, H:pc.tH, tA:pc.tA, label:pc.label, color:pc.color, box:pc.box, kind:pc.kind, zones:new Set(), full:0, cuts:[], tiles:[]}; groups.set(pc.key, g); }
+    g.zones.add((multiS() && pc.surf != null ? sName(pc.surf) + ' ' : '') + 'Z' + (pc.z+1)); pc.full ? g.full++ : g.cuts.push(pc);
+  });
+  let num = 0;
+  for(const g of groups.values()){
+    const newTile = () => { const t = {n:++num, pieces:[], g}; g.tiles.push(t); return t; };
+    if(!st.reuse || g.shape === 'cab' || (g.shape !== 'rect' && !g.cuts.every(pc => pc.pparts))){
+      g.cuts.forEach(pc => { const t = newTile(); t.pieces.push(pc); pc.src = t; pc.reused = false; });
+      continue;
+    }
+    if(g.shape !== 'rect'){ polyReuse(g, newTile); continue; }
+    const k = Math.max(0, st.kerf || 0), W = g.W, H = g.H;
+    const need = pc => pc.rect ? pc.pw*pc.ph : area(pc.tf);
+    const stock = [];
+    g.cuts.slice().sort((a,b) => need(b)-need(a)).forEach(pc => {
+      const [pw, ph] = dims(pc);
+      let best = null;
+      for(let i=0;i<stock.length;i++){
+        const s0 = stock[i];
+        if(best && s0.area >= best.area) continue;
+        let rems = null;
+        if(s0.type === 'rect'){ const p = placeRect(pw, ph, pc.req, s0, k); if(p) rems = p.rems; }
+        else if(placePoly(pc, s0, W, H)) rems = [];
+        if(rems) best = {i, area:s0.area, rems};
+      }
+      if(best){
+        const s0 = stock.splice(best.i, 1)[0];
+        s0.tile.pieces.push(pc); pc.src = s0.tile; pc.reused = true;
+        stock.push(...best.rems);
+      } else {
+        const t = newTile(); t.pieces.push(pc); pc.src = t; pc.reused = false;
+        let rems = pc.rect ? null : complement(pc, W, H, k, t);
+        if(!rems){
+          const fresh = {type:'rect', w:W, h:H, area:W*H, f:{L:true,R:true,T:true,B:true}, tile:t};
+          const p = placeRect(pw, ph, pc.req, fresh, k);
+          rems = p ? p.rems : [];
+        }
+        stock.push(...rems);
+      }
+    });
+  }
+  return [...groups.values()];
+}
+
+/* repères de départ par motif (cellules sans joint) */
+function geo(z, j){
+  const a = z.a, b = z.b, P = z.pattern;
+  if(P==='hex'){ const F=a+j, R=F/S3; return {tl:[-R+j/2,-F/2+j/2], ctr:[0,0], jn:[R,0]}; }
+  if(P==='octo'){ const S=a+j; return {tl:[j/2,j/2], ctr:[S/2,S/2], jn:[S,S/2], s:S/(1+S2)}; }
+  if(P==='chevron'){ const w=(a+j)/S2, h=(b+j)*S2; return {tl:[j/2,j/2], ctr:[w/2,w/2+h/2], jn:[0,0]}; }
+  if(P==='basket'){ const S=a+j, n=Math.max(1,Math.round(S/(b+j))), p=S/n; return {tl:[j/2,j/2], ctr:[S/2,p/2], jn:[0,0], n, p}; }
+  if(P==='herring'){ const A=Math.max(a,b)+j, B=Math.min(a,b)+j; return {tl:[j/2,j/2], ctr:[A/2,B/2], jn:[0,0]}; }
+  return {tl:[j/2,j/2], ctr:[(a+j)/2,(b+j)/2], jn:[0,0]};
+}
+
+function gen(z, j, bb, g){
+  const out = [], P = z.pattern, [minX,maxX,minY,maxY] = bb;
+  let a = z.a, b = z.b;
+  const push = (p, par, kind) => { const q = bbox(p); if(q[0]>maxX||q[1]<minX||q[2]>maxY||q[3]<minY) return; out.push({p, par:par||0, kind:kind||'main'}); };
+  const R4 = (x,y,w,h) => [[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+
+  if(P==='herring'){
+    if(b > a) [a,b] = [b,a];
+    const A=a+j, B=b+j, cs=[[minX,minY],[maxX,minY],[maxX,maxY],[minX,maxY]];
+    const ms=cs.map(q=>(q[0]+q[1])/(2*B)), ns=cs.map(q=>(q[0]-q[1])/(2*A)), pm=Math.ceil(A/B)+2;
+    for(let m=Math.floor(Math.min(...ms))-pm; m<=Math.ceil(Math.max(...ms))+pm; m++)
+      for(let n=Math.floor(Math.min(...ns))-2; n<=Math.ceil(Math.max(...ns))+2; n++){
+        const bx=m*B+n*A, by=m*B-n*A;
+        push(R4(bx,by,A,B),0); push(R4(bx+A,by+B-A,B,A),1);
+      }
+  } else if(P==='chevron'){
+    const w=(a+j)/S2, h=(b+j)*S2;
+    for(let i=Math.floor(minX/(2*w))-1; i<=Math.ceil(maxX/(2*w))+1; i++)
+      for(let k=Math.floor((minY-2*w)/h)-1; k<=Math.ceil(maxY/h)+1; k++){
+        const X=i*2*w, Y=k*h;
+        push([[X,Y],[X+w,Y+w],[X+w,Y+w+h],[X,Y+h]],0);
+        push([[X+w,Y+w],[X+2*w,Y],[X+2*w,Y+h],[X+w,Y+w+h]],1);
+      }
+  } else if(P==='basket'){
+    const S=a+j, n=g.n, p=g.p;
+    for(let i=Math.floor(minX/S)-1; i<=Math.ceil(maxX/S)+1; i++)
+      for(let k=Math.floor(minY/S)-1; k<=Math.ceil(maxY/S)+1; k++){
+        const x=i*S, y=k*S, odd=(i+k)&1;
+        for(let m=0;m<n;m++) push(odd ? R4(x+m*p,y,p,S) : R4(x,y+m*p,S,p), odd);
+      }
+  } else if(P==='hex'){
+    const F=a+j, R=F/S3;
+    for(let i=Math.floor(minX/(1.5*R))-1; i<=Math.ceil(maxX/(1.5*R))+1; i++)
+      for(let k=Math.floor(minY/F)-2; k<=Math.ceil(maxY/F)+1; k++){
+        const cx=i*1.5*R, cy=k*F+((i&1)?F/2:0), p=[];
+        for(let t=0;t<6;t++){ const an=t*Math.PI/3; p.push([cx+R*Math.cos(an), cy+R*Math.sin(an)]); }
+        push(p, ((((i+2*k)%3)+3)%3)===0 ? 1 : 0);
+      }
+  } else if(P==='octo'){
+    const S=a+j, s=S/(1+S2), c=(S-s)/2;
+    for(let i=Math.floor(minX/S)-1; i<=Math.ceil(maxX/S)+1; i++)
+      for(let k=Math.floor(minY/S)-1; k<=Math.ceil(maxY/S)+1; k++){
+        const x=i*S, y=k*S;
+        push([[x+c,y],[x+S-c,y],[x+S,y+c],[x+S,y+S-c],[x+S-c,y+S],[x+c,y+S],[x,y+S-c],[x,y+c]],0,'main');
+        const X=x+S, Y=y+S;
+        push([[X,Y-c],[X+c,Y],[X,Y+c],[X-c,Y]],1,'cab');
+      }
+  } else {
+    const A=a+j, B=b+j, per={grid:1,half:2,third:3,quarter:4}[P] || 1;
+    for(let k=Math.floor(minY/B)-1; k<=Math.ceil(maxY/B)+1; k++){
+      const off = P==='rand' ? (0.2 + (hash(k*7+3)%600)/1000)*A : (((k%per)+per)%per)*A/per;
+      for(let i=Math.floor((minX-off)/A)-1; i<=Math.ceil((maxX-off)/A)+1; i++) push(R4(i*A+off,k*B,A,B),(i+k)&1);
+    }
+  }
+  return out;
+}
+
+function buildZone(z, zi, rc, j, list){
+  if(rc.w < 0.5 || rc.h < 0.5) return null;
+  const g = geo(z, j), th = z.angle*Math.PI/180, c = Math.cos(th), s = Math.sin(th);
+  const ref = z.start==='corner' ? g.tl : z.start==='tile' ? g.ctr : g.jn;
+  const sh = [-ref[0], -ref[1]];
+  const O = [(z.start==='corner'?0:rc.w/2)+z.dx, (z.start==='corner'?0:rc.h/2)+z.dy];
+  const toW = (x,y) => { x+=sh[0]; y+=sh[1]; return [O[0]+x*c-y*s, O[1]+x*s+y*c]; };
+  const toL = (X,Y) => { const u=X-O[0], v=Y-O[1]; return [u*c+v*s-sh[0], -u*s+v*c-sh[1]]; };
+  const bb = bbox([[0,0],[rc.w,0],[rc.w,rc.h],[0,rc.h]].map(q => toL(q[0],q[1])));
+  const cells = gen(z, j, bb, g);
+  const stats = {};
+  const FX = st.kind === 'floor' ? [] : (st.folds || []).map(f => Object.assign({}, f, {x: f.x - rc.x})).filter(o => o.x > E && o.x < rc.w - E).sort((a,b) => a.x-b.x);
+  const RZ = (st.res || []).filter(r => r.type !== 'socket').map(r => ({x0:r.x-rc.x, x1:r.x+r.w-rc.x, y0:(st.H-r.sill-r.h)-rc.y, y1:(st.H-r.sill)-rc.y, cov:r.cov}))
+    .filter(r => r.x1 > 0 && r.x0 < rc.w && r.y1 > 0 && r.y0 < rc.h);
+  for(const cell of cells){
+    const tile = j > 0 ? inset(cell.p, j/2) : cell.p;
+    if(tile.length < 3) continue;
+    const tA = area(tile);
+    const cp0 = clip(tile.map(q => toW(q[0],q[1])), rc.w, rc.h);
+    if(cp0.length < 3) continue;
+    let parts = [cp0];
+    for(const r of RZ){
+      const np = [];
+      for(const p of parts){
+        const q = bbox(p);
+        if(q[0] >= r.x1-E || q[1] <= r.x0+E || q[2] >= r.y1-E || q[3] <= r.y0+E){ np.push(p); continue; }
+        for(const bx of [[-Infinity,r.x0,-Infinity,Infinity],[r.x1,Infinity,-Infinity,Infinity],[r.x0,r.x1,-Infinity,r.y0],[r.x0,r.x1,r.y1,Infinity]]){
+          const c2 = clipB(p, bx[0], bx[1], bx[2], bx[3]);
+          if(c2.length >= 3 && area(c2) > 1) np.push(c2);
+        }
+      }
+      parts = np;
+    }
+    if(!parts.length) continue;
+    const groupsP = FX.length ? (() => { const bs = [-Infinity, ...FX.map(o => o.x), Infinity], out = [];
+      for(let i=0;i<bs.length-1;i++){ const sub = parts.map(p => clipB(p, bs[i], bs[i+1], -Infinity, Infinity)).filter(p => p.length >= 3 && area(p) > 1); if(sub.length) out.push(sub); }
+      return out; })() : [parts];
+    for(const parts of groupsP){
+    const ar = parts.reduce((t,p) => t+area(p), 0), ratio = ar/tA;
+    if(ratio < 1e-4) continue;
+    const multi = parts.length > 1, tb = bbox(tile);
+    const fw = tb[1]-tb[0], fh = tb[3]-tb[2];
+    const shape = ['hex','octo','chevron'].includes(z.pattern) ? (cell.kind==='cab' ? 'cab' : z.pattern) : 'rect';
+    const rotT = fh > fw + 0.01;
+    let tW = fw, tH = fh;
+    if(shape === 'rect'){ tW = Math.max(fw,fh); tH = Math.min(fw,fh); }
+    const locs = parts.map(p => p.map(q => toL(q[0],q[1])));
+    const tfs = shape === 'rect' ? locs.map(L => L.map(q => rotT ? [q[1]-tb[2], tb[1]-q[0]] : [q[0]-tb[0], q[1]-tb[2]])) : null;
+    const allP = [].concat(...(tfs || locs)), ub = bbox(allP);
+    const pw = ub[1]-ub[0], ph = ub[3]-ub[2];
+    let tf = null;
+    if(shape === 'rect') tf = multi ? [[ub[0],ub[2]],[ub[1],ub[2]],[ub[1],ub[3]],[ub[0],ub[3]]] : tfs[0];
+    let tpoly = null, pparts = null;
+    if(shape !== 'rect'){
+      const C = tile.reduce((t,q) => [t[0]+q[0]/tile.length, t[1]+q[1]/tile.length], [0,0]);
+      tpoly = tile.map(q => [q[0]-C[0], q[1]-C[1]]);
+      pparts = locs.map(L => L.map(q => [q[0]-C[0], q[1]-C[1]]));
+    }
+    const full = ratio > 0.999, minD = Math.min(...(tfs || locs).map(P => { const q = bbox(P); return Math.min(q[1]-q[0], q[3]-q[2]); }));
+    const thin = !full && (minD < Math.max(20, Math.min(fw,fh)/4) || ratio < 0.08);
+    const req = {L:false,R:false,T:false,B:false}, vis = [], outline = [];
+    const zside = (A,B) => (Math.abs(A[0])<E && Math.abs(B[0])<E) ? 'L' : (Math.abs(A[0]-rc.w)<E && Math.abs(B[0]-rc.w)<E) ? 'R' : (Math.abs(A[1])<E && Math.abs(B[1])<E) ? 'T' : (Math.abs(A[1]-rc.h)<E && Math.abs(B[1]-rc.h)<E) ? 'B' : null;
+    const hidden = sd => { const surf = sd==='L' ? rc.x<E : sd==='R' ? rc.x+rc.w>st.W-E : sd==='T' ? rc.y<E : rc.y+rc.h>st.H-E; return surf ? !!(st.hid && st.hid[sd]) : !!st.jcov; };
+    const onLine = (P,C,D) => { const dx = D[0]-C[0], dy = D[1]-C[1], l = Math.hypot(dx,dy); return l > 1e-9 && Math.abs(dx*(P[1]-C[1]) - dy*(P[0]-C[0]))/l < E; };
+    const seam = (A,B,i) => {
+      for(let k2=0; k2<parts.length; k2++){ if(k2===i) continue; const P = parts[k2];
+        for(let m=0; m<P.length; m++){ const C = P[m], D = P[(m+1)%P.length];
+          if(!onLine(A,C,D) || !onLine(B,C,D)) continue;
+          const dx = D[0]-C[0], dy = D[1]-C[1], l2 = dx*dx+dy*dy;
+          const t1 = ((A[0]-C[0])*dx + (A[1]-C[1])*dy)/l2, t2 = ((B[0]-C[0])*dx + (B[1]-C[1])*dy)/l2;
+          if((Math.min(Math.max(t1,t2),1) - Math.max(Math.min(t1,t2),0))*Math.sqrt(l2) > E) return true; } }
+      return false;
+    };
+    const resEdge = (A,B) => {
+      for(const r of RZ){
+        const my = (A[1]+B[1])/2, mx = (A[0]+B[0])/2;
+        if(Math.abs(A[0]-B[0]) < E && (Math.abs(A[0]-r.x0) < E || Math.abs(A[0]-r.x1) < E) && my > r.y0-E && my < r.y1+E) return r;
+        if(Math.abs(A[1]-B[1]) < E && (Math.abs(A[1]-r.y0) < E || Math.abs(A[1]-r.y1) < E) && mx > r.x0-E && mx < r.x1+E) return r;
+      }
+      return null;
+    };
+    const tside = (p,q) => (Math.abs(p[0])<E && Math.abs(q[0])<E) ? 'L' : (Math.abs(p[0]-tW)<E && Math.abs(q[0]-tW)<E) ? 'R' : (Math.abs(p[1])<E && Math.abs(q[1])<E) ? 'T' : (Math.abs(p[1]-tH)<E && Math.abs(q[1]-tH)<E) ? 'B' : null;
+    const W2 = q => [q[0]+rc.x, q[1]+rc.y];
+    let notch = false, atFold = false;
+    parts.forEach((cp, i) => {
+      for(let e=0; e<cp.length; e++){
+        const A = cp[e], B = cp[(e+1)%cp.length];
+        if(Math.hypot(B[0]-A[0], B[1]-A[1]) < E) continue;
+        if(multi && seam(A,B,i)) continue;
+        outline.push([W2(A), W2(B)]);
+        const ts = tfs ? tside(tfs[i][e], tfs[i][(e+1)%cp.length]) : null;
+        const fe = (Math.abs(A[0]-B[0]) < E) ? FX.find(o => Math.abs(o.x - A[0]) < E) : null;
+        if(fe){ atFold = true; if(!full && !ts && fe.type === 'out' && !fe.cov) vis.push([W2(A), W2(B)]); continue; }
+        const rs = resEdge(A,B);
+        if(rs){ notch = true; if(!full && !ts && !rs.cov) vis.push([W2(A), W2(B)]); continue; }
+        const zs = zside(A,B);
+        if(!zs){ if(ts) req[ts] = true; }
+        else if(!full && !ts && !hidden(zs)) vis.push([W2(A), W2(B)]);
+      }
+    });
+    const wparts = parts.map(p => p.map(W2));
+    let drill = null;
+    for(const r of (st.res || [])){ if(r.type !== 'socket') continue;
+      const sx0 = r.x, sx1 = r.x + r.w, sy0 = st.H - r.sill - r.h, sy1 = st.H - r.sill;
+      if(wparts.some(p => { const q = bbox(p); return q[0] < sx1 && q[1] > sx0 && q[2] < sy1 && q[3] > sy0; })) drill = (drill ? drill + ', ' : '') + 'prise'; }
+    const imgO = tile.length === 4 && shape === 'rect' ? (rotT ? [[tb[1],tb[2]],[tb[1],tb[3]],[tb[0],tb[2]]] : [[tb[0],tb[2]],[tb[1],tb[2]],[tb[0],tb[3]]]) : [[tb[0],tb[2]],[tb[1],tb[2]],[tb[0],tb[3]]];
+    const img = imgO.map(q => W2(toW(q[0], q[1])));
+    list.push({parts: wparts, poly: wparts[0], outline, full, thin, atFold, drill, img, pw, ph, fw, fh, minD, req, vis, notch: notch && multi,
+      rect: !multi && Math.abs(ar - pw*ph)/ar < 0.003, par: cell.par, kind: cell.kind, z: zi, shape, tf, tW, tH, tA, tpoly, pparts});
+    const k = stats[cell.kind] || (stats[cell.kind] = {full:0, cut:0, tA});
+    full ? k.full++ : k.cut++;
+    }
+  }
+  return {O:[O[0]+rc.x, O[1]+rc.y], stats, g};
+}
+
+/* ---------- zones ---------- */
+function rowT(z){
+  if(['hex','octo','basket'].includes(z.pattern)) return z.a;
+  const rot = z.angle === 90;
+  return st.split==='h' ? (rot ? z.a : z.b) : (rot ? z.b : z.a);
+}
+function zoneLen(z){
+  if(z.unit==='cm') return Math.max(0, z.size*10);
+  if(z.unit==='rows'){ const r = Math.max(0, Math.round(z.size)); return r > 0 ? r*rowT(z) + (r-1)*st.j : 0; }
+  return null;
+}
+function layout(){
+  const horiz = st.split==='h', total = horiz ? st.H : st.W, cross = horiz ? st.W : st.H;
+  let fixed = 0, rest = 0;
+  const lens = st.zones.map(z => { const l = zoneLen(z); if(l==null){ rest++; return null; } fixed += l; return l; });
+  const remain = total - (st.zones.length-1)*st.j - fixed, rl = rest ? Math.max(0, remain/rest) : 0;
+  let pos = 0; const rects = [];
+  lens.forEach(l => {
+    const len = l==null ? rl : l, s0 = Math.min(pos,total), e0 = Math.min(pos+len,total);
+    rects.push(horiz ? {x:0, y:s0, w:cross, h:Math.max(0,e0-s0), len} : {x:s0, y:0, w:Math.max(0,e0-s0), h:cross, len});
+    pos += len + st.j;
+  });
+  const used = pos - st.j;
+  return {rects, over: used-total, left: rest ? 0 : total-used, total, used, horiz};
+}
+
+/* ---------- calcul ---------- */
+function showError(msg){
+  $('err').textContent = msg; $('err').classList.add('on');
+  ['sArea','sFull','sCut','sReuse','sThin','sVis','sMin'].forEach(id => $(id).textContent = '–');
+  $('tbody').innerHTML = ''; $('note').textContent = '';
+  model = null;
+}
+
+function buildSurface(){
+  if(!(st.W>0 && st.H>0 && st.j>=0)) return {error:'Renseignez des dimensions positives pour la surface et le joint.'};
+  for(let i=0;i<st.zones.length;i++){
+    const z = st.zones[i];
+    if(!(z.a>0 && z.b>0)) return {error:'Zone ' + (i+1) + ' : renseignez les dimensions du carreau.'};
+  }
+  const lay = layout();
+  let est = 0;
+  lay.rects.forEach((r,i) => { const z = st.zones[i]; const cA = ['hex','octo'].includes(z.pattern) ? (z.a+st.j)**2*0.8 : (z.a+st.j)*(z.b+st.j); est += r.w*r.h/cA; });
+  if(est > 20000) return {error:'Environ ' + fmt(est,0) + ' carreaux : trop pour l\u2019affichage. Agrandissez les carreaux ou réduisez la surface.'};
+
+  const pieces = [], zres = [];
+  st.zones.forEach((z,i) => zres.push(buildZone(z, i, lay.rects[i], st.j, pieces)));
+  const revNotes = [], reveals = [];
+  st.res.forEach((r, ri) => {
+    const D = r.depth*10; if(!(D > 0) || !hasReveal(r)) return;
+    const cx = r.x + r.w/2, cy = st.H - r.sill - r.h/2;
+    const zi = lay.rects.findIndex(q => cx >= q.x && cx <= q.x+q.w && cy >= q.y && cy <= q.y+q.h);
+    if(zi < 0 || !zres[zi]) return;
+    const z = st.zones[zi];
+    if(['hex','octo','chevron'].includes(z.pattern)){ revNotes.push(rName(r, ri) + ' : tableaux non calculés pour ce motif.'); return; }
+    const a = Math.max(z.a, z.b), b = Math.min(z.a, z.b), jj = st.j;
+    const names = {L:'tableau gauche', R:'tableau droit', T:'linteau', B:'appui'};
+    const x0 = r.x, x1 = r.x + r.w, y0 = st.H - r.sill - r.h, y1 = st.H - r.sill;
+    const Dd = Math.min(D, 0.42*Math.min(r.w, r.h));
+    const ix0 = x0 + (r.rv.L ? Dd : 0), ix1 = x1 - (r.rv.R ? Dd : 0), iy0 = y0 + (r.rv.T ? Dd : 0), iy1 = y1 - (r.rv.B ? Dd : 0);
+    const edges = {
+      L: [[x0,y1],[x0,y0],[ix0,iy1],[ix0,iy0]], R: [[x1,y1],[x1,y0],[ix1,iy1],[ix1,iy0]],
+      T: [[x0,y0],[x1,y0],[ix0,iy0],[ix1,iy0]], B: [[x0,y1],[x1,y1],[ix0,iy1],[ix1,iy1]]
+    };
+    const lerp = (P,Q,t) => [P[0]+(Q[0]-P[0])*t, P[1]+(Q[1]-P[1])*t];
+    const rv = {ri, zi, inner:[ix0,iy0,ix1,iy1], sides:[]};
+    ['L','R','T','B'].forEach(sd => {
+      if(!r.rv[sd] || (r.type === 'door' && sd === 'B')) return;
+      const [O0,O1,I0,I1] = edges[sd];
+      const len = (sd==='L' || sd==='R') ? r.h : r.w;
+      const map = (u,v) => { const t = u/len; return lerp(lerp(O0,O1,t), lerp(I0,I1,t), v/D); };
+      rv.sides.push({sd, poly:[O0,O1,I1,I0]});
+      const segs = [], rows = [];
+      for(let p=0; p < len-E; p += a+jj) segs.push([p, Math.min(a, len-p)]);
+      for(let p=0; p < D-E; p += b+jj) rows.push([p, Math.min(b, D-p)]);
+      rows.forEach(([v0,d], m) => segs.forEach(([u0,sg], k) => {
+        const full = sg >= a-E && d >= b-E;
+        const req = {L: k>0, R: k<segs.length-1, T: m>0 || !r.cov, B: m<rows.length-1};
+        const q = [map(u0,v0), map(u0+sg,v0), map(u0+sg,v0+d), map(u0,v0+d)];
+        const outline = q.map((P,i) => [P, q[(i+1)%4]]);
+        pieces.push({parts:[q], poly:q, outline, full, thin: !full && Math.min(sg,d) < Math.max(20, b/4), pw:sg, ph:d, fw:a, fh:b,
+          minD:Math.min(sg,d), req, vis:[], rect:true, par:0, kind:'main', z:zi, shape:'rect', side:sd, rres:ri,
+          tf:[[0,0],[sg,0],[sg,d],[0,d]], tW:a, tH:b, tA:a*b, reveal:'F' + (ri+1) + ' ' + names[sd], ruv:{u0, u1:u0+sg, v0, v1:v0+d}});
+      }));
+    });
+    reveals.push(rv);
+  });
+  const pl = st.plinth;
+  if(pl && pl.len > 0 && pl.h > 0){
+    const zi = Math.min(Math.max(0, pl.zone|0), st.zones.length-1), z = st.zones[zi];
+    if(['hex','octo','chevron'].includes(z.pattern)) revNotes.push('Plinthes : choisissez une zone à carreau rectangulaire.');
+    else if(zres[zi]){
+      const a = Math.max(z.a, z.b), b = Math.min(z.a, z.b);
+      if(pl.h > b + E) revNotes.push('Plinthes : la hauteur dépasse la largeur du carreau.');
+      else {
+        const segs = [];
+        for(let p=0; p < pl.len-E; p += a+st.j) segs.push(Math.min(a, pl.len-p));
+        segs.forEach((sg,k) => {
+          const full = sg >= a-E && pl.h >= b-E;
+          pieces.push({parts:null, poly:null, outline:[], full, thin: !full && sg < Math.max(20, a/4), pw:sg, ph:pl.h, fw:a, fh:b,
+            minD:Math.min(sg, pl.h), req:{L:k>0, R:k<segs.length-1, T:true, B:false}, vis:[], rect:true, par:0, kind:'main', z:zi, shape:'rect',
+            tf:[[0,0],[sg,0],[sg,pl.h],[0,pl.h]], tW:a, tH:b, tA:a*b, reveal:'Plinthe', plinth:true});
+        });
+      }
+    }
+  }
+  pieces.forEach((pc,i) => {
+    const z = st.zones[pc.z];
+    pc.color = (z.mix==='uni' || pc.reveal) ? z.c1 : z.mix==='alt' ? (pc.par ? z.c2 : z.c1) : ((hash(i)>>>3)%2 ? z.c2 : z.c1);
+    const g = zres[pc.z].g;
+    if(pc.shape==='cab') pc.label = 'Cabochon ' + mmf(g.s - st.j) + ' mm';
+    else if(pc.shape==='hex') pc.label = 'Hexagone ' + mmf(z.a) + ' mm';
+    else if(pc.shape==='octo') pc.label = 'Octogone ' + mmf(z.a) + ' mm';
+    else if(pc.shape==='chevron') pc.label = 'Lame Hongrie ' + mmf(Math.max(z.a,z.b)) + ' × ' + mmf(Math.min(z.a,z.b)) + ' mm';
+    else pc.label = mmf(pc.tW) + ' × ' + mmf(pc.tH) + ' mm';
+    pc.box = pc.kind==='main' ? z.box : 0;
+    pc.key = pc.shape + (pc.shape==='chevron' ? pc.par : '') + '|' + Math.round(pc.tW) + 'x' + Math.round(pc.tH) + '|' + (pc.shape==='rect' ? '' : z.a + 'x' + z.b) + '|' + pc.color.toLowerCase();
+  });
+  return {pieces, zres, lay, reveals, revNotes};
+}
+function surfHash(S){ return JSON.stringify(S, (k,v) => (k === 'view' || k === 'photo' || GLOBALK.includes(k)) ? undefined : v); }
+function surfData(i){
+  const S = proj.surfaces[i]; if(!S) return null;
+  const h = surfHash(S);
+  if(sCache[i] && sCache[i].h === h) return sCache[i].d;
+  const keep = st; let d = null;
+  st = S; try{ const R = buildSurface(); d = R.error ? null : R; }catch(e){ d = null; } finally { st = keep; }
+  if(d) d.pieces.forEach(p => p.surf = i);
+  sCache[i] = {h, d}; return d;
+}
+function compute(){
+  proj.surfaces.forEach(S => { if(S !== st) GLOBALK.forEach(k => { if(k !== 'view') S[k] = st[k]; }); });
+  const R = buildSurface();
+  if(R.error){ showError(R.error); draw(); return; }
+  $('err').classList.remove('on');
+  const {pieces, zres, lay, reveals, revNotes} = R;
+  pieces.forEach(p => p.surf = proj.active);
+  const others = [];
+  proj.surfaces.forEach((S,i) => { if(i === proj.active) return; const d = surfData(i); if(d) others.push(...d.pieces); });
+  model = {pieces, zres, lay, reveals, all: pieces.concat(others)};
+  if(pick >= pieces.length) pick = -1;
+  const groups = planCuts(model.all);
+  model.groups = groups;
+
+  const full = pieces.filter(p=>p.full).length, cuts = pieces.filter(p=>!p.full), thin = pieces.filter(p=>p.thin).length;
+  const reused = cuts.filter(p=>p.reused).length;
+  $('sArea').textContent = fmt(st.W*st.H/1e6, 2) + ' m²';
+  $('sFull').textContent = fmt(full,0);
+  $('sCut').textContent = fmt(cuts.length,0);
+  $('sReuse').textContent = st.reuse ? fmt(reused,0) : 'désactivé';
+  $('sThin').textContent = fmt(thin,0);
+  $('sThinBox').classList.toggle('warn', thin>0);
+  const nVis = pieces.filter(p => p.vis && p.vis.length).length;
+  $('sVis').textContent = fmt(nVis,0); $('sVisBox').classList.toggle('warn', nVis>0);
+  $('sMin').textContent = cuts.length ? mmf(Math.min(...cuts.map(p=>p.minD))) + ' mm' : 'aucune';
+  $('cap').textContent = (multiS() ? 'Commande, toutes surfaces' : 'Commande') + ' (marge ' + fmt(st.margin,0) + ' %)';
+
+  let rows = '', list = '', nTiles = 0;
+  groups.forEach(g => {
+    const posed = g.full + g.cuts.length, needed = g.full + g.tiles.length;
+    const order = Math.ceil(needed*(1+st.margin/100)), m2 = order*g.tA/1e6;
+    const boxes = g.box > 0 ? fmt(Math.ceil(m2/g.box - 1e-9),0) : '–';
+    const zs = [...g.zones].join(', ');
+    const saved = g.cuts.length - g.tiles.length;
+    rows += `<tr><td><span class="dot" style="background:${g.color}"></span>${g.label}<br><small style="color:var(--muted)">${zs}, ${fmt(g.full,0)} entiers + ${fmt(g.tiles.length,0)} pour ${fmt(g.cuts.length,0)} coupes${saved>0 ? ', ' + fmt(saved,0) + ' économisés' : ''}</small></td><td class="n">${fmt(posed,0)}</td><td class="n">${fmt(needed,0)}</td><td class="n">${fmt(order,0)}</td><td class="n">${fmt(m2,2)}</td><td class="n">${boxes}</td></tr>`;
+    if(g.tiles.length){
+      nTiles += g.tiles.length;
+      list += `<h4><span class="dot" style="background:${g.color}"></span>${g.label} (${zs})</h4><ol>` + g.tiles.map(t =>
+        `<li><b>n°${t.n}</b>${t.pieces.map(pc => (pc.notch ? 'encoche ' : pc.rect ? '' : 'biais ') + mmf(pc.pw) + ' × ' + mmf(pc.ph) + (pc.reveal ? ' (' + pc.reveal + ')' : '') + (multiS() && pc.surf != null ? ' [' + sName(pc.surf) + ']' : '')).join(' + ')}</li>`).join('') + '</ol>';
+    }
+  });
+  $('tbody').innerHTML = rows;
+  {
+    let gr = '';
+    const glueAll = [];
+    proj.surfaces.forEach((S, si) => {
+      const d = si === proj.active ? {pieces} : surfData(si); if(!d) return;
+      S.zones.forEach((z,i) => {
+        const zp = d.pieces.filter(p => p.z === i && p.kind === 'main');
+        if(!zp.length) return;
+        const g = glueAdvice(z, zp[0].tA, zp[0].fw, zp[0].fh, S.kind);
+        const m2 = zp.reduce((t,p) => t + (p.parts ? p.parts.reduce((u,q) => u+area(q), 0) : p.pw*p.ph), 0)/1e6;
+        const kg = Math.ceil(m2*g.kg*(1+st.margin/100));
+        const A = Math.max(z.a, z.b), Bm = ['hex','octo'].includes(z.pattern) ? A : Math.min(z.a, z.b);
+        const jointKg = m2 * (A+Bm)/(A*Bm) * (z.th || 9) * S.j * 1.6 * (1+st.margin/100);
+        glueAll.push({S, si, z, i, g, m2, kg, jointKg, n: zp.length, long: Math.max(zp[0].fw, zp[0].fh)});
+        gr += `<tr><td>${multiS() ? sName(si) + ', ' : ''}Zone ${i+1}</td><td>${zp[0].label}<br><small style="color:var(--muted)">${fmt(zp[0].tA/100,0)} cm²</small></td><td>${g.notch}</td><td>${g.dbl ? '<b style="color:var(--thin)">Double</b>' : 'Simple'}${g.note ? '<br><small style="color:var(--muted)">' + g.note + '</small>' : ''}</td><td class="n">${fmt(kg,0)} kg</td></tr>`;
+        if(si === proj.active && i === st.sel) renderGlueBox(g, zp[0], m2, kg);
+      });
+    });
+    $('glueBody').innerHTML = gr;
+    if(!pieces.some(p => p.z === st.sel && p.kind === 'main')) $('glueBox').innerHTML = '';
+    model.glueAll = glueAll;
+    renderShopping(groups, glueAll);
+  }
+  $('cutlist').innerHTML = list || '<p class="hint">Aucune coupe.</p>';
+  $('cutsum').textContent = 'Plan de découpe (' + fmt(nTiles,0) + ' carreaux à couper)';
+
+  const notes = [];
+  if(lay.over > 0.5) notes.push('Les zones dépassent la surface de ' + cm(lay.over) + ' cm : la fin est tronquée.');
+  if(lay.left > 0.5) notes.push(cm(lay.left) + ' cm restent non carrelés. Passez une zone en « Reste de la surface » pour combler.');
+  notes.push(...revNotes);
+  $('note').textContent = notes.join(' ');
+  {
+    const pp = pieces.filter(p => p.plinth);
+    $('pHint').textContent = pp.length ? 'Plinthes : ' + pp.length + ' pièces de ' + cm(st.plinth.h) + ' cm, dont ' + pp.filter(p=>p.reused).length + ' taillées dans les chutes. Le bord d\u2019usine reste en haut, la coupe contre le sol.' : 'Indiquez une longueur pour calculer les plinthes. Elles sont taillées en priorité dans les chutes.';
+  }
+  const rr = st.res[st.rsel];
+  if(rr){
+    const rp = pieces.filter(p => p.reveal && p.reveal.startsWith('F' + (st.rsel+1) + ' '));
+    $('rHint').textContent = rr.depth > 0 && rp.length ? 'Tableaux : ' + rp.length + ' pièces, dont ' + rp.filter(p=>p.reused).length + ' taillées dans les chutes.' : '';
+  }
+
+  const rc = lay.rects[st.sel];
+  $('zHint').textContent = rc ? (lay.horiz ? 'Hauteur' : 'Largeur') + ' de la zone : ' + cm(rc.len) + ' cm.' : '';
+  draw(); info();
+  if(typeof renderCmpTable === 'function') renderCmpTable();
+}
+
+/* ---------- liste d'achat ---------- */
+function shoppingItems(groups, glueAll){
+  const items = [];
+  groups.forEach(g => {
+    const needed = g.full + g.tiles.length, order = Math.ceil(needed*(1+st.margin/100)), m2 = order*g.tA/1e6;
+    const boxes = g.box > 0 ? Math.ceil(m2/g.box - 1e-9) : 0;
+    const buyM2 = boxes ? boxes*g.box : m2;
+    items.push({key:'tile|' + g.key, label: g.label, dot: g.color, qty: boxes ? fmt(boxes,0) + ' cartons (' + fmt(buyM2,2) + ' m²)' : fmt(order,0) + ' pièces (' + fmt(m2,2) + ' m²)', unit:'€/m²', mult: buyM2});
+  });
+  if(glueAll.length){
+    const kg = glueAll.reduce((t,x) => t+x.kg, 0), flex = glueAll.some(x => x.g.S > 2200 || x.g.dbl && x.g.S > 1100);
+    const sacs = Math.ceil(kg/25);
+    items.push({key:'colle', label: 'Mortier-colle ' + (flex ? 'déformable C2 S1' : 'C2'), qty: fmt(sacs,0) + ' sacs de 25 kg (' + fmt(kg,0) + ' kg)', unit:'€/sac', mult: sacs});
+    const byGrout = {};
+    glueAll.forEach(x => { const c = x.z.grout.toLowerCase(); byGrout[c] = (byGrout[c] || 0) + x.jointKg; });
+    Object.entries(byGrout).forEach(([c, kg2]) => { const sacs2 = Math.ceil(kg2/5 - 1e-9) || 1;
+      items.push({key:'joint|' + c, label:'Mortier de joint', dot:c, qty: fmt(sacs2,0) + ' sacs de 5 kg (' + fmt(kg2,1) + ' kg)', unit:'€/sac', mult: sacs2}); });
+    const small = glueAll.filter(x => x.long < 450).reduce((t,x) => t + x.n, 0), big = glueAll.filter(x => x.long >= 450).reduce((t,x) => t + x.n, 0);
+    if(small && st.j >= 1){ const n = Math.ceil(small*1.3/200); items.push({key:'crois', label:'Croisillons ' + fmt(st.j,1) + ' mm', qty: fmt(n,0) + ' sachets de 200', unit:'€/sachet', mult:n}); }
+    if(big){ const n = Math.ceil(big*3/100); items.push({key:'cales', label:'Cales de nivellement (grands formats)', qty: fmt(n,0) + ' sachets de 100', unit:'€/sachet', mult:n}); }
+    const m2all = glueAll.reduce((t,x) => t+x.m2, 0), litres = Math.ceil(m2all*0.15);
+    items.push({key:'primaire', label:'Primaire d\u2019accrochage', qty: fmt(litres,0) + ' L', unit:'€/L', mult: litres});
+  }
+  // profilés et silicone
+  let prof = 0, sil = 0;
+  proj.surfaces.forEach(S => {
+    const Hm = S.H/1000;
+    if(S.kind !== 'floor') S.folds.forEach(f => { if(f.type === 'out' && f.cov) prof += Hm; if(f.type === 'in') sil += Hm; });
+    if(S.jcov) prof += Math.max(0, S.zones.length-1) * (S.split === 'h' ? S.W : S.H)/1000;
+    S.res.forEach(r => {
+      if(r.type === 'window' || r.type === 'door'){
+        const per = (2*r.h + r.w + (r.type === 'window' ? r.w : 0))/1000;
+        if(r.cov) prof += per;
+        sil += per;
+      }
+      if(r.type === 'tub') sil += (r.w + (S.kind === 'floor' ? r.w + 2*r.h : 0))/1000;
+    });
+  });
+  if(proj.room){
+    const R = proj.room, ws = ['A','B','C','D'].filter(k => R.surf && R.surf[k] != null && proj.surfaces[R.surf[k]]);
+    ['AB','BC','CD','DA'].forEach(p => { const a = proj.surfaces[R.surf[p[0]]], b = proj.surfaces[R.surf[p[1]]]; if(a && b) sil += Math.min(a.H, b.H)/1000; });
+    if(R.surf && R.surf.F != null && proj.surfaces[R.surf.F] && ws.length) sil += 2*(R.L + R.l)/1000;
+  }
+  if(prof > 0){ const n = Math.ceil(prof*(1+st.margin/100)/2.5); items.push({key:'profil', label:'Profilés d\u2019angle', qty: fmt(n,0) + ' barres de 2,5 m (' + fmt(prof,1) + ' m)', unit:'€/barre', mult:n}); }
+  if(sil > 0){ const n = Math.ceil(sil/10); items.push({key:'silicone', label:'Silicone sanitaire (angles, menuiseries)', qty: fmt(n,0) + ' cartouches (' + fmt(sil,1) + ' m)', unit:'€/cartouche', mult:n}); }
+  return items;
+}
+function renderShopping(groups, glueAll){
+  const items = shoppingItems(groups, glueAll);
+  let total = 0;
+  $('shopBody').innerHTML = items.map(it => {
+    const pr = proj.prices[it.key], t = pr > 0 ? pr*it.mult : 0; total += t;
+    return `<tr><td>${it.dot ? '<span class="dot" style="background:' + it.dot + '"></span>' : ''}${it.label}</td><td>${it.qty}</td><td class="n"><input class="price" type="number" inputmode="decimal" min="0" step="0.01" data-price="${it.key}" value="${pr > 0 ? pr : ''}" placeholder="${it.unit}" aria-label="Prix ${it.label} en ${it.unit}"></td><td class="n">${t ? fmt(t,2) + ' €' : '–'}</td></tr>`;
+  }).join('');
+  $('shopTotal').textContent = total ? fmt(total,2) + ' €' : '–';
+  model.cost = total;
+}
+
+/* ---------- encollage (repères NF DTU 52.2 / fiches mortiers-colles, pose intérieure) ---------- */
+function glueAdvice(z, tA, fw, fh, kind){
+  const S = tA/100, floor = (kind || st.kind) === 'floor';
+  const long = Math.max(fw, fh), short = Math.min(fw, fh), ratio = short > 0 ? long/short : 1;
+  let notch, dbl, kg, note = '';
+  if(S <= 50){ notch = 'U3 (3 mm)'; dbl = false; kg = 2; note = 'Mosaïque : peigne fin, bien serrer la colle.'; }
+  else if(S <= 500){ notch = 'U6 (6 mm)'; dbl = false; kg = 3; }
+  else if(floor && S <= 1100){ notch = 'U9 (9 mm)'; dbl = false; kg = 4.5; }
+  else if(S <= 2200){ notch = 'U9 (9 mm)'; dbl = true; kg = 4.5; }
+  else if(S <= 3600){ notch = floor ? 'U9 ou demi-lune DL20' : 'U9 (9 mm)'; dbl = true; kg = floor ? 6 : 5; note = 'Mortier-colle déformable (C2 S1) conseillé.'; }
+  else if(floor ? S <= 10000 : false){ notch = 'Demi-lune DL20'; dbl = true; kg = 7.5; note = 'Grand format : mortier-colle déformable (C2 S1), support très plan.'; }
+  else { notch = 'Demi-lune DL20'; dbl = true; kg = 7.5; note = (floor ? 'Au-delà de 10 000 cm²' : 'Au-delà de 3 600 cm² en mur') + ' : hors DTU, suivre l\u2019avis technique du fabricant.'; }
+  if(!dbl && ratio >= 3 && long >= 600){ dbl = true; note = (note ? note + ' ' : '') + 'Format allongé : double encollage recommandé contre le tuilage.'; }
+  if(dbl) kg += 1.5;
+  return {notch, dbl, kg, note, S};
+}
+function renderGlueBox(g, p, m2, kg){
+  $('glueBox').innerHTML = `Spatule crantée <b>${g.notch}</b> <span class="${g.dbl ? 'dbl' : 'sgl'}">${g.dbl ? 'Double encollage' : 'Simple encollage'}</span>
+    <small>Carreau de ${fmt(g.S,0)} cm² en ${st.kind === 'floor' ? 'sol' : 'mur'} intérieur. ${g.dbl ? 'Peigner la colle sur le support et beurrer l\u2019envers du carreau avec le côté lisse de la spatule.' : 'Colle peignée sur le support uniquement.'}${g.note ? ' ' + g.note : ''} Environ ${fmt(g.kg,1)} kg/m², soit ${fmt(kg,0)} kg pour ${fmt(m2,1)} m² avec la marge.</small>`;
+}
+
+/* ---------- dessin ---------- */
+function draw(){
+  const dpr = window.devicePixelRatio || 1, cw = wrap.clientWidth || 300;
+  const W = st.W > 0 ? st.W : 3000, H = st.H > 0 ? st.H : 2400;
+  const plan = st.view === 'plan', multi = st.zones.length > 1;
+  if(st.view === 'persp'){
+    const chP = Math.round(Math.min(Math.max(320, cw*0.72), Math.max(320, window.innerHeight*(window.innerWidth>=900 ? 0.72 : 0.6))));
+    cv.style.height = chP + 'px'; cv.width = Math.round(cw*dpr); cv.height = Math.round(chP*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    if(model) drawPersp(cw, chP); else { ctx.fillStyle = css('--sheet'); ctx.fillRect(0,0,cw,chP); }
+    return;
+  }
+  const pL = plan ? 46 : 14, pT = plan ? 46 : 14;
+  const pR = plan && multi && st.split==='h' ? 58 : 14, pB = plan && multi && st.split==='v' ? 46 : 14;
+  const maxH = Math.max(280, window.innerHeight*(window.innerWidth>=900 ? 0.72 : 0.6));
+  let sc = (cw-pL-pR)/W, ch = H*sc + pT + pB;
+  if(ch > maxH){ sc = (maxH-pT-pB)/H; ch = maxH; }
+  const ox = pL + ((cw-pL-pR) - W*sc)/2, oy = pT;
+  xf = {ox, oy, sc};
+  cv.style.height = ch + 'px';
+  cv.width = Math.round(cw*dpr); cv.height = Math.round(ch*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = css('--sheet'); ctx.fillRect(0,0,cw,ch);
+  if(!model) return;
+
+  const ink = css('--ink'), tline = css('--tline'), accent = css('--accent'), muted = css('--muted'), sheet = css('--sheet');
+  const X = x => ox + x*sc, Y = y => oy + y*sc;
+  const path = poly => { ctx.beginPath(); poly.forEach((q,i) => i ? ctx.lineTo(X(q[0]),Y(q[1])) : ctx.moveTo(X(q[0]),Y(q[1]))); ctx.closePath(); };
+  const pathParts = pc => { ctx.beginPath(); pc.parts.forEach(p => { p.forEach((q,i) => i ? ctx.lineTo(X(q[0]),Y(q[1])) : ctx.moveTo(X(q[0]),Y(q[1]))); ctx.closePath(); }); };
+  const strokeOutline = pc => { ctx.beginPath(); pc.outline.forEach(([A,B]) => { ctx.moveTo(X(A[0]),Y(A[1])); ctx.lineTo(X(B[0]),Y(B[1])); }); ctx.stroke(); };
+  const lay = model.lay;
+
+  if(plan){
+    const cTile = css('--tile'), cCut = css('--cut'), cThin = css('--thin'), cReuse = css('--reuse');
+    model.pieces.forEach(pc => {
+      if(!pc.parts || pc.reveal) return;
+      pathParts(pc);
+      if(pc.full){ ctx.fillStyle = cTile; ctx.globalAlpha = 1; }
+      else { ctx.fillStyle = pc.thin ? cThin : pc.reused ? cReuse : cCut; ctx.globalAlpha = pc.thin ? .75 : pc.reused ? .7 : .55; }
+      ctx.fill(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = tline; ctx.lineWidth = .8; strokeOutline(pc);
+    });
+  } else {
+    const shade = +st.shade || 0;
+    ctx.fillStyle = st.zones[0].grout; ctx.fillRect(X(0), Y(0), W*sc, H*sc);
+    lay.rects.forEach((r,i) => {
+      if(r.w<=0 || r.h<=0) return;
+      const hj = st.j/2, x0 = Math.max(0,r.x-hj), y0 = Math.max(0,r.y-hj), x1 = Math.min(W,r.x+r.w+hj), y1 = Math.min(H,r.y+r.h+hj);
+      ctx.fillStyle = st.zones[i].grout; ctx.fillRect(X(x0), Y(y0), (x1-x0)*sc, (y1-y0)*sc);
+    });
+    const thinJ = st.j*sc < 1;
+    model.pieces.forEach((pc,i) => {
+      if(!pc.parts || pc.reveal) return;
+      const h = hash(i);
+      pathParts(pc);
+      ctx.fillStyle = pc.color;
+      ctx.fill();
+      const zph = st.zones[pc.z], im = pc.img ? photoImg(zph.photo) : null;
+      if(im){
+        const [o,u,v0] = photoFrame(pc, i, zph), iw = im.naturalWidth, ih = im.naturalHeight, ox = X(o[0]), oy = Y(o[1]);
+        ctx.save(); ctx.clip();
+        ctx.transform((X(u[0])-ox)/iw, (Y(u[1])-oy)/iw, (X(v0[0])-ox)/ih, (Y(v0[1])-oy)/ih, ox, oy);
+        ctx.drawImage(im, 0, 0); ctx.restore(); pathParts(pc);
+      }
+      if(shade){
+        const v = ((h % 1000)/1000 - .5)*2;
+        ctx.fillStyle = v>0 ? 'rgba(255,255,255,'+(v*shade)+')' : 'rgba(0,0,0,'+(-v*shade)+')';
+        ctx.fill();
+      }
+      if(thinJ){ ctx.strokeStyle = st.zones[pc.z].grout; ctx.lineWidth = .7; strokeOutline(pc); }
+    });
+  }
+
+  // fenêtres
+  st.res.forEach((r, ri) => {
+    const x0 = Math.max(0, r.x), x1 = Math.min(W, r.x + r.w), y0 = Math.max(0, H - r.sill - r.h), y1 = Math.min(H, H - r.sill);
+    if(x1 <= x0 || y1 <= y0) return;
+    const rx = X(x0), ry = Y(y0), rw = (x1-x0)*sc, rh = (y1-y0)*sc, selr = ri === st.rsel;
+    const rvl = model.reveals.find(q => q.ri === ri);
+    const inn = rvl ? rvl.inner : [x0,y0,x1,y1];
+    const ixr = X(Math.max(x0,inn[0])), iyr = Y(Math.max(y0,inn[1])), iwr = (Math.min(x1,inn[2])-Math.max(x0,inn[0]))*sc, ihr = (Math.min(y1,inn[3])-Math.max(y0,inn[1]))*sc;
+    const revPieces = rvl ? model.pieces.filter(pc => pc.rres === ri) : [];
+    const shadeSide = {L:.06, R:.12, T:.2, B:.02};
+    const rt = r.type || 'window';
+    if(plan){
+      if(rt !== 'socket'){ ctx.fillStyle = sheet; ctx.fillRect(rx, ry, rw, rh); }
+      if(rvl){
+        const cTile = css('--tile'), cCut = css('--cut'), cThin = css('--thin'), cReuse = css('--reuse');
+        rvl.sides.forEach(sd => { path(sd.poly); ctx.fillStyle = muted; ctx.globalAlpha = .18; ctx.fill(); ctx.globalAlpha = 1; });
+        revPieces.forEach(pc => {
+          pathParts(pc);
+          if(pc.full){ ctx.fillStyle = cTile; ctx.globalAlpha = 1; }
+          else { ctx.fillStyle = pc.thin ? cThin : pc.reused ? cReuse : cCut; ctx.globalAlpha = pc.thin ? .75 : pc.reused ? .7 : .55; }
+          ctx.fill(); ctx.globalAlpha = 1;
+          ctx.strokeStyle = tline; ctx.lineWidth = .8; strokeOutline(pc);
+        });
+        ctx.strokeStyle = muted; ctx.lineWidth = .8;
+        rvl.sides.forEach(sd => { path(sd.poly); ctx.stroke(); });
+      }
+      ctx.strokeStyle = muted; ctx.lineWidth = .8; ctx.beginPath();
+      if(rt === 'door' && st.kind !== 'floor'){ const rad = Math.min(iwr, ihr); ctx.moveTo(ixr, iyr+ihr); ctx.lineTo(ixr, iyr+ihr-rad); ctx.arc(ixr, iyr+ihr, rad, -Math.PI/2, 0); }
+      else if(rt === 'socket'){ ctx.arc(rx+rw/2, ry+rh/2, Math.min(rw,rh)*0.36, 0, Math.PI*2); }
+      else if(rt === 'tub'){ const m = Math.min(rw,rh)*0.12, rr = Math.min(rw,rh)*0.3; ctx.roundRect ? ctx.roundRect(rx+m, ry+m, rw-2*m, rh-2*m, rr) : ctx.rect(rx+m, ry+m, rw-2*m, rh-2*m); }
+      else if(rt === 'trap'){ ctx.save(); ctx.beginPath(); ctx.rect(rx, ry, rw, rh); ctx.clip(); ctx.beginPath(); for(let t=-rh; t<rw; t+=8){ ctx.moveTo(rx+t, ry); ctx.lineTo(rx+t+rh, ry+rh); } ctx.stroke(); ctx.restore(); ctx.beginPath(); }
+      else { ctx.moveTo(ixr,iyr); ctx.lineTo(ixr+iwr,iyr+ihr); ctx.moveTo(ixr+iwr,iyr); ctx.lineTo(ixr,iyr+ihr); }
+      ctx.stroke();
+      if(rvl){ ctx.strokeStyle = ink; ctx.lineWidth = 1; ctx.strokeRect(ixr, iyr, iwr, ihr); }
+      ctx.strokeStyle = selr ? accent : ink; ctx.lineWidth = selr ? 2.5 : 1.5; ctx.strokeRect(rx, ry, rw, rh);
+      ctx.font = '600 13px ' + css('--cond'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const t1 = rCode(r, ri), t2 = cm(r.w) + ' × ' + cm(r.h);
+      if(iwr > ctx.measureText(t2).width + 12 && ihr > 40){
+        const bw = ctx.measureText(t2).width + 10, mx2 = ixr+iwr/2, my2 = iyr+ihr/2;
+        ctx.fillStyle = sheet; ctx.fillRect(mx2-bw/2, my2-17, bw, 34);
+        ctx.fillStyle = selr ? accent : ink; ctx.fillText(t1, mx2, my2-8); ctx.fillText(t2, mx2, my2+8);
+      }
+      if(selr){
+        ctx.font = '600 12px ' + css('--cond'); ctx.strokeStyle = accent; ctx.fillStyle = accent; ctx.lineWidth = 1;
+        const my = ry + rh/2, mx = rx + rw/2;
+        if(r.x > 0){ ctx.beginPath(); ctx.moveTo(X(0), my); ctx.lineTo(rx, my); ctx.stroke(); const t = cm(r.x); const bw = ctx.measureText(t).width+8; if((rx-X(0)) > bw+6){ ctx.fillStyle = sheet; ctx.fillRect((X(0)+rx)/2-bw/2, my-8, bw, 16); ctx.fillStyle = accent; ctx.fillText(t, (X(0)+rx)/2, my); } }
+        if(r.sill > 0){ const yb = Y(H); ctx.beginPath(); ctx.moveTo(mx, ry+rh); ctx.lineTo(mx, yb); ctx.stroke(); const t = cm(r.sill); const bw = ctx.measureText(t).width+8; if((yb-ry-rh) > 18){ ctx.fillStyle = sheet; ctx.fillRect(mx-bw/2, (ry+rh+yb)/2-8, bw, 16); ctx.fillStyle = accent; ctx.fillText(t, mx, (ry+rh+yb)/2); } }
+      }
+    } else {
+      if(rvl){
+        const zg = st.zones[rvl.zi].grout, shd = +st.shade || 0;
+        rvl.sides.forEach(sd => { path(sd.poly); ctx.fillStyle = zg; ctx.fill(); });
+        revPieces.forEach(pc => {
+          pathParts(pc); ctx.fillStyle = pc.color; ctx.fill();
+          const h = hash(model.pieces.indexOf(pc));
+          if(shd){ const v = ((h % 1000)/1000 - .5)*2; ctx.fillStyle = v>0 ? 'rgba(255,255,255,'+(v*shd)+')' : 'rgba(0,0,0,'+(-v*shd)+')'; ctx.fill(); }
+          if(st.j*sc < 1){ ctx.strokeStyle = zg; ctx.lineWidth = .7; strokeOutline(pc); }
+        });
+        rvl.sides.forEach(sd => { path(sd.poly); ctx.fillStyle = 'rgba(0,0,0,' + shadeSide[sd.sd] + ')'; ctx.fill(); });
+      }
+      drawResFace2D(rt, ixr, iyr, iwr, ihr, rx, ry, rw, rh);
+    }
+  });
+
+  if(st.kind !== 'floor') st.folds.forEach((fo, fi) => {
+    if(fo.x <= 0 || fo.x >= W) return;
+    const fx = X(fo.x), self = fi === st.fsel && plan;
+    ctx.save(); ctx.strokeStyle = self ? accent : ink; ctx.lineWidth = self ? 2.5 : 1.6; ctx.setLineDash(fo.type==='in' ? [10,4,2,4] : [3,3]);
+    ctx.beginPath(); ctx.moveTo(fx, Y(0)); ctx.lineTo(fx, Y(H)); ctx.stroke(); ctx.restore();
+    if(!plan){
+      const g = ctx.createLinearGradient(fx - 14, 0, fx + 14, 0);
+      const dark = fo.type === 'in';
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.5, dark ? 'rgba(0,0,0,.16)' : 'rgba(255,255,255,.22)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fillRect(fx - 14, Y(0), 28, H*sc);
+    }
+  });
+  if(plan){
+    ctx.strokeStyle = css('--thin'); ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    model.pieces.forEach(pc => (pc.vis || []).forEach(([A,B]) => { ctx.beginPath(); ctx.moveTo(X(A[0]),Y(A[1])); ctx.lineTo(X(B[0]),Y(B[1])); ctx.stroke(); }));
+    ctx.lineCap = 'butt';
+  }
+
+  // zone non carrelée
+  if(lay.left > 0.5){
+    const s0 = Math.max(0, lay.used + st.j/2);
+    const r = lay.horiz ? [0, s0, W, H-s0] : [s0, 0, W-s0, H];
+    ctx.save(); ctx.beginPath(); ctx.rect(X(r[0]),Y(r[1]),r[2]*sc,r[3]*sc); ctx.fillStyle = sheet; ctx.fill(); ctx.clip();
+    ctx.strokeStyle = muted; ctx.globalAlpha = .5; ctx.lineWidth = 1;
+    for(let t=-ch; t<cw+ch; t+=9){ ctx.beginPath(); ctx.moveTo(t,0); ctx.lineTo(t+ch,ch); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  if(!plan){
+    const g = ctx.createLinearGradient(X(0),Y(0),X(W),Y(H));
+    g.addColorStop(0,'rgba(255,255,255,.10)'); g.addColorStop(.55,'rgba(255,255,255,0)'); g.addColorStop(1,'rgba(0,0,0,.12)');
+    ctx.fillStyle = g; ctx.fillRect(X(0),Y(0),W*sc,H*sc);
+  }
+
+  // contours de zones
+  if(multi && plan){
+    lay.rects.forEach((r,i) => {
+      if(r.w<=0 || r.h<=0) return;
+      const selz = i === st.sel;
+      ctx.setLineDash(selz ? [] : [5,4]);
+      ctx.strokeStyle = selz ? accent : ink; ctx.lineWidth = selz ? 2.5 : 1.2;
+      ctx.strokeRect(X(r.x), Y(r.y), r.w*sc, r.h*sc);
+      ctx.setLineDash([]);
+      const tag = 'Z' + (i+1);
+      ctx.font = '600 12px ' + css('--cond');
+      const tw = ctx.measureText(tag).width + 8;
+      if(r.h*sc > 18 && r.w*sc > tw+6){
+        ctx.fillStyle = selz ? accent : ink; ctx.fillRect(X(r.x)+3, Y(r.y)+3, tw, 16);
+        ctx.fillStyle = selz ? css('--accent-ink') : sheet; ctx.textAlign='left'; ctx.textBaseline='middle';
+        ctx.fillText(tag, X(r.x)+7, Y(r.y)+11.5);
+      }
+    });
+  }
+
+  ctx.strokeStyle = ink; ctx.lineWidth = plan ? 2 : 1.5; ctx.strokeRect(X(0), Y(0), W*sc, H*sc);
+
+  if(plan){
+    ctx.font = '600 14px ' + css('--cond');
+    const label = (txt, x, y, rot) => {
+      ctx.save(); ctx.translate(x,y); if(rot) ctx.rotate(-Math.PI/2);
+      const w = ctx.measureText(txt).width + 8;
+      ctx.fillStyle = sheet; ctx.fillRect(-w/2,-9,w,18);
+      ctx.fillStyle = ink; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,0,0); ctx.restore();
+    };
+    const hdim = (x0,x1,y,txt) => { ctx.strokeStyle=ink; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.moveTo(x0,y-5); ctx.lineTo(x0,y+5); ctx.moveTo(x1,y-5); ctx.lineTo(x1,y+5); ctx.stroke(); if(x1-x0 > ctx.measureText(txt).width+10) label(txt,(x0+x1)/2,y,false); };
+    const vdim = (y0,y1,x,txt) => { ctx.strokeStyle=ink; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x,y0); ctx.lineTo(x,y1); ctx.moveTo(x-5,y0); ctx.lineTo(x+5,y0); ctx.moveTo(x-5,y1); ctx.lineTo(x+5,y1); ctx.stroke(); if(y1-y0 > ctx.measureText(txt).width+10) label(txt,x,(y0+y1)/2,true); };
+    hdim(X(0), X(W), oy-20, cm(W) + ' cm');
+    vdim(Y(0), Y(H), ox-20, cm(H) + ' cm');
+    if(multi){
+      ctx.font = '600 13px ' + css('--cond');
+      lay.rects.forEach(r => {
+        if(lay.horiz){ if(r.h>0) vdim(Y(r.y), Y(r.y+r.h), X(W)+22, cm(r.h)); }
+        else { if(r.w>0) hdim(X(r.x), X(r.x+r.w), Y(H)+22, cm(r.w)); }
+      });
+    }
+    if(st.nums){
+      ctx.font = '600 10px ' + css('--cond'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      model.pieces.forEach(pc => {
+        if(pc.full || !pc.src || !pc.parts) return;
+        const mp = pc.parts.reduce((m,p) => area(p) > area(m) ? p : m, pc.parts[0]);
+        const b = bbox(mp);
+        if(Math.min(b[1]-b[0], b[3]-b[2])*sc < 12) return;
+        const cx = mp.reduce((t,q)=>t+q[0],0)/mp.length, cy = mp.reduce((t,q)=>t+q[1],0)/mp.length;
+        const txt = String(pc.src.n), w = ctx.measureText(txt).width + 5;
+        if(w > (b[1]-b[0])*sc - 2) return;
+        ctx.fillStyle = sheet; ctx.globalAlpha = .85; ctx.fillRect(X(cx)-w/2, Y(cy)-6, w, 12); ctx.globalAlpha = 1;
+        ctx.fillStyle = ink; ctx.fillText(txt, X(cx), Y(cy)+.5);
+      });
+    }
+    if(st.kind !== 'floor') st.folds.forEach((fo, fi) => {
+      if(fo.x <= 0 || fo.x >= W) return;
+      const fx = X(fo.x), self = fi === st.fsel;
+      {
+      ctx.font = '600 12px ' + css('--cond'); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const t = 'A' + (fi+1) + (fo.type==='in' ? ' rentrant ' : ' sortant ') + fmt(fo.ang,0) + '°', w = ctx.measureText(t).width + 8;
+      const ty = Y(0) + 12, tx = Math.min(Math.max(fx, X(0) + w/2 + 2), X(W) - w/2 - 2);
+      ctx.fillStyle = self ? accent : ink; ctx.fillRect(tx - w/2, ty - 8, w, 16);
+      ctx.fillStyle = self ? css('--accent-ink') : sheet; ctx.fillText(t, tx, ty + .5);
+    }
+    });
+    // origine de la zone active
+    const zr = model.zres[st.sel];
+    if(zr){
+      const oX = X(zr.O[0]), oY = Y(zr.O[1]), r = lay.rects[st.sel];
+      if(oX>=X(r.x)-1 && oX<=X(r.x+r.w)+1 && oY>=Y(r.y)-1 && oY<=Y(r.y+r.h)+1){
+        ctx.strokeStyle = accent; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(oX-9,oY); ctx.lineTo(oX+9,oY); ctx.moveTo(oX,oY-9); ctx.lineTo(oX,oY+9); ctx.stroke();
+        ctx.beginPath(); ctx.arc(oX,oY,4,0,Math.PI*2); ctx.stroke();
+      }
+    }
+  }
+
+  if(pick >= 0 && model.pieces[pick] && model.pieces[pick].parts){
+    ctx.strokeStyle = accent; ctx.lineWidth = 3; strokeOutline(model.pieces[pick]);
+  }
+}
+
+function drawResFace2D(rt, ixr, iyr, iwr, ihr, rx, ry, rw, rh){
+  if(rt === 'window'){
+    const gl = ctx.createLinearGradient(ixr, iyr, ixr+iwr, iyr+ihr);
+    gl.addColorStop(0, '#dbe7ee'); gl.addColorStop(.5, '#b9cdd9'); gl.addColorStop(1, '#9fb6c4');
+    ctx.fillStyle = gl; ctx.fillRect(ixr, iyr, iwr, ihr);
+    const fr = Math.max(3, Math.min(iwr, ihr)*0.05);
+    ctx.strokeStyle = '#f4f4f2'; ctx.lineWidth = fr; ctx.strokeRect(ixr+fr/2, iyr+fr/2, iwr-fr, ihr-fr);
+    if(iwr > ihr*0.9){ ctx.beginPath(); ctx.moveTo(ixr+iwr/2, iyr); ctx.lineTo(ixr+iwr/2, iyr+ihr); ctx.lineWidth = fr*0.8; ctx.stroke(); }
+  } else if(rt === 'door'){
+    const g = ctx.createLinearGradient(ixr, 0, ixr+iwr, 0); g.addColorStop(0, '#8a7259'); g.addColorStop(1, '#6d5843');
+    ctx.fillStyle = g; ctx.fillRect(ixr, iyr, iwr, ihr);
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.strokeRect(ixr+iwr*0.12, iyr+ihr*0.06, iwr*0.76, ihr*0.4); ctx.strokeRect(ixr+iwr*0.12, iyr+ihr*0.52, iwr*0.76, ihr*0.42);
+    ctx.fillStyle = '#d9d4c8'; ctx.beginPath(); ctx.arc(ixr+iwr*0.86, iyr+ihr*0.52, Math.max(1.5, iwr*0.035), 0, Math.PI*2); ctx.fill();
+    const fr = Math.max(2, iwr*0.06); ctx.strokeStyle = '#f2f0ea'; ctx.lineWidth = fr; ctx.beginPath(); ctx.moveTo(rx-fr/2, ry+rh); ctx.lineTo(rx-fr/2, ry-fr/2); ctx.lineTo(rx+rw+fr/2, ry-fr/2); ctx.lineTo(rx+rw+fr/2, ry+rh); ctx.stroke();
+  } else if(rt === 'socket'){
+    const m = Math.max(1, Math.min(rw,rh)*0.08);
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(rx-m+1, ry-m+2, rw+2*m, rh+2*m);
+    ctx.fillStyle = '#f7f7f5'; ctx.fillRect(rx-m, ry-m, rw+2*m, rh+2*m);
+    ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(rx+rw/2, ry+rh/2, Math.min(rw,rh)*0.32, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#555'; [-1,1].forEach(k => { ctx.beginPath(); ctx.arc(rx+rw/2 + k*rw*0.12, ry+rh/2, Math.max(.7, rw*0.04), 0, Math.PI*2); ctx.fill(); });
+  } else if(rt === 'tub'){
+    ctx.fillStyle = '#f6f6f3'; ctx.fillRect(rx, ry, rw, rh);
+    const g = ctx.createLinearGradient(0, ry, 0, ry+rh); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.12)');
+    ctx.fillStyle = g; ctx.fillRect(rx, ry, rw, rh);
+    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(rx, ry + Math.min(8, rh*0.12)); ctx.lineTo(rx+rw, ry + Math.min(8, rh*0.12)); ctx.stroke();
+  } else if(rt === 'trap'){
+    ctx.fillStyle = '#d9d5cd'; ctx.fillRect(ixr, iyr, iwr, ihr);
+    ctx.strokeStyle = '#f2f0ea'; ctx.lineWidth = Math.max(2, iwr*0.06); ctx.strokeRect(ixr, iyr, iwr, ihr);
+  } else { ctx.fillStyle = '#e4e0d8'; ctx.fillRect(ixr, iyr, iwr, ihr); }
+  ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1; if(rt !== 'socket') ctx.strokeRect(rx, ry, rw, rh);
+}
+
+/* ---------- vue en perspective (rendu 3D sur canvas 2D) ---------- */
+const rgbCache = {};
+function rgb(hex){
+  if(rgbCache[hex]) return rgbCache[hex];
+  let h = hex.replace('#',''); if(h.length===3) h = h.split('').map(c=>c+c).join('');
+  return rgbCache[hex] = [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+const LDIR = (() => { const v = [-0.45, 0.75, 0.55], l = Math.hypot(...v); return v.map(x => x/l); })();
+function litK(n, extra){ return (0.58 + 0.42*Math.max(0, n[0]*LDIR[0] + n[1]*LDIR[1] + n[2]*LDIR[2])) * (extra || 1); }
+function lit(hex, n, extra){
+  const k = litK(n, extra), c = rgb(hex);
+  return 'rgb(' + Math.min(255, Math.round(c[0]*k)) + ',' + Math.min(255, Math.round(c[1]*k)) + ',' + Math.min(255, Math.round(c[2]*k)) + ')';
+}
+/* photos de carreaux */
+const imgCache = {};
+function photoImg(id){
+  if(!id || !proj.photos[id]) return null;
+  let im = imgCache[id];
+  if(!im){ im = new Image(); im.onload = () => draw(); im.src = proj.photos[id]; imgCache[id] = im; }
+  return im.complete && im.naturalWidth ? im : null;
+}
+function photoFrame(pc, i, z){
+  const [o,u,v] = pc.img;
+  if(z.photoRot && st.orient !== 'none' && (hash(i*31+7) & 1)) return [[u[0]+v[0]-o[0], u[1]+v[1]-o[1]], v, u];
+  return [o,u,v];
+}
+function wallFrames(S, base0, dir0){
+  S = S || st;
+  const fs = (S.folds || []).filter(f => f.x > 1 && f.x < S.W-1).slice().sort((a,b) => a.x-b.x);
+  const bounds = [0, ...fs.map(f => f.x), S.W], frames = [];
+  let base = (base0 || [0,0]).slice(), dir = (dir0 || [1,0]).slice();
+  for(let k=0; k<bounds.length-1; k++){
+    const len = (bounds[k+1]-bounds[k])/1000;
+    frames.push({x0:bounds[k], x1:bounds[k+1], base:base.slice(), dir:dir.slice(), n:[-dir[1],0,dir[0]], len, k, last:k===bounds.length-2});
+    base = [base[0]+dir[0]*len, base[1]+dir[1]*len];
+    if(k < fs.length){
+      const t = (180 - Math.min(179, Math.max(1, fs[k].ang)))*Math.PI/180*(fs[k].type==='in' ? 1 : -1);
+      dir = [dir[0]*Math.cos(t) - dir[1]*Math.sin(t), dir[0]*Math.sin(t) + dir[1]*Math.cos(t)];
+    }
+  }
+  return frames;
+}
+function sceneInstances(){
+  const dataOf = i => i === proj.active ? model : surfData(i);
+  if(!(proj.room && persMode === 'room')){
+    return {inst:[{S:st, M:model, si:proj.active, kind: st.kind === 'floor' ? 'floor' : 'wall', frames: st.kind === 'floor' ? null : wallFrames(st)}], room:null};
+  }
+  const R = proj.room, L = R.L/1000, l = R.l/1000, out = [];
+  const defs = {A:{base:[0,0],dir:[1,0]}, B:{base:[L,0],dir:[0,1]}, C:{base:[L,l],dir:[-1,0]}, D:{base:[0,l],dir:[0,-1]}};
+  const fi = R.surf && R.surf.F;
+  if(fi != null && proj.surfaces[fi]){ const M = dataOf(fi); if(M) out.push({S:proj.surfaces[fi], M, si:fi, kind:'floor'}); }
+  ['A','B','C','D'].forEach(k => { const i = R.surf && R.surf[k]; if(i == null || !proj.surfaces[i]) return; const M = dataOf(i); if(!M) return;
+    out.push({S:proj.surfaces[i], M, si:i, kind:'wall', frames: wallFrames(proj.surfaces[i], defs[k].base, defs[k].dir), role:k}); });
+  return {inst:out, room:R, defs};
+}
+function drawPersp(cw, ch){
+  const sc0 = sceneInstances(), inst = sc0.inst, room = sc0.room;
+  const fov = 50*Math.PI/180, f = (ch/2)/Math.tan(fov/2);
+  const plaster = '#ebe7e0', shade = +st.shade || 0;
+  // cible et taille de la scène
+  let tgt, span, bx, bz;
+  const single = inst[0];
+  if(room){ const L = room.L/1000, l = room.l/1000, Hr = room.H/1000; tgt = [L/2, Math.min(Hr/2, 1.2), l/2]; span = Math.max(L, l, Hr); bx = [0, L]; bz = [0, l]; }
+  else if(single.kind === 'floor'){ const W = st.W/1000, H = st.H/1000; tgt = [W/2, 0, H/2]; span = Math.max(W, H, 0.5); bx = [0, W]; bz = [0, H]; }
+  else {
+    const pts = []; single.frames.forEach(fr => pts.push(fr.base, [fr.base[0]+fr.dir[0]*fr.len, fr.base[1]+fr.dir[1]*fr.len]));
+    bx = [Math.min(...pts.map(p=>p[0])), Math.max(...pts.map(p=>p[0]))]; bz = [Math.min(...pts.map(p=>p[1])), Math.max(...pts.map(p=>p[1]))];
+    span = Math.max(bx[1]-bx[0], bz[1]-bz[0], st.H/1000, 0.5); tgt = [(bx[0]+bx[1])/2, Math.min(st.H/2000, 1.5), (bz[0]+bz[1])/2];
+  }
+  const d = cam.dist * span*0.55/Math.tan(fov/2);
+  const pos = [tgt[0] + d*Math.sin(cam.yaw)*Math.cos(cam.pitch), tgt[1] + d*Math.sin(cam.pitch), tgt[2] + d*Math.cos(cam.yaw)*Math.cos(cam.pitch)];
+  const sub = (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]], dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  const nrm = v => { const l = Math.hypot(...v); return v.map(x => x/l); };
+  const fw = nrm(sub(tgt, pos)), rt = nrm(cross(fw, [0,1,0])), up = cross(rt, fw);
+  const NEAR = 0.05;
+  const toCam = p => { const v = sub(p, pos); return [dot(v,rt), dot(v,up), dot(v,fw)]; };
+  const proj2 = c => [cw/2 + f*c[0]/c[2], ch/2 - f*c[1]/c[2]];
+  const clipNear = Q => { const out = []; for(let i=0;i<Q.length;i++){ const A = Q[(i+Q.length-1)%Q.length], B = Q[i], ai = A[2] >= NEAR, bi = B[2] >= NEAR;
+    if(bi){ if(!ai){ const t = (NEAR-A[2])/(B[2]-A[2]); out.push([A[0]+t*(B[0]-A[0]), A[1]+t*(B[1]-A[1]), NEAR]); } out.push(B); }
+    else if(ai){ const t = (NEAR-A[2])/(B[2]-A[2]); out.push([A[0]+t*(B[0]-A[0]), A[1]+t*(B[1]-A[1]), NEAR]); } } return out; };
+  const addPoly = P3 => { const c = clipNear(P3.map(toCam)); if(c.length < 3) return false; c.forEach((q,i) => { const p = proj2(q); i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1]); }); ctx.closePath(); return true; };
+  const fillPoly = (P3, style) => { ctx.beginPath(); if(addPoly(P3)){ ctx.fillStyle = style; ctx.fill(); } };
+  const facing = (p, n) => dot(sub(pos, p), n) > 0;
+  const jz = st.j/1000*f/Math.max(0.3, d);
+  const P = (fr, x, Y, depth) => { const t = (x - fr.x0)/1000; return [fr.base[0] + fr.dir[0]*t - fr.n[0]*depth, Y, fr.base[1] + fr.dir[1]*t - fr.n[2]*depth]; };
+  const frameAt = (frames, x) => frames.find(fr => x <= fr.x1 + 1e-6) || frames[frames.length-1];
+  const clip3 = (poly, fn) => { const out = []; for(let i=0;i<poly.length;i++){ const A = poly[(i+poly.length-1)%poly.length], B = poly[i], fa = fn(A), fb = fn(B);
+    if(fb >= 0){ if(fa < 0){ const t = fa/(fa-fb); out.push([A[0]+t*(B[0]-A[0]), A[1]+t*(B[1]-A[1]), A[2]+t*(B[2]-A[2])]); } out.push(B); }
+    else if(fa >= 0){ const t = fa/(fa-fb); out.push([A[0]+t*(B[0]-A[0]), A[1]+t*(B[1]-A[1]), A[2]+t*(B[2]-A[2])]); } } return out; };
+
+  // texture photo affine par triangles
+  const triTex = (im, s0, s1, s2, d0, d1, d2) => {
+    const cx = (d0[0]+d1[0]+d2[0])/3, cy = (d0[1]+d1[1]+d2[1])/3, inf = q => { const dx = q[0]-cx, dy = q[1]-cy, l = Math.hypot(dx,dy) || 1; return [q[0]+dx/l*0.7, q[1]+dy/l*0.7]; };
+    const e0 = inf(d0), e1 = inf(d1), e2 = inf(d2);
+    ctx.save(); ctx.beginPath(); ctx.moveTo(e0[0],e0[1]); ctx.lineTo(e1[0],e1[1]); ctx.lineTo(e2[0],e2[1]); ctx.closePath(); ctx.clip();
+    const [u0,v0] = s0, [u1,v1] = s1, [u2,v2] = s2, [x0,y0] = d0, [x1,y1] = d1, [x2,y2] = d2;
+    const den = (u1-u0)*(v2-v0) - (u2-u0)*(v1-v0);
+    if(Math.abs(den) > 1e-9){
+      const a = ((x1-x0)*(v2-v0) - (x2-x0)*(v1-v0))/den, b = ((y1-y0)*(v2-v0) - (y2-y0)*(v1-v0))/den;
+      const c = ((x2-x0)*(u1-u0) - (x1-x0)*(u2-u0))/den, dd = ((y2-y0)*(u1-u0) - (y1-y0)*(u2-u0))/den;
+      ctx.transform(a, b, c, dd, x0 - a*u0 - c*v0, y0 - b*u0 - dd*v0); ctx.drawImage(im, 0, 0);
+    }
+    ctx.restore();
+  };
+  const drawTex = (pc, i, S, M3, n, k) => {
+    const z = S.zones[pc.z], im = photoImg(z.photo); if(!im || !pc.img) return false;
+    const [o,u,v] = photoFrame(pc, i, z);
+    const at = (s,t) => M3(o[0]+(u[0]-o[0])*s+(v[0]-o[0])*t, o[1]+(u[1]-o[1])*s+(v[1]-o[1])*t, .002);
+    const cc = [at(0,0), at(1,0), at(0,1), at(1,1)].map(toCam);
+    if(cc.some(c => c[2] < NEAR)) return false;
+    const sp = cc.map(proj2), ext = Math.max(Math.max(...sp.map(p=>p[0])) - Math.min(...sp.map(p=>p[0])), Math.max(...sp.map(p=>p[1])) - Math.min(...sp.map(p=>p[1])));
+    if(ext < 3) return false;
+    const N = ext > 260 ? 4 : ext > 80 ? 2 : 1, iw = im.naturalWidth, ih = im.naturalHeight;
+    const G = []; for(let a2=0; a2<=N; a2++){ G.push([]); for(let b2=0; b2<=N; b2++) G[a2].push(proj2(toCam(at(a2/N, b2/N)))); }
+    ctx.save(); ctx.beginPath(); pc.parts.forEach(p => addPoly(p.map(q => M3(q[0], q[1], .002)))); ctx.clip();
+    for(let a2=0; a2<N; a2++) for(let b2=0; b2<N; b2++){
+      const s0 = [a2/N*iw, b2/N*ih], s1 = [(a2+1)/N*iw, b2/N*ih], s2 = [(a2+1)/N*iw, (b2+1)/N*ih], s3 = [a2/N*iw, (b2+1)/N*ih];
+      triTex(im, s0, s1, s2, G[a2][b2], G[a2+1][b2], G[a2+1][b2+1]);
+      triTex(im, s0, s2, s3, G[a2][b2], G[a2+1][b2+1], G[a2][b2+1]);
+    }
+    ctx.restore();
+    ctx.beginPath(); pc.parts.forEach(p => addPoly(p.map(q => M3(q[0], q[1], .002))));
+    ctx.fillStyle = k < 1 ? 'rgba(0,0,0,' + Math.min(.7, 1-k) + ')' : 'rgba(255,255,255,' + Math.min(.4, k-1) + ')'; ctx.fill();
+    return true;
+  };
+
+  // surface plane : support, joints, carreaux, reflet
+  const surfaceLayer = (I, M3, n, x0, x1, ext) => {
+    const S = I.S, Mo = I.M;
+    const holes = S.res.filter(r => r.type !== 'socket').map(r => ({x0:r.x, x1:r.x+r.w, y0:S.H-r.sill-r.h, y1:S.H-r.sill}));
+    const rp = (a,b,c,e) => [M3(a,b),M3(c,b),M3(c,e),M3(a,e)];
+    const clipH = (H0, a0, a1, b0, b1) => H0.map(h => ({x0:Math.max(h.x0, a0+0.1), x1:Math.min(h.x1, a1-0.1), y0:Math.max(h.y0, b0+0.1), y1:Math.min(h.y1, b1-0.1)})).filter(h => h.x1 > h.x0 && h.y1 > h.y0);
+    const withHoles = (outer, style, hz) => { ctx.beginPath(); if(!addPoly(outer)) return; hz.forEach(h => addPoly(rp(h.x0,h.y0,h.x1,h.y1))); ctx.fillStyle = style; ctx.fill('evenodd'); };
+    withHoles(rp(ext[0], ext[1], ext[2], ext[3]), lit(I.kind === 'floor' ? '#bdb6ab' : plaster, n), clipH(holes, ext[0], ext[2], ext[1], ext[3]));
+    Mo.lay.rects.forEach((rc,i) => {
+      const a0 = Math.max(rc.x, x0), a1 = Math.min(rc.x+rc.w, x1);
+      if(rc.h <= 0 || a1 <= a0) return;
+      withHoles(rp(a0, rc.y, a1, rc.y+rc.h), lit(S.zones[i].grout, n), clipH(holes, a0, a1, rc.y, rc.y+rc.h));
+    });
+    Mo.pieces.forEach((pc,i) => {
+      if(!pc.parts || pc.reveal) return;
+      const cxp = pc.parts[0].reduce((t,q) => t+q[0], 0)/pc.parts[0].length;
+      if(cxp < x0 || cxp > x1) return;
+      const k = litK(n, 1 + (((hash(i)%1000)/1000 - .5)*2)*shade);
+      ctx.beginPath(); let ok = false;
+      pc.parts.forEach(p => { if(addPoly(p.map(q => M3(q[0], q[1], .002)))) ok = true; });
+      if(!ok) return;
+      ctx.fillStyle = lit(pc.color, n, k/litK(n)); ctx.fill();
+      drawTex(pc, i, S, M3, n, k);
+      if(jz < 1){ ctx.beginPath(); pc.parts.forEach(p => addPoly(p.map(q => M3(q[0], q[1], .002)))); ctx.strokeStyle = lit(S.zones[pc.z].grout, n); ctx.lineWidth = .6; ctx.stroke(); }
+    });
+    ctx.save(); ctx.beginPath();
+    if(addPoly(rp(x0, 0, x1, S.H))){ clipH(holes, x0, x1, 0, S.H).forEach(h => addPoly(rp(h.x0,h.y0,h.x1,h.y1))); ctx.clip('evenodd');
+      const g = ctx.createLinearGradient(0, 0, cw, ch);
+      g.addColorStop(0, 'rgba(255,255,255,.14)'); g.addColorStop(.5, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.09)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, cw, ch); }
+    ctx.restore();
+  };
+
+  // ombre d'une face d'embrasure (lumière LDIR)
+  const embrasureShadow = (face, fr, x0, x1, yb, yt) => {
+    const nv = fr.n, Ln = dot(LDIR, nv);
+    ctx.beginPath(); if(!addPoly(face)) return;
+    if(Ln <= 0.02){ ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fill(); return; }
+    const B3 = [fr.base[0], 0, fr.base[1]], dv = [fr.dir[0], 0, fr.dir[1]];
+    const onWall = p => { const depth = -dot(sub(p, B3), nv), t = depth/Ln; return [p[0]+LDIR[0]*t, p[1]+LDIR[1]*t, p[2]+LDIR[2]*t]; };
+    const U = p => dot(sub(onWall(p), B3), dv)*1000 + fr.x0, V = p => onWall(p)[1];
+    let litP = face;
+    litP = clip3(litP, p => U(p) - x0 + 0.5); litP = clip3(litP, p => x1 - U(p) + 0.5);
+    litP = clip3(litP, p => V(p) - yb + 0.0005); litP = clip3(litP, p => yt - V(p) + 0.0005);
+    if(litP.length >= 3) addPoly(litP);
+    ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fill('evenodd');
+  };
+
+  // fond
+  const bg = ctx.createLinearGradient(0, 0, 0, ch);
+  bg.addColorStop(0, '#eef1f2'); bg.addColorStop(1, '#d9dde0');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, cw, ch);
+
+  // sol : contexte ou surface
+  const floorI = inst.find(I => I.kind === 'floor');
+  if(room){
+    if(floorI) surfaceLayer(floorI, (x, y, lift) => [x/1000, lift || 0, y/1000], [0,1,0], 0, floorI.S.W, [0, 0, floorI.S.W, floorI.S.H]);
+    else fillPoly([[0,0,0],[room.L/1000,0,0],[room.L/1000,0,room.l/1000],[0,0,room.l/1000]], lit('#cfc6b8', [0,1,0]));
+  } else if(floorI){
+    const W = st.W/1000, H = st.H/1000, hw = 2.5;
+    if(pos[2] > 0) fillPoly([[0,0,0],[W,0,0],[W,hw,0],[0,hw,0]], lit(plaster, [0,0,1]));
+    if(pos[0] > 0) fillPoly([[0,0,0],[0,0,H],[0,hw,H],[0,hw,0]], lit(plaster, [1,0,0]));
+    if(pos[0] < W) fillPoly([[W,0,0],[W,0,H],[W,hw,H],[W,hw,0]], lit(plaster, [-1,0,0]));
+    floorI.S.res.forEach(r => { if(r.type === 'trap' || r.type === 'other'){ const M3 = (x,y) => [x/1000, 0, y/1000]; fillPoly([M3(r.x, st.H-r.sill-r.h), M3(r.x+r.w, st.H-r.sill-r.h), M3(r.x+r.w, st.H-r.sill), M3(r.x, st.H-r.sill)], '#2b2b2c'); } });
+    surfaceLayer(floorI, (x, y, lift) => [x/1000, lift || 0, y/1000], [0,1,0], 0, st.W, [0, 0, st.W, st.H]);
+  } else {
+    fillPoly([[bx[0]-1.5,0,bz[0]-1.5],[bx[1]+1.5,0,bz[0]-1.5],[bx[1]+1.5,0,bz[1]+3.2],[bx[0]-1.5,0,bz[1]+3.2]], lit('#cfc6b8', [0,1,0]));
+  }
+
+  // baignoires et receveurs : boîtes 3D
+  const boxes = [];
+  inst.forEach(I => I.S.res.forEach(r => {
+    if(r.type !== 'tub') return;
+    if(I.kind === 'floor'){
+      const y0 = I.S.H - r.sill - r.h, y1 = I.S.H - r.sill, h = 0.05;
+      boxes.push({pts:[[r.x/1000,0,y0/1000],[(r.x+r.w)/1000,0,y0/1000],[(r.x+r.w)/1000,0,y1/1000],[r.x/1000,0,y1/1000]], h, floor:true});
+    } else {
+      const fr = frameAt(I.frames, r.x + r.w/2), pr = (r.proj || 700)/1000;
+      boxes.push({pts:[P(fr,r.x,0,0), P(fr,r.x+r.w,0,0), P(fr,r.x+r.w,0,-pr), P(fr,r.x,0,-pr)], h:r.h/1000, floor:false});
+    }
+  }));
+  // ombres portées des boîtes au sol
+  boxes.forEach(bxx => {
+    const pts = []; bxx.pts.forEach(p => { pts.push(p); const top = [p[0], bxx.h, p[2]], t = bxx.h/LDIR[1]; pts.push([top[0]-LDIR[0]*t, 0, top[2]-LDIR[2]*t]); });
+    const hull = (() => { const q = pts.map(p => [p[0], p[2]]).sort((a,b) => a[0]-b[0] || a[1]-b[1]); const cr = (o,a,b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
+      const lo = [], hi = []; q.forEach(p => { while(lo.length >= 2 && cr(lo[lo.length-2], lo[lo.length-1], p) <= 0) lo.pop(); lo.push(p); });
+      for(let i=q.length-1;i>=0;i--){ const p = q[i]; while(hi.length >= 2 && cr(hi[hi.length-2], hi[hi.length-1], p) <= 0) hi.pop(); hi.push(p); }
+      return lo.slice(0,-1).concat(hi.slice(0,-1)); })();
+    fillPoly(hull.map(p => [p[0], 0.001, p[1]]), 'rgba(0,0,0,.16)');
+  });
+  const drawBox = bxx => {
+    const b = bxx.pts, t = b.map(p => [p[0], bxx.h, p[2]]);
+    const cen = b.reduce((s2,p) => [s2[0]+p[0]/4, 0, s2[2]+p[2]/4], [0,0,0]);
+    for(let i=0;i<4;i++){ const A = b[i], B2 = b[(i+1)%4], q = [A, B2, t[(i+1)%4], t[i]];
+      const mid = [(A[0]+B2[0])/2, bxx.h/2, (A[2]+B2[2])/2], nn = nrm([mid[0]-cen[0], 0, mid[2]-cen[2]]);
+      if(facing(mid, nn)) fillPoly(q, lit('#f3f3f0', nn)); }
+    if(pos[1] > bxx.h){ fillPoly(t, lit('#f7f7f4', [0,1,0]));
+      const ins = t.map(p => [cen[0]+(p[0]-cen[0])*0.86, bxx.h+0.001, cen[2]+(p[2]-cen[2])*0.86]);
+      if(!bxx.floor) fillPoly(ins, lit('#e6e8e8', [0,1,0]));
+      else { const c = [cen[0], bxx.h+0.002, cen[2]]; fillPoly([0,1,2,3,4,5,6,7].map(k => [c[0]+Math.cos(k*Math.PI/4)*0.03, c[1], c[2]+Math.sin(k*Math.PI/4)*0.03]), '#9aa0a4'); }
+    }
+  };
+  boxes.filter(b2 => b2.floor).forEach(drawBox);
+
+  // murs
+  const walls = [];
+  inst.filter(I => I.kind === 'wall').forEach(I => I.frames.forEach(fr => {
+    const m = P(fr, (fr.x0+fr.x1)/2, I.S.H/2000, 0);
+    if(facing(m, fr.n)) walls.push({I, fr, m});
+  }));
+  if(room){ // murs non carrelés de la pièce
+    const L = room.L/1000, l = room.l/1000, Hr = room.H/1000;
+    Object.entries(sc0.defs).forEach(([k, df]) => {
+      if(room.surf && room.surf[k] != null && proj.surfaces[room.surf[k]]) return;
+      const len = (k === 'A' || k === 'C') ? L : l, n = [-df.dir[1], 0, df.dir[0]], e = [df.base[0]+df.dir[0]*len, df.base[1]+df.dir[1]*len];
+      const m = [(df.base[0]+e[0])/2, Hr/2, (df.base[1]+e[1])/2];
+      if(facing(m, n)) walls.push({plain:true, poly:[[df.base[0],0,df.base[1]],[e[0],0,e[1]],[e[0],Hr,e[1]],[df.base[0],Hr,df.base[1]]], n, m});
+    });
+  }
+  walls.sort((a,b) => Math.hypot(...sub(b.m,pos)) - Math.hypot(...sub(a.m,pos)));
+  walls.forEach(w => {
+    if(w.plain){ fillPoly(w.poly, lit(plaster, w.n)); return; }
+    const I = w.I, S = I.S, fr = w.fr, Mo = I.M;
+    // embrasures des ouvertures de ce segment
+    S.res.forEach((r, ri) => {
+      if(r.type === 'socket' || r.type === 'tub') return;
+      if(frameAt(I.frames, r.x + r.w/2) !== fr) return;
+      const D = r.type === 'trap' ? 0.015 : r.type === 'other' ? 0.06 : (r.depth > 0 ? r.depth*10 : 120)/1000;
+      const x0 = Math.max(0, r.x), x1 = Math.min(S.W, r.x + r.w), yb = Math.max(0, r.sill)/1000, yt = Math.min(room ? Math.max(room.H, S.H) : S.H, r.sill+r.h)/1000;
+      if(x1 <= x0 || yt <= yb) return;
+      const back = [P(fr,x0,yb,D), P(fr,x1,yb,D), P(fr,x1,yt,D), P(fr,x0,yt,D)];
+      ctx.save(); ctx.beginPath(); if(addPoly([P(fr,x0,yb,0), P(fr,x1,yb,0), P(fr,x1,yt,0), P(fr,x0,yt,0)])) ctx.clip();
+      const backCol = r.type === 'window' ? '#a9c1cf' : r.type === 'door' ? '#7a6550' : r.type === 'trap' ? '#d9d5cd' : '#e4e0d8';
+      fillPoly(back, lit(backCol, fr.n, r.type === 'window' ? 1/litK(fr.n) : 1));
+      if(r.type === 'window'){
+        const sky = ctx.createLinearGradient(0,0,0,ch); sky.addColorStop(0,'rgba(255,255,255,.35)'); sky.addColorStop(1,'rgba(255,255,255,0)'); fillPoly(back, sky);
+        const frw = 45, frh = 0.045, zf = D - 0.002, strips = [[x0,yb,x0+frw,yt],[x1-frw,yb,x1,yt],[x0,yt-frh,x1,yt],[x0,yb,x1,yb+frh]];
+        if((x1-x0)/1000 >= (yt-yb)*0.9) strips.push([(x0+x1)/2-frw/2, yb, (x0+x1)/2+frw/2, yt]);
+        strips.forEach(q => fillPoly([P(fr,q[0],q[1],zf), P(fr,q[2],q[1],zf), P(fr,q[2],q[3],zf), P(fr,q[0],q[3],zf)], lit('#f6f6f4', fr.n)));
+      } else if(r.type === 'door'){
+        const hx = x0 + (x1-x0)*0.86, hy = yb + (yt-yb)*0.48;
+        fillPoly([P(fr,hx-25,hy-0.012,D-0.003), P(fr,hx+25,hy-0.012,D-0.003), P(fr,hx+25,hy+0.012,D-0.003), P(fr,hx-25,hy+0.012,D-0.003)], '#c9c4b8');
+      }
+      const dv = [fr.dir[0], 0, fr.dir[1]];
+      const sides = {
+        L:{n:dv, quad:[P(fr,x0,yb,0),P(fr,x0,yt,0),P(fr,x0,yt,D),P(fr,x0,yb,D)], map:(u,v,l) => P(fr, x0+l*1000, yb+u, v)},
+        R:{n:dv.map(c=>-c), quad:[P(fr,x1,yb,0),P(fr,x1,yt,0),P(fr,x1,yt,D),P(fr,x1,yb,D)], map:(u,v,l) => P(fr, x1-l*1000, yb+u, v)},
+        T:{n:[0,-1,0], quad:[P(fr,x0,yt,0),P(fr,x1,yt,0),P(fr,x1,yt,D),P(fr,x0,yt,D)], map:(u,v,l) => P(fr, x0+u*1000, yt-l, v)},
+        B:{n:[0,1,0], quad:[P(fr,x0,yb,0),P(fr,x1,yb,0),P(fr,x1,yb,D),P(fr,x0,yb,D)], map:(u,v,l) => P(fr, x0+u*1000, yb+l, v)}
+      };
+      const zr = Mo.reveals ? Mo.reveals.find(q => q.ri === ri) : null;
+      const visFaces = [back];
+      Object.keys(sides).forEach(sd => {
+        const so = sides[sd];
+        if(r.type === 'door' && sd === 'B') return;
+        if(!facing(so.quad[0], so.n) && !facing(so.quad[2], so.n)) return;
+        visFaces.push(so.quad);
+        if(!(hasReveal(r) && r.depth > 0 && r.rv[sd]) || !zr){ fillPoly(so.quad, lit(plaster, so.n)); return; }
+        fillPoly(so.quad, lit(S.zones[zr.zi].grout, so.n));
+        Mo.pieces.forEach((pc,i) => {
+          if(pc.rres !== ri || pc.side !== sd || !pc.ruv) return;
+          const u = pc.ruv, k = 1 + (((hash(i)%1000)/1000 - .5)*2)*shade;
+          fillPoly([so.map(u.u0/1000,u.v0/1000,.002), so.map(u.u1/1000,u.v0/1000,.002), so.map(u.u1/1000,u.v1/1000,.002), so.map(u.u0/1000,u.v1/1000,.002)], lit(pc.color, so.n, k));
+        });
+      });
+      visFaces.forEach(face => embrasureShadow(face, fr, x0, x1, yb, yt));
+      ctx.restore();
+    });
+    // plan du mur
+    const M3 = (x, y, lift) => P(fr, x, (S.H - y)/1000, -(lift || 0));
+    const topExt = room ? -(Math.max(room.H, S.H) - S.H) : -600;
+    const e0 = (!room && fr.k === 0) ? fr.x0 - 1200 : fr.x0, e1 = (!room && fr.last) ? fr.x1 + 1200 : fr.x1;
+    surfaceLayer(I, M3, fr.n, fr.x0, fr.x1, [e0, topExt, e1, S.H]);
+    // habillages : prises, chambranles
+    S.res.forEach(r => {
+      if(r.x + r.w/2 < fr.x0 || r.x + r.w/2 > fr.x1) return;
+      const y0 = S.H - r.sill - r.h, y1 = S.H - r.sill;
+      if(r.type === 'socket'){
+        const m = 8, q = [M3(r.x-m, y0-m, .006), M3(r.x+r.w+m, y0-m, .006), M3(r.x+r.w+m, y1+m, .006), M3(r.x-m, y1+m, .006)];
+        const sh = [M3(r.x-m+4, y0-m+6, .004), M3(r.x+r.w+m+4, y0-m+6, .004), M3(r.x+r.w+m+4, y1+m+6, .004), M3(r.x-m+4, y1+m+6, .004)];
+        fillPoly(sh, 'rgba(0,0,0,.18)'); fillPoly(q, lit('#f7f7f5', fr.n));
+      } else if((r.type === 'door' || r.type === 'window') && r.cov && r.type === 'door'){
+        const b2 = 55, z = .008;
+        [[r.x-b2, y0-b2, r.x, y1], [r.x+r.w, y0-b2, r.x+r.w+b2, y1], [r.x-b2, y0-b2, r.x+r.w+b2, y0]].forEach(q => fillPoly([M3(q[0],q[1],z), M3(q[2],q[1],z), M3(q[2],q[3],z), M3(q[0],q[3],z)], lit('#f4f2ec', fr.n)));
+      }
+    });
+    // ombre au pied
+    const a2 = toCam(P(fr, fr.x0, 0, 0)), b2 = toCam(P(fr, fr.x1, 0, 0));
+    if(a2[2] > NEAR && b2[2] > NEAR){ const pa = proj2(a2), pb = proj2(b2); ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pa[0],pa[1]); ctx.lineTo(pb[0],pb[1]); ctx.stroke(); }
+  });
+  // baignoires murales, du plus loin au plus proche
+  boxes.filter(b2 => !b2.floor).sort((a,b) => Math.hypot(...sub(b.pts[2],pos)) - Math.hypot(...sub(a.pts[2],pos))).forEach(drawBox);
+
+  if(window.__thumb) return;
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.font = '500 12px ' + css('--sans'); ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillText('Glisser pour tourner, pincer ou molette pour zoomer', 10, ch - 8);
+}
+
+/* contrôles caméra */
+const camPtrs = new Map(); let camStart = null;
+const camLimit = () => {
+  const floor = st.kind === 'floor' || (proj.room && persMode === 'room');
+  if(floor){ cam.pitch = Math.min(1.5, Math.max(0.12, cam.pitch)); }
+  else { cam.yaw = Math.min(1.2, Math.max(-1.2, cam.yaw)); cam.pitch = Math.min(1.0, Math.max(0.02, cam.pitch)); }
+  cam.dist = Math.min(3, Math.max(0.35, cam.dist));
+};
+let rafP = 0; const redrawP = () => { cancelAnimationFrame(rafP); rafP = requestAnimationFrame(draw); };
+cv.addEventListener('pointerdown', e => {
+  if(st.view !== 'persp') return;
+  camPtrs.set(e.pointerId, [e.clientX, e.clientY]);
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+  const pts = [...camPtrs.values()];
+  camStart = {yaw:cam.yaw, pitch:cam.pitch, dist:cam.dist, x:pts[0][0], y:pts[0][1], pinch: pts.length===2 ? Math.hypot(pts[0][0]-pts[1][0], pts[0][1]-pts[1][1]) : 0};
+});
+cv.addEventListener('pointermove', e => {
+  if(st.view !== 'persp' || !camPtrs.has(e.pointerId)) return;
+  camPtrs.set(e.pointerId, [e.clientX, e.clientY]);
+  const pts = [...camPtrs.values()];
+  if(pts.length >= 2 && camStart.pinch){ cam.dist = camStart.dist * camStart.pinch / Math.max(10, Math.hypot(pts[0][0]-pts[1][0], pts[0][1]-pts[1][1])); }
+  else if(pts.length === 1){ cam.yaw = camStart.yaw - (pts[0][0]-camStart.x)*0.006; cam.pitch = camStart.pitch + (pts[0][1]-camStart.y)*0.005; }
+  camLimit(); redrawP();
+});
+const camEnd = e => { if(!camPtrs.has(e.pointerId)) return; camPtrs.delete(e.pointerId); const pts = [...camPtrs.values()]; if(pts.length) camStart = {yaw:cam.yaw, pitch:cam.pitch, dist:cam.dist, x:pts[0][0], y:pts[0][1], pinch:0}; };
+cv.addEventListener('pointerup', camEnd); cv.addEventListener('pointercancel', camEnd);
+cv.addEventListener('wheel', e => { if(st.view !== 'persp') return; e.preventDefault(); cam.dist *= Math.exp(e.deltaY*0.0012); camLimit(); redrawP(); }, {passive:false});
+function setCam(name){ const p = CAMS[(proj.room && persMode === 'room') ? 'room' : st.kind === 'floor' ? 'floor' : 'wall'][name]; cam = {yaw:p[0], pitch:p[1], dist:p[2]}; draw(); }
+document.querySelectorAll('[data-cam]').forEach(b => b.addEventListener('click', () => setCam(b.dataset.cam)));
+
+function info(){
+  const el = $('info');
+  if(st.view === 'persp'){ el.textContent = st.kind==='floor' ? 'Vue en perspective du sol. Les réservations apparaissent comme des trappes.' : 'Vue en perspective du mur, avec les tableaux de fenêtre en relief.'; return; }
+  if(fpick && st.folds[st.fsel]){ const f = st.folds[st.fsel]; el.textContent = 'Angle ' + (st.fsel+1) + ' : ' + (f.type==='in' ? 'rentrant' : 'sortant') + ' à ' + fmt(f.ang,0) + '°, à ' + cm(f.x) + ' cm du bord gauche.'; return; }
+  if(rpick && st.res[st.rsel]){ const r = st.res[st.rsel]; el.textContent = rName(r, st.rsel) + ' : ' + cm(r.w) + ' × ' + cm(r.h) + ' cm, à ' + cm(r.x) + ' cm du bord gauche, allège ' + cm(r.sill) + ' cm.'; return; }
+  if(!model || pick < 0 || !model.pieces[pick]){ el.textContent = 'Glissez dans une zone pour déplacer son motif, ou une fenêtre pour la placer. Touchez un carreau pour voir sa coupe.'; return; }
+  const pc = model.pieces[pick], z = st.zones[pc.z];
+  const pre = pc.reveal ? pc.reveal.replace(/^F(\d+)/, 'Fenêtre $1,') + '. ' : 'Zone ' + (pc.z+1) + ', ' + (pc.kind==='cab' ? 'cabochon' : PATNAME[z.pattern]) + '. ';
+  const d = mmf(pc.pw) + ' × ' + mmf(pc.ph) + ' mm';
+  if(pc.full) el.textContent = pre + 'Pièce entière : ' + mmf(pc.fw) + ' × ' + mmf(pc.fh) + ' mm' + (pc.drill ? ', perçage pour la ' + pc.drill : '') + '.';
+  else {
+    let t = pre + (pc.rect ? 'Coupe droite : ' + d : pc.notch ? 'Coupe en encoche autour de la fenêtre, encombrement ' + d : 'Coupe biaise, encombrement ' + d) + (pc.thin ? ', coupe fine' : '');
+    if(pc.src){
+      const others = pc.src.pieces.length - 1;
+      t += '. Carreau n°' + pc.src.n + (pc.reused ? ', taillé dans une chute' : '') + (others > 0 ? ' (' + (others+1) + ' pièces dans ce carreau)' : '');
+    }
+    const nr = SIDES.filter(d => pc.req && pc.req[d]).length;
+    if(pc.shape === 'rect' && nr) t += '. Bords d\u2019usine côté joints (' + nr + (nr>1 ? ' côtés' : ' côté') + '), coupe contre le bord';
+    if(pc.atFold) t += '. Coupé dans l\u2019angle';
+    if(pc.drill) t += '. Perçage à la scie cloche pour la ' + pc.drill;
+    if(pc.vis && pc.vis.length) t += '. Coupe apparente sur un bord visible : prévoir un profilé ou un polissage';
+    el.textContent = t + '.';
+  }
+}
+
+/* ---------- interactions plan ---------- */
+const toWorld = e => { const r = cv.getBoundingClientRect(); return [(e.clientX-r.left-xf.ox)/xf.sc, (e.clientY-r.top-xf.oy)/xf.sc]; };
+function zoneAt(pt){
+  if(!model) return -1;
+  const R = model.lay.rects, half = st.j/2 + 1;
+  for(let i=0;i<R.length;i++){ const r = R[i]; if(pt[0]>=r.x-half && pt[0]<=r.x+r.w+half && pt[1]>=r.y-half && pt[1]<=r.y+r.h+half) return i; }
+  return -1;
+}
+function inPoly(pt, poly){
+  let ins = false;
+  for(let i=0,k=poly.length-1;i<poly.length;k=i++){
+    const a = poly[i], b = poly[k];
+    if(((a[1]>pt[1]) !== (b[1]>pt[1])) && pt[0] < (b[0]-a[0])*(pt[1]-a[1])/(b[1]-a[1]) + a[0]) ins = !ins;
+  }
+  return ins;
+}
+let drag = null, rafC = 0;
+const computeSoon = () => { cancelAnimationFrame(rafC); rafC = requestAnimationFrame(compute); };
+
+cv.addEventListener('pointerdown', e => {
+  if(st.view === 'persp') return;
+  if(!model || !xf) return;
+  const pt = toWorld(e);
+  const ri = st.res.findIndex(r => pt[0] >= r.x && pt[0] <= r.x+r.w && pt[1] >= st.H-r.sill-r.h && pt[1] <= st.H-r.sill);
+  const fi = st.kind === 'floor' ? -1 : st.folds.findIndex(f => Math.abs(f.x - pt[0])*xf.sc < 10 && pt[1] >= 0 && pt[1] <= st.H);
+  if(ri < 0 && fi >= 0){
+    drag = {id:e.pointerId, x:e.clientX, y:e.clientY, ri:-1, fi, zi:-1, pt, moved:false, sx:st.folds[fi].x, sy:0};
+  } else if(ri >= 0){
+    const r = st.res[ri];
+    drag = {id:e.pointerId, x:e.clientX, y:e.clientY, ri, zi:-1, pt, moved:false, sx:r.x, sy:r.sill};
+  } else {
+    const zi = zoneAt(pt);
+    drag = {id:e.pointerId, x:e.clientX, y:e.clientY, ri:-1, zi, pt, moved:false,
+      sx: zi>=0 ? st.zones[zi].dx : 0, sy: zi>=0 ? st.zones[zi].dy : 0};
+  }
+  try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+});
+cv.addEventListener('pointermove', e => {
+  if(!drag || e.pointerId !== drag.id) return;
+  const dX = e.clientX - drag.x, dY = e.clientY - drag.y;
+  if(!drag.moved && Math.hypot(dX,dY) < 6) return;
+  if(drag.fi >= 0){
+    if(!drag.moved){ drag.moved = true; cv.classList.add('dragging'); pick = -1; rpick = false; fpick = true; if(st.fsel !== drag.fi){ st.fsel = drag.fi; syncFolds(); } }
+    const f = st.folds[drag.fi];
+    f.x = Math.max(10, Math.min(st.W - 10, Math.round((drag.sx + dX/xf.sc)/5)*5));
+    $('fX').value = f.x/10; computeSoon(); return;
+  }
+  if(drag.ri >= 0){
+    if(!drag.moved){ drag.moved = true; cv.classList.add('dragging'); pick = -1; rpick = true; if(st.rsel !== drag.ri){ st.rsel = drag.ri; syncRes(); } }
+    const r = st.res[drag.ri];
+    r.x = Math.max(0, Math.min(st.W - r.w, Math.round((drag.sx + dX/xf.sc)/5)*5));
+    r.sill = Math.max(0, Math.min(st.H - r.h, Math.round((drag.sy - dY/xf.sc)/5)*5));
+    $('rX').value = r.x/10; $('rS').value = r.sill/10;
+    computeSoon(); return;
+  }
+  if(drag.zi < 0) return;
+  if(!drag.moved){
+    drag.moved = true; cv.classList.add('dragging'); pick = -1; rpick = false;
+    if(st.sel !== drag.zi){ st.sel = drag.zi; syncZone(); }
+  }
+  const z = st.zones[drag.zi];
+  z.dx = Math.round(drag.sx + dX/xf.sc);
+  z.dy = Math.round(drag.sy + dY/xf.sc);
+  $('offX').value = z.dx; $('offY').value = z.dy;
+  computeSoon();
+});
+const endDrag = e => {
+  if(!drag || (e && e.pointerId !== drag.id)) return;
+  cv.classList.remove('dragging');
+  if(drag.moved){ save(); }
+  else if(e && e.type === 'pointerup' && drag.fi >= 0){
+    pick = -1; rpick = false; fpick = true; if(st.fsel !== drag.fi){ st.fsel = drag.fi; syncFolds(); save(); }
+    draw(); info();
+  }
+  else if(e && e.type === 'pointerup' && drag.ri >= 0){
+    pick = -1; rpick = true; fpick = false; if(st.rsel !== drag.ri){ st.rsel = drag.ri; syncRes(); save(); }
+    draw(); info();
+  }
+  else if(e && e.type === 'pointerup'){
+    rpick = false; fpick = false;
+    const idx = model ? model.pieces.findIndex(pc => pc.parts && pc.parts.some(p => inPoly(drag.pt, p))) : -1;
+    pick = idx === pick ? -1 : idx;
+    const zi = idx >= 0 ? model.pieces[idx].z : drag.zi;
+    if(zi >= 0 && zi !== st.sel){ st.sel = zi; syncZone(); save(); compute(); }
+    else { draw(); info(); }
+  }
+  drag = null;
+};
+cv.addEventListener('pointerup', endDrag);
+cv.addEventListener('pointercancel', endDrag);
+
+/* ---------- interface ---------- */
+function syncGlobal(){
+  $('surfL').value = st.W/10; $('surfW').value = st.H/10; $('joint').value = st.j; $('margin').value = st.margin;
+  $('split').value = st.split; $('shade').value = String(st.shade);
+  $('reuse').checked = !!st.reuse; $('nums').checked = !!st.nums; $('orient').value = st.orient; $('jcov').checked = !!st.jcov;
+  document.querySelectorAll('[data-hid]').forEach(c => c.checked = !!st.hid[c.dataset.hid]);
+  $('kerf').value = st.kerf; $('minr').value = st.minr;
+  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view===st.view));
+  $('legend').classList.toggle('hide', st.view!=='plan');
+  $('camBtns').classList.toggle('hide', st.view!=='persp');
+  $('persBtns').classList.toggle('hide', st.view!=='persp' || !proj.room);
+  document.querySelectorAll('[data-pm]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pm === persMode));
+  $('kind').value = st.kind || 'wall';
+  cv.style.cursor = st.view==='persp' ? 'grab' : '';
+}
+function syncZone(){
+  const z = cur(), n = st.zones.length, i = st.sel;
+  $('zones').innerHTML = st.zones.map((q,k) => {
+    const size = q.unit==='rest' ? 'reste' : q.unit==='rows' ? fmt(q.size,0) + ' rang.' : fmt(q.size,1) + ' cm';
+    return `<button type="button" class="z" data-i="${k}" aria-pressed="${k===i}">Zone ${k+1}<small>${PATNAME[q.pattern]}, ${size}</small></button>`;
+  }).join('');
+  document.querySelectorAll('.zn').forEach(s => s.textContent = n > 1 ? ', zone ' + (i+1) : '');
+  $('zSize').value = z.size; $('zUnit').value = z.unit; $('zSize').disabled = z.unit==='rest';
+  $('zSizeLbl').textContent = (st.split==='h' ? 'Hauteur' : 'Largeur') + (z.unit==='rows' ? ' (rangées)' : z.unit==='cm' ? ' (cm)' : '');
+  $('zUp').textContent = st.split==='h' ? 'Monter' : 'Vers la gauche';
+  $('zDown').textContent = st.split==='h' ? 'Descendre' : 'Vers la droite';
+  $('zUp').disabled = i===0; $('zDown').disabled = i===n-1; $('zDel').disabled = n<=1;
+  $('tileL').value = Math.round(z.a*10)/10; $('tileW').value = Math.round(z.b*10)/10; $('box').value = z.box;
+  const single = z.pattern==='hex' || z.pattern==='octo';
+  $('tileW').disabled = single;
+  $('tileLLbl').textContent = single ? 'Largeur côté plat à côté plat (mm)' : 'Longueur (mm)';
+  let hint = '';
+  if(z.pattern==='hex') hint = 'Hexagone mesuré entre deux côtés parallèles.';
+  else if(z.pattern==='octo') hint = 'Octogone mesuré entre deux côtés parallèles. Les cabochons sont calculés automatiquement.';
+  else if(z.pattern==='basket'){ const g = geo(z, st.j); hint = 'Vannerie : ' + g.n + ' lames par carré, largeur ramenée à ' + mmf(g.p - st.j) + ' mm pour former des carrés.'; }
+  else if(z.pattern==='herring' || z.pattern==='chevron') hint = 'Utilisez de préférence une lame allongée (rapport 3:1 ou plus).';
+  $('tHint').textContent = hint;
+  document.querySelectorAll('#patterns button').forEach(b => b.setAttribute('aria-pressed', b.dataset.p===z.pattern));
+  $('angle').value = String(z.angle); $('start').value = z.start;
+  $('offX').value = z.dx; $('offY').value = z.dy;
+  $('c1').value = z.c1; $('c2').value = z.c2; $('mix').value = z.mix;
+  $('c2row').classList.toggle('hide', z.mix==='uni');
+  $('th').value = z.th || 9;
+  const ph = z.photo && proj.photos[z.photo];
+  $('phPrev').classList.toggle('hide', !ph); if(ph) $('phPrev').src = ph;
+  $('phDel').classList.toggle('hide', !ph); $('phRot').checked = z.photoRot !== false;
+  $('grout').value = z.grout; $('target').value = z.mix==='uni' ? 'c1' : st.target;
+  if(typeof syncPlinth === 'function' && $('pZone')) try{ syncPlinth(); }catch(e){}
+  renderSwatches();
+}
+
+$('patterns').innerHTML = PAT.map(([k,l]) => `<button type="button" data-p="${k}" aria-pressed="false"><svg viewBox="0 0 34 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round">${ICON[k]}</svg>${l}</button>`).join('');
+$('patterns').addEventListener('click', e => {
+  const b = e.target.closest('[data-p]'); if(!b) return;
+  cur().pattern = b.dataset.p; pick = -1; syncZone(); save(); compute();
+});
+$('zones').addEventListener('click', e => {
+  const b = e.target.closest('[data-i]'); if(!b) return;
+  st.sel = +b.dataset.i; pick = -1; syncZone(); save(); compute();
+});
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => { st.view = b.dataset.view; syncGlobal(); save(); draw(); info(); }));
+document.querySelectorAll('#presets button').forEach(b => b.addEventListener('click', () => {
+  const [w,l] = b.dataset.t.split('x').map(Number), z = cur();
+  z.a = Math.max(w,l); z.b = Math.min(w,l); pick = -1; syncZone(); save(); compute();
+}));
+
+const G = {
+  surfL: v => { st.W = v*10; if(!proj.room) $('roomL').value = v; }, surfW: v => st.H = v*10, joint: v => st.j = v, margin: v => st.margin = Math.max(0, v||0),
+  split: (v,raw) => st.split = raw, shade: v => st.shade = v,
+  kerf: v => st.kerf = Math.max(0, v||0), minr: v => st.minr = Math.max(1, v||20)
+};
+const Z = {
+  zSize: v => cur().size = isNaN(v) ? 0 : v, zUnit: (v,raw) => { cur().unit = raw; if(raw!=='rest' && !(cur().size>0)) cur().size = raw==='rows' ? 3 : 20; },
+  tileL: v => cur().a = v, tileW: v => cur().b = v, box: v => cur().box = v||0, th: v => cur().th = v > 0 ? v : 9,
+  angle: v => cur().angle = v, start: (v,raw) => cur().start = raw,
+  offX: v => cur().dx = v||0, offY: v => cur().dy = v||0,
+  c1: (v,raw) => cur().c1 = raw, c2: (v,raw) => cur().c2 = raw, mix: (v,raw) => cur().mix = raw, grout: (v,raw) => cur().grout = raw
+};
+const drawOnly = ['shade','grout'];
+Object.keys(G).forEach(id => $(id).addEventListener('input', () => { G[id](num(id), $(id).value); if(id==='split') syncZone(); save(); drawOnly.includes(id) ? draw() : (pick=-1, compute()); }));
+Object.keys(Z).forEach(id => $(id).addEventListener('input', () => {
+  Z[id](num(id), $(id).value); save();
+  if(['zSize','zUnit','mix','angle','c1','c2','grout'].includes(id) || id==='tileL' || id==='tileW') syncZoneLight(id);
+  drawOnly.includes(id) ? draw() : (pick=-1, compute());
+}));
+function syncZoneLight(id){
+  // met à jour les éléments dépendants sans réécrire le champ en cours de saisie
+  const z = cur(), keep = $(id), v = keep.value;
+  syncZone(); keep.value = v;
+  if(id==='zUnit') $('zSize').value = z.size;
+}
+
+$('zAdd').addEventListener('click', () => {
+  const z = cur(), hasRest = st.zones.some(q => q.unit==='rest');
+  const nz = defZone({a:z.a, b:z.b, c1:z.c1, c2:z.c2, grout:z.grout, box:z.box, pattern:'grid', unit: hasRest ? 'rows' : 'rest', size:3});
+  st.zones.splice(st.sel+1, 0, nz); st.sel++; pick = -1; syncZone(); save(); compute();
+});
+const move = d => { const i = st.sel, k = i+d; if(k<0 || k>=st.zones.length) return; [st.zones[i], st.zones[k]] = [st.zones[k], st.zones[i]]; st.sel = k; pick=-1; syncZone(); save(); compute(); };
+$('zUp').addEventListener('click', () => move(-1));
+$('zDown').addEventListener('click', () => move(1));
+$('zDel').addEventListener('click', () => { if(st.zones.length<=1) return; st.zones.splice(st.sel,1); st.sel = Math.min(st.sel, st.zones.length-1); pick=-1; syncZone(); save(); compute(); });
+$('recenter').addEventListener('click', () => { const z = cur(); z.dx = 0; z.dy = 0; syncZone(); save(); compute(); });
+$('tpl').addEventListener('click', () => {
+  const z = cur(), base = {a:z.a, b:z.b, c1:z.c1, c2:z.c2, grout:z.grout, box:z.box};
+  st.split = 'h';
+  st.zones = [
+    defZone(Object.assign({}, base, {unit:'rows', size:3, pattern:'half'})),
+    defZone(Object.assign({}, base, {unit:'rest', pattern:'herring'})),
+    defZone(Object.assign({}, base, {unit:'rows', size:3, pattern:'half'}))
+  ];
+  st.sel = 1; pick = -1; syncGlobal(); syncZone(); save(); compute();
+});
+
+['reuse','nums','jcov'].forEach(id => $(id).addEventListener('change', () => {
+  st[id] = $(id).checked; save(); id==='nums' ? draw() : (pick=-1, compute());
+}));
+$('orient').addEventListener('change', () => { st.orient = $('orient').value; save(); pick=-1; compute(); });
+document.querySelectorAll('[data-hid]').forEach(c => c.addEventListener('change', () => { st.hid[c.dataset.hid] = c.checked; save(); pick=-1; compute(); }));
+$('target').addEventListener('change', () => { st.target = $('target').value; save(); renderSwatches(); });
+
+function renderSwatches(){
+  const z = cur(), tgt = z.mix==='uni' ? 'c1' : st.target;
+  const mk = (list, kind, curv) => list.length
+    ? list.map((c,i) => `<button type="button" class="c" data-k="${kind}" data-i="${i}" style="background:${c}" aria-label="${(manage[kind] ? 'Supprimer ' : 'Appliquer ') + c}" aria-pressed="${c.toLowerCase()===curv.toLowerCase()}"></button>`).join('')
+    : '<span class="empty">Aucune couleur enregistrée.</span>';
+  $('swTiles').innerHTML = mk(pal.tiles, 'tiles', z[tgt]) + '<button type="button" class="add" data-add="tiles" aria-label="Enregistrer la couleur de carreau actuelle">+</button>';
+  $('swGrouts').innerHTML = mk(pal.grouts, 'grouts', z.grout) + '<button type="button" class="add" data-add="grouts" aria-label="Enregistrer la couleur de joint actuelle">+</button>';
+  $('swTiles').classList.toggle('manage', manage.tiles); $('swGrouts').classList.toggle('manage', manage.grouts);
+  document.querySelectorAll('[data-manage]').forEach(b => b.textContent = manage[b.dataset.manage] ? 'Terminé' : 'Gérer');
+  $('cPaste').disabled = !clipC;
+}
+function onSwatch(e){
+  const add = e.target.closest('[data-add]'), sw = e.target.closest('.c');
+  const z = cur(), tgt = z.mix==='uni' ? 'c1' : st.target;
+  if(add){
+    const kind = add.dataset.add, c = (kind==='tiles' ? z[tgt] : z.grout).toLowerCase();
+    if(!pal[kind].includes(c)){ pal[kind].push(c); if(pal[kind].length > 24) pal[kind].shift(); savePal(); }
+    renderSwatches(); return;
+  }
+  if(!sw) return;
+  const kind = sw.dataset.k, i = +sw.dataset.i;
+  if(manage[kind]){ pal[kind].splice(i,1); savePal(); renderSwatches(); return; }
+  if(kind==='tiles') z[tgt] = pal.tiles[i]; else z.grout = pal.grouts[i];
+  syncZone(); save(); kind==='grouts' ? draw() : (pick=-1, compute());
+}
+$('swTiles').addEventListener('click', onSwatch);
+$('swGrouts').addEventListener('click', onSwatch);
+document.querySelectorAll('[data-manage]').forEach(b => b.addEventListener('click', () => { const k = b.dataset.manage; manage[k] = !manage[k]; renderSwatches(); }));
+$('cCopy').addEventListener('click', () => { const z = cur(); clipC = {c1:z.c1, c2:z.c2, mix:z.mix, grout:z.grout}; $('cCopy').textContent = 'Couleurs copiées'; setTimeout(() => $('cCopy').textContent = 'Copier les couleurs', 1400); renderSwatches(); });
+$('cPaste').addEventListener('click', () => { if(!clipC) return; Object.assign(cur(), clipC); syncZone(); save(); pick=-1; compute(); });
+$('cAll').addEventListener('click', () => { const z = cur(); st.zones.forEach(q => Object.assign(q, {c1:z.c1, c2:z.c2, mix:z.mix, grout:z.grout})); syncZone(); save(); pick=-1; compute(); });
+
+function syncRes(){
+  $('resList').innerHTML = st.res.map((r,k) => `<button type="button" class="z" data-r="${k}" aria-pressed="${k===st.rsel}">${rName(r,k)}<small>${cm(r.w)} × ${cm(r.h)} cm</small></button>`).join('');
+  $('resForm').classList.toggle('hide', !st.res.length);
+  const r = st.res[st.rsel]; if(!r) return;
+  $('rW').value = r.w/10; $('rH').value = r.h/10; $('rX').value = r.x/10; $('rS').value = r.sill/10;
+  $('rCov').checked = !!r.cov; $('rD').value = r.depth; $('rType').value = r.type || 'window'; $('rP').value = (r.proj || 700)/10;
+  $('rProjWrap').classList.toggle('hide', r.type !== 'tub' || st.kind === 'floor');
+  $('rRevWrap').classList.toggle('hide', !hasReveal(r));
+  document.querySelector('[data-rv="B"]').closest('label').classList.toggle('hide', r.type === 'door');
+  document.querySelectorAll('[data-rv]').forEach(c => { c.checked = !!r.rv[c.dataset.rv]; c.disabled = !(r.depth > 0); });
+}
+$('resList').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if(!b) return; st.rsel = +b.dataset.r; rpick = true; pick = -1; syncRes(); save(); compute(); });
+$('rAdd').addEventListener('click', () => {
+  const type = $('rNewType').value, d = RTYPES[type].d;
+  const w = Math.min(d.w, st.W*0.8), h = Math.min(d.h, st.H*0.9);
+  const sill = st.kind === 'floor' ? Math.round((st.H-h)/2) : Math.round(Math.max(0, Math.min(d.sill, st.H-h)));
+  st.res.push(defRes({type, w, h, x: Math.round((st.W-w)/2), sill, proj: d.proj || 700}));
+  st.rsel = st.res.length-1; rpick = true; pick = -1; syncRes(); save(); compute();
+});
+$('rDel').addEventListener('click', () => { st.res.splice(st.rsel,1); st.rsel = Math.max(0, Math.min(st.rsel, st.res.length-1)); rpick = false; syncRes(); save(); compute(); });
+$('rCenter').addEventListener('click', () => { const r = st.res[st.rsel]; if(!r) return; r.x = Math.round((st.W - r.w)/2); syncRes(); save(); compute(); });
+const RF = {rP: v => r => r.proj = Math.max(100, v*10), rW: v => r => r.w = Math.max(10, v*10), rH: v => r => r.h = Math.max(10, v*10), rX: v => r => r.x = Math.max(0, v*10), rS: v => r => r.sill = Math.max(0, v*10), rD: v => r => r.depth = Math.max(0, v||0)};
+Object.keys(RF).forEach(id => $(id).addEventListener('input', () => {
+  const r = st.res[st.rsel], v = num(id); if(!r || (isNaN(v) && id!=='rD')) return;
+  RF[id](v)(r); rpick = true; save();
+  $('resList').querySelectorAll('[data-r]').forEach((b,k) => b.querySelector('small').textContent = cm(st.res[k].w) + ' × ' + cm(st.res[k].h) + ' cm');
+  if(id==='rD') document.querySelectorAll('[data-rv]').forEach(c => c.disabled = !(r.depth > 0));
+  pick = -1; compute();
+}));
+$('rType').addEventListener('change', () => { const r = st.res[st.rsel]; if(!r) return; r.type = $('rType').value; if((r.type === 'door' || r.type === 'tub') && st.kind !== 'floor') r.sill = 0; if(r.type === 'tub') r.proj = r.proj || 700; syncRes(); save(); pick=-1; compute(); });
+$('rCov').addEventListener('change', () => { const r = st.res[st.rsel]; if(!r) return; r.cov = $('rCov').checked; save(); pick=-1; compute(); });
+document.querySelectorAll('[data-rv]').forEach(c => c.addEventListener('change', () => { const r = st.res[st.rsel]; if(!r) return; r.rv[c.dataset.rv] = c.checked; save(); pick=-1; compute(); }));
+
+function syncPlinth(){
+  const pl = st.plinth;
+  $('pZone').innerHTML = st.zones.map((z,i) => `<option value="${i}">Zone ${i+1} (${mmf(Math.max(z.a,z.b))} × ${mmf(Math.min(z.a,z.b))} mm)</option>`).join('');
+  pl.zone = Math.min(pl.zone|0, st.zones.length-1);
+  $('pZone').value = String(pl.zone); $('pLen').value = pl.len/10; $('pH').value = pl.h/10;
+}
+$('pLen').addEventListener('input', () => { const v = num('pLen'); st.plinth.len = Math.max(0, (v||0)*10); save(); compute(); });
+$('pH').addEventListener('input', () => { const v = num('pH'); if(v > 0){ st.plinth.h = v*10; save(); compute(); } });
+$('pZone').addEventListener('change', () => { st.plinth.zone = +$('pZone').value; save(); compute(); });
+$('pPer').addEventListener('click', () => { st.plinth.len = 2*(st.W+st.H); syncPlinth(); save(); compute(); });
+$('pW').addEventListener('click', () => { st.plinth.len = st.W; syncPlinth(); save(); compute(); });
+$('pOff').addEventListener('click', () => { st.plinth.len = 0; syncPlinth(); save(); compute(); });
+
+/* ---------- optimisation du départ ---------- */
+function zonePeriod(z){
+  const j = st.j, a = z.a, b = z.b;
+  switch(z.pattern){
+    case 'herring': { const A = Math.max(a,b)+j, B = Math.min(a,b)+j; return [A+B, A+B]; }
+    case 'chevron': { const w = (a+j)/S2, h = (b+j)*S2; return [2*w, h]; }
+    case 'basket': return [2*(a+j), 2*(a+j)];
+    case 'hex': { const F = a+j, R = F/S3; return [3*R, F]; }
+    case 'octo': return [a+j, a+j];
+    default: { const per = {grid:1, half:2, third:3, quarter:4}[z.pattern] || 1; return [a+j, (b+j)*per]; }
+  }
+}
+function evalZone(zi, over){
+  const lay = layout(), z = Object.assign({}, st.zones[zi], over), list = [];
+  buildZone(z, zi, lay.rects[zi], st.j, list);
+  list.forEach(pc => { pc.key = pc.shape + (pc.shape==='chevron' ? pc.par : '') + '|' + pc.kind; pc.color = '#000'; pc.label = ''; pc.box = 0; });
+  const groups = planCuts(list);
+  return {needed: groups.reduce((t,g) => t+g.full+g.tiles.length, 0), thin: list.filter(p=>p.thin).length, vis: list.filter(p=>p.vis.length).length,
+    minD: list.filter(p=>!p.full).reduce((m,p) => Math.min(m,p.minD), Infinity)};
+}
+function scoreOf(r, goal){
+  const small = r.minD < Infinity ? Math.max(0, 60 - r.minD)/60 : 0;
+  if(goal === 'tiles') return r.needed*100 + r.thin*8 + r.vis*8 + small;
+  if(goal === 'bal') return r.needed*25 + r.thin*30 + r.vis*30 + small*5;
+  return r.thin*100 + r.vis*70 + r.needed + small*10;
+}
+let optBusy = false, optPrev = null;
+const tick = () => new Promise(res => setTimeout(res, 0));
+async function optimize(zis){
+  if(optBusy || !model) return;
+  optBusy = true; ['optZone','optAll'].forEach(id => $(id).disabled = true);
+  const goal = $('optGoal').value, sum = {b:{needed:0,thin:0,vis:0}, a:{needed:0,thin:0,vis:0}};
+  optPrev = zis.map(i => ({i, dx:st.zones[i].dx, dy:st.zones[i].dy, start:st.zones[i].start}));
+  const lay = layout();
+  for(let n=0; n<zis.length; n++){
+    const zi = zis[n], z = st.zones[zi], rc = lay.rects[zi];
+    if(!rc || rc.w < 1 || rc.h < 1) continue;
+    const lockX = st.split==='v' && z.unit==='rows', lockY = st.split==='h' && z.unit==='rows';
+    const base = evalZone(zi, {});
+    let best = {over:{dx:z.dx, dy:z.dy, start:z.start}, r:base, sc:scoreOf(base, goal==='sym' ? 'bal' : goal)};
+    const tryC = over => { const r = evalZone(zi, over), sc = scoreOf(r, goal==='sym' ? 'bal' : goal); if(sc < best.sc - 1e-9) best = {over, r, sc}; };
+    if(goal === 'sym'){
+      best = {over:null, r:null, sc:Infinity};
+      if(!lockX && !lockY){ for(const sm of ['tile','joint']) tryC({start:sm, dx:0, dy:0}); }
+      else if(z.angle === 0 || z.angle === 90){
+        const g = geo(z, st.j);
+        for(const ref of [g.ctr, g.jn]){
+          const o = {start:'corner', dx:z.dx, dy:z.dy}, rx = ref[0]-g.tl[0], ry = ref[1]-g.tl[1];
+          const ux = z.angle===90 ? -ry : rx, uy = z.angle===90 ? rx : ry;
+          if(lockY) o.dx = Math.round(rc.w/2 - ux); else o.dy = Math.round(rc.h/2 - uy);
+          tryC(o);
+        }
+      } else best = {over:{dx:z.dx, dy:z.dy, start:z.start}, r:base, sc:0};
+    } else {
+      let [Px, Py] = zonePeriod(z);
+      if(z.angle === 90) [Px, Py] = [Py, Px]; else if(z.angle % 90) Px = Py = Math.max(Px, Py);
+      const est = rc.w*rc.h/((z.a+st.j)*(z.b+st.j)), N = est > 2500 ? 6 : est > 900 ? 9 : 12;
+      const xs = lockX ? [z.dx] : Array.from({length:N}, (_,k) => k*Px/N), ys = lockY ? [z.dy] : Array.from({length:N}, (_,k) => k*Py/N);
+      let cnt = 0;
+      for(const dx of xs){ for(const dy of ys){ tryC({start:z.start, dx:Math.round(dx), dy:Math.round(dy)}); cnt++; }
+        $('optStatus').textContent = 'Recherche zone ' + (zi+1) + ' : ' + Math.round(cnt/(xs.length*ys.length)*70) + ' %'; await tick(); }
+      const stX = lockX ? 0 : Px/N, stY = lockY ? 0 : Py/N, c0 = best.over;
+      for(let i=-3;i<=3;i++){ for(let k=-3;k<=3;k++){ if(!i && !k) continue; tryC({start:z.start, dx:Math.round(c0.dx + i*stX/4), dy:Math.round(c0.dy + k*stY/4)}); }
+        $('optStatus').textContent = 'Recherche zone ' + (zi+1) + ' : ' + (70 + (i+3)*4) + ' %'; await tick(); }
+    }
+    if(best.over) Object.assign(z, best.over);
+    const after = best.r || base;
+    ['needed','thin','vis'].forEach(k => { sum.b[k] += base[k]; sum.a[k] += after[k]; });
+  }
+  syncZone(); save(); pick = -1; compute();
+  $('optStatus').textContent = 'Appliqué. Carreaux nécessaires ' + sum.b.needed + ' → ' + sum.a.needed + ', coupes fines ' + sum.b.thin + ' → ' + sum.a.thin + ', coupes apparentes ' + sum.b.vis + ' → ' + sum.a.vis + '.';
+  $('optUndo').disabled = false;
+  ['optZone','optAll'].forEach(id => $(id).disabled = false);
+  optBusy = false;
+}
+$('optGoal').value = st.optGoal || 'thin';
+$('optGoal').addEventListener('change', () => { st.optGoal = $('optGoal').value; save(); });
+$('optZone').addEventListener('click', () => optimize([st.sel]));
+$('optAll').addEventListener('click', () => optimize(st.zones.map((_,i) => i)));
+$('optUndo').addEventListener('click', () => {
+  if(!optPrev) return;
+  optPrev.forEach(p => { const z = st.zones[p.i]; if(z) Object.assign(z, {dx:p.dx, dy:p.dy, start:p.start}); });
+  optPrev = null; $('optUndo').disabled = true; $('optStatus').textContent = 'Position précédente rétablie.';
+  syncZone(); save(); pick = -1; compute();
+});
+
+$('kind').addEventListener('change', () => { st.kind = $('kind').value; syncFolds(); syncRes(); pick = -1; compute(); const p = CAMS[(proj.room && persMode==='room') ? 'room' : st.kind==='floor'?'floor':'wall'].biais; cam = {yaw:p[0], pitch:p[1], dist:p[2]}; save(); draw(); });
+
+function syncFolds(){
+  $('foldPanel').classList.toggle('hide', st.kind === 'floor');
+  $('foldList').innerHTML = st.folds.map((f,k) => `<button type="button" class="z" data-f="${k}" aria-pressed="${k===st.fsel}">Angle ${k+1}<small>${f.type==='in' ? 'rentrant' : 'sortant'}, ${cm(f.x)} cm</small></button>`).join('');
+  $('foldForm').classList.toggle('hide', !st.folds.length);
+  const f = st.folds[st.fsel]; if(!f) return;
+  $('fX').value = f.x/10; $('fA').value = f.ang; $('fT').value = f.type; $('fCov').checked = !!f.cov;
+  $('fCovWrap').classList.toggle('hide', f.type !== 'out');
+}
+$('foldList').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if(!b) return; st.fsel = +b.dataset.f; fpick = true; rpick = false; pick = -1; syncFolds(); save(); draw(); info(); });
+$('fAdd').addEventListener('click', () => {
+  const used = st.folds.map(f => f.x); let x = Math.round(st.W/2);
+  if(used.length){ const bs = [0, ...used.slice().sort((a,b)=>a-b), st.W]; let gi = 0; for(let i=0;i<bs.length-1;i++) if(bs[i+1]-bs[i] > bs[gi+1]-bs[gi]) gi = i; x = Math.round((bs[gi]+bs[gi+1])/2); }
+  st.folds.push(defFold({x})); st.fsel = st.folds.length-1; fpick = true; rpick = false; pick = -1; syncFolds(); save(); compute();
+});
+$('fDel').addEventListener('click', () => { st.folds.splice(st.fsel, 1); st.fsel = Math.max(0, Math.min(st.fsel, st.folds.length-1)); fpick = false; syncFolds(); save(); compute(); });
+$('fX').addEventListener('input', () => { const f = st.folds[st.fsel], v = num('fX'); if(!f || !(v > 0)) return; f.x = Math.min(st.W-10, v*10); fpick = true; save(); syncFoldsLight(); compute(); });
+$('fA').addEventListener('input', () => { const f = st.folds[st.fsel], v = num('fA'); if(!f || !(v >= 30 && v <= 170)) return; f.ang = v; save(); syncFoldsLight(); draw(); info(); });
+$('fT').addEventListener('change', () => { const f = st.folds[st.fsel]; if(!f) return; f.type = $('fT').value; save(); syncFolds(); compute(); });
+$('fCov').addEventListener('change', () => { const f = st.folds[st.fsel]; if(!f) return; f.cov = $('fCov').checked; save(); compute(); });
+function syncFoldsLight(){ $('foldList').querySelectorAll('[data-f]').forEach((b,k) => { const f = st.folds[k]; b.querySelector('small').textContent = (f.type==='in' ? 'rentrant' : 'sortant') + ', ' + cm(f.x) + ' cm'; }); }
+
+/* ---------- scénarios ---------- */
+function loadScen(){ try{ const o = JSON.parse(localStorage.getItem(SKEY) || 'null'); if(o) scen = {A:o.A || null, B:o.B || null}; }catch(e){} }
+function saveScen(){ try{ localStorage.setItem(SKEY, JSON.stringify(scen)); }catch(e){ $('optStatus').textContent = ''; } }
+function metrics(){
+  if(!model || !model.groups) return null;
+  let posed = 0, needed = 0, order = 0, m2 = 0, boxes = 0;
+  model.groups.forEach(g => {
+    const n = g.full + g.tiles.length, o = Math.ceil(n*(1+st.margin/100)), a = o*g.tA/1e6;
+    posed += g.full + g.cuts.length; needed += n; order += o; m2 += a; if(g.box > 0) boxes += Math.ceil(a/g.box - 1e-9);
+  });
+  const pcs = model.all || model.pieces, cuts = pcs.filter(p => !p.full);
+  return {posed, needed, order, m2, boxes, cuts:cuts.length, thin:pcs.filter(p=>p.thin).length, vis:pcs.filter(p=>p.vis && p.vis.length).length,
+    reused:cuts.filter(p=>p.reused).length, minCut: cuts.length ? Math.min(...cuts.map(p=>p.minD)) : 0,
+    cost: model.cost || 0,
+    desc: (multiS() ? proj.surfaces.length + ' surfaces, ' : '') + st.zones.map(z => PATNAME[z.pattern] + ' ' + mmf(Math.max(z.a,z.b)) + '×' + mmf(Math.min(z.a,z.b))).join(' / ')};
+}
+function snapshotThumb(){
+  const keep = st.view; st.view = 'persp'; window.__thumb = true; draw(); window.__thumb = false;
+  const t = document.createElement('canvas'), w = 480, h = Math.round(w*cv.height/cv.width);
+  t.width = w; t.height = h; t.getContext('2d').drawImage(cv, 0, 0, w, h);
+  const url = t.toDataURL('image/jpeg', 0.78);
+  st.view = keep; draw();
+  return url;
+}
+function storeScen(k){
+  if(!model) return;
+  const m = metrics(), prev = scen[k];
+  const snap = JSON.parse(JSON.stringify(proj)); delete snap.photos;
+  scen[k] = {name: prev && prev.name ? prev.name : (k==='A' ? 'Scénario A' : 'Scénario B'), state: snap, metrics: m,
+    thumb: snapshotThumb(), date: new Date().toLocaleString('fr-FR', {dateStyle:'short', timeStyle:'short'})};
+  saveScen(); renderScen();
+}
+function applyState(o){
+  const keepView = st.view, photos = proj.photos, c = JSON.parse(JSON.stringify(o));
+  if(Array.isArray(c.surfaces)) proj = {surfaces: c.surfaces.map(normSurface), active: Math.min(c.active|0, c.surfaces.length-1), room: c.room || null, prices: c.prices || proj.prices || {}, photos};
+  else proj = {surfaces: [normSurface(c)], active: 0, room: null, prices: proj.prices || {}, photos};
+  Object.keys(sCache).forEach(k => delete sCache[k]);
+  st = proj.surfaces[proj.active]; st.view = keepView;
+  pick = -1; rpick = false; fpick = false; syncSurfaces();
+  syncGlobal(); syncZone(); syncRes(); syncPlinth(); syncFolds(); save(); compute();
+}
+function renderScen(){
+  ['A','B'].forEach(k => {
+    const c = scen[k], el = $('card' + k);
+    if(!c){ el.innerHTML = `<span class="tag">${k}</span><div class="empty">Aucun scénario enregistré.</div><div class="btns"><button type="button" class="btn primary" data-sc="save" data-k="${k}">Enregistrer l'état actuel</button></div>`; return; }
+    el.innerHTML = `<span class="tag">${k}</span><img src="${c.thumb}" alt="Aperçu du scénario ${k}"><input type="text" data-k="${k}" value="${c.name.replace(/"/g,'&quot;')}" aria-label="Nom du scénario ${k}"><small style="color:var(--muted)">${c.metrics.desc}<br>Enregistré le ${c.date}</small>
+      <div class="btns"><button type="button" class="btn" data-sc="load" data-k="${k}">Charger</button><button type="button" class="btn" data-sc="save" data-k="${k}">Remplacer par l'actuel</button><button type="button" class="btn" data-sc="clear" data-k="${k}">Effacer</button></div>`;
+  });
+  renderCmpTable();
+}
+function renderCmpTable(){
+  const A = scen.A, B = scen.B, cur = metrics();
+  const left = A || B, right = A && B ? B : cur;
+  if(!left || !right){ $('cmpTable').classList.add('hide'); return; }
+  $('cmpHA').textContent = A ? A.name : B.name;
+  $('cmpHB').textContent = A && B ? B.name : 'État actuel';
+  const L = left.metrics, R = A && B ? B.metrics : cur;
+  const rows = [['Carreaux posés','posed',0,0],['Carreaux nécessaires','needed',0,1],['À commander','order',0,1],['Surface à commander (m²)','m2',2,1],['Cartons','boxes',0,1],
+    ['Pièces coupées','cuts',0,1],['Coupes fines','thin',0,1],['Coupes apparentes','vis',0,1],['Taillées dans les chutes','reused',0,-1],['Coupe la plus étroite (mm)','minCut',0,-1],['Coût estimé (€)','cost',2,1]];
+  $('cmpBody').innerHTML = rows.map(([lab,key,dec,dir]) => {
+    let a = L[key] || 0, b = R[key] || 0; 
+    const dlt = b - a, cls = !dir || Math.abs(dlt) < 1e-9 ? '' : (dlt*dir < 0 ? 'better' : 'worse');
+    return `<tr><td>${lab}</td><td class="n">${fmt(a,dec)}</td><td class="n">${fmt(b,dec)}</td><td class="n ${cls}">${Math.abs(dlt) < 1e-9 ? '=' : (dlt > 0 ? '+' : '') + fmt(dlt,dec)}</td></tr>`;
+  }).join('');
+  $('cmpTable').classList.remove('hide');
+}
+document.querySelector('.cmp').addEventListener('click', e => {
+  const b = e.target.closest('[data-sc]'); if(!b) return;
+  const k = b.dataset.k;
+  if(b.dataset.sc === 'save') storeScen(k);
+  else if(b.dataset.sc === 'load' && scen[k]) applyState(scen[k].state);
+  else if(b.dataset.sc === 'clear'){ scen[k] = null; saveScen(); renderScen(); }
+});
+document.querySelector('.cmp').addEventListener('input', e => { const t = e.target.closest('input[data-k]'); if(!t || !scen[t.dataset.k]) return; scen[t.dataset.k].name = t.value || t.dataset.k; saveScen(); const h = t.dataset.k==='A' ? 'cmpHA' : 'cmpHB'; if(scen.A && scen.B) $(h).textContent = scen[t.dataset.k].name; });
+
+/* ---------- surfaces et pièce ---------- */
+function syncSurfaces(){
+  $('surfBar').innerHTML = proj.surfaces.map((S,i) => `<button type="button" data-si="${i}" aria-pressed="${i===proj.active}">${S.name || ('Surface ' + (i+1))}</button>`).join('');
+  $('surfBar').classList.toggle('hide', proj.surfaces.length < 2);
+  $('sName').value = st.name || ''; $('sDel').disabled = proj.surfaces.length < 2;
+  const R = proj.room;
+  $('roomL').value = R ? R.L/10 : st.kind === 'floor' ? st.W/10 : st.W/10;
+  $('roomW').value = R ? R.l/10 : 200; $('roomH').value = R ? R.H/10 : 250; $('roomT').value = R ? R.T/10 : Math.min(st.H, 2400)/10;
+  document.querySelectorAll('[data-rs]').forEach(c => { if(R && R.surf) c.checked = R.surf[c.dataset.rs] != null; });
+  $('persBtns').classList.toggle('hide', st.view !== 'persp' || !proj.room);
+}
+function switchSurface(i){
+  if(i === proj.active || !proj.surfaces[i]) return;
+  const view = st.view;
+  proj.active = i; st = proj.surfaces[i]; st.view = view;
+  pick = -1; rpick = false; fpick = false;
+  syncSurfaces(); syncGlobal(); syncZone(); syncRes(); syncPlinth(); syncFolds(); save(); compute();
+}
+$('surfBar').addEventListener('click', e => { const b = e.target.closest('[data-si]'); if(b) switchSurface(+b.dataset.si); });
+$('sName').addEventListener('input', () => { st.name = $('sName').value.slice(0, 40) || ('Surface ' + (proj.active+1)); const b = $('surfBar').querySelector('[aria-pressed="true"]'); if(b) b.textContent = st.name; save(); });
+$('sAdd').addEventListener('click', () => {
+  const c = normSurface(JSON.parse(JSON.stringify(st))); c.name = 'Surface ' + (proj.surfaces.length+1); c.role = null;
+  proj.surfaces.push(c); switchSurface(proj.surfaces.length-1);
+});
+$('sDel').addEventListener('click', () => {
+  if(proj.surfaces.length < 2) return;
+  const i = proj.active; proj.surfaces.splice(i, 1);
+  if(proj.room && proj.room.surf){ Object.keys(proj.room.surf).forEach(k => { const v = proj.room.surf[k]; if(v === i) delete proj.room.surf[k]; else if(v > i) proj.room.surf[k] = v-1; }); if(!Object.keys(proj.room.surf).length) proj.room = null; }
+  Object.keys(sCache).forEach(k => delete sCache[k]);
+  proj.active = Math.max(0, i-1); st = proj.surfaces[proj.active];
+  syncSurfaces(); syncGlobal(); syncZone(); syncRes(); syncPlinth(); syncFolds(); save(); compute();
+});
+$('roomGo').addEventListener('click', () => {
+  const L = num('roomL')*10, l = num('roomW')*10, Hr = num('roomH')*10, T = Math.min(num('roomT')*10, Hr);
+  if(!(L > 0 && l > 0 && Hr > 0 && T > 0)){ $('roomHint').textContent = 'Renseignez longueur, largeur et hauteurs.'; return; }
+  const want = {}; document.querySelectorAll('[data-rs]').forEach(c => want[c.dataset.rs] = c.checked);
+  const tpl = JSON.parse(JSON.stringify(st));
+  const R = proj.room || {surf:{}}; R.L = L; R.l = l; R.H = Hr; R.T = T; R.surf = R.surf || {};
+  const names = {A:'Mur A', B:'Mur B', C:'Mur C', D:'Mur D', F:'Sol'};
+  ['A','B','C','D','F'].forEach(k => {
+    let i = R.surf[k];
+    if(!want[k]){ return; }
+    if(i == null || !proj.surfaces[i]){
+      if(proj.surfaces.length === 1 && !proj.room && !proj.surfaces[0].role){ i = 0; }
+      else { proj.surfaces.push(normSurface(JSON.parse(JSON.stringify(tpl)))); i = proj.surfaces.length-1; proj.surfaces[i].res = []; proj.surfaces[i].folds = []; proj.surfaces[i].plinth = {len:0, h:80, zone:0}; }
+      R.surf[k] = i;
+      const S = proj.surfaces[i]; S.name = names[k]; S.role = k;
+      if(k === 'F'){ S.kind = 'floor'; S.zones = S.zones.map(z => Object.assign({}, z, {unit:'rest'})).slice(0,1); S.res = (S.res || []).filter(r => r.type === 'tub' || r.type === 'trap'); }
+      else S.kind = 'wall';
+    }
+    const S = proj.surfaces[i];
+    if(k === 'F'){ S.W = L; S.H = l; } else { S.W = (k === 'A' || k === 'C') ? L : l; S.H = T; }
+  });
+  Object.keys(R.surf).forEach(k => { if(!want[k]) delete R.surf[k]; });
+  proj.room = Object.keys(R.surf).length ? R : null;
+  Object.keys(sCache).forEach(k => delete sCache[k]);
+  st = proj.surfaces[proj.active];
+  $('roomHint').textContent = 'Pièce de ' + cm(L) + ' × ' + cm(l) + ' cm, murs carrelés sur ' + cm(T) + ' cm. Choisissez une surface en haut du plan pour la régler.';
+  persMode = 'room';
+  syncSurfaces(); syncGlobal(); syncZone(); syncRes(); syncPlinth(); syncFolds(); save(); compute();
+});
+document.querySelectorAll('[data-pm]').forEach(b => b.addEventListener('click', () => {
+  persMode = b.dataset.pm;
+  const p = CAMS[(proj.room && persMode==='room') ? 'room' : st.kind==='floor' ? 'floor' : 'wall'].biais; cam = {yaw:p[0], pitch:p[1], dist:p[2]};
+  syncGlobal(); draw();
+}));
+
+/* ---------- photo de carreau ---------- */
+function prunePhotos(){
+  const used = new Set();
+  proj.surfaces.forEach(S => S.zones.forEach(z => { if(z.photo) used.add(z.photo); }));
+  ['A','B'].forEach(k => { const c = scen[k]; if(c && c.state && c.state.surfaces) c.state.surfaces.forEach(S => (S.zones || []).forEach(z => { if(z.photo) used.add(z.photo); })); });
+  Object.keys(proj.photos).forEach(id => { if(!used.has(id)) delete proj.photos[id]; });
+}
+function usePhotoBlob(f){
+  if(!f || !/^image\//.test(f.type || 'image/')){ $('phMsg').textContent = 'Ce fichier n\u2019est pas une image.'; return; }
+  $('phMsg').textContent = 'Chargement de la photo…';
+  const rd = new FileReader();
+  rd.onerror = () => { $('phMsg').textContent = 'Lecture de l\u2019image impossible.'; };
+  rd.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const m = 640, k = Math.min(1, m/Math.max(im.width, im.height));
+      const c = document.createElement('canvas'); c.width = Math.round(im.width*k); c.height = Math.round(im.height*k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      const id = 'ph' + uid(); proj.photos[id] = c.toDataURL('image/jpeg', 0.84);
+      cur().photo = id; prunePhotos(); syncZone(); save(); draw();
+      $('phMsg').textContent = 'Photo appliquée à la zone ' + (st.sel+1) + '.';
+    };
+    im.onerror = () => { $('phMsg').textContent = 'Format d\u2019image non lu par le navigateur (essayez JPEG ou PNG).'; };
+    im.src = rd.result;
+  };
+  rd.readAsDataURL(f);
+}
+$('phFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if(f) usePhotoBlob(f); e.target.value = ''; });
+$('phPick').addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('phFile').click(); } });
+const pasteZone = $('phPaste'), pasteTxt = pasteZone.textContent;
+pasteZone.addEventListener('paste', e => {
+  e.preventDefault();
+  const items = (e.clipboardData && e.clipboardData.items) ? [...e.clipboardData.items] : [];
+  const it = items.find(i => i.type && i.type.startsWith('image/'));
+  if(it){ usePhotoBlob(it.getAsFile()); }
+  else { $('phMsg').textContent = 'Aucune image dans le presse-papiers. Dans Photos, utilisez « Copier » sur l\u2019image puis recollez ici.'; }
+  pasteZone.textContent = pasteTxt; pasteZone.blur();
+});
+pasteZone.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(f) usePhotoBlob(f); });
+pasteZone.addEventListener('dragover', e => e.preventDefault());
+pasteZone.addEventListener('input', () => { pasteZone.textContent = pasteTxt; });
+$('phDel').addEventListener('click', () => { cur().photo = null; prunePhotos(); syncZone(); save(); draw(); });
+$('phRot').addEventListener('change', () => { cur().photoRot = $('phRot').checked; save(); draw(); });
+
+/* ---------- prix ---------- */
+$('shopBody').addEventListener('input', e => {
+  const t = e.target.closest('[data-price]'); if(!t) return;
+  const v = parseFloat(String(t.value).replace(',', '.'));
+  if(v > 0) proj.prices[t.dataset.price] = v; else delete proj.prices[t.dataset.price];
+  save();
+  if(!model) return;
+  const items = shoppingItems(model.groups, model.glueAll || []); let total = 0;
+  const rows = $('shopBody').querySelectorAll('tr');
+  items.forEach((it, i) => { const pr = proj.prices[it.key], tt = pr > 0 ? pr*it.mult : 0; total += tt; if(rows[i]) rows[i].lastElementChild.textContent = tt ? fmt(tt,2) + ' €' : '–'; });
+  $('shopTotal').textContent = total ? fmt(total,2) + ' €' : '–'; model.cost = total;
+  if(typeof renderCmpTable === 'function') renderCmpTable();
+});
+
+let rafD = 0;
+const redraw = () => { cancelAnimationFrame(rafD); rafD = requestAnimationFrame(draw); };
+new ResizeObserver(redraw).observe(wrap);
+window.addEventListener('resize', redraw);
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw); }catch(e){}
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+
+loadPal(); load(); syncSurfaces(); { const p = CAMS[st.kind==='floor'?'floor':'wall'].biais; cam = {yaw:p[0], pitch:p[1], dist:p[2]}; } syncGlobal(); syncZone(); syncRes(); syncPlinth(); syncFolds(); loadScen(); $('optGoal').value = st.optGoal || 'thin'; compute(); renderScen();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+legacy/
+docs/
+dist/
+node_modules/
+playwright-report/
+test-results/
+package-lock.json
+tests/parity/fixtures/
+*.md
