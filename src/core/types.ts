@@ -216,6 +216,24 @@ export interface Piece {
   m2PerBox: number;
 }
 
+/** Pièce avant attribution de couleur et de produit (sortie de buildZone, tableaux, plinthes). */
+export type RawPiece = Omit<Piece, 'surface' | 'color' | 'key' | 'label' | 'm2PerBox'>;
+
+/** Alertes de calcul d'une surface ; le texte est produit par l'interface. */
+export type SurfaceWarning =
+  | { code: 'zones-overflow'; amount: number }
+  | { code: 'zones-gap'; amount: number }
+  | { code: 'reveal-pattern'; opening: number }
+  | { code: 'plinth-pattern' }
+  | { code: 'plinth-too-high' };
+
+/** Erreur bloquante d'une surface. */
+export type SurfaceError =
+  | { code: 'invalid-surface' }
+  | { code: 'no-zone' }
+  | { code: 'invalid-tile'; zone: number }
+  | { code: 'too-many-tiles'; estimate: number };
+
 export interface CutTile {
   n: number;
   /** Indices des pièces taillées dans ce carreau. */
