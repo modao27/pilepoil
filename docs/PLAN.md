@@ -92,9 +92,6 @@ Règles pour toutes les phases :
   réalisable sur téléphone sans aide ; 60 i/s en 3D pour 30 m².
 
 ## Décisions en attente
-- Réglages par défaut du parquet (avant P1) : selon le type de lame, le mode de pose, ou les deux.
-  Proposition : le type de lame donne les valeurs, et une pose collée ou clouée désactive les alertes de
-  fractionnement et de passage (`docs/parquet/SPEC.md` §2).
 - Liaison plan ↔ surfaces carrelage (après P5).
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 
