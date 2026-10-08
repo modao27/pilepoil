@@ -1,6 +1,6 @@
 /** Textes des erreurs et alertes du moteur : ce qui ne va pas, puis comment corriger. */
 import type { ProductLabel, SurfaceError, SurfaceWarning } from '../../core';
-import type { Surface } from '../../../../state/model';
+import type { Surface } from '../../state/model';
 
 const n = (v: number, d = 1) => v.toLocaleString('fr-FR', { maximumFractionDigits: d });
 const OPENINGS = {

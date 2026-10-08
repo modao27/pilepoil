@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { OpeningType } from '../../../../state/model';
+  import type { OpeningType } from '../../state/model';
   import Button from '../../../../ui/components/Button.svelte';
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';

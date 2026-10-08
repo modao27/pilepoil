@@ -1,7 +1,8 @@
 /** Fonctions du contrat de module (docs/BOITE.md §2) propres au carrelage, hors écrans. */
 import { bbox } from '../../../core/geometry/polygon';
 import type { Plan } from '../../../core/plan/types';
-import type { Project, Tile } from '../../../state/model';
+import type { Project } from '../../../state/model';
+import type { Tile } from './model';
 import type { ShoppingGroup, ShoppingLine } from '../../../core/shopping/types';
 import type { Libraries, ModuleError, ModuleSummary } from '../../types';
 import { count, m2 } from '../../../ui/lib/format';

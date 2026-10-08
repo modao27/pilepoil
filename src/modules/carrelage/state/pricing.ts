@@ -1,5 +1,5 @@
 import type { ProjectResult, ShoppingItem } from '../core';
-import type { Tile } from '../../../state/model';
+import type { Tile } from './model';
 import type { CarrelageData, CarrelageProject } from './data';
 
 /**

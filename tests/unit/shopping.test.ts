@@ -11,7 +11,7 @@ import { itemPrice, projectCost } from '../../src/modules/carrelage/state/pricin
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { createRoomProject, createSingleSurfaceProject } from '../../src/modules/carrelage/state/templates';
 import { shoppingLabel } from '../../src/modules/carrelage/ui/lib/labels';
-import type { Tile } from '../../src/state/model';
+import type { Tile } from '../../src/modules/carrelage/state/model';
 import { consolidate, parsePrice, toCsv } from '../../src/ui/lib/shopping';
 
 const priced = createTile({ name: 'Grès 60 × 30', pricePerM2: 32.5 });

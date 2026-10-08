@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RoomWallKey } from '../../../../state/model';
+  import type { RoomWallKey } from '../../state/model';
   import Button from '../../../../ui/components/Button.svelte';
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import Dialog from '../../../../ui/components/Dialog.svelte';

@@ -3,10 +3,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { carrelageView } from '../../src/modules/carrelage/state/data';
 import { newId } from '../../src/modules/carrelage/state/factories';
 import { openDb, type Db } from '../../src/storage/db';
-import { EMPTY_STORAGE } from '../../src/storage/legacy/convert';
-import { autoImportLegacy, importLegacy } from '../../src/storage/legacy/import';
-import { getPhoto, getPref, getProject, listItems, listProjects, listScenarios } from '../../src/storage/repo';
-import type { Tile } from '../../src/state/model';
+import { EMPTY_STORAGE } from '../../src/modules/carrelage/storage/legacy/convert';
+import { autoImportLegacy, importLegacy } from '../../src/modules/carrelage/storage/legacy/import';
+import { getPhoto, getPref, getProject, listItems, listProjects } from '../../src/storage/repo';
+import { listScenarios } from '../../src/modules/carrelage/storage/scenarios';
+import type { Tile } from '../../src/modules/carrelage/state/model';
 
 const listTiles = async (db: Db) => (await listItems(db, 'tiles')) as Tile[];
 

@@ -7,9 +7,11 @@ import { carrelageView, dataOf, withCarrelage } from '../../src/modules/carrelag
 import { createTile } from '../../src/modules/carrelage/state/factories';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import type { ToolModule } from '../../src/modules/types';
-import type { Project, Scenario } from '../../src/state/model';
+import type { Project } from '../../src/state/model';
+import type { Scenario } from '../../src/modules/carrelage/state/model';
 import { reduceProject, type ProjectAction } from '../../src/state/project';
-import { FutureVersionError, migrateProject, migrateScenario } from '../../src/storage/migrations';
+import { FutureVersionError, migrateProject } from '../../src/storage/migrations';
+import { migrateScenario } from '../../src/modules/carrelage/storage/scenarios';
 import { V1_ROOM, V1_SCENARIO, V1_WALL } from './fixtures/v1';
 
 describe('migration v1 → v2 (documents figés)', () => {

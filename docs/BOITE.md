@@ -53,7 +53,15 @@ export interface ToolModule<Data, Spec, Result> {
     editor: () => Promise<Component>;
     results: () => Promise<Component>;
     worksite?: () => Promise<Component>;       // mode chantier
+    routes?: ModuleRoute[];                    // écrans propres sous #/p/:id/m/<id>/…
+    create?: () => Promise<Component>;         // #/new : assistant de création
+    card?: () => Promise<Component>;           // carte du projet sur l'accueil
+    settings?: () => Promise<Component>;       // section des Réglages
   };
+  /** Démarrage, base ouverte, avant le chargement des projets (import de données…). Facultatif. */
+  start?(db: Db): Promise<void>;
+  /** Photos utilisées hors des bibliothèques (scénarios…), gardées au ramassage. Facultatif. */
+  usedPhotos?(db: Db): Promise<Id[]>;
   /** Bibliothèque de produits propre au module (carreaux, lames…). Facultatif. */
   library?: LibraryDefinition;
 }
@@ -75,9 +83,11 @@ Précisions (décidées le 2026-10-08) :
 - `screens` ne couvre pas tous les écrans du carrelage (pièce 3D, comparaison, assistant, fiche carreau) :
   le contrat doit permettre à un module de déclarer ses propres routes sous `#/p/:id/m/<id>/…`. À fixer
   en écrivant `types.ts`.
-- Pendant S1 seulement, la coquille (`ui`, `storage`) peut importer `modules/carrelage/index.ts`, jamais un
-  fichier interne du module. Une règle ESLint l'impose ; les tests peuvent importer les internes.
-  Ces imports disparaissent en S2–S3 au profit du registre.
+- Depuis S3, la coquille ne voit les modules que par `modules/registry.ts` (modules et bibliothèques),
+  `modules/types.ts` et `modules/engines.ts` (worker). Une règle ESLint l'impose ; les tests peuvent importer
+  les internes. Le magasin `scenarios`, l'import legacy et les types du carrelage sont dans le module.
+- Bibliothèques : déclarées par les modules (`LibraryDefinition`, avec `templates` facultatifs), tenues par la
+  coquille (chargement, migration, modèles types posés une seule fois, routes `#/library/<id>`).
 
 ## 3. Plan commun
 
@@ -305,6 +315,8 @@ seul le parquet s'en sert au début.
 | 2026-10-08 | Magasin `scenarios` : déplacé dans le module carrelage en S3 (avec le ramassage des photos) | §4 |
 | 2026-10-08 | Achats : quantité = quantité sur laquelle porte le prix (m² pour un carreau), coût identique au carrelage | §7 |
 | 2026-10-08 | Contrat : `priceAction` (prix modifiés par l'écran Achats via le module) | §2, §7 |
+| 2026-10-08 | Coquille indépendante du carrelage dès S3 (contrat : `start`, `usedPhotos`, `screens.create/card/settings`) | §2 |
+| 2026-10-08 | Bibliothèques tenues par la coquille ; parquet créé avec sa seule bibliothèque de lames avant P1 | §2, S3 |
 | 2026-10-08 | Éditeur de plan en SVG ; activer un module = action `project/module/add` (données créées hors réducteur) | §5, §9 |
 | 2026-10-08 | Murs avec identifiant stable et épaisseur propre ; ouvertures rattachées à l'`id` du mur | §3 |
 | 2026-10-08 | Épaisseur de mur par défaut : 72 mm (cloison placo 72/48, BA13) | §3, §4 |

@@ -1,8 +1,9 @@
 /** Objets neufs avec les valeurs par défaut de legacy. */
 import { OPENING_DEFAULTS } from '../core';
-import type { Corner, Id, Opening, OpeningType, Surface, Tile, TileShape, Zone } from '../../../state/model';
+import type { Id } from '../../../state/model';
+import type { Corner, Opening, OpeningType, Surface, Tile, TileShape, Zone } from './model';
 import { DEFAULT_SETTINGS, type CarrelageProject } from './data';
-import { TILE_SCHEMA } from '../../../state/model';
+import { TILE_SCHEMA } from './model';
 
 export function newId(): Id {
   return crypto.randomUUID();
@@ -10,10 +11,6 @@ export function newId(): Id {
 
 export const DEFAULT_GROUT = '#8f8a83';
 export const DEFAULT_COLOR_B = '#3f5a6b';
-export const DEFAULT_PALETTE = {
-  tiles: ['#d8cfc2', '#f1ede6', '#3f5a6b', '#2f2f31'],
-  grouts: ['#f2f0eb', '#c9c4bb', '#8f8a83', '#3d3d3f'],
-};
 
 const fmtCm = (mm: number) => (mm / 10).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
 

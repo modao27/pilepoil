@@ -5,7 +5,7 @@
   import Screen from '../../../../ui/components/Screen.svelte';
   import TileForm from '../components/TileForm.svelte';
   import { createTile } from '../../state/factories';
-  import type { Tile } from '../../../../state/model';
+  import type { Tile } from '../../state/model';
   import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
   import { go } from '../../../../ui/lib/router.svelte';

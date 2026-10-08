@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Tile } from '../../../../state/model';
+  import type { Tile } from '../../state/model';
   import { app } from '../../../../ui/lib/app.svelte';
 
   let { tile, size = 48 }: { tile: Tile; size?: number } = $props();

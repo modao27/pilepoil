@@ -2,7 +2,7 @@
   /** Assistant de création : type → dimensions → carreau → motif, aperçu en direct à chaque étape. */
   import { PATTERNS, type PatternId, type ProjectResult } from '../../core';
   import { createTile, tileName } from '../../state/factories';
-  import type { RoomWallKey, Tile } from '../../../../state/model';
+  import type { RoomWallKey, Tile } from '../../state/model';
   import type { CarrelageProject } from '../../state/data';
   import { projectFromV1 } from '../../../../storage/migrations';
   import { toProjectSpec } from '../../state/selectors';

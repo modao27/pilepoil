@@ -1,7 +1,7 @@
 import type { LibraryItem } from '../modules/types';
-import type { Id, Photo, Pref, PrefKey, PrefValue, Project, Scenario } from '../state/model';
+import type { Id, Photo, Pref, PrefKey, PrefValue, Project } from '../state/model';
 import type { Db } from './db';
-import { migrateProject, migrateScenario } from './migrations';
+import { migrateProject } from './migrations';
 
 /* ---------- projets ---------- */
 
@@ -34,7 +34,6 @@ export async function deleteProject(db: Db, id: Id): Promise<void> {
   const scen = tx.objectStore('scenarios');
   for (const key of await scen.index('projectId').getAllKeys(id)) await scen.delete(key);
   await tx.done;
-  await collectPhotos(db);
 }
 
 /* ---------- bibliothèques de produits (carreaux, lames) ---------- */
@@ -59,7 +58,6 @@ export async function putItem(db: Db, store: LibraryStore, item: LibraryItem): P
 
 export async function deleteItem(db: Db, store: LibraryStore, id: Id): Promise<void> {
   await db.delete(store, id);
-  await collectPhotos(db);
 }
 
 /* ---------- photos ---------- */
@@ -72,15 +70,14 @@ export function getPhoto(db: Db, id: Id): Promise<Photo | undefined> {
   return db.get('photos', id);
 }
 
-/** Supprime les photos qu'aucun carreau ni scénario ne référence. Renvoie le nombre supprimé. */
-export async function collectPhotos(db: Db): Promise<number> {
-  const used = new Set<Id>();
+/**
+ * Supprime les photos qu'aucun élément de bibliothèque ne référence, sauf celles de `keep` (photos utilisées
+ * par les modules : scénarios…). Renvoie le nombre supprimé.
+ */
+export async function collectPhotos(db: Db, keep: Iterable<Id> = []): Promise<number> {
+  const used = new Set<Id>(keep);
   for (const s of LIBRARY_STORES)
     for (const t of (await db.getAll(s)) as LibraryItem[]) if (t.photoId) used.add(t.photoId);
-  for (const s of await db.getAll('scenarios')) {
-    if (s.thumbnailId) used.add(s.thumbnailId);
-    for (const t of s.snapshot.tiles) if (t.photoId) used.add(t.photoId);
-  }
   let n = 0;
   for (const key of await db.getAllKeys('photos')) {
     if (!used.has(key)) {
@@ -89,36 +86,6 @@ export async function collectPhotos(db: Db): Promise<number> {
     }
   }
   return n;
-}
-
-/* ---------- scénarios ---------- */
-
-export async function listScenarios(db: Db, projectId: Id): Promise<Scenario[]> {
-  const all = await db.getAllFromIndex('scenarios', 'projectId', projectId);
-  return all
-    .map((raw) => {
-      const { doc, changed } = migrateScenario(raw);
-      if (changed) void db.put('scenarios', doc);
-      return doc;
-    })
-    .sort((a, b) => a.slot.localeCompare(b.slot));
-}
-
-/** Un seul scénario par emplacement A/B : l'ancien est remplacé. */
-export async function saveScenario(db: Db, s: Scenario): Promise<void> {
-  const old = (await db.getAllFromIndex('scenarios', 'projectId', s.projectId)).filter(
-    (o) => o.slot === s.slot && o.id !== s.id,
-  );
-  const tx = db.transaction('scenarios', 'readwrite');
-  for (const o of old) await tx.store.delete(o.id);
-  await tx.store.put(s);
-  await tx.done;
-  if (old.length) await collectPhotos(db);
-}
-
-export async function deleteScenario(db: Db, id: Id): Promise<void> {
-  await db.delete('scenarios', id);
-  await collectPhotos(db);
 }
 
 /* ---------- préférences ---------- */

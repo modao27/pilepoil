@@ -1,7 +1,13 @@
 /** Types legacy pour la parité ; le format lui-même est dans src/storage/legacy/format.ts. */
-import type { LegacyFold, LegacyOpening, LegacyRoom, LegacySurface, LegacyZone } from '../../src/storage/legacy/format';
+import type {
+  LegacyFold,
+  LegacyOpening,
+  LegacyRoom,
+  LegacySurface,
+  LegacyZone,
+} from '../../src/modules/carrelage/storage/legacy/format';
 
-export type { LegacyProject, LegacySurface, LegacyZone } from '../../src/storage/legacy/format';
+export type { LegacyProject, LegacySurface, LegacyZone } from '../../src/modules/carrelage/storage/legacy/format';
 
 /** Projet partiel accepté par `applyState` (les valeurs manquantes prennent les défauts legacy). */
 export interface LegacyInput {

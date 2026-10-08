@@ -8,6 +8,7 @@ import type { Component, Snippet } from 'svelte';
 import type { Plan } from '../core/plan/types';
 import type { ShoppingLine } from '../core/shopping/types';
 import type { Id, Project } from '../state/model';
+import type { Db } from '../storage/db';
 
 /** 'carrelage', 'parquet'… Liste ouverte : ajouter un module ne touche pas aux types communs. */
 export type ModuleId = string;
@@ -134,6 +135,12 @@ export interface ModuleScreens {
   worksite?: ScreenLoader;
   /** Autres écrans du module (pièce 3D, comparaison…). */
   routes?: ModuleRoute[];
+  /** #/new : assistant de création d'un projet avec cet outil. */
+  create?: ScreenLoader<Record<string, never>>;
+  /** Carte d'un projet sur l'accueil (vignette, chiffres), si le projet a cet outil. */
+  card?: ScreenLoader<{ project: Project }>;
+  /** Section du module dans les Réglages (données, import…). */
+  settings?: ScreenLoader<Record<string, never>>;
 }
 
 /** Face application : état, sélecteurs, écrans. */
@@ -167,6 +174,10 @@ export interface ToolModule<
   migrations: Record<number, (doc: unknown) => unknown>;
   /** Écrans, chargés à la demande. */
   screens: ModuleScreens;
+  /** Démarrage, base ouverte, avant le chargement des projets (import de données…). Facultatif. */
+  start?(db: Db): Promise<void>;
+  /** Photos utilisées hors des bibliothèques (scénarios…), gardées au ramassage. Facultatif. */
+  usedPhotos?(db: Db): Promise<Id[]>;
   /** Bibliothèque de produits propre au module (carreaux, lames…). Facultatif. */
   library?: LibraryDefinition;
 }

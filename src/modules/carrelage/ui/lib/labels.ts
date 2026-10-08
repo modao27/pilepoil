@@ -13,7 +13,7 @@ import {
   type ShoppingItem,
   type ZoneGlue,
 } from '../../core';
-import type { Tile } from '../../../../state/model';
+import type { Tile } from '../../state/model';
 import type { CarrelageProject } from '../../state/data';
 import { productName } from './messages';
 

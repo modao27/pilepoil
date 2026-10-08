@@ -64,8 +64,9 @@ tests/               unit/, parity/ (carrelage), browser/, e2e/
 - Les alertes du moteur sont des codes ; le texte est produit par l'interface (`ui/lib/messages.ts` ou celui
   du module).
 - Ajouter un module ne modifie que : `modules/registry.ts`, le module lui-même, et si besoin une migration.
-- Pendant S1 seulement, la coquille peut importer `modules/carrelage/index.ts` (jamais ses fichiers
-  internes) ; les tests peuvent importer les internes d'un module.
+- La coquille (`core`, `state`, `storage`, `render`, `ui`, `workers`) ne voit les modules que par
+  `modules/registry.ts`, `modules/types.ts` et `modules/engines.ts` (règle ESLint) ; les tests peuvent importer
+  les internes d'un module.
 - Code commun extrait au moment où un second module en a besoin, pas avant (`docs/BOITE.md` §10).
 
 ## Conventions

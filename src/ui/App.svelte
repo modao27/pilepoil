@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { ui } from '../modules/carrelage';
   import Button from './components/Button.svelte';
   import EmptyState from './components/EmptyState.svelte';
   import Screen from './components/Screen.svelte';
   import ToastHost from './components/ToastHost.svelte';
-  import { libraryById, moduleById } from '../modules/registry';
+  import { libraryById, moduleById, modules } from '../modules/registry';
   import LibraryNav from './components/LibraryNav.svelte';
   import { app } from './lib/app.svelte';
   import { matchScreen } from './lib/moduleRoutes';
@@ -15,6 +14,8 @@
   import Settings from './screens/Settings.svelte';
 
   const route = $derived(router.route);
+  /** Assistant de création (#/new) : celui du premier outil qui en a un. */
+  const creator = modules.find((m) => m.screens.create);
   const screen = $derived.by(() => {
     if (route.name !== 'module') return null;
     const m = moduleById(route.module);
@@ -36,7 +37,7 @@
 {:else if route.name === 'home'}
   <Home />
 {:else if route.name === 'new'}
-  {#await ui.Wizard() then { default: Wizard }}<Wizard />{/await}
+  {#await creator?.screens.create?.() then Create}{#if Create}<Create />{/if}{/await}
 {:else if route.name === 'library'}
   {#await libraryById(route.lib)?.screens.list() then LibraryList}{#if LibraryList}<LibraryList
         itemId={null}

@@ -3,14 +3,9 @@
   import Screen from '../components/Screen.svelte';
   import Segmented from '../components/Segmented.svelte';
   import { app, type Theme } from '../lib/app.svelte';
-  import { ui } from '../../modules/carrelage';
+  import { libraries, modules } from '../../modules/registry';
   import { count } from '../lib/format';
   import { APP_VERSION, pwa } from '../lib/pwa.svelte';
-  import { toast } from '../lib/toasts.svelte';
-
-  let input: HTMLInputElement;
-  let status = $state('');
-  let busy = $state(false);
 
   let appStatus = $state('');
   let checking = $state(false);
@@ -20,20 +15,6 @@
     appStatus = 'Recherche en cours…';
     appStatus = await pwa.check();
     checking = false;
-  }
-
-  async function importFile(file: File | undefined) {
-    if (!file) return;
-    busy = true;
-    status = 'Import en cours…';
-    try {
-      status = await app.importLegacyFile(file);
-      toast(status);
-    } catch (e) {
-      status = e instanceof Error ? e.message : 'Import impossible.';
-    } finally {
-      busy = false;
-    }
   }
 </script>
 
@@ -57,31 +38,12 @@
     <section aria-labelledby="s-data">
       <h2 id="s-data">Données</h2>
       <p>
-        {count(app.projects.length, 'projet', 'projets')} et {#await ui.state() then { carrelage }}{count(
-            carrelage.tiles.length,
-            'carreau',
-            'carreaux',
-          )}{/await}, enregistrés sur cet appareil uniquement.
+        {count(app.projects.length, 'projet', 'projets')}, enregistrés sur cet appareil uniquement. Bibliothèques :
+        {libraries.map((l) => `${l.label.toLowerCase()} ${app.libraries[l.id]?.length ?? 0}`).join(', ')}.
       </p>
-      <h3>Ancienne version</h3>
-      <p class="muted">
-        Dans l’ancienne version, touchez « Exporter mes données » en bas des résultats, puis choisissez le fichier
-        <code>calepinage-export-…json</code> ici.
-      </p>
-      <div>
-        <Button icon="upload" disabled={busy} onclick={() => input.click()}>Importer un fichier</Button>
-        <input
-          bind:this={input}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onchange={(e) => {
-            void importFile(e.currentTarget.files?.[0]);
-            e.currentTarget.value = '';
-          }}
-        />
-      </div>
-      <p class="status" role="status">{status}</p>
+      {#each modules.filter((m) => m.screens.settings) as m (m.id)}
+        {#await m.screens.settings!() then Section}<Section />{/await}
+      {/each}
     </section>
 
     <section aria-labelledby="s-app">

@@ -6,9 +6,16 @@ import {
   createTile,
   newId,
 } from '../../src/modules/carrelage/state/factories';
-import { migrateProject, migrateScenario, projectFromV1 } from '../../src/storage/migrations';
+import { migrateProject, projectFromV1 } from '../../src/storage/migrations';
+import {
+  listScenarios,
+  migrateScenario,
+  saveScenario,
+  scenarioPhotos,
+} from '../../src/modules/carrelage/storage/scenarios';
 import { V1_ROOM, V1_SCENARIO } from '../unit/fixtures/v1';
-import type { Photo, Project, Scenario, Tile } from '../../src/state/model';
+import type { Photo, Project } from '../../src/state/model';
+import type { Scenario, Tile } from '../../src/modules/carrelage/state/model';
 import { BOARD_TEMPLATES } from '../../src/modules/parquet/core/board';
 import { DB_VERSION, openDb, type Db } from '../../src/storage/db';
 import {
@@ -19,13 +26,11 @@ import {
   getPref,
   getProject,
   listProjects,
-  listScenarios,
   listItems,
   libraryStore,
   putItem,
   saveProject,
   savePhoto,
-  saveScenario,
   setPref,
 } from '../../src/storage/repo';
 
@@ -112,7 +117,7 @@ describe('base IndexedDB', () => {
     await putItem(db, 'tiles', t);
     const p = createProject([createSurface(t.id)]);
     await saveScenario(db, scenario(p, 'A', { thumbnailId: thumb.id }));
-    expect(await collectPhotos(db)).toBe(1);
+    expect(await collectPhotos(db, await scenarioPhotos(db))).toBe(1);
     const back = await getPhoto(db, kept.id);
     expect(back!.blob).toBeInstanceOf(Blob);
     expect(await back!.blob.text()).toBe('x');
@@ -157,7 +162,7 @@ describe('base IndexedDB', () => {
     expect(await listScenarios(db, 'p-mur')).toEqual([migrateScenario(V1_SCENARIO).doc]);
     await new Promise((r) => setTimeout(r, 50));
     expect(await db.get('projects', 'p-sdb')).toEqual(migrateProject(V1_ROOM).doc);
-    expect((await db.get('scenarios', 'sc1'))!.schemaVersion).toBe(2);
+    expect(((await db.get('scenarios', 'sc1')) as Scenario).schemaVersion).toBe(2);
   });
 
   it('préférences', async () => {

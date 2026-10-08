@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeProject, type ProjectResult } from '../../src/modules/carrelage/core';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
-import { convertLegacy, EMPTY_STORAGE, readLegacyProject } from '../../src/storage/legacy/convert';
+import { convertLegacy, EMPTY_STORAGE, readLegacyProject } from '../../src/modules/carrelage/storage/legacy/convert';
 import { expectSame } from './compare';
 import configs from './configs';
 import fixtureRaw from './fixtures/legacy-results.json?raw';

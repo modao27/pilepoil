@@ -1,5 +1,6 @@
 import type { ProjectSpec, RoomSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../core';
-import type { Edges, Id, Surface, Tile, Zone } from '../../../state/model';
+import type { Id } from '../../../state/model';
+import type { Edges, Surface, Tile, Zone } from './model';
 import type { CarrelageProject } from './data';
 
 /** Correspondance entre indices du moteur et identifiants du modèle. */

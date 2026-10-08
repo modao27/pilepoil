@@ -1,12 +1,20 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction, type StoreNames } from 'idb';
 import type { LibraryItem } from '../modules/types';
-import type { Photo, Pref, PrefKey, Project, Scenario, Tile } from '../state/model';
+import type { Photo, Pref, PrefKey, Project } from '../state/model';
+
+/** Document d'un module rattaché à un projet (scénarios du carrelage) : typé par son module. */
+export interface ProjectRecord {
+  id: string;
+  projectId: string;
+}
 
 export interface CalepinageDB extends DBSchema {
   projects: { key: string; value: Project; indexes: { updatedAt: number } };
-  tiles: { key: string; value: Tile; indexes: { name: string; updatedAt: number } };
+  /** Bibliothèque de carreaux du carrelage (typée par le module). */
+  tiles: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
   photos: { key: string; value: Photo };
-  scenarios: { key: string; value: Scenario; indexes: { projectId: string } };
+  /** Scénarios A/B du carrelage : supprimés avec leur projet. */
+  scenarios: { key: string; value: ProjectRecord; indexes: { projectId: string } };
   prefs: { key: PrefKey; value: Pref };
   /** Bibliothèque de lames du parquet (le type précis arrive avec le module, P1). */
   boards: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };

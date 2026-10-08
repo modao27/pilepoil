@@ -1,7 +1,9 @@
-import type { Id, Photo, Tile } from '../../state/model';
-import type { Db } from '../db';
-import { getPref, putItem, saveProject, saveScenario, savePhoto, setPref } from '../repo';
-import { migrateProject, migrateScenario } from '../migrations';
+import type { Id, Photo } from '../../../../state/model';
+import type { Tile } from '../../state/model';
+import type { Db } from '../../../../storage/db';
+import { getPref, putItem, saveProject, savePhoto, setPref } from '../../../../storage/repo';
+import { migrateScenario, saveScenario } from '../scenarios';
+import { migrateProject } from '../../../../storage/migrations';
 import { convertLegacy } from './convert';
 import { LEGACY_EXPORT_FORMAT, LEGACY_KEYS, type LegacyStorage } from './format';
 
@@ -117,4 +119,11 @@ export async function importLegacy(db: Db, store: LegacyStorage, now = Date.now(
 export async function autoImportLegacy(db: Db, ls: Pick<Storage, 'getItem'>): Promise<ImportSummary | null> {
   if (await getPref(db, 'legacyImport')) return null;
   return importLegacy(db, readLocalStorage(ls));
+}
+
+/** Message après import : « Projet de l'ancienne version importé : 3 surfaces, 2 carreaux. » */
+export function importMessage(s: ImportSummary): string {
+  const parts = [`${s.surfaces} surface${s.surfaces > 1 ? 's' : ''}`, `${s.tiles} carreau${s.tiles > 1 ? 'x' : ''}`];
+  if (s.scenarios) parts.push(`${s.scenarios} scénario${s.scenarios > 1 ? 's' : ''}`);
+  return `Projet de l’ancienne version importé : ${parts.join(', ')}.`;
 }

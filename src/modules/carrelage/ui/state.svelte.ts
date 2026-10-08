@@ -2,10 +2,13 @@
  * État du module carrelage : bibliothèque de carreaux, calculs (worker), prix, scénarios A/B.
  * Les projets, préférences et photos restent dans l'état de la coquille (`app`).
  */
-import type { Id, Project, Scenario, Tile } from '../../../state/model';
-import { SCENARIO_SCHEMA } from '../../../state/model';
+import type { Id, Project } from '../../../state/model';
+import type { Scenario, Tile } from '../state/model';
+import { SCENARIO_SCHEMA } from '../state/model';
 import type { Db } from '../../../storage/db';
-import * as repo from '../../../storage/repo';
+import { toast } from '../../../ui/lib/toasts.svelte';
+import { autoImportLegacy, importMessage } from '../storage/legacy/import';
+import { deleteScenario, listScenarios, saveScenario } from '../storage/scenarios';
 import { app } from '../../../ui/lib/app.svelte';
 import { SupersededError } from '../../../workers/client';
 import type {
@@ -34,8 +37,18 @@ export class CarrelageState {
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   private cache = new Map<string, ProjectResult>();
 
-  async load(db: Db): Promise<void> {
+  /**
+   * Démarrage (avant le chargement des projets) : import automatique des données de l'ancienne version, une
+   * seule fois et seulement si elle a laissé des données sur cette origine.
+   */
+  async start(db: Db): Promise<void> {
     this.db = db;
+    try {
+      const imported = await autoImportLegacy(db, localStorage);
+      if (imported?.projectId) toast(importMessage(imported));
+    } catch {
+      // stockage legacy illisible : on continue sans import
+    }
   }
 
   /** Bibliothèque de carreaux, tenue par la coquille (`app.libraries.tiles`). */
@@ -136,7 +149,7 @@ export class CarrelageState {
   /* ---------- scénarios A/B ---------- */
 
   scenarios(projectId: Id): Promise<Scenario[]> {
-    return repo.listScenarios(this.db, projectId);
+    return listScenarios(this.db, projectId);
   }
 
   /** Enregistre l'état actuel du projet dans l'emplacement A ou B (copie figée avec ses carreaux). */
@@ -154,16 +167,17 @@ export class CarrelageState {
       thumbnailId: null,
       createdAt: Date.now(),
     };
-    await repo.saveScenario(this.db, s);
+    if (await saveScenario(this.db, s)) app.collectPhotos();
     return s;
   }
 
   async renameScenario(s: Scenario, name: string): Promise<void> {
-    await repo.saveScenario(this.db, { ...s, name });
+    await saveScenario(this.db, { ...s, name });
   }
 
   async deleteScenario(s: Scenario): Promise<void> {
-    await repo.deleteScenario(this.db, s.id);
+    await deleteScenario(this.db, s.id);
+    app.collectPhotos();
   }
 
   /**

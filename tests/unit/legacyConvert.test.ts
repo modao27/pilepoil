@@ -5,9 +5,14 @@ import {
   normSurface,
   parseFrDate,
   readLegacyProject,
-} from '../../src/storage/legacy/convert';
-import { LEGACY_EXPORT_FORMAT } from '../../src/storage/legacy/format';
-import { dataUrlToBlob, LegacyFileError, parseLegacyExport, readLocalStorage } from '../../src/storage/legacy/import';
+} from '../../src/modules/carrelage/storage/legacy/convert';
+import { LEGACY_EXPORT_FORMAT } from '../../src/modules/carrelage/storage/legacy/format';
+import {
+  dataUrlToBlob,
+  LegacyFileError,
+  parseLegacyExport,
+  readLocalStorage,
+} from '../../src/modules/carrelage/storage/legacy/import';
 
 const PNG = 'data:image/png;base64,iVBORw0KGgo=';
 const v3 = (o: unknown) => ({ ...EMPTY_STORAGE, 'calepinage-v3': JSON.stringify(o) });

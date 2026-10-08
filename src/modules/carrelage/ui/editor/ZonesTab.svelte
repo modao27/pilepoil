@@ -1,6 +1,6 @@
 <script lang="ts">
   import { pattern } from '../../core';
-  import type { Zone } from '../../../../state/model';
+  import type { Zone } from '../../state/model';
   import Button from '../../../../ui/components/Button.svelte';
   import ListReorder from '../../../../ui/components/ListReorder.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
