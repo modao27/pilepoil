@@ -56,7 +56,9 @@ tests/               unit/, parity/ (carrelage), browser/, e2e/
 - `core` et `modules/*/core` sont déterministes et sérialisables (JSON simple) pour passer par le worker.
 - Un module n'importe **jamais** un autre module. Ce qui sert à deux modules descend dans `src/core`,
   `src/render` ou `src/ui` (avec ses tests), et les tests de parité carrelage doivent rester verts.
-- Un module expose un seul point d'entrée (`modules/<id>/index.ts`) conforme au contrat de `docs/BOITE.md`.
+- Un module expose deux points d'entrée, un par face du contrat de `docs/BOITE.md` : `modules/<id>/index.ts`
+  (application, écrans chargés à la demande) et `modules/<id>/engine.ts` (moteur, importé seulement par
+  `modules/engines.ts`, donc par le worker).
 - L'UI ne calcule rien de métier : elle appelle le moteur via le worker et affiche.
 - Les rendus ne modifient pas l'état ; les interactions passent par des actions du store.
 - Les alertes du moteur sont des codes ; le texte est produit par l'interface (`ui/lib/messages.ts` ou celui

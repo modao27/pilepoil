@@ -27,7 +27,7 @@ Règles pour toutes les phases :
 - Worker : aiguillage par module (`docs/BOITE.md` §6), carrelage branché dessus.
 - Routes préfixées `#/p/:id/m/carrelage/…`, redirections depuis les anciennes.
 - Fini quand : aucun changement visible pour l'utilisateur, parité 100 %, tous les tests verts,
-  `src/modules/carrelage` n'est importé que via son `index.ts` (hors tests).
+  `src/modules/carrelage` n'est importé que via son `index.ts` (et `engine.ts` par `engines.ts`), hors tests.
 
 ### S2 — Modèle v2 et plan commun
 - Types du plan (`core/plan`), validation, réducteur, tests. Murs à identifiant stable et épaisseur
