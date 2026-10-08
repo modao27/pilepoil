@@ -5,3 +5,4 @@ test-results/
 .vite/
 *.local
 *.local.ts
+screenshots/

@@ -1,0 +1,88 @@
+/*
+ * Système de design « plan de chantier » (docs/UX.md).
+ * Papier bleu-gris, encre, cobalt pour l'action ; jaune / vert / rouge réservés aux statuts de coupe.
+ * Contrastes vérifiés AA : texte ≥ 4,5:1, bordures de champs et focus ≥ 3:1.
+ */
+:root {
+  color-scheme: light;
+  --paper: #e6ebee;
+  --sheet: #ffffff;
+  --ink: #15232c;
+  --muted: #5a6a74;
+  --line: #cdd5da;
+  /* bordure de champ : ≥ 3:1 sur --sheet et --paper (WCAG 1.4.11) */
+  --field-border: #7d8d97;
+  --accent: #2747c9;
+  --on-accent: #ffffff;
+  --accent-soft: #e3e8fb;
+  --cut: #f0be45;
+  --reuse: #7cc79a;
+  --thin: #d9472b;
+  /* texte d'erreur : --thin est trop clair pour du texte (4,4:1) */
+  --thin-ink: #b5361d;
+  --thin-soft: #fbe5e0;
+  --scrim: rgb(14 22 27 / 0.45);
+  --shadow: 0 8px 28px rgb(21 35 44 / 0.18), 0 1px 3px rgb(21 35 44 / 0.12);
+
+  --font: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-num: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+
+  --r-field: 8px;
+  --r-panel: 12px;
+  --touch: 44px;
+  --gutter: 16px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --dur: 160ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --paper: #0e161b;
+    --sheet: #1a262e;
+    --ink: #e4ebef;
+    --muted: #93a4ae;
+    --line: #2e3d47;
+    --field-border: #6b7e89;
+    --accent: #8299ff;
+    --on-accent: #0e161b;
+    --accent-soft: #24305a;
+    --thin-ink: #ff8a70;
+    --thin-soft: #3a1f1a;
+    --scrim: rgb(0 0 0 / 0.6);
+    --shadow: 0 8px 28px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #0e161b;
+  --sheet: #1a262e;
+  --ink: #e4ebef;
+  --muted: #93a4ae;
+  --line: #2e3d47;
+  --field-border: #6b7e89;
+  --accent: #8299ff;
+  --on-accent: #0e161b;
+  --accent-soft: #24305a;
+  --thin-ink: #ff8a70;
+  --thin-soft: #3a1f1a;
+  --scrim: rgb(0 0 0 / 0.6);
+  --shadow: 0 8px 28px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+  }
+}

@@ -1,6 +1,6 @@
 /** Objets neufs avec les valeurs par défaut de legacy. */
 import { OPENING_DEFAULTS } from '../core';
-import type { Corner, Id, Opening, OpeningType, Project, Surface, Tile, Zone } from './model';
+import type { Corner, Id, Opening, OpeningType, Project, Surface, Tile, TileShape, Zone } from './model';
 import { PROJECT_SCHEMA, TILE_SCHEMA } from './model';
 
 export function newId(): Id {
@@ -13,6 +13,16 @@ export const DEFAULT_PALETTE = {
   tiles: ['#d8cfc2', '#f1ede6', '#3f5a6b', '#2f2f31'],
   grouts: ['#f2f0eb', '#c9c4bb', '#8f8a83', '#3d3d3f'],
 };
+
+const fmtCm = (mm: number) => (mm / 10).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+
+/** Nom par défaut d'un carreau : « 60 × 30 cm », « Hexagone 20 cm »… */
+export function tileName(shape: TileShape, length: number, width: number): string {
+  if (shape === 'hex') return `Hexagone ${fmtCm(length)} cm`;
+  if (shape === 'octo') return `Octogone ${fmtCm(length)} cm`;
+  const dims = `${fmtCm(length)} × ${fmtCm(width)} cm`;
+  return shape === 'chevron' ? `Lame Hongrie ${dims}` : dims;
+}
 
 export function createTile(o: Partial<Tile> = {}, now = Date.now()): Tile {
   return {

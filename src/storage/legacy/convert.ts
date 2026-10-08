@@ -3,7 +3,7 @@
  * Aucun accès au stockage ici : les photos restent en dataURL, l'écriture est faite par import.ts.
  */
 import type { Metrics, OptimizerGoal, PatternId } from '../../core';
-import { newId } from '../../state/factories';
+import { newId, tileName } from '../../state/factories';
 import {
   PROJECT_SCHEMA,
   SCENARIO_SCHEMA,
@@ -142,15 +142,6 @@ function parse(s: string | null): unknown {
 const SHAPES: Partial<Record<string, TileShape>> = { hex: 'hex', octo: 'octo', chevron: 'chevron' };
 const MIX = { uni: 'solid', alt: 'alternate', rand: 'random' } as const;
 const GOALS: readonly OptimizerGoal[] = ['thin', 'tiles', 'bal', 'sym'];
-const fmtCm = (mm: number) => (mm / 10).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
-
-export function tileName(shape: TileShape, length: number, width: number): string {
-  if (shape === 'hex') return `Hexagone ${fmtCm(length)} cm`;
-  if (shape === 'octo') return `Octogone ${fmtCm(length)} cm`;
-  const dims = `${fmtCm(length)} × ${fmtCm(width)} cm`;
-  return shape === 'chevron' ? `Lame Hongrie ${dims}` : dims;
-}
-
 /** Clé de produit legacy (prix « tile|… ») du carreau rectangulaire principal d'une zone. */
 function rectTileKey(z: LegacyZone): string {
   return `rect|${Math.round(Math.max(z.a, z.b))}x${Math.round(Math.min(z.a, z.b))}||${z.c1.toLowerCase()}`;
