@@ -1,16 +1,23 @@
-import { describe, it } from 'vitest';
-import fixtureJson from './fixtures/legacy-results.json';
-import { buildSurface } from '../../src/core/cutting/buildSurface';
-import { planCuts } from '../../src/core/cutting/planCuts';
+import { describe, expect, it } from 'vitest';
 import { area } from '../../src/core/geometry/polygon';
-import type { Piece, ProjectSpec, SurfaceError } from '../../src/core/types';
+import { computeProject } from '../../src/core/project';
+import type { GlueNote, Notch } from '../../src/core/rules/glue';
+import type { Piece, SurfaceError, SurfaceWarning } from '../../src/core/types';
 import { expectSame } from './compare';
+import fixtureJson from './fixtures/legacy-results.json';
 import { fromLegacy } from './fromLegacy';
 import type { LegacyProject } from './legacyTypes';
 
 interface LegacyPiece {
   surface: number;
   reveal: string | null;
+  source: number | null;
+  reused: boolean;
+  [k: string]: unknown;
+}
+interface LegacyGlue {
+  notch: string;
+  note: string;
   [k: string]: unknown;
 }
 interface LegacyResult {
@@ -18,14 +25,41 @@ interface LegacyResult {
   error?: string;
   pieces: LegacyPiece[];
   groups: ({ label: string } & Record<string, unknown>)[];
+  metrics: Record<string, number>;
+  shopping: { key: string; mult: number }[];
+  glue: LegacyGlue[];
   note: string;
 }
 
 const fixture = fixtureJson as unknown as { results: Record<string, LegacyResult> };
 
-const REVEAL_NAMES = { L: 'tableau gauche', R: 'tableau droit', T: 'linteau', B: 'appui' } as const;
+/* ---------- textes legacy, reconstitués depuis les codes du moteur ---------- */
 
-/** Message d'erreur legacy correspondant à un code. */
+const REVEAL_NAMES = { L: 'tableau gauche', R: 'tableau droit', T: 'linteau', B: 'appui' } as const;
+const OPENING_NAMES = {
+  window: 'Fenêtre',
+  door: 'Porte',
+  socket: 'Prise',
+  trap: 'Trappe',
+  tub: 'Baignoire',
+  other: 'Réservation',
+};
+const NOTCH: Record<Notch, string> = {
+  U3: 'U3 (3 mm)',
+  U6: 'U6 (6 mm)',
+  U9: 'U9 (9 mm)',
+  'U9-or-DL20': 'U9 ou demi-lune DL20',
+  DL20: 'Demi-lune DL20',
+};
+const GLUE_NOTE: Record<GlueNote, RegExp> = {
+  mosaic: /^Mosaïque/,
+  deformable: /déformable \(C2 S1\) conseillé/,
+  'large-format': /^Grand format/,
+  'beyond-dtu': /hors DTU/,
+  elongated: /Format allongé/,
+};
+const cm = (mm: number) => (mm / 10).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+
 function legacyError(e: SurfaceError): RegExp {
   switch (e.code) {
     case 'invalid-surface':
@@ -39,16 +73,19 @@ function legacyError(e: SurfaceError): RegExp {
   }
 }
 
-/** Pièces de toutes les surfaces calculables, dans l'ordre du projet. */
-function allPieces(p: ProjectSpec): { pieces: Piece[]; firstError: SurfaceError | null } {
-  const pieces: Piece[] = [];
-  let firstError: SurfaceError | null = null;
-  p.surfaces.forEach((s, i) => {
-    const r = buildSurface(s, i);
-    if (r.ok) pieces.push(...r.value.pieces);
-    else if (i === 0) firstError = r.error;
-  });
-  return { pieces, firstError };
+function legacyNote(w: SurfaceWarning, L: LegacyResult): string {
+  switch (w.code) {
+    case 'zones-overflow':
+      return 'Les zones dépassent la surface de ' + cm(w.amount) + ' cm : la fin est tronquée.';
+    case 'zones-gap':
+      return cm(w.amount) + ' cm restent non carrelés. Passez une zone en « Reste de la surface » pour combler.';
+    case 'reveal-pattern':
+      return `${OPENING_NAMES[L.input.surfaces[0]!.res[w.opening]!.type]} ${w.opening + 1} : tableaux non calculés pour ce motif.`;
+    case 'plinth-pattern':
+      return 'Plinthes : choisissez une zone à carreau rectangulaire.';
+    case 'plinth-too-high':
+      return 'Plinthes : la hauteur dépasse la largeur du carreau.';
+  }
 }
 
 /** Projection d'une pièce sur les champs extraits de legacy. */
@@ -85,7 +122,6 @@ function project(pc: Piece) {
     area: pc.parts ? pc.parts.reduce((t, q) => t + area(q), 0) : null,
   };
 }
-
 const PIECE_FIELDS = [
   ...'surface zone full thin vis outline minD pw ph fw fh rect notch atFold drill req'.split(' '),
   ...'shape kind par key color tA tW tH box plinth reveal parts area'.split(' '),
@@ -93,24 +129,26 @@ const PIECE_FIELDS = [
 
 describe.each(Object.entries(fixture.results))('parité : %s', (_name, L) => {
   const spec = fromLegacy(L.input);
-  const { pieces, firstError } = allPieces(spec);
+  const R = computeProject(spec);
+  const first = R.surfaces[0]!;
 
   it('erreur bloquante identique', () => {
     if (L.error) {
-      if (!firstError) throw new Error('erreur attendue : ' + L.error);
-      if (!legacyError(firstError).test(L.error)) throw new Error(`${firstError.code} ≠ « ${L.error} »`);
-    } else if (firstError) throw new Error('erreur inattendue : ' + JSON.stringify(firstError));
+      if (first.ok) throw new Error('erreur attendue : ' + L.error);
+      expect(L.error).toMatch(legacyError(first.error));
+    } else if (!first.ok) throw new Error('erreur inattendue : ' + JSON.stringify(first.error));
   });
 
-  it.skipIf(!!L.error)('pièces identiques', () => {
+  if (L.error) return;
+
+  it('pièces', () => {
     const expected = L.pieces.map((p) => Object.fromEntries(PIECE_FIELDS.map((k) => [k, p[k]])));
-    expectSame(pieces.map(project), expected, 'pièces');
+    expectSame(R.pieces.map(project), expected, 'pièces');
   });
 
-  it.skipIf(!!L.error)('plan de découpe identique (groupes, carreaux numérotés, réemploi)', () => {
-    const plan = planCuts(pieces, spec.settings);
+  it('plan de découpe (groupes, carreaux numérotés, réemploi)', () => {
     expectSame(
-      plan.groups.map((g) => ({
+      R.plan.groups.map((g) => ({
         key: g.key,
         shape: g.shape,
         W: g.tileWidth,
@@ -127,14 +165,56 @@ describe.each(Object.entries(fixture.results))('parité : %s', (_name, L) => {
       'groupes',
     );
     expectSame(
-      plan.source,
+      R.plan.source,
       L.pieces.map((p) => p.source),
       'source',
     );
     expectSame(
-      plan.reused,
+      R.plan.reused,
       L.pieces.map((p) => p.reused),
       'réemploi',
     );
+  });
+
+  it('quantités', () => {
+    expectSame(R.metrics, L.metrics, 'métriques');
+  });
+
+  it('encollage et joint', () => {
+    expectSame(
+      R.glue.map((g) => ({
+        surface: g.surface,
+        zone: g.zone,
+        notch: NOTCH[g.advice.notch],
+        double: g.advice.double,
+        kgPerM2: g.advice.kgPerM2,
+        S: g.advice.S,
+        m2: g.m2,
+        kg: g.kg,
+        jointKg: g.jointKg,
+        n: g.n,
+        long: g.long,
+      })),
+      L.glue.map(({ note: _note, ...g }) => g),
+      'encollage',
+    );
+    R.glue.forEach((g, i) => {
+      const note = L.glue[i]!.note;
+      expect(note === '').toBe(g.advice.notes.length === 0);
+      for (const n of g.advice.notes) expect(note).toMatch(GLUE_NOTE[n]);
+    });
+  });
+
+  it('liste d’achat', () => {
+    expectSame(
+      R.shopping.map((s) => ({ key: s.key, mult: s.mult })),
+      L.shopping.map((s) => ({ key: s.key, mult: s.mult })),
+      'achats',
+    );
+  });
+
+  it('alertes de la surface', () => {
+    const warnings = first.ok ? first.value.warnings : [];
+    expect(warnings.map((w) => legacyNote(w, L)).join(' ')).toBe(L.note);
   });
 });
