@@ -1,0 +1,102 @@
+/**
+ * État de l'éditeur du parquet : projet (store + historique commun au projet), pose courante, résultat du
+ * calcul (worker). Toutes les modifications passent par des actions.
+ */
+import type { Project } from '../../../state/model';
+import { reduceProject, type ProjectAction } from '../../../state/project';
+import { createProjectStore, type ProjectStore } from '../../../state/store';
+import { createSaver, type Saver } from '../../../storage/autosave';
+import { app } from '../../../ui/lib/app.svelte';
+import { toast } from '../../../ui/lib/toasts.svelte';
+import { SupersededError } from '../../../workers/client';
+import type { Board } from '../core/board';
+import { METHOD_BY_KIND, RULES_BY_KIND } from '../core/defaults';
+import type { ParquetResult, ParquetSpec } from '../core/types';
+import type { Action } from '../state/actions';
+import { createLayout, PARQUET_ID, type Layout } from '../state/model';
+import { parquetData, toSpec } from '../state/module';
+
+export class ParquetEditorState {
+  doc = $state.raw<Project>(null as never);
+  canUndo = $state(false);
+  canRedo = $state(false);
+  result = $state.raw<ParquetResult | null>(null);
+  /** Pièce touchée sur le plan (infos de coupe). */
+  selected = $state<string | null>(null);
+  computing = $state(false);
+
+  readonly store: ProjectStore<Project, ProjectAction>;
+  private saver: Saver<Project>;
+
+  data = $derived(parquetData(this.doc)!);
+  layout = $derived<Layout | undefined>(this.data.layouts[0]);
+  boards = $derived((app.libraries.boards ?? []) as readonly Board[]);
+  board = $derived(this.boards.find((b) => b.id === this.layout?.boardId));
+
+  constructor(p: Project) {
+    this.saver = createSaver(
+      (q) => app.saveProject(q),
+      300,
+      () => toast('Enregistrement impossible : stockage plein ou indisponible.', { tone: 'error' }),
+    );
+    this.store = createProjectStore(p, (q: Project, a: ProjectAction) => reduceProject(q, a), {
+      onChange: (q) => this.saver.schedule(q),
+    });
+    this.store.subscribe((s) => {
+      this.doc = s.project;
+      this.canUndo = s.canUndo;
+      this.canRedo = s.canRedo;
+    });
+  }
+
+  flush(): Promise<void> {
+    return this.saver.flush();
+  }
+
+  dispatch(a: Action, key?: string): void {
+    this.store.dispatch(a, key);
+  }
+
+  /** Calcul en direct dans le worker (seule la dernière demande compte). */
+  async recompute(): Promise<void> {
+    const r = toSpec(this.doc, app.libraries);
+    if ('errors' in r) {
+      this.result = null;
+      return;
+    }
+    this.computing = true;
+    try {
+      this.result = await app.live.compute<ParquetResult>(PARQUET_ID, r.spec satisfies ParquetSpec);
+    } catch (e) {
+      if (!(e instanceof SupersededError)) throw e;
+    } finally {
+      this.computing = false;
+    }
+  }
+
+  updateLayout(patch: Partial<Omit<Layout, 'id'>>, key?: string): void {
+    if (this.layout) this.dispatch({ type: 'parquet/layout/update', layoutId: this.layout.id, patch }, key);
+  }
+
+  /** Changer de lame remet les règles et le mode de pose de son type (docs/parquet/SPEC.md §2). */
+  chooseBoard(id: string): void {
+    const b = this.boards.find((x) => x.id === id);
+    if (!b) return;
+    this.updateLayout({ boardId: id, rules: { ...RULES_BY_KIND[b.kind] }, method: METHOD_BY_KIND[b.kind] });
+  }
+
+  resetRules(): void {
+    if (this.board) this.updateLayout({ rules: { ...RULES_BY_KIND[this.board.kind] } });
+  }
+
+  toggleRoom(roomId: string, on: boolean): void {
+    const rooms = this.layout?.rooms ?? [];
+    this.updateLayout({ rooms: on ? [...rooms, roomId] : rooms.filter((r) => r !== roomId) });
+  }
+
+  /** Première pose (projet sans pose, ou pose supprimée avec ses pièces). */
+  addLayout(): void {
+    const room = this.doc.plan.rooms[0];
+    this.dispatch({ type: 'parquet/layout/add', layout: createLayout(crypto.randomUUID(), room ? [room.id] : []) });
+  }
+}
