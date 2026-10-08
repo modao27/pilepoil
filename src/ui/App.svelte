@@ -4,7 +4,8 @@
   import EmptyState from './components/EmptyState.svelte';
   import Screen from './components/Screen.svelte';
   import ToastHost from './components/ToastHost.svelte';
-  import { moduleById } from '../modules/registry';
+  import { libraryById, moduleById } from '../modules/registry';
+  import LibraryNav from './components/LibraryNav.svelte';
   import { app } from './lib/app.svelte';
   import { matchScreen } from './lib/moduleRoutes';
   import { router } from './lib/router.svelte';
@@ -24,6 +25,8 @@
   const params = $derived(screen?.params ?? {});
 </script>
 
+{#snippet libraryNav()}<LibraryNav current={route.name === 'library' ? route.lib : ''} />{/snippet}
+
 {#if app.fatal}
   <Screen title="Calepinage">
     <EmptyState icon="warn" title="Impossible d’ouvrir vos données" text={app.fatal} />
@@ -35,9 +38,14 @@
 {:else if route.name === 'new'}
   {#await ui.Wizard() then { default: Wizard }}<Wizard />{/await}
 {:else if route.name === 'library'}
-  {#await ui.Library() then { default: Library }}<Library />{/await}
-{:else if route.name === 'tile'}
-  {#key route.id}{#await ui.TileEdit() then { default: TileEdit }}<TileEdit id={route.id} />{/await}{/key}
+  {#await libraryById(route.lib)?.screens.list() then LibraryList}{#if LibraryList}<LibraryList
+        itemId={null}
+        nav={libraryNav}
+      />{/if}{/await}
+{:else if route.name === 'libraryItem'}
+  {#key route.lib + '/' + route.id}{#await libraryById(route.lib)?.screens.edit() then LibraryEdit}{#if LibraryEdit}<LibraryEdit
+          itemId={route.id}
+        />{/if}{/await}{/key}
 {:else if route.name === 'settings'}
   <Settings />
 {:else if route.name === 'demo'}

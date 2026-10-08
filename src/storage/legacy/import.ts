@@ -1,6 +1,6 @@
 import type { Id, Photo, Tile } from '../../state/model';
 import type { Db } from '../db';
-import { getPref, saveProject, saveScenario, saveTile, savePhoto, setPref } from '../repo';
+import { getPref, putItem, saveProject, saveScenario, savePhoto, setPref } from '../repo';
 import { migrateProject, migrateScenario } from '../migrations';
 import { convertLegacy } from './convert';
 import { LEGACY_EXPORT_FORMAT, LEGACY_KEYS, type LegacyStorage } from './format';
@@ -85,7 +85,7 @@ export async function importLegacy(db: Db, store: LegacyStorage, now = Date.now(
   }
   const ref = (id: Id | null) => (id && saved.has(id) ? id : null);
   const fixTile = (t: Tile): Tile => (t.photoId === ref(t.photoId) ? t : { ...t, photoId: null });
-  for (const t of r.tiles) await saveTile(db, fixTile(t));
+  for (const t of r.tiles) await putItem(db, 'tiles', fixTile(t));
   // documents v1 : migrés en v2 avant écriture
   if (r.project) await saveProject(db, migrateProject(r.project).doc);
   for (const v1 of r.scenarios) {

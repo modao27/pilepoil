@@ -8,22 +8,24 @@ import {
 } from '../../src/modules/carrelage/state/factories';
 import { migrateProject, migrateScenario, projectFromV1 } from '../../src/storage/migrations';
 import { V1_ROOM, V1_SCENARIO } from '../unit/fixtures/v1';
-import type { Photo, Project, Scenario } from '../../src/state/model';
+import type { Photo, Project, Scenario, Tile } from '../../src/state/model';
+import { BOARD_TEMPLATES } from '../../src/modules/parquet/core/board';
 import { DB_VERSION, openDb, type Db } from '../../src/storage/db';
 import {
   collectPhotos,
   deleteProject,
-  deleteTile,
+  deleteItem,
   getPhoto,
   getPref,
   getProject,
   listProjects,
   listScenarios,
-  listTiles,
+  listItems,
+  libraryStore,
+  putItem,
   saveProject,
   savePhoto,
   saveScenario,
-  saveTile,
   setPref,
 } from '../../src/storage/repo';
 
@@ -86,17 +88,18 @@ describe('base IndexedDB', () => {
     expect(await listScenarios(db, a.id)).toEqual([]);
   });
 
-  it('carreaux : tri par nom, suppression refusée s’ils sont utilisés', async () => {
+  it('bibliothèques : carreaux et lames, magasins génériques', async () => {
     const db = await fresh();
     const t1 = createTile({ name: 'Zellige' }),
       t2 = createTile({ name: 'Ardoise' });
-    await saveTile(db, t1);
-    await saveTile(db, t2);
-    expect((await listTiles(db)).map((t) => t.name)).toEqual(['Ardoise', 'Zellige']);
-    await saveProject(db, createProject([createSurface(t1.id)]));
-    expect(await deleteTile(db, t1.id)).toBe(false);
-    expect(await deleteTile(db, t2.id)).toBe(true);
-    expect((await listTiles(db)).map((t) => t.name)).toEqual(['Zellige']);
+    await putItem(db, 'tiles', t1);
+    await putItem(db, 'tiles', t2);
+    await putItem(db, 'boards', BOARD_TEMPLATES[0]!);
+    expect(((await listItems(db, 'tiles')) as Tile[]).map((t) => t.name).sort()).toEqual(['Ardoise', 'Zellige']);
+    await deleteItem(db, 'tiles', t2.id);
+    expect(((await listItems(db, 'tiles')) as Tile[]).map((t) => t.name)).toEqual(['Zellige']);
+    expect(await listItems(db, 'boards')).toEqual([BOARD_TEMPLATES[0]]);
+    expect(() => libraryStore('scenarios')).toThrow(/Magasin inconnu/);
   });
 
   it('photos en Blob ; les orphelines sont supprimées', async () => {
@@ -106,7 +109,7 @@ describe('base IndexedDB', () => {
       orphan = photo();
     for (const p of [kept, thumb, orphan]) await savePhoto(db, p);
     const t = createTile({ photoId: kept.id });
-    await saveTile(db, t);
+    await putItem(db, 'tiles', t);
     const p = createProject([createSurface(t.id)]);
     await saveScenario(db, scenario(p, 'A', { thumbnailId: thumb.id }));
     expect(await collectPhotos(db)).toBe(1);

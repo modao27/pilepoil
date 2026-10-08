@@ -3,7 +3,7 @@
  * Deux faces : le moteur (pur, exécuté dans le worker) et l'application (état, écrans).
  * Ce fichier ne contient que des types : le worker peut l'importer sans rien charger.
  */
-import type { Component } from 'svelte';
+import type { Component, Snippet } from 'svelte';
 
 import type { Plan } from '../core/plan/types';
 import type { ShoppingLine } from '../core/shopping/types';
@@ -70,6 +70,8 @@ export interface LibraryItem {
   id: Id;
   name: string;
   updatedAt: number;
+  /** Photo du produit (magasin photos commun), pour le ramassage des photos orphelines. */
+  photoId?: Id | null;
 }
 
 /** Bibliothèques chargées, par identifiant de bibliothèque ('tiles', 'boards'…). */
@@ -91,6 +93,8 @@ export interface LibraryDefinition {
     /** #/library/<id>/<itemId> et #/library/<id>/new */
     edit: ScreenLoader<LibraryScreenProps>;
   };
+  /** Modèles types posés une seule fois dans la bibliothèque (un modèle supprimé ne revient pas). */
+  templates?: () => LibraryItem[];
 }
 
 /** Props passées aux écrans d'un module, sous #/p/:id/m/<module>/… */
@@ -103,6 +107,8 @@ export interface ModuleScreenProps {
 export interface LibraryScreenProps {
   /** null : écran de liste, ou création d'un nouvel élément. */
   itemId: Id | null;
+  /** Onglets des bibliothèques, fournis par la coquille (écran de liste). */
+  nav?: Snippet;
 }
 
 /** Écran chargé à la demande (import dynamique, découpé par Vite). */
@@ -131,7 +137,12 @@ export interface ModuleScreens {
 }
 
 /** Face application : état, sélecteurs, écrans. */
-export interface ToolModule<Data, Spec, Result, Action extends ModuleAction = ModuleAction> {
+export interface ToolModule<
+  Data = unknown,
+  Spec = unknown,
+  Result = unknown,
+  Action extends ModuleAction = ModuleAction,
+> {
   id: ModuleId;
   /** « Carrelage ». */
   label: string;
@@ -159,14 +170,3 @@ export interface ToolModule<Data, Spec, Result, Action extends ModuleAction = Mo
   /** Bibliothèque de produits propre au module (carreaux, lames…). Facultatif. */
   library?: LibraryDefinition;
 }
-
-/**
- * Contrat sans la bibliothèque, branchée plus loin en S3 (docs/BOITE.md §2).
- * Disparaît quand tous les modules remplissent le contrat complet.
- */
-export type ToolModuleS2<
-  Data = unknown,
-  Spec = unknown,
-  Result = unknown,
-  Action extends ModuleAction = ModuleAction,
-> = Omit<ToolModule<Data, Spec, Result, Action>, 'library'>;

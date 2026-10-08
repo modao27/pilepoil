@@ -5,7 +5,7 @@
 import { reducePlan, type PlanAction } from '../core/plan/reduce';
 import type { Plan } from '../core/plan/types';
 import { moduleById } from '../modules/registry';
-import type { ModuleAction, ModuleId, ToolModuleS2 } from '../modules/types';
+import type { ModuleAction, ModuleId, ToolModule } from '../modules/types';
 import type { ModuleDoc, Project } from './model';
 
 export type ProjectAction =
@@ -26,7 +26,7 @@ export interface RoomRemoved {
 export function reduceProject(
   p: Project,
   a: ProjectAction,
-  find: (id: ModuleId) => ToolModuleS2 | undefined = moduleById,
+  find: (id: ModuleId) => ToolModule | undefined = moduleById,
 ): Project {
   if (a.type === 'project/rename') {
     const { name } = a as Extract<ProjectAction, { type: 'project/rename' }>;
@@ -59,7 +59,7 @@ function toModule(
   id: ModuleId,
   a: ModuleAction,
   plan: Plan,
-  find: (id: ModuleId) => ToolModuleS2 | undefined,
+  find: (id: ModuleId) => ToolModule | undefined,
 ): Project {
   const doc = Object.hasOwn(p.modules, id) ? p.modules[id] : undefined;
   const m = find(id);

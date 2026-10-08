@@ -10,7 +10,7 @@
 
 <Screen title="Mes projets">
   {#snippet actions()}
-    <IconButton icon="tiles" label="Bibliothèque de carreaux" href="#/library" />
+    <IconButton icon="tiles" label="Bibliothèques" href="#/library/tiles" />
     <IconButton icon="settings" label="Réglages" href="#/settings" />
   {/snippet}
 

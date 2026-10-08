@@ -2,7 +2,7 @@
   /** Écran Projet (#/p/:id) : plan des pièces, outils activés avec leur résumé, ajout d'un outil. */
   import { modules } from '../../modules/registry';
   import type { ShoppingLine } from '../../core/shopping/types';
-  import type { ModuleSummary, ToolModuleS2 } from '../../modules/types';
+  import type { ModuleSummary, ToolModule } from '../../modules/types';
   import { reduceProject } from '../../state/project';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
@@ -43,7 +43,7 @@
     return () => (live = false);
   });
 
-  async function addTool(m: ToolModuleS2) {
+  async function addTool(m: ToolModule) {
     const p = project;
     if (!p) return;
     const next = reduceProject(p, {

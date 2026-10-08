@@ -197,6 +197,8 @@ export type Pref =
   | { key: 'theme'; value: 'auto' | 'light' | 'dark' }
   | { key: 'lastProjectId'; value: Id }
   | { key: 'showCutNumbers'; value: boolean }
+  /** Bibliothèques dont les modèles types ont été posés (une seule fois). */
+  | { key: 'librarySeeded'; value: string[] }
   | { key: 'legacyImport'; value: { at: number; projectId: Id | null } };
 
 export type PrefKey = Pref['key'];

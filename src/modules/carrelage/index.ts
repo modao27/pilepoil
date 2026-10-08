@@ -2,17 +2,17 @@
  * Point d'entrée du module carrelage (face application) : seul fichier du module importable hors du
  * module, hors tests et hors engine.ts (face moteur, importée par modules/engines.ts).
  */
-import type { ToolModuleS2 } from '../types';
+import type { ToolModule } from '../types';
 import type { ProjectResult, ProjectSpec } from './core';
 import { reduce, type Action } from './state/actions';
 import { CARRELAGE_ID, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
+import { TILE_SCHEMA } from '../../state/model';
 import { create, priceAction, shopping, summary, toSpec } from './state/module';
 
 export * from './core';
 export * from './state/actions';
 export * from './state/data';
 export * from './state/factories';
-export * from './state/library';
 export * from './state/pricing';
 export * from './state/selectors';
 export * from './state/templates';
@@ -25,8 +25,6 @@ export const ui = {
   /** État du module (bibliothèque, calculs, scénarios). */
   state: () => import('./ui/state.svelte'),
   ProjectCard: () => import('./ui/components/ProjectCard.svelte'),
-  Library: () => import('./ui/screens/Library.svelte'),
-  TileEdit: () => import('./ui/screens/TileEdit.svelte'),
   Wizard: () => import('./ui/screens/Wizard.svelte'),
   PatternPicker: () => import('./ui/components/PatternPicker.svelte'),
 };
@@ -35,7 +33,7 @@ export const ui = {
 const editor = () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default);
 
 /** Module carrelage (docs/BOITE.md §2) : tout le contrat sauf achats et bibliothèque (S3). */
-export const module: ToolModuleS2<CarrelageData, ProjectSpec, ProjectResult, Action> = {
+export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Action> = {
   id: CARRELAGE_ID,
   label: 'Carrelage',
   description: 'Murs et sols carrelés : calepinage, coupes, chutes, quantités.',
@@ -47,6 +45,17 @@ export const module: ToolModuleS2<CarrelageData, ProjectSpec, ProjectResult, Act
   shopping,
   priceAction,
   migrations: {},
+  library: {
+    id: 'tiles',
+    label: 'Carreaux',
+    store: 'tiles',
+    schemaVersion: TILE_SCHEMA,
+    migrations: {},
+    screens: {
+      list: () => import('./ui/screens/Library.svelte').then((m) => m.default),
+      edit: () => import('./ui/screens/TileEdit.svelte').then((m) => m.default),
+    },
+  },
   icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M12 1v22M23 1v22M1 12h32"/>',
   screens: {
     editor,

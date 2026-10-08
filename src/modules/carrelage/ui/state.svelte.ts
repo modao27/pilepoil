@@ -20,40 +20,27 @@ import type {
 } from '../core';
 import type { OptimizeSpec } from '../engine';
 import { newId } from '../state/factories';
-import { createLibraryStore, type LibraryStore } from '../state/library';
 import { toProjectSpec, usedTileIds } from '../state/selectors';
 import { carrelageData, carrelageView, withCarrelage, type CarrelageProject } from '../state/data';
 import { reduceProject } from '../../../state/project';
 import type { Action } from '../state/actions';
 
 const MODULE = 'carrelage';
+const TILES = 'tiles';
 
 export class CarrelageState {
-  // Données immuables, remplacées à chaque modification : $state.raw évite les proxys, que ni IndexedDB
-  // ni postMessage ne savent cloner.
-  tiles = $state.raw<readonly Tile[]>([]);
-
   private db!: Db;
-  private library!: LibraryStore;
-  // Caches internes, volontairement non réactifs (l'interface lit tiles, pas ces tables).
+  // Cache interne, volontairement non réactif (l'interface lit les projets et la bibliothèque, pas cette table).
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   private cache = new Map<string, ProjectResult>();
-  private tilesVersion = 0;
 
-  /** (Re)charge la bibliothèque ; ouvre les workers au premier appel. */
   async load(db: Db): Promise<void> {
     this.db = db;
-    const tiles = await repo.listTiles(db);
-    this.library = createLibraryStore(tiles, {
-      isUsed: (id) => app.projects.some((p) => uses(p, id)),
-      onSave: (t) => void repo.saveTile(this.db, t),
-      onDelete: (id) => void repo.deleteTile(this.db, id),
-    });
-    this.library.subscribe((t) => {
-      this.tiles = t;
-      app.setLibrary('tiles', t);
-      this.tilesVersion++;
-    });
+  }
+
+  /** Bibliothèque de carreaux, tenue par la coquille (`app.libraries.tiles`). */
+  get tiles(): readonly Tile[] {
+    return (app.libraries[TILES] ?? []) as readonly Tile[];
   }
 
   /* ---------- bibliothèque ---------- */
@@ -63,14 +50,14 @@ export class CarrelageState {
   }
 
   putTile(t: Tile): void {
-    this.library.put(t);
+    app.putLibraryItem(TILES, t);
   }
 
   /** null si supprimé, sinon le nom d'un projet qui l'utilise. */
   deleteTile(id: Id): string | null {
     const user = app.projects.find((p) => uses(p, id));
     if (user) return user.name;
-    this.library.remove(id);
+    app.removeLibraryItem(TILES, id);
     return null;
   }
 
@@ -114,7 +101,7 @@ export class CarrelageState {
 
   /** Résultat d'un projet enregistré, mis en cache tant que ni le projet ni la bibliothèque ne changent. */
   result(p: CarrelageProject): Promise<ProjectResult> {
-    return this.cached(`${p.id}:${p.updatedAt}:${this.tilesVersion}`, () => this.spec(p));
+    return this.cached(`${p.id}:${p.updatedAt}:${app.libraryVersion}`, () => this.spec(p));
   }
 
   /** Résultat d'un scénario : son projet figé avec ses propres carreaux. */

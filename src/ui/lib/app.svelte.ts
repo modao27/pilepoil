@@ -8,7 +8,10 @@ import type { Id, Palette, Photo, Project } from '../../state/model';
 import { openDb, type Db } from '../../storage/db';
 import { autoImportLegacy, importLegacy, parseLegacyExport, type ImportSummary } from '../../storage/legacy/import';
 import * as repo from '../../storage/repo';
-import type { Libraries, LibraryItem, ModuleId } from '../../modules/types';
+import { libraries as libraryDefs } from '../../modules/registry';
+import type { Libraries, LibraryDefinition, LibraryItem, ModuleId } from '../../modules/types';
+import { migrate, type Step } from '../../storage/migrations';
+import { upsertItem } from './library';
 import { createWorkerClient, type ComputeClient } from '../../workers/client';
 import { toast } from './toasts.svelte';
 
@@ -65,6 +68,7 @@ export class AppState {
   }
 
   private async reload() {
+    await this.loadLibraries();
     const { carrelage } = await ui.state();
     await carrelage.load(this.db);
     this.projects = (await repo.listProjects(this.db)).filter((p) => !this.pendingDeletes.has(p.id));
@@ -174,14 +178,74 @@ export class AppState {
     return job;
   }
 
-  setLibrary(id: string, items: readonly LibraryItem[]): void {
-    this.libraries = { ...this.libraries, [id]: items };
+  /** Incrémenté à chaque modification d'une bibliothèque (clés de cache des calculs). */
+  libraryVersion = 0;
+
+  /** Charge chaque bibliothèque déclarée par les modules ; pose ses modèles types une seule fois. */
+  private async loadLibraries(): Promise<void> {
+    const seeded = [...((await repo.getPref(this.db, 'librarySeeded')) ?? [])];
+    const next: Record<string, readonly LibraryItem[]> = {};
+    let seededNow = false;
+    for (const def of libraryDefs) {
+      const store = repo.libraryStore(def.store);
+      let items: readonly LibraryItem[] = [];
+      for (const raw of await repo.listItems(this.db, store)) {
+        const { doc, changed } = migrateItem(def, raw);
+        if (changed) void repo.putItem(this.db, store, doc);
+        items = upsertItem(items, doc);
+      }
+      if (def.templates && !seeded.includes(def.id)) {
+        for (const t of def.templates())
+          if (!items.some((x) => x.id === t.id)) {
+            await repo.putItem(this.db, store, t);
+            items = upsertItem(items, t);
+          }
+        seeded.push(def.id);
+        seededNow = true;
+      }
+      next[def.id] = items;
+    }
+    if (seededNow) await repo.setPref(this.db, 'librarySeeded', seeded);
+    this.libraries = next;
+    this.libraryVersion++;
+  }
+
+  libraryItem<T extends LibraryItem>(lib: string, id: Id): T | undefined {
+    return this.libraries[lib]?.find((x) => x.id === id) as T | undefined;
+  }
+
+  /** Ajoute ou remplace un élément (horodaté), trié par nom. */
+  putLibraryItem(lib: string, item: LibraryItem): void {
+    const def = libraryDefs.find((d) => d.id === lib);
+    if (!def) return;
+    const stamped = { ...item, updatedAt: Date.now() };
+    this.libraries = { ...this.libraries, [lib]: upsertItem(this.libraries[lib] ?? [], stamped) };
+    this.libraryVersion++;
+    void repo.putItem(this.db, repo.libraryStore(def.store), stamped);
+  }
+
+  removeLibraryItem(lib: string, id: Id): void {
+    const def = libraryDefs.find((d) => d.id === lib);
+    if (!def) return;
+    this.libraries = { ...this.libraries, [lib]: (this.libraries[lib] ?? []).filter((x) => x.id !== id) };
+    this.libraryVersion++;
+    void repo.deleteItem(this.db, repo.libraryStore(def.store), id);
   }
 
   /** Base ouverte (modules). */
   get db(): Db {
     return this._db;
   }
+}
+
+function migrateItem(def: LibraryDefinition, raw: unknown): { doc: LibraryItem; changed: boolean } {
+  const steps: Record<number, Step> = Object.fromEntries(
+    Object.entries(def.migrations).map(([v, f]) => [
+      v,
+      (d: Record<string, unknown>) => f(d) as Record<string, unknown>,
+    ]),
+  );
+  return migrate<LibraryItem>(raw, def.schemaVersion, steps);
 }
 
 function applyTheme(t: Theme) {

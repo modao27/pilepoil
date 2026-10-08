@@ -6,7 +6,7 @@ import { computeProject } from '../../src/modules/carrelage/core';
 import { carrelageView, dataOf, withCarrelage } from '../../src/modules/carrelage/state/data';
 import { createTile } from '../../src/modules/carrelage/state/factories';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
-import type { ToolModuleS2 } from '../../src/modules/types';
+import type { ToolModule } from '../../src/modules/types';
 import type { Project, Scenario } from '../../src/state/model';
 import { reduceProject, type ProjectAction } from '../../src/state/project';
 import { FutureVersionError, migrateProject, migrateScenario } from '../../src/storage/migrations';
@@ -145,7 +145,7 @@ describe('réducteur du projet', () => {
         seen.push(a),
         a.type === 'plan/room/removed' ? { cleaned: true } : d
       ),
-    } as unknown as ToolModuleS2;
+    } as unknown as ToolModule;
     const two = reduceProject(p, {
       type: 'plan/room/add',
       room: rectRoom(1000, 1000, { name: 'B' }, () => 'b' + seen.length),
