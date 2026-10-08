@@ -3,7 +3,7 @@ import { area, bbox, centroid, clipBox, clipRect, inset, onLine } from '../geome
 import { openingRect, zoneCutouts } from '../layout/openings';
 import type { ZoneRect } from '../layout/zones';
 import { pattern } from '../patterns/registry';
-import type { PatternGeo } from '../patterns/types';
+import type { Cell, PatternGeo } from '../patterns/types';
 import type {
   CornerSpec,
   Point,
@@ -37,10 +37,18 @@ export interface ZoneBuild {
  * 3. découpe aux angles de mur ; 4. prises → perçage ;
  * 5. classement entière / coupe fine ; 6. repère carreau canonique, bords d'usine requis, coupes apparentes.
  */
-export function buildZone(s: SurfaceSpec, z: ZoneSpec, zi: number, rc: ZoneRect, list: RawPiece[]): ZoneBuild | null {
-  if (rc.w < 0.5 || rc.h < 0.5) return null;
-  const j = s.joint,
-    P = pattern(z.pattern),
+/** Repère du motif dans une zone : origine, passage repère motif ↔ repère zone, cellules couvrant la zone. */
+export interface PatternFrame {
+  g: PatternGeo;
+  O: Point;
+  toW: (x: number, y: number) => Point;
+  toL: (X: number, Y: number) => Point;
+  /** Cellules (avant rétraction du joint) dont la boîte touche la zone. */
+  cells: Cell[];
+}
+
+export function patternFrame(z: ZoneSpec, rc: { w: number; h: number }, j: number): PatternFrame {
+  const P = pattern(z.pattern),
     a = z.tile.width,
     b = z.tile.height;
   const g = P.geo(a, b, j),
@@ -70,7 +78,13 @@ export function buildZone(s: SurfaceSpec, z: ZoneSpec, zi: number, rc: ZoneRect,
     [0, rc.h],
   ];
   const bb = bbox(corners.map((q) => toL(q[0], q[1])));
-  const cells = P.generate(a, b, j, bb, g);
+  return { g, O, toW, toL, cells: P.generate(a, b, j, bb, g) };
+}
+
+export function buildZone(s: SurfaceSpec, z: ZoneSpec, zi: number, rc: ZoneRect, list: RawPiece[]): ZoneBuild | null {
+  if (rc.w < 0.5 || rc.h < 0.5) return null;
+  const j = s.joint;
+  const { g, O, toW, toL, cells } = patternFrame(z, rc, j);
   const stats: ZoneBuild['stats'] = {};
   const FX: CornerSpec[] =
     s.kind === 'floor'

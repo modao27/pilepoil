@@ -1,6 +1,9 @@
 /** API publique du moteur de calepinage. */
 export * from './types';
 export { EPS } from './constants';
+export { hash } from './hash';
+export { area, bbox, centroid, pointInPolygon } from './geometry/polygon';
+export { snapOffset, type SnapResult } from './layout/snap';
 export { PATTERNS, pattern } from './patterns/registry';
 export type { PatternModule, PatternGeo, Cell } from './patterns/types';
 export { layoutZones, rowThickness, zoneLength, type ZoneLayout, type ZoneRect } from './layout/zones';

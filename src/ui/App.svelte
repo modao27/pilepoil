@@ -8,7 +8,8 @@
   import Demo from './screens/Demo.svelte';
   import Home from './screens/Home.svelte';
   import Library from './screens/Library.svelte';
-  import ProjectView from './screens/ProjectView.svelte';
+  import Editor from './editor/Editor.svelte';
+  import Results from './screens/Results.svelte';
   import Settings from './screens/Settings.svelte';
   import TileEdit from './screens/TileEdit.svelte';
   import Wizard from './screens/Wizard.svelte';
@@ -34,8 +35,16 @@
   <Settings />
 {:else if route.name === 'demo'}
   <Demo />
+{:else if route.name === 'project' && app.project(route.id)}
+  {#key route.id}<Editor project={app.project(route.id)!} surfaceId={route.surfaceId} />{/key}
+{:else if route.name === 'results'}
+  {#key route.id}<Results id={route.id} />{/key}
 {:else if route.name === 'project'}
-  {#key route.id}<ProjectView id={route.id} surfaceId={route.surfaceId} />{/key}
+  <Screen title="Projet introuvable" backHref="#/" backLabel="Accueil">
+    <EmptyState icon="info" title="Ce projet n’existe plus" text="Il a peut-être été supprimé.">
+      {#snippet action()}<Button variant="primary" href="#/">Voir mes projets</Button>{/snippet}
+    </EmptyState>
+  </Screen>
 {:else}
   <Screen title="Page introuvable" backHref="#/" backLabel="Accueil">
     <EmptyState icon="info" title="Cette page n’existe pas" text="Le lien est peut-être ancien. Revenez à vos projets.">

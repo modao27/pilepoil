@@ -22,6 +22,10 @@ export type Action =
   | { type: 'corner/add'; surfaceId: Id; corner: Corner }
   | { type: 'corner/remove'; surfaceId: Id; cornerId: Id }
   | { type: 'corner/update'; surfaceId: Id; cornerId: Id; patch: Partial<Omit<Corner, 'id'>> }
+  /** Toutes les zones d'une surface (modèle de zones). */
+  | { type: 'zone/replaceAll'; surfaceId: Id; zones: Zone[]; split?: Surface['split'] }
+  /** Projet entier (opérations composées : pièce complète). */
+  | { type: 'project/replace'; project: Project }
   /** Plusieurs actions en une seule étape d'historique (ex. résultat d'optimisation). */
   | { type: 'batch'; actions: Action[] };
 
@@ -73,6 +77,12 @@ function surfaceReduce(s: Surface, a: Action): Surface {
     case 'zone/update': {
       const zones = updateById(s.zones, a.zoneId, (z) => patch(z, a.patch));
       return zones === s.zones ? s : { ...s, zones };
+    }
+    case 'zone/replaceAll': {
+      if (!a.zones.length) return s;
+      const ids = new Set(a.zones.map((z) => z.id));
+      const plinth = s.plinth && !ids.has(s.plinth.zoneId) ? { ...s.plinth, zoneId: a.zones[0]!.id } : s.plinth;
+      return { ...s, zones: a.zones, split: a.split ?? s.split, plinth };
     }
     case 'zone/move': {
       const from = s.zones.findIndex((z) => z.id === a.zoneId);
@@ -132,6 +142,8 @@ export function reduce(p: Project, a: Action): Project {
       const from = p.surfaces.findIndex((s) => s.id === a.surfaceId);
       return from < 0 || from === a.to ? p : { ...p, surfaces: move(p.surfaces, from, a.to) };
     }
+    case 'project/replace':
+      return a.project.id === p.id ? a.project : p;
     case 'batch':
       return a.actions.reduce(reduce, p);
     default:

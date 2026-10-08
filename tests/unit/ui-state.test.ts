@@ -66,6 +66,7 @@ describe('routes', () => {
     ['#/settings', { name: 'settings' }],
     ['#/p/x1', { name: 'project', id: 'x1', surfaceId: null }],
     ['#/p/x1/s/s2', { name: 'project', id: 'x1', surfaceId: 's2' }],
+    ['#/p/x1/results', { name: 'results', id: 'x1' }],
     ['#/p/x1/z', { name: 'notFound', path: '/p/x1/z' }],
   ])('%s', (h, r) => {
     expect(parseRoute(h)).toEqual(r);

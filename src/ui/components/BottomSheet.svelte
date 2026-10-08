@@ -12,7 +12,16 @@
     header,
     children,
     contained = false,
-  }: { snap?: Snap; label: string; header?: Snippet; children: Snippet; contained?: boolean } = $props();
+    peek = 52,
+  }: {
+    snap?: Snap;
+    label: string;
+    header?: Snippet;
+    children: Snippet;
+    contained?: boolean;
+    /** Hauteur visible repliée (px) : poignée + en-tête. */
+    peek?: number;
+  } = $props();
 
   const NAMES = ['fermé', 'mi-hauteur', 'plein écran'];
   /** Hauteur visible de chaque cran, en % de la hauteur disponible (cran fermé : en-tête seul). */
@@ -57,7 +66,7 @@
   class:contained
   class:dragging={dragY != null}
   aria-label={label}
-  style="--h: {HEIGHTS[snap]}%; --dy: {dragY ?? 0}px"
+  style="--h: {HEIGHTS[snap]}%; --dy: {dragY ?? 0}px; --peek: {peek}px"
 >
   <button
     type="button"
@@ -86,7 +95,7 @@
     display: flex;
     flex-direction: column;
     max-height: 92dvh;
-    min-height: calc(var(--touch) + 8px);
+    min-height: var(--peek);
     height: calc(var(--h) - var(--dy));
     border-radius: var(--r-panel) var(--r-panel) 0 0;
     background: var(--sheet);

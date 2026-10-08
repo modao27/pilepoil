@@ -24,6 +24,7 @@ export class AppState {
   projects = $state.raw<Project[]>([]);
   theme = $state<Theme>('auto');
   palette = $state.raw<Palette>(DEFAULT_PALETTE);
+  showCutNumbers = $state(true);
   /** URL d'affichage des photos chargées (object URL). */
   photoUrls = $state.raw<Record<Id, string>>({});
 
@@ -55,6 +56,7 @@ export class AppState {
       await this.reload();
       this.theme = (await repo.getPref(this.db, 'theme')) ?? 'auto';
       this.palette = (await repo.getPref(this.db, 'palette')) ?? DEFAULT_PALETTE;
+      this.showCutNumbers = (await repo.getPref(this.db, 'showCutNumbers')) ?? true;
       applyTheme(this.theme);
       this.ready = true;
       if (imported?.projectId) toast(importMessage(imported));
@@ -174,6 +176,16 @@ export class AppState {
     await repo.setPref(this.db, 'theme', t);
   }
 
+  async setPalette(p: Palette): Promise<void> {
+    this.palette = p;
+    await repo.setPref(this.db, 'palette', p);
+  }
+
+  async setShowCutNumbers(v: boolean): Promise<void> {
+    this.showCutNumbers = v;
+    await repo.setPref(this.db, 'showCutNumbers', v);
+  }
+
   async importLegacyFile(file: File): Promise<string> {
     const store = parseLegacyExport(await file.text());
     const sum = await importLegacy(this.db, store);
@@ -195,6 +207,11 @@ export class AppState {
       if (e instanceof SupersededError) return null;
       throw e;
     }
+  }
+
+  /** Optimisation du départ dans le worker, avec progression et annulation. */
+  optimize(...args: Parameters<ComputeClient['optimize']>): ReturnType<ComputeClient['optimize']> {
+    return this.live.optimize(...args);
   }
 
   /** Résultat d'un projet enregistré, mis en cache tant que ni le projet ni la bibliothèque ne changent. */

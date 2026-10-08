@@ -7,6 +7,7 @@ export type Route =
   | { name: 'settings' }
   | { name: 'demo' }
   | { name: 'project'; id: string; surfaceId: string | null }
+  | { name: 'results'; id: string }
   | { name: 'notFound'; path: string };
 
 export function parseRoute(hash: string): Route {
@@ -20,6 +21,7 @@ export function parseRoute(hash: string): Route {
   if (a === 'settings' && !b) return { name: 'settings' };
   if (a === 'demo' && !b) return { name: 'demo' };
   if (a === 'p' && b && !c) return { name: 'project', id: b, surfaceId: null };
+  if (a === 'p' && b && c === 'results' && !d) return { name: 'results', id: b };
   if (a === 'p' && b && c === 's' && d && parts.length === 4) return { name: 'project', id: b, surfaceId: d };
   return { name: 'notFound', path };
 }
@@ -40,6 +42,8 @@ export function href(r: Route): string {
       return '#/demo';
     case 'project':
       return '#/p/' + encodeURIComponent(r.id) + (r.surfaceId ? '/s/' + encodeURIComponent(r.surfaceId) : '');
+    case 'results':
+      return '#/p/' + encodeURIComponent(r.id) + '/results';
     case 'notFound':
       return '#' + r.path;
   }

@@ -19,6 +19,16 @@
   }: { tile: Tile; submitLabel: string; onsubmit: (t: Tile) => void; extra?: Snippet } = $props();
 
   const regular = $derived(tile.shape === 'hex' || tile.shape === 'octo');
+  /** Formats courants (repris de legacy), en mm. */
+  const PRESETS: [number, number, string][] = [
+    [200, 200, '20 × 20'],
+    [600, 300, '30 × 60'],
+    [600, 600, '60 × 60'],
+    [1200, 600, '60 × 120'],
+    [300, 75, '7,5 × 30 métro'],
+    [300, 74, '7,4 × 30'],
+    [900, 150, '15 × 90 lame'],
+  ];
   let price = $state(tile.pricePerM2 ?? 0);
   let error = $state('');
   $effect(() => app.loadPhoto(tile.photoId));
@@ -65,6 +75,21 @@
       ]}
     />
   </div>
+
+  {#if !regular}
+    <div class="field">
+      <span class="lbl">Formats courants</span>
+      <div class="chips">
+        {#each PRESETS as [l, w, name] (name)}
+          <button
+            type="button"
+            aria-pressed={tile.length === l && tile.width === w}
+            onclick={() => ((tile.length = l), (tile.width = w))}>{name}</button
+          >
+        {/each}
+      </div>
+    </div>
+  {/if}
 
   <div class="two">
     <NumberField
@@ -163,6 +188,25 @@
   }
   .hint {
     font-size: var(--fs-xs);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .chips button {
+    min-height: var(--touch);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--field-border);
+    border-radius: 22px;
+    background: var(--sheet);
+    color: var(--ink);
+    cursor: pointer;
+    font-size: var(--fs-sm);
+  }
+  .chips button[aria-pressed='true'] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
   }
   .err {
     color: var(--thin-ink);

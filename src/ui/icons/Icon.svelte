@@ -28,6 +28,9 @@
     floor: 'M3 17l9-5 9 5-9 5zM3 17V9l9-5 9 5v8',
     room: 'M3 8l9-5 9 5v10l-9 5-9-5zM12 13v10M3 8l9 5 9-5',
     warn: 'M12 4l9 16H3zM12 10v4M12 17h.01',
+    list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
+    fit: 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5',
+    sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
     info: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v6M12 7.5h.01',
   } as const;
   export type IconName = keyof typeof ICONS;

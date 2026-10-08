@@ -50,20 +50,18 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await shot(page, info, '14-assistant-motif');
   await page.getByRole('button', { name: 'Créer le projet' }).click();
 
-  // vue projet
-  await expect(page.getByRole('heading', { name: 'Mur 288 × 240' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Plan de Mur' })).toBeVisible();
+  // éditeur puis résultats
+  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByText('Mur 288 × 240')).toBeVisible();
+  await page.getByRole('link', { name: /\d+ carreaux/ }).click();
   await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
   await check(page);
-  await shot(page, info, '20-projet-rendu');
-  await page.getByRole('radio', { name: 'Coupes' }).click();
-  await expect(page.getByRole('list', { name: 'Légende' })).toBeVisible();
-  await check(page);
-  await shot(page, info, '21-projet-coupes');
+  await shot(page, info, '20-resultats-mur');
 
   // persistance
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Mur 288 × 240' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Résultats — Mur 288 × 240' })).toBeVisible();
+  await page.getByRole('link', { name: 'Retour au plan' }).click();
 
   // accueil, carte, menu
   await page.getByRole('link', { name: 'Mes projets' }).click();
@@ -80,7 +78,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
   await page.getByRole('button', { name: 'Actions pour Crédence cuisine' }).click();
   await page.getByRole('button', { name: 'Dupliquer' }).click();
-  await expect(page.getByRole('heading', { name: 'Crédence cuisine (copie)' })).toBeVisible();
+  await expect(page.getByText('Crédence cuisine (copie)')).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('link', { name: /Crédence cuisine/ })).toHaveCount(2);
 
@@ -123,7 +121,7 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
   await next(page);
   await next(page);
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
   await page.goto('/#/library');
   await page.getByRole('link', { name: /Hexagone terracotta/ }).click();
   await page.getByRole('button', { name: 'Supprimer le carreau' }).click();
@@ -142,11 +140,13 @@ test('pièce complète : murs et sol', async ({ page }, info) => {
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next(page);
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('heading', { name: 'Pièce 240 × 180' })).toBeVisible();
-  const surfaces = page.getByRole('radiogroup', { name: 'Surface' });
-  await expect(surfaces.getByRole('radio')).toHaveText(['Mur A', 'Mur B', 'Mur D', 'Sol']);
-  await surfaces.getByRole('radio', { name: 'Sol' }).click();
-  await expect(page.getByRole('img', { name: 'Plan de Sol' })).toBeVisible();
+  await expect(page.getByText('Pièce 240 × 180')).toBeVisible();
+  await page.getByRole('button', { name: /Pièce 240 × 180/ }).click();
+  const dlg = page.getByRole('dialog', { name: 'Surfaces et pièce' });
+  await expect(dlg.getByRole('button', { name: /^(Mur|Sol)/ })).toHaveText([/^Mur A/, /^Mur B/, /^Mur D/, /^Sol/]);
+  await dlg.getByRole('button', { name: /^Sol/ }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('application', { name: /^Plan de Sol/ })).toBeVisible();
   await check(page);
   await shot(page, info, '22-projet-piece-sol');
 });

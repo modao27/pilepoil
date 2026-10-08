@@ -46,6 +46,12 @@
 </div>
 
 <style>
+  .tabs {
+    min-width: 0;
+  }
+  .panel {
+    min-width: 0;
+  }
   .list {
     display: flex;
     overflow-x: auto;
@@ -55,7 +61,7 @@
   button {
     flex: 1 0 auto;
     min-height: var(--touch);
-    padding: 0 var(--space-3);
+    padding: 0 10px;
     border: 0;
     border-bottom: 3px solid transparent;
     background: transparent;

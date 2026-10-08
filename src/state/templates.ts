@@ -1,6 +1,6 @@
 /** Projets créés par l'assistant : mur ou sol seul, ou pièce complète (murs A à D + sol, comme legacy). */
 import type { PatternId } from '../core';
-import { createProject, createSurface, createZone } from './factories';
+import { createProject, createSurface, createZone, newId } from './factories';
 import type { Id, Project, RoomWallKey, Surface } from './model';
 
 export interface LayoutChoice {
@@ -44,6 +44,76 @@ export function createSingleSurfaceProject(i: SingleSurfaceInput, now = Date.now
 }
 
 const WALL_NAMES: Record<RoomWallKey, string> = { A: 'Mur A', B: 'Mur B', C: 'Mur C', D: 'Mur D', floor: 'Sol' };
+
+export interface RoomUpdate {
+  length: number;
+  width: number;
+  height: number;
+  tiledHeight: number;
+  walls: Record<RoomWallKey, boolean>;
+}
+
+/**
+ * Crée ou met à jour la pièce d'un projet [roomGo] : chaque mur ou sol demandé reçoit une surface (copie de
+ * `template` sans ouvertures, angles ni plinthe ; la première surface est reprise si elle est seule et hors
+ * pièce), puis toutes prennent les dimensions de la pièce. Les surfaces décochées restent, hors pièce.
+ */
+export function applyRoom(project: Project, template: Surface, i: RoomUpdate): Project {
+  let walls: Partial<Record<RoomWallKey, Id>> = { ...(project.room?.walls ?? {}) };
+  let surfaces = project.surfaces.slice();
+  const inRoom = new Set(Object.values(walls));
+  for (const k of ['A', 'B', 'C', 'D', 'floor'] as const) {
+    if (!i.walls[k]) {
+      walls = Object.fromEntries(Object.entries(walls).filter(([key]) => key !== k));
+      continue;
+    }
+    let s = surfaces.find((x) => x.id === walls[k]);
+    if (!s) {
+      const reuseFirst = surfaces.length === 1 && !project.room && !inRoom.has(surfaces[0]!.id);
+      if (reuseFirst) s = surfaces[0]!;
+      else {
+        const copy = structuredClone(template);
+        s = {
+          ...copy,
+          id: newId(),
+          openings: [],
+          corners: [],
+          plinth: null,
+          zones: copy.zones.map((z) => ({ ...z, id: newId() })),
+        };
+        surfaces.push(s);
+      }
+      const floor = k === 'floor';
+      s = {
+        ...s,
+        name: WALL_NAMES[k],
+        kind: floor ? 'floor' : 'wall',
+        ...(floor
+          ? {
+              zones: [{ ...s.zones[0]!, unit: 'rest' as const }],
+              openings: s.openings.filter((o) => o.type === 'tub' || o.type === 'trap'),
+              plinth: null,
+            }
+          : {}),
+      };
+      walls[k] = s.id;
+      inRoom.add(s.id);
+    }
+    const floor = k === 'floor';
+    const sized: Surface = {
+      ...s,
+      width: floor || k === 'A' || k === 'C' ? i.length : i.width,
+      height: floor ? i.width : Math.min(i.tiledHeight, i.height),
+    };
+    surfaces = surfaces.some((x) => x.id === sized.id)
+      ? surfaces.map((x) => (x.id === sized.id ? sized : x))
+      : [...surfaces, sized];
+  }
+  const room = Object.keys(walls).length
+    ? { length: i.length, width: i.width, height: i.height, tiledHeight: i.tiledHeight, walls }
+    : null;
+  return { ...project, surfaces, room };
+}
 
 /** Murs A et C sur la longueur, B et D sur la largeur, carrelés sur tiledHeight ; sol longueur × largeur. */
 export function createRoomProject(i: RoomInput, now = Date.now()): Project {

@@ -166,6 +166,7 @@ export type Pref =
   | { key: 'palette'; value: Palette }
   | { key: 'theme'; value: 'auto' | 'light' | 'dark' }
   | { key: 'lastProjectId'; value: Id }
+  | { key: 'showCutNumbers'; value: boolean }
   | { key: 'legacyImport'; value: { at: number; projectId: Id | null } };
 
 export type PrefKey = Pref['key'];
