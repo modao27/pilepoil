@@ -49,3 +49,29 @@ export function openingCenter(room: PlanRoom, opening: WallOpening): Point | nul
 export function parallel(u: Point, v: Point): boolean {
   return Math.abs(u[0] * v[1] - u[1] * v[0]) < 1e-6 && (u[0] !== 0 || u[1] !== 0) && (v[0] !== 0 || v[1] !== 0);
 }
+
+/**
+ * Tracé des murs vers l'extérieur, avec leur épaisseur : un quadrilatère par mur, angles en onglet
+ * (les bandes de deux murs voisins se rejoignent sans trou ni chevauchement). Repère de la pièce.
+ */
+export function wallBands(room: PlanRoom): Point[][] {
+  const n = room.outline.length;
+  if (n < 3) return [];
+  const outer: Point[] = room.outline.map((p, i) => {
+    const prev = (i - 1 + n) % n;
+    const d1 = wallDirection(room, prev),
+      d2 = wallDirection(room, i);
+    const n1 = outwardNormal(d1),
+      n2 = outwardNormal(d2);
+    const t1 = room.walls[prev]?.thickness ?? 0,
+      t2 = room.walls[i]?.thickness ?? 0;
+    // intersection des droites décalées p + n1·t1 + s·d1 et p + n2·t2 + u·d2
+    const a: Point = [p[0] + n1[0] * t1, p[1] + n1[1] * t1];
+    const b: Point = [p[0] + n2[0] * t2, p[1] + n2[1] * t2];
+    const den = d1[0] * d2[1] - d1[1] * d2[0];
+    if (Math.abs(den) < 1e-9) return b;
+    const s = ((b[0] - a[0]) * d2[1] - (b[1] - a[1]) * d2[0]) / den;
+    return [a[0] + d1[0] * s, a[1] + d1[1] * s];
+  });
+  return room.outline.map((p, i) => [p, room.outline[(i + 1) % n]!, outer[(i + 1) % n]!, outer[i]!]);
+}

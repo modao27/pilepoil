@@ -168,7 +168,7 @@
 
 <div class="editor" class:desktop>
   <header class="bar">
-    <IconButton icon="back" label="Mes projets" href="#/" />
+    <IconButton icon="back" label="Projet" href="#/p/{ed.project.id}" />
     <button type="button" class="surf" aria-haspopup="dialog" onclick={() => (surfaceDialog = true)}>
       <span class="pname">{ed.project.name}</span>
       <span class="sname">{ed.surface.name} <Icon name="down" size={16} /></span>

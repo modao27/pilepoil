@@ -122,6 +122,16 @@ describe('réducteur du projet', () => {
       expect(reduceProject(p, a)).toBe(p);
   });
 
+  it('activer un outil : données créées hors du réducteur, une seule fois', () => {
+    const bare: Project = { ...p, modules: {} };
+    const doc = { schemaVersion: 1, data: carrelage.create(p.plan) };
+    const on = reduceProject(bare, { type: 'project/module/add', id: 'carrelage', doc });
+    expect(on.modules.carrelage).toBe(doc);
+    expect(
+      reduceProject(on, { type: 'project/module/add', id: 'carrelage', doc: { schemaVersion: 1, data: {} } }),
+    ).toBe(on);
+  });
+
   it('module absent du projet : action ignorée', () => {
     const bare: Project = { ...p, modules: {} };
     expect(reduceProject(bare, { type: 'carrelage/settings', patch: { margin: 15 } } as ProjectAction)).toBe(bare);

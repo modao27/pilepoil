@@ -8,6 +8,8 @@ import type { Id, Palette, Photo, Project } from '../../state/model';
 import { openDb, type Db } from '../../storage/db';
 import { autoImportLegacy, importLegacy, parseLegacyExport, type ImportSummary } from '../../storage/legacy/import';
 import * as repo from '../../storage/repo';
+import type { Libraries, LibraryItem, ModuleId } from '../../modules/types';
+import { createWorkerClient, type ComputeClient } from '../../workers/client';
 import { toast } from './toasts.svelte';
 
 export type Theme = 'auto' | 'light' | 'dark';
@@ -24,6 +26,14 @@ export class AppState {
   /** URL d'affichage des photos chargées (object URL). */
   photoUrls = $state.raw<Record<Id, string>>({});
 
+  /** Bibliothèques chargées par les modules ('tiles'…), pour `toSpec` de chaque module. */
+  libraries = $state.raw<Libraries>({});
+
+  /** Aperçu en direct : seule la dernière demande de chaque module compte (docs/BOITE.md §6). */
+  live!: ComputeClient;
+  /** Vignettes et résumés : toutes les demandes, une à la fois. */
+  private batch!: ComputeClient;
+  private queue: Promise<unknown> = Promise.resolve();
   private _db!: Db;
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   private pendingDeletes = new Map<Id, ReturnType<typeof setTimeout>>();
@@ -31,6 +41,8 @@ export class AppState {
   async init(): Promise<void> {
     try {
       this._db = await openDb();
+      this.live = createWorkerClient();
+      this.batch = createWorkerClient();
       let imported: ImportSummary | null = null;
       try {
         imported = await autoImportLegacy(this.db, localStorage);
@@ -151,6 +163,19 @@ export class AppState {
     const sum = await importLegacy(this.db, store);
     await this.reload();
     return sum ? importMessage(sum) : 'Ce fichier ne contient aucun projet.';
+  }
+
+  /* ---------- calcul et bibliothèques ---------- */
+
+  /** Calcul en file (vignettes, résumés) : toutes les demandes sont faites, l'une après l'autre. */
+  queued<R>(module: ModuleId, spec: unknown): Promise<R> {
+    const job = this.queue.then(() => this.batch.compute<R>(module, spec));
+    this.queue = job.catch(() => undefined);
+    return job;
+  }
+
+  setLibrary(id: string, items: readonly LibraryItem[]): void {
+    this.libraries = { ...this.libraries, [id]: items };
   }
 
   /** Base ouverte (modules). */

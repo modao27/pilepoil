@@ -6,10 +6,12 @@ import { reducePlan, type PlanAction } from '../core/plan/reduce';
 import type { Plan } from '../core/plan/types';
 import { moduleById } from '../modules/registry';
 import type { ModuleAction, ModuleId, ToolModuleS2 } from '../modules/types';
-import type { Project } from './model';
+import type { ModuleDoc, Project } from './model';
 
 export type ProjectAction =
   | { type: 'project/rename'; name: string }
+  /** Active un module : ses données initiales sont créées hors du réducteur (`module.create`). */
+  | { type: 'project/module/add'; id: ModuleId; doc: ModuleDoc }
   /** Plusieurs actions en une seule étape d'historique (ex. résultat d'optimisation). */
   | { type: 'batch'; actions: ProjectAction[] }
   | PlanAction
@@ -29,6 +31,10 @@ export function reduceProject(
   if (a.type === 'project/rename') {
     const { name } = a as Extract<ProjectAction, { type: 'project/rename' }>;
     return name === p.name ? p : { ...p, name };
+  }
+  if (a.type === 'project/module/add') {
+    const { id, doc } = a as Extract<ProjectAction, { type: 'project/module/add' }>;
+    return Object.hasOwn(p.modules, id) ? p : { ...p, modules: { ...p.modules, [id]: doc } };
   }
   if (a.type === 'batch') {
     const { actions } = a as Extract<ProjectAction, { type: 'batch' }>;

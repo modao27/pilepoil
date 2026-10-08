@@ -295,6 +295,11 @@ seul le parquet s'en sert au début.
 | 2026-10-08 | `ModuleId` ouvert, `Project.modules` en `Record<string, ModuleDoc>` | §2, §4 |
 | 2026-10-08 | Deux points d'entrée par module : `index.ts` (application) et `engine.ts` (moteur, worker) | §2 |
 | 2026-10-08 | `ModuleEngine` : entrée et résultat propres à l'optimisation (`OptSpec`, `OptResult`) | §2 |
+| 2026-10-08 | Booléens et décalage : `clipper2-ts` 2.0.1-18 (figée), enveloppée dans `core/geometry/boolean.ts` | §3 |
+| 2026-10-08 | Migration v1 → v2 déterministe (ids de plan dérivés de l'id du projet) | §4 |
+| 2026-10-08 | Workers et bibliothèques chargées tenus par la coquille ; résumés des cartes calculés en file | §6 |
+| 2026-10-08 | Magasin `scenarios` : déplacé dans le module carrelage en S3 (avec le ramassage des photos) | §4 |
+| 2026-10-08 | Éditeur de plan en SVG ; activer un module = action `project/module/add` (données créées hors réducteur) | §5, §9 |
 | 2026-10-08 | Murs avec identifiant stable et épaisseur propre ; ouvertures rattachées à l'`id` du mur | §3 |
 | 2026-10-08 | Épaisseur de mur par défaut : 72 mm (cloison placo 72/48, BA13) | §3, §4 |
 | 2026-10-08 | Magasin `scenarios` géré par le module carrelage | §4 |

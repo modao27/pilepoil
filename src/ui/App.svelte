@@ -10,6 +10,7 @@
   import { router } from './lib/router.svelte';
   import Demo from './screens/Demo.svelte';
   import Home from './screens/Home.svelte';
+  import Project from './screens/Project.svelte';
   import Settings from './screens/Settings.svelte';
 
   const route = $derived(router.route);
@@ -41,6 +42,12 @@
   <Settings />
 {:else if route.name === 'demo'}
   <Demo />
+{:else if route.name === 'project'}
+  {#key route.id}<Project id={route.id} />{/key}
+{:else if route.name === 'plan' && app.project(route.id)}
+  {#key route.id}{#await import('./plan/PlanEditor.svelte') then { default: PlanEditor }}<PlanEditor
+        project={app.project(route.id)!}
+      />{/await}{/key}
 {:else if route.name === 'module' && load}
   {#key route.id}{#await load() then ModuleScreen}<ModuleScreen projectId={route.id} {params} />{/await}{/key}
 {:else}

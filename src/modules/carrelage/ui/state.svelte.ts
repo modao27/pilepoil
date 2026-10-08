@@ -7,7 +7,7 @@ import { SCENARIO_SCHEMA } from '../../../state/model';
 import type { Db } from '../../../storage/db';
 import * as repo from '../../../storage/repo';
 import { app } from '../../../ui/lib/app.svelte';
-import { createWorkerClient, SupersededError, type ComputeClient } from '../../../workers/client';
+import { SupersededError } from '../../../workers/client';
 import type {
   Metrics,
   OptimizeProgress,
@@ -35,11 +35,6 @@ export class CarrelageState {
 
   private db!: Db;
   private library!: LibraryStore;
-  /** Aperçu en direct : seule la dernière demande compte. */
-  private live!: ComputeClient;
-  /** Vignettes : toutes les demandes, une à la fois. */
-  private batch!: ComputeClient;
-  private queue: Promise<unknown> = Promise.resolve();
   // Caches internes, volontairement non réactifs (l'interface lit tiles, pas ces tables).
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   private cache = new Map<string, ProjectResult>();
@@ -48,8 +43,6 @@ export class CarrelageState {
   /** (Re)charge la bibliothèque ; ouvre les workers au premier appel. */
   async load(db: Db): Promise<void> {
     this.db = db;
-    this.live ??= createWorkerClient();
-    this.batch ??= createWorkerClient();
     const tiles = await repo.listTiles(db);
     this.library = createLibraryStore(tiles, {
       isUsed: (id) => app.projects.some((p) => uses(p, id)),
@@ -58,6 +51,7 @@ export class CarrelageState {
     });
     this.library.subscribe((t) => {
       this.tiles = t;
+      app.setLibrary('tiles', t);
       this.tilesVersion++;
     });
   }
@@ -95,7 +89,7 @@ export class CarrelageState {
   /** Calcul en direct (aperçu) : null si une demande plus récente l'a remplacé. */
   async computeLive(spec: ProjectSpec): Promise<ProjectResult | null> {
     try {
-      return await this.live.compute<ProjectResult>(MODULE, spec);
+      return await app.live.compute<ProjectResult>(MODULE, spec);
     } catch (e) {
       if (e instanceof SupersededError) return null;
       throw e;
@@ -112,7 +106,7 @@ export class CarrelageState {
   ): Promise<OptimizeResult> {
     const spec: OptimizeSpec = { surface, zones, goal, settings };
     const onProgress = opts.onProgress;
-    return this.live.optimize<OptimizeResult>(MODULE, spec, {
+    return app.live.optimize<OptimizeResult>(MODULE, spec, {
       signal: opts.signal,
       onProgress: onProgress && ((p) => onProgress({ zone: p.part ?? 0, percent: p.percent })),
     });
@@ -135,9 +129,7 @@ export class CarrelageState {
     const hit = this.cache.get(key);
     if (hit) return Promise.resolve(hit);
     const sp = spec();
-    const job = this.queue.then(() => this.batch.compute<ProjectResult>(MODULE, sp));
-    this.queue = job.catch(() => undefined);
-    return job.then((r) => {
+    return app.queued<ProjectResult>(MODULE, sp).then((r) => {
       this.cache.set(key, r);
       return r;
     });
