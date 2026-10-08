@@ -11,6 +11,7 @@
   import Screen from '../../../../ui/components/Screen.svelte';
   import TextField from '../../../../ui/components/TextField.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { dateShort } from '../../../../ui/lib/format';
   import { COMPARE_ROWS, compareValue, projectDescription, type CompareMetrics } from '../lib/labels';
   import { toast } from '../../../../ui/lib/toasts.svelte';
@@ -29,20 +30,20 @@
     const p = project;
     if (!p) return;
     let live = true;
-    void app.result(p).then((r) => live && (current = r));
+    void carrelage.result(p).then((r) => live && (current = r));
     return () => (live = false);
   });
 
   $effect(() => {
     void version;
     let live = true;
-    void app.scenarios(id).then(async (list) => {
+    void carrelage.scenarios(id).then(async (list) => {
       if (!live) return;
       const next = { A: list.find((s) => s.slot === 'A') ?? null, B: list.find((s) => s.slot === 'B') ?? null };
       scen = next;
       names = { A: next.A?.name ?? '', B: next.B?.name ?? '' };
       const res: Record<string, ProjectResult> = {};
-      for (const s of [next.A, next.B]) if (s) res[s.id] = await app.scenarioResult(s);
+      for (const s of [next.A, next.B]) if (s) res[s.id] = await carrelage.scenarioResult(s);
       if (live) results = res;
     });
     return () => (live = false);
@@ -50,14 +51,14 @@
 
   function metricsOf(r: ProjectResult, s: Scenario | null): CompareMetrics {
     const p = s ? s.snapshot.project : project!;
-    const tiles = s ? s.snapshot.tiles : app.tiles;
+    const tiles = s ? s.snapshot.tiles : carrelage.tiles;
     return { ...r.metrics, cost: projectCost(p, tiles, r).total };
   }
 
   async function save(slot: 'A' | 'B') {
     if (!project || !current) return;
     const name = scen[slot]?.name || `Scénario ${slot}`;
-    await app.saveScenario(project, slot, name, current.metrics);
+    await carrelage.saveScenario(project, slot, name, current.metrics);
     toast(`État actuel enregistré dans le scénario ${slot}.`);
     version++;
   }
@@ -65,7 +66,7 @@
   async function clear(slot: 'A' | 'B') {
     const s = scen[slot];
     if (!s) return;
-    await app.deleteScenario(s);
+    await carrelage.deleteScenario(s);
     version++;
   }
 
@@ -73,7 +74,7 @@
     const s = scen[slot],
       n = names[slot].trim();
     if (!s || !n || n === s.name) return;
-    await app.renameScenario(s, n);
+    await carrelage.renameScenario(s, n);
     version++;
   }
 
@@ -81,9 +82,9 @@
     const s = scen[slot];
     confirm = null;
     if (!s) return;
-    const prev = await app.loadScenario(s);
+    const prev = await carrelage.loadScenario(s);
     toast(`Scénario « ${s.name} » chargé.`, {
-      action: prev ? { label: 'Annuler', run: () => void app.restoreProject(prev) } : undefined,
+      action: prev ? { label: 'Annuler', run: () => void carrelage.restoreProject(prev) } : undefined,
     });
   }
 

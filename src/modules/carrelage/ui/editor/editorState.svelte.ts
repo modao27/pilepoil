@@ -9,6 +9,7 @@ import type { Corner, Id, Opening, OpeningType, Project, Surface, Zone } from '.
 import { toProjectSpec } from '../../state/selectors';
 import { createProjectStore, type ProjectStore } from '../../../../state/store';
 import { applyRoom, type RoomUpdate } from '../../state/templates';
+import { carrelage } from '../state.svelte';
 import { reduce } from '../../state/actions';
 import { createSaver, type Saver } from '../../../../storage/autosave';
 import { app } from '../../../../ui/lib/app.svelte';
@@ -85,8 +86,8 @@ export class EditorState {
 
   /** Calcule le projet (dernière demande seulement) ; appelé à chaque changement du projet ou de la bibliothèque. */
   async recompute(): Promise<void> {
-    const { spec } = toProjectSpec(this.project, app.tiles);
-    const r = await app.computeLive(spec);
+    const { spec } = toProjectSpec(this.project, carrelage.tiles);
+    const r = await carrelage.computeLive(spec);
     if (r) {
       this.result = r;
       this.spec = spec;
@@ -295,7 +296,7 @@ export class EditorState {
     this.abort = new AbortController();
     this.optimizing = { zone: zones[0] ?? 0, percent: 0 };
     try {
-      const res = await app.optimize(surf, zones, goal, this.spec.settings, {
+      const res = await carrelage.optimize(surf, zones, goal, this.spec.settings, {
         signal: this.abort.signal,
         onProgress: (p) => (this.optimizing = { zone: p.zone, percent: p.percent }),
       });

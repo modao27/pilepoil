@@ -5,12 +5,12 @@
   import PatternPicker from '../components/PatternPicker.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import Select from '../../../../ui/components/Select.svelte';
-  import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import type { EditorState } from './editorState.svelte';
 
   let { ed }: { ed: EditorState } = $props();
 
-  const shape = $derived(app.tile(ed.zone.tileId)?.shape ?? 'rect');
+  const shape = $derived(carrelage.tile(ed.zone.tileId)?.shape ?? 'rect');
   const GOALS: { value: OptimizerGoal; label: string }[] = [
     { value: 'thin', label: 'Éviter les coupes fines et apparentes' },
     { value: 'tiles', label: 'Le moins de carreaux possible' },

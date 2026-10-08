@@ -2,7 +2,7 @@
   /** Export PDF (A4) : téléchargement, ou partage du fichier quand le téléphone le permet. */
   import type { ProjectResult } from '../../core';
   import type { Project } from '../../../../state/model';
-  import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import Button from '../../../../ui/components/Button.svelte';
   import Dialog from '../../../../ui/components/Dialog.svelte';
 
@@ -35,7 +35,13 @@
     status = 'Préparation du PDF…';
     try {
       const { buildPdf } = await import('../lib/pdf');
-      const blob = buildPdf({ project, spec: app.spec(project), result, tiles: app.tiles, date: Date.now() });
+      const blob = buildPdf({
+        project,
+        spec: carrelage.spec(project),
+        result,
+        tiles: carrelage.tiles,
+        date: Date.now(),
+      });
       return new File([blob], fileName, { type: 'application/pdf' });
     } catch {
       status = 'Création du PDF impossible. Réessayez.';

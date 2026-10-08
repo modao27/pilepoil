@@ -10,6 +10,7 @@
   import { hitTest, pieceAt } from '../../render/hitTest';
   import { fitView, panBy, toWorld, zoomAt, type View } from '../../../../render/view';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import type { EditorState } from './editorState.svelte';
 
   let { ed, label }: { ed: EditorState; label: string } = $props();
@@ -62,7 +63,7 @@
   const images = new Map<string, HTMLImageElement>();
   function photoFor(zone: number): HTMLImageElement | null {
     const tileId = ed.surface.zones[zone]?.tileId;
-    const pid = tileId ? app.tile(tileId)?.photoId : null;
+    const pid = tileId ? carrelage.tile(tileId)?.photoId : null;
     if (!pid) return null;
     app.loadPhoto(pid);
     const url = app.photoUrls[pid];
@@ -111,7 +112,7 @@
         return im ? [im.naturalWidth, im.naturalHeight] : [1, 1];
       },
       photoFlip: (z) => {
-        const t = app.tile(ed.surface.zones[z]?.tileId ?? '');
+        const t = carrelage.tile(ed.surface.zones[z]?.tileId ?? '');
         return !!ed.surface.zones[z]?.photoRandomFlip && t?.orientation !== 'none';
       },
       guides: ed.guides,

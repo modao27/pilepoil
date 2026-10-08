@@ -6,6 +6,7 @@
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import Select from '../../../../ui/components/Select.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { cm } from '../../../../ui/lib/format';
   import type { EditorState } from './editorState.svelte';
 
@@ -133,7 +134,10 @@
       <Select
         label="Carreau de la zone"
         value={pl?.zoneId ?? s.zones[0]!.id}
-        options={s.zones.map((z, i) => ({ value: z.id, label: `Zone ${i + 1} — ${app.tile(z.tileId)?.name ?? ''}` }))}
+        options={s.zones.map((z, i) => ({
+          value: z.id,
+          label: `Zone ${i + 1} — ${carrelage.tile(z.tileId)?.name ?? ''}`,
+        }))}
         onchange={(id) => setPlinth({ zoneId: id })}
       />
     {/if}

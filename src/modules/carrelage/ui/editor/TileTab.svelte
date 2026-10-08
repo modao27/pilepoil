@@ -10,13 +10,14 @@
   import TileForm from '../components/TileForm.svelte';
   import TileSwatch from '../components/TileSwatch.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { mm, tileSize } from '../../../../ui/lib/format';
   import { glueNoteText, NOTCH_LABEL } from '../lib/labels';
   import type { EditorState } from './editorState.svelte';
 
   let { ed }: { ed: EditorState } = $props();
 
-  const tile = $derived(app.tile(ed.zone.tileId));
+  const tile = $derived(carrelage.tile(ed.zone.tileId));
   const regular = $derived(tile?.shape === 'hex' || tile?.shape === 'octo');
   let dialog = $state<'new' | 'edit' | null>(null);
   let draft = $state<Tile>(createTile({ name: '' }));
@@ -33,7 +34,7 @@
     dialog = 'edit';
   }
   function save(t: Tile) {
-    app.putTile(t);
+    carrelage.putTile(t);
     if (dialog === 'new') ed.updateZone({ tileId: t.id });
     dialog = null;
     void ed.recompute();
@@ -44,7 +45,7 @@
   <section aria-labelledby="t-tile">
     <h3 id="t-tile">Carreau{ed.surface.zones.length > 1 ? ` de la zone ${ed.zoneIndex + 1}` : ''}</h3>
     <div class="tiles" role="radiogroup" aria-labelledby="t-tile">
-      {#each app.tiles as t (t.id)}
+      {#each carrelage.tiles as t (t.id)}
         <button
           type="button"
           role="radio"

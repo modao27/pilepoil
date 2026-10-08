@@ -1,5 +1,6 @@
-import type { Project } from '../../state/model';
-import { app } from './app.svelte';
+import type { Project } from '../../../../state/model';
+import { app } from '../../../../ui/lib/app.svelte';
+import { carrelage } from '../state.svelte';
 
 /**
  * Photo du carreau d'une zone pour le rendu 3D : URL chargée (sinon null, la photo arrive ensuite)
@@ -8,7 +9,7 @@ import { app } from './app.svelte';
 export function scenePhoto(project: Project): (surface: number, zone: number) => { url: string; flip: boolean } | null {
   return (si, zi) => {
     const z = project.surfaces[si]?.zones[zi];
-    const t = z ? app.tile(z.tileId) : undefined;
+    const t = z ? carrelage.tile(z.tileId) : undefined;
     if (!z || !t?.photoId) return null;
     app.loadPhoto(t.photoId);
     const url = app.photoUrls[t.photoId];

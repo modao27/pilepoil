@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { ui } from '../../modules/carrelage';
-  import type { ProjectResult } from '../../modules/carrelage';
-  import type { Project } from '../../state/model';
-  import { projectArea, projectCost } from '../../modules/carrelage';
-  import { app } from '../lib/app.svelte';
-  import { dateShort, euros, m2 } from '../lib/format';
-  import { go } from '../lib/router.svelte';
-  import Button from './Button.svelte';
-  import Dialog from './Dialog.svelte';
-  import IconButton from './IconButton.svelte';
-  import TextField from './TextField.svelte';
+  import type { ProjectResult } from '../../core';
+  import type { Project } from '../../../../state/model';
+  import { projectArea, projectCost } from '../../state/pricing';
+  import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
+  import PlanPreview from './PlanPreview.svelte';
+  import { dateShort, euros, m2 } from '../../../../ui/lib/format';
+  import { go } from '../../../../ui/lib/router.svelte';
+  import Button from '../../../../ui/components/Button.svelte';
+  import Dialog from '../../../../ui/components/Dialog.svelte';
+  import IconButton from '../../../../ui/components/IconButton.svelte';
+  import TextField from '../../../../ui/components/TextField.svelte';
 
   let { project }: { project: Project } = $props();
 
@@ -20,12 +21,12 @@
 
   $effect(() => {
     let live = true;
-    void app.result(project).then((r) => live && (result = r));
+    void carrelage.result(project).then((r) => live && (result = r));
     return () => (live = false);
   });
 
   const first = $derived(result?.surfaces[0]);
-  const cost = $derived(result ? projectCost(project, app.tiles, result) : null);
+  const cost = $derived(result ? projectCost(project, carrelage.tiles, result) : null);
   const firstGrout = $derived(project.surfaces[0]?.zones[0]?.groutColor);
 
   async function rename() {
@@ -40,14 +41,12 @@
 <article class="card">
   <div class="thumb">
     {#if first?.ok}
-      {#await ui.PlanPreview() then { default: PlanPreview }}
-        <PlanPreview
-          surface={app.spec(project).surfaces[0]!}
-          pieces={first.value.pieces}
-          grout={firstGrout}
-          label="Aperçu de {project.surfaces[0]!.name}"
-        />
-      {/await}
+      <PlanPreview
+        surface={carrelage.spec(project).surfaces[0]!}
+        pieces={first.value.pieces}
+        grout={firstGrout}
+        label="Aperçu de {project.surfaces[0]!.name}"
+      />
     {/if}
   </div>
   <div class="info">

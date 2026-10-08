@@ -5,7 +5,7 @@
   import ListReorder from '../../../../ui/components/ListReorder.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
-  import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { cm } from '../../../../ui/lib/format';
   import type { EditorState } from './editorState.svelte';
 
@@ -20,7 +20,7 @@
         ? `${z.size} rangée${z.size > 1 ? 's' : ''}`
         : cm(z.size);
   const label = (z: Zone, i: number) =>
-    `Zone ${i + 1} : ${pattern(z.pattern).name}, ${app.tile(z.tileId)?.name ?? 'carreau manquant'}, ${sizeText(z)}`;
+    `Zone ${i + 1} : ${pattern(z.pattern).name}, ${carrelage.tile(z.tileId)?.name ?? 'carreau manquant'}, ${sizeText(z)}`;
 </script>
 
 <div class="tab">

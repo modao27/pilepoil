@@ -7,25 +7,26 @@
   import { createTile } from '../../state/factories';
   import type { Tile } from '../../../../state/model';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { go } from '../../../../ui/lib/router.svelte';
   import { toast } from '../../../../ui/lib/toasts.svelte';
 
   let { id }: { id: string | null } = $props();
 
   // Valeur initiale voulue : l'écran est recréé à chaque changement d'id ({#key} dans App.svelte).
-  const existing = untrack(() => (id ? app.tile(id) : undefined));
+  const existing = untrack(() => (id ? carrelage.tile(id) : undefined));
   let tile = $state<Tile>(existing ? { ...existing } : createTile({ name: '' }));
   let blocked = $state<string | null>(null);
 
   function save(t: Tile) {
-    app.putTile(t);
+    carrelage.putTile(t);
     app.collectPhotos();
     toast(existing ? 'Carreau enregistré.' : 'Carreau ajouté à la bibliothèque.');
     go({ name: 'library' }, true);
   }
 
   function remove() {
-    const user = app.deleteTile(tile.id);
+    const user = carrelage.deleteTile(tile.id);
     if (user) {
       blocked = user;
       return;

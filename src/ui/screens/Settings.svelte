@@ -3,6 +3,7 @@
   import Screen from '../components/Screen.svelte';
   import Segmented from '../components/Segmented.svelte';
   import { app, type Theme } from '../lib/app.svelte';
+  import { ui } from '../../modules/carrelage';
   import { count } from '../lib/format';
   import { APP_VERSION, pwa } from '../lib/pwa.svelte';
   import { toast } from '../lib/toasts.svelte';
@@ -56,8 +57,11 @@
     <section aria-labelledby="s-data">
       <h2 id="s-data">Données</h2>
       <p>
-        {count(app.projects.length, 'projet', 'projets')} et {count(app.tiles.length, 'carreau', 'carreaux')},
-        enregistrés sur cet appareil uniquement.
+        {count(app.projects.length, 'projet', 'projets')} et {#await ui.state() then { carrelage }}{count(
+            carrelage.tiles.length,
+            'carreau',
+            'carreaux',
+          )}{/await}, enregistrés sur cet appareil uniquement.
       </p>
       <h3>Ancienne version</h3>
       <p class="muted">

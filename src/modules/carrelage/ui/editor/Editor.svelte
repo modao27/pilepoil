@@ -11,10 +11,11 @@
   import Scene3DView from '../components/Scene3DView.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
-  import { scenePhoto } from '../../../../ui/lib/photos';
+  import { scenePhoto } from '../lib/photos';
   import Tabs from '../../../../ui/components/Tabs.svelte';
   import Icon from '../../../../ui/icons/Icon.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { euros } from '../../../../ui/lib/format';
   import { pwa } from '../../../../ui/lib/pwa.svelte';
   import Alerts from './Alerts.svelte';
@@ -56,7 +57,7 @@
   // Calcul à chaque modification du projet ou de la bibliothèque.
   $effect(() => {
     void ed.project;
-    void app.tiles;
+    void carrelage.tiles;
     void ed.recompute();
   });
 
@@ -83,7 +84,7 @@
   });
 
   const m = $derived(ed.result?.metrics);
-  const cost = $derived(ed.result ? projectCost(ed.project, app.tiles, ed.result) : null);
+  const cost = $derived(ed.result ? projectCost(ed.project, carrelage.tiles, ed.result) : null);
   const summary = $derived(
     m
       ? `${m.order.toLocaleString('fr-FR')} carreaux · ${m.thin} coupe${m.thin > 1 ? 's' : ''} fine${m.thin > 1 ? 's' : ''}${cost && cost.total > 0 ? ' · ' + euros(cost.total) : ''}`

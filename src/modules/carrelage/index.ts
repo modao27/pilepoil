@@ -12,6 +12,9 @@ export * from './state/templates';
  * pas l'interface (le worker et le stockage l'importent). S1 seulement ; remplacé par le registre.
  */
 export const ui = {
+  /** État du module (bibliothèque, calculs, scénarios). */
+  state: () => import('./ui/state.svelte'),
+  ProjectCard: () => import('./ui/components/ProjectCard.svelte'),
   Editor: () => import('./ui/editor/Editor.svelte'),
   Compare: () => import('./ui/screens/Compare.svelte'),
   Library: () => import('./ui/screens/Library.svelte'),
@@ -20,5 +23,4 @@ export const ui = {
   TileEdit: () => import('./ui/screens/TileEdit.svelte'),
   Wizard: () => import('./ui/screens/Wizard.svelte'),
   PatternPicker: () => import('./ui/components/PatternPicker.svelte'),
-  PlanPreview: () => import('./ui/components/PlanPreview.svelte'),
 };

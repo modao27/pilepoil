@@ -9,12 +9,13 @@
   import Screen from '../../../../ui/components/Screen.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
-  import { scenePhoto } from '../../../../ui/lib/photos';
+  import { carrelage } from '../state.svelte';
+  import { scenePhoto } from '../lib/photos';
 
   let { id }: { id: string } = $props();
 
   const project = $derived(app.project(id));
-  const spec = $derived(project ? app.spec(project) : null);
+  const spec = $derived(project ? carrelage.spec(project) : null);
   let result = $state.raw<ProjectResult | null>(null);
   let view = $state<'top' | '3d'>('top');
 
@@ -22,7 +23,7 @@
     const p = project;
     if (!p) return;
     let live = true;
-    void app.result(p).then((r) => live && (result = r));
+    void carrelage.result(p).then((r) => live && (result = r));
     return () => (live = false);
   });
 

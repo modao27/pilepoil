@@ -16,6 +16,7 @@
   import TileForm from '../components/TileForm.svelte';
   import TileSwatch from '../components/TileSwatch.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { count, mm, tileSize } from '../../../../ui/lib/format';
   import { go } from '../../../../ui/lib/router.svelte';
 
@@ -28,8 +29,8 @@
   let height = $state(2400);
   let room = $state({ length: 2400, width: 1800, height: 2500, tiledHeight: 2000 });
   let walls = $state<Record<RoomWallKey, boolean>>({ A: true, B: true, C: true, D: true, floor: true });
-  let tileId = $state<string | null>(app.tiles[0]?.id ?? null);
-  let creating = $state(app.tiles.length === 0);
+  let tileId = $state<string | null>(carrelage.tiles[0]?.id ?? null);
+  let creating = $state(carrelage.tiles.length === 0);
   let draft = $state<Tile>(createTile({ name: '' }));
   let joint = $state(3);
   let upright = $state(false);
@@ -39,7 +40,7 @@
   let error = $state('');
   let saving = $state(false);
 
-  const tile = $derived((tileId && app.tile(tileId)) || undefined);
+  const tile = $derived((tileId && carrelage.tile(tileId)) || undefined);
   /** Carreau de l'aperçu : celui choisi, sinon le brouillon en cours de saisie. */
   const shown = $derived<Tile>(tile ?? $state.snapshot(draft));
   const allowed = $derived(PATTERNS.filter((p) => p.shape === shown.shape));
@@ -60,8 +61,8 @@
   let preview = $state.raw<ProjectResult | null>(null);
   let previewSpec = $state.raw<ReturnType<typeof toProjectSpec>['spec'] | null>(null);
   $effect(() => {
-    const spec = toProjectSpec(project, [...app.tiles.filter((t) => t.id !== shown.id), shown]).spec;
-    void app.computeLive(spec).then((r) => {
+    const spec = toProjectSpec(project, [...carrelage.tiles.filter((t) => t.id !== shown.id), shown]).spec;
+    void carrelage.computeLive(spec).then((r) => {
       if (r) {
         preview = r;
         previewSpec = spec;
@@ -206,21 +207,21 @@
             bind:tile={draft}
             submitLabel="Ajouter ce carreau"
             onsubmit={(t) => {
-              app.putTile(t);
+              carrelage.putTile(t);
               tileId = t.id;
               creating = false;
               error = '';
             }}
           >
             {#snippet extra()}
-              {#if app.tiles.length}<Button variant="ghost" onclick={() => (creating = false)}
+              {#if carrelage.tiles.length}<Button variant="ghost" onclick={() => (creating = false)}
                   >Choisir dans la bibliothèque</Button
                 >{/if}
             {/snippet}
           </TileForm>
         {:else}
           <div class="tiles" role="radiogroup" aria-label="Carreau de la bibliothèque">
-            {#each app.tiles as t (t.id)}
+            {#each carrelage.tiles as t (t.id)}
               <button
                 type="button"
                 role="radio"

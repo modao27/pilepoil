@@ -10,6 +10,7 @@
   import Tabs from '../../../../ui/components/Tabs.svelte';
   import ExportDialog from '../components/ExportDialog.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { evaluate } from '../../../../ui/lib/calc';
   import { euros, m2 } from '../../../../ui/lib/format';
   import { glueRows, pieceCutText, shoppingLabel } from '../lib/labels';
@@ -27,14 +28,14 @@
     const p = project;
     if (!p) return;
     let live = true;
-    void app.result(p).then((r) => live && (result = r));
+    void carrelage.result(p).then((r) => live && (result = r));
     return () => (live = false);
   });
 
-  const cost = $derived(project && result ? projectCost(project, app.tiles, result) : null);
+  const cost = $derived(project && result ? projectCost(project, carrelage.tiles, result) : null);
   const multi = $derived((project?.surfaces.length ?? 0) > 1);
   const mm = (v: number) => (Math.round(v * 10) / 10).toLocaleString('fr-FR');
-  const tilesById = $derived(new Map(app.tiles.map((t) => [t.id, t])));
+  const tilesById = $derived(new Map(carrelage.tiles.map((t) => [t.id, t])));
 
   const shop = $derived(
     project && result
@@ -55,7 +56,7 @@
   function onPrice(key: string, raw: string) {
     const v = raw.trim() === '' ? null : evaluate(raw);
     if (v === null && raw.trim() !== '') return;
-    void app.setPrice(id, key, v != null && v > 0 ? Math.round(v * 100) / 100 : null);
+    void carrelage.setPrice(id, key, v != null && v > 0 ? Math.round(v * 100) / 100 : null);
   }
 </script>
 

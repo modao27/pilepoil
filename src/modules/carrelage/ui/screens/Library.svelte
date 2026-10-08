@@ -5,6 +5,7 @@
   import TileSwatch from '../components/TileSwatch.svelte';
   import { usedTileIds } from '../../state/selectors';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import { count, euros, mm, tileSize } from '../../../../ui/lib/format';
 
   const uses = $derived.by(() => {
@@ -17,7 +18,7 @@
 </script>
 
 <Screen title="Bibliothèque de carreaux" backHref="#/" backLabel="Accueil">
-  {#if app.tiles.length === 0}
+  {#if carrelage.tiles.length === 0}
     <EmptyState
       icon="tiles"
       title="Aucun carreau"
@@ -29,7 +30,7 @@
   {:else}
     <div class="top"><Button variant="primary" icon="plus" href="#/library/new">Ajouter un carreau</Button></div>
     <ul class="list" aria-label="Carreaux">
-      {#each app.tiles as t (t.id)}
+      {#each carrelage.tiles as t (t.id)}
         {@const n = uses.get(t.id) ?? 0}
         <li>
           <a href="#/library/{t.id}">

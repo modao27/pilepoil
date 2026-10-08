@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Alertes de la surface : ce qui ne va pas, et le bouton qui le corrige. */
   import { warningText, errorText } from '../lib/messages';
-  import { app } from '../../../../ui/lib/app.svelte';
+  import { carrelage } from '../state.svelte';
   import type { EditorState, Tab } from './editorState.svelte';
 
   let { ed, onsurface }: { ed: EditorState; onsurface: () => void } = $props();
@@ -59,7 +59,7 @@
       else if (w.code === 'reveal-pattern')
         out.push({ tone: 'warn', text, action: { label: 'Ouvertures', run: goTab('openings') } });
       else if (w.code === 'plinth-too-high') {
-        const t = app.tile(ed.zone.tileId);
+        const t = carrelage.tile(ed.zone.tileId);
         out.push({
           tone: 'warn',
           text,
