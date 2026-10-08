@@ -8,11 +8,23 @@ import type { Db } from '../../../storage/db';
 import * as repo from '../../../storage/repo';
 import { app } from '../../../ui/lib/app.svelte';
 import { createWorkerClient, SupersededError, type ComputeClient } from '../../../workers/client';
-import type { Metrics, ProjectResult, ProjectSpec } from '../core';
+import type {
+  Metrics,
+  OptimizeProgress,
+  OptimizeResult,
+  OptimizerGoal,
+  ProjectResult,
+  ProjectSpec,
+  Settings,
+  SurfaceSpec,
+} from '../core';
+import type { OptimizeSpec } from '../engine';
 import { reduce } from '../state/actions';
 import { newId } from '../state/factories';
 import { createLibraryStore, type LibraryStore } from '../state/library';
 import { toProjectSpec, usedTileIds } from '../state/selectors';
+
+const MODULE = 'carrelage';
 
 export class CarrelageState {
   // Données immuables, remplacées à chaque modification : $state.raw évite les proxys, que ni IndexedDB
@@ -75,7 +87,7 @@ export class CarrelageState {
   /** Calcul en direct (aperçu) : null si une demande plus récente l'a remplacé. */
   async computeLive(spec: ProjectSpec): Promise<ProjectResult | null> {
     try {
-      return await this.live.compute(spec);
+      return await this.live.compute<ProjectResult>(MODULE, spec);
     } catch (e) {
       if (e instanceof SupersededError) return null;
       throw e;
@@ -83,8 +95,19 @@ export class CarrelageState {
   }
 
   /** Optimisation du départ dans le worker, avec progression et annulation. */
-  optimize(...args: Parameters<ComputeClient['optimize']>): ReturnType<ComputeClient['optimize']> {
-    return this.live.optimize(...args);
+  optimize(
+    surface: SurfaceSpec,
+    zones: number[],
+    goal: OptimizerGoal,
+    settings: Settings,
+    opts: { onProgress?: (p: OptimizeProgress) => void; signal?: AbortSignal } = {},
+  ): Promise<OptimizeResult> {
+    const spec: OptimizeSpec = { surface, zones, goal, settings };
+    const onProgress = opts.onProgress;
+    return this.live.optimize<OptimizeResult>(MODULE, spec, {
+      signal: opts.signal,
+      onProgress: onProgress && ((p) => onProgress({ zone: p.part ?? 0, percent: p.percent })),
+    });
   }
 
   /** Résultat d'un projet enregistré, mis en cache tant que ni le projet ni la bibliothèque ne changent. */
@@ -104,7 +127,7 @@ export class CarrelageState {
     const hit = this.cache.get(key);
     if (hit) return Promise.resolve(hit);
     const sp = spec();
-    const job = this.queue.then(() => this.batch.compute(sp));
+    const job = this.queue.then(() => this.batch.compute<ProjectResult>(MODULE, sp));
     this.queue = job.catch(() => undefined);
     return job.then((r) => {
       this.cache.set(key, r);

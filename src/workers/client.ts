@@ -1,12 +1,4 @@
-import type {
-  OptimizeProgress,
-  OptimizeResult,
-  OptimizerGoal,
-  ProjectResult,
-  ProjectSpec,
-  Settings,
-  SurfaceSpec,
-} from '../modules/carrelage';
+import type { ModuleId, Progress } from '../modules/types';
 import type { Request, Response } from './protocol';
 
 /** Canal vers le worker (un Worker, ou un faux canal en test). */
@@ -23,31 +15,36 @@ export class SupersededError extends Error {
   }
 }
 
+export interface OptimizeOptions {
+  onProgress?: (p: Progress) => void;
+  signal?: AbortSignal;
+}
+
+/**
+ * Client du worker de calcul. Entrées et résultats ne sont pas vérifiés ici : chaque module appelle avec
+ * le type de son moteur (`R` = résultat de son `compute` ou de son `optimize`).
+ */
 export interface ComputeClient {
-  /** Calcule le projet ; la promesse d'une demande dépassée est rejetée avec SupersededError. */
-  compute(spec: ProjectSpec): Promise<ProjectResult>;
-  /** Optimise des zones ; abort via signal (rejet AbortError). */
-  optimize(
-    surface: SurfaceSpec,
-    zones: number[],
-    goal: OptimizerGoal,
-    settings: Settings,
-    opts?: { onProgress?: (p: OptimizeProgress) => void; signal?: AbortSignal },
-  ): Promise<OptimizeResult>;
+  /** Calcule ; par module, la promesse d'une demande dépassée est rejetée avec SupersededError. */
+  compute<R>(module: ModuleId, spec: unknown): Promise<R>;
+  /** Optimise ; abort via signal (rejet AbortError). */
+  optimize<R>(module: ModuleId, spec: unknown, opts?: OptimizeOptions): Promise<R>;
 }
 
 interface Waiting {
   kind: 'compute' | 'optimize';
-  resolve(v: never): void;
+  module: ModuleId;
+  resolve(v: unknown): void;
   reject(e: unknown): void;
-  onProgress?: (p: OptimizeProgress) => void;
+  onProgress?: (p: Progress) => void;
 }
 
 const abortError = () => new DOMException('Optimisation annulée.', 'AbortError');
 
 export function createComputeClient(port: Port): ComputeClient {
-  let seq = 0,
-    latestCompute = 0;
+  let seq = 0;
+  /** Dernière demande de calcul de chaque module. */
+  const latest = new Map<ModuleId, number>();
   const waiting = new Map<number, Waiting>();
 
   port.addEventListener('message', ({ data: m }) => {
@@ -55,16 +52,16 @@ export function createComputeClient(port: Port): ComputeClient {
     if (!w) return;
     switch (m.type) {
       case 'progress':
-        w.onProgress?.({ zone: m.zone, percent: m.percent });
+        w.onProgress?.(m.progress);
         return;
       case 'result':
         waiting.delete(m.id);
-        if (m.id < latestCompute) w.reject(new SupersededError());
-        else w.resolve(m.result as never);
+        if (m.id < (latest.get(w.module) ?? 0)) w.reject(new SupersededError());
+        else w.resolve(m.result);
         return;
       case 'optimized':
         waiting.delete(m.id);
-        w.resolve(m.result as never);
+        w.resolve(m.result);
         return;
       case 'cancelled':
         waiting.delete(m.id);
@@ -78,21 +75,22 @@ export function createComputeClient(port: Port): ComputeClient {
   });
 
   return {
-    compute(spec) {
+    compute<R>(module: ModuleId, spec: unknown) {
       const id = ++seq;
-      latestCompute = id;
-      return new Promise<ProjectResult>((resolve, reject) => {
-        waiting.set(id, { kind: 'compute', resolve: resolve as (v: never) => void, reject });
-        port.postMessage({ type: 'compute', id, spec });
+      latest.set(module, id);
+      return new Promise<R>((resolve, reject) => {
+        waiting.set(id, { kind: 'compute', module, resolve: resolve as (v: unknown) => void, reject });
+        port.postMessage({ type: 'compute', id, module, spec });
       });
     },
-    optimize(surface, zones, goal, settings, opts = {}) {
+    optimize<R>(module: ModuleId, spec: unknown, opts: OptimizeOptions = {}) {
       const id = ++seq;
-      return new Promise<OptimizeResult>((resolve, reject) => {
+      return new Promise<R>((resolve, reject) => {
         if (opts.signal?.aborted) return reject(abortError());
         waiting.set(id, {
           kind: 'optimize',
-          resolve: resolve as (v: never) => void,
+          module,
+          resolve: resolve as (v: unknown) => void,
           reject,
           onProgress: opts.onProgress,
         });
@@ -105,7 +103,7 @@ export function createComputeClient(port: Port): ComputeClient {
           },
           { once: true },
         );
-        port.postMessage({ type: 'optimize', id, surface, zones, goal, settings });
+        port.postMessage({ type: 'optimize', id, module, spec });
       });
     },
   };
