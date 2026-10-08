@@ -42,6 +42,8 @@ export interface ToolModule<Data, Spec, Result> {
   toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
   /** Lignes d'achat consolidables. */
   shopping(result: Result, data: Data, libraries: Libraries): ShoppingLine[];
+  /** Action qui fixe le prix d'une ligne (null : revenir au prix de la bibliothèque). */
+  priceAction(key: string, value: number | null): ModuleAction;
   /** Résumé court pour la carte du module (« 46 carreaux, 312 € »). */
   summary(result: Result): ModuleSummary;
   /** Migrations des données du module, par version. */
@@ -241,6 +243,8 @@ export interface ShoppingLine {
       | 'piece' | 'm2' | 'm';                // sachet, cartridge, litre : unités actuelles du carrelage
   detail?: string;                   // « 49 lames + 5 % »
   unitPrice: number | null;
+  priceFromLibrary?: boolean;        // prix suggéré par la bibliothèque, pas saisi dans le projet
+  color?: string;                    // pastille (carreau, joint)
 }
 ```
 - Le carrelage convertit ses `ShoppingItem` actuels en `ShoppingLine` (adaptateur, sans toucher au calcul).
@@ -299,6 +303,8 @@ seul le parquet s'en sert au début.
 | 2026-10-08 | Migration v1 → v2 déterministe (ids de plan dérivés de l'id du projet) | §4 |
 | 2026-10-08 | Workers et bibliothèques chargées tenus par la coquille ; résumés des cartes calculés en file | §6 |
 | 2026-10-08 | Magasin `scenarios` : déplacé dans le module carrelage en S3 (avec le ramassage des photos) | §4 |
+| 2026-10-08 | Achats : quantité = quantité sur laquelle porte le prix (m² pour un carreau), coût identique au carrelage | §7 |
+| 2026-10-08 | Contrat : `priceAction` (prix modifiés par l'écran Achats via le module) | §2, §7 |
 | 2026-10-08 | Éditeur de plan en SVG ; activer un module = action `project/module/add` (données créées hors réducteur) | §5, §9 |
 | 2026-10-08 | Murs avec identifiant stable et épaisseur propre ; ouvertures rattachées à l'`id` du mur | §3 |
 | 2026-10-08 | Épaisseur de mur par défaut : 72 mm (cloison placo 72/48, BA13) | §3, §4 |

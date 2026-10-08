@@ -6,7 +6,7 @@ import type { ToolModuleS2 } from '../types';
 import type { ProjectResult, ProjectSpec } from './core';
 import { reduce, type Action } from './state/actions';
 import { CARRELAGE_ID, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
-import { create, summary, toSpec } from './state/module';
+import { create, priceAction, shopping, summary, toSpec } from './state/module';
 
 export * from './core';
 export * from './state/actions';
@@ -44,6 +44,8 @@ export const module: ToolModuleS2<CarrelageData, ProjectSpec, ProjectResult, Act
   reduce: (data, action) => reduce(data, action),
   toSpec,
   summary,
+  shopping,
+  priceAction,
   migrations: {},
   icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M12 1v22M23 1v22M1 12h32"/>',
   screens: {

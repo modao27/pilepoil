@@ -10,6 +10,8 @@ export type Route =
   | { name: 'project'; id: string }
   /** Éditeur du plan commun. */
   | { name: 'plan'; id: string }
+  /** Liste d'achat consolidée du projet. */
+  | { name: 'shopping'; id: string }
   /** Écran d'un module : #/p/:id/m/:module/…path ; path vide = éditeur du module. */
   | { name: 'module'; id: string; module: string; path: string }
   /** Ancienne adresse : remplacée par `to` sans nouvelle entrée d'historique. */
@@ -34,6 +36,7 @@ export function parseRoute(hash: string): Route {
   if (a === 'p' && b && c === 'm' && d) return { name: 'module', id: b, module: d, path: parts.slice(4).join('/') };
   if (a === 'p' && b && !c) return { name: 'project', id: b };
   if (a === 'p' && b && c === 'plan' && !d) return { name: 'plan', id: b };
+  if (a === 'p' && b && c === 'achats' && !d) return { name: 'shopping', id: b };
   // anciennes adresses du carrelage (favoris)
   if (a === 'p' && b && (c === 'results' || c === 'room' || c === 'compare') && !d)
     return { name: 'redirect', to: moduleRoute(b, c) };
@@ -59,6 +62,8 @@ export function href(r: Route): string {
       return '#/p/' + encodeURIComponent(r.id);
     case 'plan':
       return '#/p/' + encodeURIComponent(r.id) + '/plan';
+    case 'shopping':
+      return '#/p/' + encodeURIComponent(r.id) + '/achats';
     case 'module':
       return (
         '#/p/' +

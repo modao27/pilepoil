@@ -1,6 +1,6 @@
 import type { ProjectResult, ShoppingItem } from '../core';
 import type { Tile } from '../../../state/model';
-import type { CarrelageProject } from './data';
+import type { CarrelageData, CarrelageProject } from './data';
 
 /**
  * Prix unitaire d'un article : prix saisi dans le projet, sinon prix au m² du carreau de la bibliothèque
@@ -8,7 +8,7 @@ import type { CarrelageProject } from './data';
  */
 export function itemPrice(
   item: ShoppingItem,
-  project: CarrelageProject,
+  project: Pick<CarrelageData, 'prices' | 'surfaces'>,
   tiles: ReadonlyMap<string, Tile>,
   result: ProjectResult,
 ): number | undefined {

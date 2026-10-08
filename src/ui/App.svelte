@@ -44,6 +44,10 @@
   <Demo />
 {:else if route.name === 'project'}
   {#key route.id}<Project id={route.id} />{/key}
+{:else if route.name === 'shopping'}
+  {#key route.id}{#await import('./screens/Shopping.svelte') then { default: Shopping }}<Shopping
+        id={route.id}
+      />{/await}{/key}
 {:else if route.name === 'plan' && app.project(route.id)}
   {#key route.id}{#await import('./plan/PlanEditor.svelte') then { default: PlanEditor }}<PlanEditor
         project={app.project(route.id)!}

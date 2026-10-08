@@ -148,6 +148,8 @@ export interface ToolModule<Data, Spec, Result, Action extends ModuleAction = Mo
   toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
   /** Lignes d'achat consolidables. */
   shopping(result: Result, data: Data, libraries: Libraries): ShoppingLine[];
+  /** Action qui fixe le prix unitaire d'une ligne (`key`) ; null : revenir au prix de la bibliothèque. */
+  priceAction(key: string, value: number | null): Action;
   /** Résumé court pour la carte du module (« 46 carreaux, 312 € »). */
   summary(result: Result): ModuleSummary;
   /** Migrations des données du module : migrations[n] passe de la version n - 1 à n. */
@@ -159,7 +161,7 @@ export interface ToolModule<Data, Spec, Result, Action extends ModuleAction = Mo
 }
 
 /**
- * Ce que le carrelage implémente en S2 (docs/BOITE.md §2) : tout sauf les achats et la bibliothèque (S3).
+ * Contrat sans la bibliothèque, branchée plus loin en S3 (docs/BOITE.md §2).
  * Disparaît quand tous les modules remplissent le contrat complet.
  */
 export type ToolModuleS2<
@@ -167,4 +169,4 @@ export type ToolModuleS2<
   Spec = unknown,
   Result = unknown,
   Action extends ModuleAction = ModuleAction,
-> = Omit<ToolModule<Data, Spec, Result, Action>, 'shopping' | 'library'>;
+> = Omit<ToolModule<Data, Spec, Result, Action>, 'library'>;
