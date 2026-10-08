@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { area } from '../../src/core/geometry/polygon';
+import { optimizeZonesSync } from '../../src/core/optimizer/optimize';
 import { computeProject } from '../../src/core/project';
+import configs from './configs';
 import type { GlueNote, Notch } from '../../src/core/rules/glue';
 import type { Piece, SurfaceError, SurfaceWarning } from '../../src/core/types';
 import { expectSame } from './compare';
@@ -29,9 +31,12 @@ interface LegacyResult {
   shopping: { key: string; mult: number }[];
   glue: LegacyGlue[];
   note: string;
+  optimized?: { dx: number; dy: number; start: string }[];
+  optimizedMetrics?: { needed: number; thin: number; vis: number };
 }
 
 const fixture = fixtureJson as unknown as { results: Record<string, LegacyResult> };
+const CONFIGS = new Map(configs.map((c) => [c.name, c]));
 
 /* ---------- textes legacy, reconstitués depuis les codes du moteur ---------- */
 
@@ -210,6 +215,26 @@ describe.each(Object.entries(fixture.results))('parité : %s', (_name, L) => {
       R.shopping.map((s) => ({ key: s.key, mult: s.mult })),
       L.shopping.map((s) => ({ key: s.key, mult: s.mult })),
       'achats',
+    );
+  });
+
+  const opt = CONFIGS.get(_name)?.optimize;
+  it.runIf(!!opt)('optimisation du départ', () => {
+    const res = optimizeZonesSync(spec.surfaces[0]!, opt!.zones, opt!.goal, spec.settings);
+    const zones = spec.surfaces[0]!.zones.map((z, i) => {
+      const o = res.zones.find((r) => r.zone === i);
+      return o ? { ...z, offsetX: o.offsetX, offsetY: o.offsetY, start: o.start } : z;
+    });
+    expectSame(
+      zones.map((z) => ({ dx: z.offsetX, dy: z.offsetY, start: z.start })),
+      L.optimized,
+      'départs',
+    );
+    const after = computeProject({ ...spec, surfaces: [{ ...spec.surfaces[0]!, zones }, ...spec.surfaces.slice(1)] });
+    expectSame(
+      { needed: after.metrics.needed, thin: after.metrics.thin, vis: after.metrics.vis },
+      L.optimizedMetrics,
+      'après',
     );
   });
 
