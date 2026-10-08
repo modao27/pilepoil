@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ProjectResult } from '../../modules/carrelage';
   import type { Project } from '../../state/model';
-  import { projectArea, projectCost } from '../../state/pricing';
+  import { projectArea, projectCost } from '../../modules/carrelage';
   import { app } from '../lib/app.svelte';
   import { dateShort, euros, m2 } from '../lib/format';
   import { go } from '../lib/router.svelte';

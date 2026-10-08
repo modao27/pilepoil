@@ -5,7 +5,7 @@
    */
   import { onMount, untrack } from 'svelte';
   import type { Project } from '../../state/model';
-  import { projectCost } from '../../state/pricing';
+  import { projectCost } from '../../modules/carrelage';
   import BottomSheet from '../components/BottomSheet.svelte';
   import IconButton from '../components/IconButton.svelte';
   import Scene3DView from '../components/Scene3DView.svelte';

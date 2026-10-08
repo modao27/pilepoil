@@ -1,5 +1,5 @@
-import type { ProjectResult, ShoppingItem } from '../modules/carrelage';
-import type { Project, Tile } from './model';
+import type { ProjectResult, ShoppingItem } from '..';
+import type { Project, Tile } from '../../../state/model';
 
 /**
  * Prix unitaire d'un article : prix saisi dans le projet, sinon prix au m² du carreau de la bibliothèque

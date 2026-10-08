@@ -4,7 +4,7 @@
  */
 import { jsPDF } from 'jspdf';
 import { bbox, type Polygon, type ProjectResult, type ProjectSpec, type SurfaceBuild } from '../../modules/carrelage';
-import { itemPrice, projectArea, projectCost } from '../../state/pricing';
+import { itemPrice, projectArea, projectCost } from '../../modules/carrelage';
 import type { Project, Tile } from '../../state/model';
 import { glueRows, pieceCutText, projectDescription, shoppingLabel } from './labels';
 import { productName } from './messages';

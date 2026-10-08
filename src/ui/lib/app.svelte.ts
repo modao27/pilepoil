@@ -3,9 +3,9 @@
  * L'interface lit cet état et appelle ses méthodes ; aucun calcul métier ici (tout passe par le worker).
  */
 import type { Metrics, ProjectResult, ProjectSpec } from '../../modules/carrelage';
-import { reduce } from '../../state/actions';
-import { DEFAULT_PALETTE, newId } from '../../state/factories';
-import { createLibraryStore, type LibraryStore } from '../../state/library';
+import { reduce } from '../../modules/carrelage';
+import { DEFAULT_PALETTE, newId } from '../../modules/carrelage';
+import { createLibraryStore, type LibraryStore } from '../../modules/carrelage';
 import {
   SCENARIO_SCHEMA,
   type Id,
@@ -15,7 +15,7 @@ import {
   type Scenario,
   type Tile,
 } from '../../state/model';
-import { toProjectSpec, usedTileIds } from '../../state/selectors';
+import { toProjectSpec, usedTileIds } from '../../modules/carrelage';
 import { openDb, type Db } from '../../storage/db';
 import { autoImportLegacy, importLegacy, parseLegacyExport, type ImportSummary } from '../../storage/legacy/import';
 import * as repo from '../../storage/repo';

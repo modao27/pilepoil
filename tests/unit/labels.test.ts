@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { computeProject } from '../../src/modules/carrelage/core';
-import { createOpening, createProject, createSurface, createTile, createZone } from '../../src/state/factories';
-import { toProjectSpec } from '../../src/state/selectors';
+import {
+  createOpening,
+  createProject,
+  createSurface,
+  createTile,
+  createZone,
+} from '../../src/modules/carrelage/state/factories';
+import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { compareValue, glueRows, pieceCutText, projectDescription, shoppingLabel } from '../../src/ui/lib/labels';
 
 const tile = createTile({ name: '60 × 30 cm' });

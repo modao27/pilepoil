@@ -1,4 +1,4 @@
-import type { Id, Tile } from './model';
+import type { Id, Tile } from '../../../state/model';
 
 /** Bibliothèque de carreaux : store séparé, hors historique des projets. */
 export interface LibraryStore {

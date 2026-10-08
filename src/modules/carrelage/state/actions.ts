@@ -1,4 +1,4 @@
-import type { Corner, Id, Opening, Project, ProjectSettings, Room, Surface, Zone } from './model';
+import type { Corner, Id, Opening, Project, ProjectSettings, Room, Surface, Zone } from '../../../state/model';
 
 type SurfacePatch = Partial<Omit<Surface, 'id' | 'zones' | 'openings' | 'corners'>>;
 

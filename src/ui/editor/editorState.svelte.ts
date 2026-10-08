@@ -3,12 +3,12 @@
  * calcul (worker), optimisation. Toutes les modifications passent par des actions du store.
  */
 import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../modules/carrelage';
-import type { Action } from '../../state/actions';
-import { createCorner, createOpening, createZone, newId } from '../../state/factories';
+import type { Action } from '../../modules/carrelage';
+import { createCorner, createOpening, createZone, newId } from '../../modules/carrelage';
 import type { Corner, Id, Opening, OpeningType, Project, Surface, Zone } from '../../state/model';
-import { toProjectSpec } from '../../state/selectors';
+import { toProjectSpec } from '../../modules/carrelage';
 import { createProjectStore, type ProjectStore } from '../../state/store';
-import { applyRoom, type RoomUpdate } from '../../state/templates';
+import { applyRoom, reduce, type RoomUpdate } from '../../modules/carrelage';
 import { createSaver, type Saver } from '../../storage/autosave';
 import { app } from '../lib/app.svelte';
 import { toast } from '../lib/toasts.svelte';
@@ -45,7 +45,7 @@ export class EditorState {
   optimizing = $state<{ zone: number; percent: number } | null>(null);
   colorClip = $state.raw<ColorClip | null>(null);
 
-  readonly store: ProjectStore;
+  readonly store: ProjectStore<Project, Action>;
   private saver: Saver<Project>;
   private abort: AbortController | null = null;
 
@@ -73,7 +73,7 @@ export class EditorState {
       300,
       () => toast('Enregistrement impossible : stockage plein ou indisponible.', { tone: 'error' }),
     );
-    this.store = createProjectStore(p, { onChange: (q) => this.saver.schedule(q) });
+    this.store = createProjectStore(p, reduce, { onChange: (q) => this.saver.schedule(q) });
     this.store.subscribe((s) => {
       this.project = s.project;
       this.canUndo = s.canUndo;

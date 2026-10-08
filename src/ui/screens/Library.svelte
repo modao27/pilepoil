@@ -3,7 +3,7 @@
   import EmptyState from '../components/EmptyState.svelte';
   import Screen from '../components/Screen.svelte';
   import TileSwatch from '../components/TileSwatch.svelte';
-  import { usedTileIds } from '../../state/selectors';
+  import { usedTileIds } from '../../modules/carrelage';
   import { app } from '../lib/app.svelte';
   import { count, euros, mm, tileSize } from '../lib/format';
 

@@ -3,7 +3,7 @@
  * Aucun accès au stockage ici : les photos restent en dataURL, l'écriture est faite par import.ts.
  */
 import type { Metrics, OptimizerGoal, PatternId } from '../../modules/carrelage';
-import { newId, tileName } from '../../state/factories';
+import { newId, tileName } from '../../modules/carrelage';
 import {
   PROJECT_SCHEMA,
   SCENARIO_SCHEMA,

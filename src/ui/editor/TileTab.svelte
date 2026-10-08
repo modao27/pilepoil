@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createTile } from '../../state/factories';
+  import { createTile } from '../../modules/carrelage';
   import type { Tile } from '../../state/model';
   import Button from '../components/Button.svelte';
   import Checkbox from '../components/Checkbox.svelte';

@@ -2,8 +2,8 @@
   /** Comparaison de deux scénarios A / B (ou d'un scénario et de l'état actuel), comme legacy. */
   import type { ProjectResult } from '../../modules/carrelage';
   import type { Scenario } from '../../state/model';
-  import { projectCost } from '../../state/pricing';
-  import { toProjectSpec } from '../../state/selectors';
+  import { projectCost } from '../../modules/carrelage';
+  import { toProjectSpec } from '../../modules/carrelage';
   import Button from '../components/Button.svelte';
   import Dialog from '../components/Dialog.svelte';
   import EmptyState from '../components/EmptyState.svelte';

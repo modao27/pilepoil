@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { computeProject } from '../../src/modules/carrelage/core';
-import { createTile } from '../../src/state/factories';
-import { projectArea, projectCost } from '../../src/state/pricing';
-import { toProjectSpec } from '../../src/state/selectors';
-import { createRoomProject, createSingleSurfaceProject } from '../../src/state/templates';
+import { createTile } from '../../src/modules/carrelage/state/factories';
+import { projectArea, projectCost } from '../../src/modules/carrelage/state/pricing';
+import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
+import { createRoomProject, createSingleSurfaceProject } from '../../src/modules/carrelage/state/templates';
 import { href, parseRoute, type Route } from '../../src/ui/lib/routes';
 
 const tile = createTile({ pricePerM2: 30 });

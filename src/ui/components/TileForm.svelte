@@ -2,7 +2,7 @@
   /** Formulaire de carreau (bibliothèque et assistant). */
   import type { Snippet } from 'svelte';
   import type { Tile, TileShape } from '../../state/model';
-  import { tileName } from '../../state/factories';
+  import { tileName } from '../../modules/carrelage';
   import { app } from '../lib/app.svelte';
   import Button from './Button.svelte';
   import ColorSwatch from './ColorSwatch.svelte';

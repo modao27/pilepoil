@@ -1,10 +1,10 @@
 <script lang="ts">
   /** Assistant de création : type → dimensions → carreau → motif, aperçu en direct à chaque étape. */
   import { PATTERNS, type PatternId, type ProjectResult } from '../../modules/carrelage';
-  import { createTile, tileName } from '../../state/factories';
+  import { createTile, tileName } from '../../modules/carrelage';
   import type { Project, RoomWallKey, Tile } from '../../state/model';
-  import { toProjectSpec } from '../../state/selectors';
-  import { createRoomProject, createSingleSurfaceProject } from '../../state/templates';
+  import { toProjectSpec } from '../../modules/carrelage';
+  import { createRoomProject, createSingleSurfaceProject } from '../../modules/carrelage';
   import Button from '../components/Button.svelte';
   import Checkbox from '../components/Checkbox.svelte';
   import NumberField from '../components/NumberField.svelte';

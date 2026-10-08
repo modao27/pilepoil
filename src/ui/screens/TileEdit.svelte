@@ -4,7 +4,7 @@
   import Dialog from '../components/Dialog.svelte';
   import Screen from '../components/Screen.svelte';
   import TileForm from '../components/TileForm.svelte';
-  import { createTile } from '../../state/factories';
+  import { createTile } from '../../modules/carrelage';
   import type { Tile } from '../../state/model';
   import { app } from '../lib/app.svelte';
   import { go } from '../lib/router.svelte';

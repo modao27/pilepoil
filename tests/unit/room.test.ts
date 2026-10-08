@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { reduce } from '../../src/state/actions';
-import { createOpening, createProject, createSurface, createTile, createZone } from '../../src/state/factories';
-import { applyRoom } from '../../src/state/templates';
+import { reduce } from '../../src/modules/carrelage/state/actions';
+import {
+  createOpening,
+  createProject,
+  createSurface,
+  createTile,
+  createZone,
+} from '../../src/modules/carrelage/state/factories';
+import { applyRoom } from '../../src/modules/carrelage/state/templates';
 
 const tile = createTile();
 const all = { A: true, B: true, C: true, D: true, floor: true };

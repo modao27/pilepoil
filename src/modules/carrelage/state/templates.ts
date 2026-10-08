@@ -1,7 +1,7 @@
 /** Projets créés par l'assistant : mur ou sol seul, ou pièce complète (murs A à D + sol, comme legacy). */
-import type { PatternId } from '../modules/carrelage';
+import type { PatternId } from '..';
 import { createProject, createSurface, createZone, newId } from './factories';
-import type { Id, Project, RoomWallKey, Surface } from './model';
+import type { Id, Project, RoomWallKey, Surface } from '../../../state/model';
 
 export interface LayoutChoice {
   tileId: Id;

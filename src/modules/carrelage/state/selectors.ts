@@ -1,5 +1,5 @@
-import type { ProjectSpec, RoomSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../modules/carrelage';
-import type { Edges, Id, Project, Surface, Tile, Zone } from './model';
+import type { ProjectSpec, RoomSpec, SurfaceSpec, TileSpec, ZoneSpec } from '..';
+import type { Edges, Id, Project, Surface, Tile, Zone } from '../../../state/model';
 
 /** Correspondance entre indices du moteur et identifiants du modèle. */
 export interface SpecIds {
