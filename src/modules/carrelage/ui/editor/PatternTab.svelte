@@ -83,7 +83,7 @@
       label="Priorité"
       value={ed.project.settings.optimizerGoal}
       options={GOALS}
-      onchange={(g) => ed.dispatch({ type: 'project/settings', patch: { optimizerGoal: g } })}
+      onchange={(g) => ed.dispatch({ type: 'carrelage/settings', patch: { optimizerGoal: g } })}
     />
     {#if ed.optimizing}
       <div class="progress">

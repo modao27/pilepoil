@@ -63,7 +63,9 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await expect(page.getByRole('heading', { name: 'Résultats — Mur 288 × 240' })).toBeVisible();
   await page.getByRole('link', { name: 'Retour au plan' }).click();
 
-  // accueil, carte, menu
+  // éditeur → écran Projet → accueil, carte, menu
+  await page.getByRole('link', { name: 'Projet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Outils' })).toBeVisible();
   await page.getByRole('link', { name: 'Mes projets' }).click();
   await expect(page.getByRole('link', { name: 'Mur 288 × 240' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Aperçu de Mur' })).toBeVisible();

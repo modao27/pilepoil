@@ -10,7 +10,6 @@
   import StatCard from '../../../../ui/components/StatCard.svelte';
   import Tabs from '../../../../ui/components/Tabs.svelte';
   import ExportDialog from '../components/ExportDialog.svelte';
-  import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
   import { evaluate } from '../../../../ui/lib/calc';
   import { euros, m2 } from '../../../../ui/lib/format';
@@ -20,7 +19,7 @@
   let { projectId: id }: ModuleScreenProps = $props();
 
   type Tab = 'order' | 'cuts' | 'shop' | 'glue';
-  const project = $derived(app.project(id));
+  const project = $derived(carrelage.view(id));
   let result = $state.raw<ProjectResult | null>(null);
   let tab = $state<Tab>('order');
   let exporting = $state(false);

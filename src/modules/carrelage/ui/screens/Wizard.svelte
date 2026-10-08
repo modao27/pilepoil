@@ -2,7 +2,9 @@
   /** Assistant de création : type → dimensions → carreau → motif, aperçu en direct à chaque étape. */
   import { PATTERNS, type PatternId, type ProjectResult } from '../../core';
   import { createTile, tileName } from '../../state/factories';
-  import type { Project, RoomWallKey, Tile } from '../../../../state/model';
+  import type { RoomWallKey, Tile } from '../../../../state/model';
+  import type { CarrelageProject } from '../../state/data';
+  import { projectFromV1 } from '../../../../storage/migrations';
   import { toProjectSpec } from '../../state/selectors';
   import { createRoomProject, createSingleSurfaceProject } from '../../state/templates';
   import Button from '../../../../ui/components/Button.svelte';
@@ -50,7 +52,7 @@
     if (!allowed.some((p) => p.id === pattern)) pattern = allowed[0]!.id;
   });
 
-  function build(t: Tile): Project {
+  function build(t: Tile): CarrelageProject {
     const layout = { tileId: t.id, tileUpright: !regular && upright, pattern, angle, joint };
     return kind === 'room'
       ? createRoomProject({ ...layout, ...room, walls, name }, 0)
@@ -100,7 +102,7 @@
     saving = true;
     const p = build(tile);
     const now = Date.now();
-    await app.saveProject({ ...p, createdAt: now, updatedAt: now });
+    await app.saveProject(projectFromV1({ ...p, createdAt: now, updatedAt: now }));
     go({ name: 'module', id: p.id, module: 'carrelage', path: '' }, true);
   }
 

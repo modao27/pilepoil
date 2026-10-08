@@ -68,6 +68,8 @@ describe('routes', () => {
     ['#/library/new', { name: 'tile', id: null }],
     ['#/library/abc', { name: 'tile', id: 'abc' }],
     ['#/settings', { name: 'settings' }],
+    ['#/p/x1', { name: 'project', id: 'x1' }],
+    ['#/p/x1/plan', { name: 'plan', id: 'x1' }],
     ['#/p/x1/m/carrelage', { name: 'module', id: 'x1', module: 'carrelage', path: '' }],
     ['#/p/x1/m/carrelage/s/s2', { name: 'module', id: 'x1', module: 'carrelage', path: 's/s2' }],
     ['#/p/x1/m/carrelage/results', { name: 'module', id: 'x1', module: 'carrelage', path: 'results' }],
@@ -79,7 +81,6 @@ describe('routes', () => {
   });
 
   it.each([
-    ['#/p/x1', '#/p/x1/m/carrelage'],
     ['#/p/x1/s/s2', '#/p/x1/m/carrelage/s/s2'],
     ['#/p/x1/results', '#/p/x1/m/carrelage/results'],
     ['#/p/x1/room', '#/p/x1/m/carrelage/room'],

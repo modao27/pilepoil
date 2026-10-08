@@ -4,10 +4,10 @@
    * bord). Chaque surface est un lien vers son éditeur. Projet sans pièce : les surfaces côte à côte.
    */
   import type { ProjectResult, ProjectSpec } from '../../core';
-  import type { Project } from '../../../../state/model';
+  import type { CarrelageProject } from '../../state/data';
   import { planDrawing } from '../../render/planSvg';
 
-  let { project, spec, result }: { project: Project; spec: ProjectSpec; result: ProjectResult } = $props();
+  let { project, spec, result }: { project: CarrelageProject; spec: ProjectSpec; result: ProjectResult } = $props();
 
   type Placed = { i: number; transform: string; lx: number; ly: number; anchor: 'middle' | 'start' | 'end' };
 

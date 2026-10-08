@@ -2,10 +2,15 @@
  * Point d'entrée du module carrelage (face application) : seul fichier du module importable hors du
  * module, hors tests et hors engine.ts (face moteur, importée par modules/engines.ts).
  */
-import type { ToolModuleS1 } from '../types';
+import type { ToolModuleS2 } from '../types';
+import type { ProjectResult, ProjectSpec } from './core';
+import { reduce, type Action } from './state/actions';
+import { CARRELAGE_ID, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
+import { create, summary, toSpec } from './state/module';
 
 export * from './core';
 export * from './state/actions';
+export * from './state/data';
 export * from './state/factories';
 export * from './state/library';
 export * from './state/pricing';
@@ -29,10 +34,17 @@ export const ui = {
 /** Même chargeur pour les deux adresses de l'éditeur : il n'est pas recréé quand seule la surface change. */
 const editor = () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default);
 
-/** Module carrelage : en S1, identité et écrans seulement (docs/BOITE.md §2). */
-export const module: ToolModuleS1 = {
-  id: 'carrelage',
+/** Module carrelage (docs/BOITE.md §2) : tout le contrat sauf achats et bibliothèque (S3). */
+export const module: ToolModuleS2<CarrelageData, ProjectSpec, ProjectResult, Action> = {
+  id: CARRELAGE_ID,
   label: 'Carrelage',
+  description: 'Murs et sols carrelés : calepinage, coupes, chutes, quantités.',
+  schemaVersion: CARRELAGE_SCHEMA,
+  create,
+  reduce: (data, action) => reduce(data, action),
+  toSpec,
+  summary,
+  migrations: {},
   icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M12 1v22M23 1v22M1 12h32"/>',
   screens: {
     editor,

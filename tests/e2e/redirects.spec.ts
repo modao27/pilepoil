@@ -21,10 +21,6 @@ test('anciennes adresses redirigées vers le module carrelage', async ({ page })
   await page.goBack();
   await expect(page).toHaveURL(/#\/$/);
 
-  await page.goto(`/#/p/${id}`);
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(`#/p/${id}/m/carrelage$`));
-
   await page.goto(`/#/p/${id}/s/s9`);
   await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`#/p/${id}/m/carrelage/s/s9$`));

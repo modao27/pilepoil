@@ -5,12 +5,13 @@
 import { jsPDF } from 'jspdf';
 import { bbox, type Polygon, type ProjectResult, type ProjectSpec, type SurfaceBuild } from '../../core';
 import { itemPrice, projectArea, projectCost } from '../../state/pricing';
-import type { Project, Tile } from '../../../../state/model';
+import type { Tile } from '../../../../state/model';
+import type { CarrelageProject } from '../../state/data';
 import { glueRows, pieceCutText, projectDescription, shoppingLabel } from './labels';
 import { productName } from './messages';
 
 export interface PdfInput {
-  project: Project;
+  project: CarrelageProject;
   spec: ProjectSpec;
   result: ProjectResult;
   tiles: readonly Tile[];

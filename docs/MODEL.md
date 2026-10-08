@@ -1,7 +1,36 @@
-# Modèle de données et stockage (phase 2)
+# Modèle de données et stockage
 
-> Version 1 du modèle. La version 2 (plan commun, données par module) est décrite dans `docs/BOITE.md` §4.
-> Mettre ce fichier à jour en fin de phase S2.
+> **Version 2 depuis S2** (plan commun, données par module) : voir « Modèle v2 » ci-dessous et
+> `docs/BOITE.md` §3–§5. Les sections suivantes décrivent la version 1, dont la forme est conservée à
+> l'identique dans les données carrelage (`project.modules.carrelage.data`).
+
+## Modèle v2 (S2)
+
+```ts
+interface Project {            // state/model.ts
+  schemaVersion: 2;
+  id: Id; name: string; createdAt: number; updatedAt: number;
+  plan: Plan;                  // core/plan/types.ts (BOITE §3)
+  modules: Record<string, ModuleDoc>;   // clé = identifiant du module
+}
+interface ModuleDoc { schemaVersion: number; data: unknown }
+// carrelage : CarrelageData = { surfaces, room, settings, prices } (forme v1, schéma 1)
+```
+- **Migration v1 → v2** (`storage/migrations.ts`, `projectFromV1`) : déterministe ; données carrelage déplacées
+  telles quelles ; si `room` existe, une pièce rectangulaire `length × width` nommée comme le projet, murs de
+  72 mm, identifiants dérivés de celui du projet (`<id>:plan:<n>`). Scénarios : schéma 2, instantané migré
+  comme un projet. Puis les données de chaque module sont migrées par le module (`migrations`,
+  `schemaVersion`) ; un module inconnu est laissé tel quel, une version future est refusée.
+- **Lecture** : projets et scénarios migrés à la lecture, réécrits en tâche de fond.
+- **Import legacy** : la conversion produit des documents v1 (`ProjectV1`, `ScenarioV1`), migrés avant écriture.
+- **Code carrelage** : il travaille sur la vue `CarrelageProject` (champs communs + `CarrelageData`), lue et
+  réécrite à la frontière (`carrelageView`, `withCarrelage`).
+- **IndexedDB version 2** : magasin `boards` (bibliothèque de lames, index `name`, `updatedAt`).
+- **Réducteur racine** (`state/project.ts`) : `project/rename`, `project/module/add`, `batch`, `plan/*` vers
+  `core/plan/reduce.ts`, `<module>/*` vers `module.reduce` ; `plan/room/removed` envoyé aux modules. Historique
+  unique du projet (plan et modules).
+- **Workers** : la coquille ouvre les deux workers (aperçu en direct, file des vignettes et résumés) et tient
+  les bibliothèques chargées (`app.libraries`) pour `toSpec` de chaque module.
 
 Proposition. Unités : mm (surfaces, carreaux, ouvertures), ms depuis 1970 pour les dates, € pour les prix.
 Les identifiants sont des chaînes uniques (`crypto.randomUUID()`).
@@ -149,7 +178,7 @@ Carreau introuvable → erreur de surface `missing-tile`. Le moteur passe le sen
 (changement de `core` : `TileSpec.orientation`, `Settings.orientation` supprimé ; parité conservée car
 l'import legacy copie le réglage global sur chaque carreau).
 
-## IndexedDB (`idb`, base `calepinage`, version 1)
+## IndexedDB (`idb`, base `calepinage`, version 1 ; version 2 : + `boards`)
 
 | Magasin | Clé | Index | Contenu |
 |---|---|---|---|

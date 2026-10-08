@@ -7,7 +7,7 @@ import { SCENARIO_SCHEMA } from '../../../state/model';
 import type { Db } from '../../../storage/db';
 import * as repo from '../../../storage/repo';
 import { app } from '../../../ui/lib/app.svelte';
-import { createWorkerClient, SupersededError, type ComputeClient } from '../../../workers/client';
+import { SupersededError } from '../../../workers/client';
 import type {
   Metrics,
   OptimizeProgress,
@@ -19,10 +19,12 @@ import type {
   SurfaceSpec,
 } from '../core';
 import type { OptimizeSpec } from '../engine';
-import { reduce } from '../state/actions';
 import { newId } from '../state/factories';
 import { createLibraryStore, type LibraryStore } from '../state/library';
 import { toProjectSpec, usedTileIds } from '../state/selectors';
+import { carrelageData, carrelageView, withCarrelage, type CarrelageProject } from '../state/data';
+import { reduceProject } from '../../../state/project';
+import type { Action } from '../state/actions';
 
 const MODULE = 'carrelage';
 
@@ -33,11 +35,6 @@ export class CarrelageState {
 
   private db!: Db;
   private library!: LibraryStore;
-  /** Aperçu en direct : seule la dernière demande compte. */
-  private live!: ComputeClient;
-  /** Vignettes : toutes les demandes, une à la fois. */
-  private batch!: ComputeClient;
-  private queue: Promise<unknown> = Promise.resolve();
   // Caches internes, volontairement non réactifs (l'interface lit tiles, pas ces tables).
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   private cache = new Map<string, ProjectResult>();
@@ -46,16 +43,15 @@ export class CarrelageState {
   /** (Re)charge la bibliothèque ; ouvre les workers au premier appel. */
   async load(db: Db): Promise<void> {
     this.db = db;
-    this.live ??= createWorkerClient();
-    this.batch ??= createWorkerClient();
     const tiles = await repo.listTiles(db);
     this.library = createLibraryStore(tiles, {
-      isUsed: (id) => app.projects.some((p) => usedTileIds(p).has(id)),
+      isUsed: (id) => app.projects.some((p) => uses(p, id)),
       onSave: (t) => void repo.saveTile(this.db, t),
       onDelete: (id) => void repo.deleteTile(this.db, id),
     });
     this.library.subscribe((t) => {
       this.tiles = t;
+      app.setLibrary('tiles', t);
       this.tilesVersion++;
     });
   }
@@ -72,22 +68,28 @@ export class CarrelageState {
 
   /** null si supprimé, sinon le nom d'un projet qui l'utilise. */
   deleteTile(id: Id): string | null {
-    const user = app.projects.find((p) => usedTileIds(p).has(id));
+    const user = app.projects.find((p) => uses(p, id));
     if (user) return user.name;
     this.library.remove(id);
     return null;
   }
 
+  /** Vue carrelage d'un projet enregistré ; undefined s'il n'existe pas ou n'a pas le carrelage. */
+  view(projectId: Id): CarrelageProject | undefined {
+    const p = app.project(projectId);
+    return (p && carrelageView(p)) ?? undefined;
+  }
+
   /* ---------- calcul ---------- */
 
-  spec(p: Project): ProjectSpec {
+  spec(p: CarrelageProject): ProjectSpec {
     return toProjectSpec(p, this.tiles).spec;
   }
 
   /** Calcul en direct (aperçu) : null si une demande plus récente l'a remplacé. */
   async computeLive(spec: ProjectSpec): Promise<ProjectResult | null> {
     try {
-      return await this.live.compute<ProjectResult>(MODULE, spec);
+      return await app.live.compute<ProjectResult>(MODULE, spec);
     } catch (e) {
       if (e instanceof SupersededError) return null;
       throw e;
@@ -104,14 +106,14 @@ export class CarrelageState {
   ): Promise<OptimizeResult> {
     const spec: OptimizeSpec = { surface, zones, goal, settings };
     const onProgress = opts.onProgress;
-    return this.live.optimize<OptimizeResult>(MODULE, spec, {
+    return app.live.optimize<OptimizeResult>(MODULE, spec, {
       signal: opts.signal,
       onProgress: onProgress && ((p) => onProgress({ zone: p.part ?? 0, percent: p.percent })),
     });
   }
 
   /** Résultat d'un projet enregistré, mis en cache tant que ni le projet ni la bibliothèque ne changent. */
-  result(p: Project): Promise<ProjectResult> {
+  result(p: CarrelageProject): Promise<ProjectResult> {
     return this.cached(`${p.id}:${p.updatedAt}:${this.tilesVersion}`, () => this.spec(p));
   }
 
@@ -119,7 +121,7 @@ export class CarrelageState {
   scenarioResult(s: Scenario): Promise<ProjectResult> {
     return this.cached(
       `scenario:${s.id}:${s.createdAt}`,
-      () => toProjectSpec(s.snapshot.project, s.snapshot.tiles).spec,
+      () => toProjectSpec(carrelageView(s.snapshot.project)!, s.snapshot.tiles).spec,
     );
   }
 
@@ -127,9 +129,7 @@ export class CarrelageState {
     const hit = this.cache.get(key);
     if (hit) return Promise.resolve(hit);
     const sp = spec();
-    const job = this.queue.then(() => this.batch.compute<ProjectResult>(MODULE, sp));
-    this.queue = job.catch(() => undefined);
-    return job.then((r) => {
+    return app.queued<ProjectResult>(MODULE, sp).then((r) => {
       this.cache.set(key, r);
       return r;
     });
@@ -141,7 +141,8 @@ export class CarrelageState {
   async setPrice(projectId: Id, key: string, value: number | null): Promise<void> {
     const p = app.project(projectId);
     if (!p) return;
-    const next = reduce(p, { type: 'project/price', key, value });
+    const price: Action = { type: 'carrelage/price', key, value };
+    const next = reduceProject(p, price);
     if (next !== p) await app.saveProject({ ...next, updatedAt: Date.now() });
   }
 
@@ -153,14 +154,15 @@ export class CarrelageState {
 
   /** Enregistre l'état actuel du projet dans l'emplacement A ou B (copie figée avec ses carreaux). */
   async saveScenario(p: Project, slot: 'A' | 'B', name: string, metrics: Metrics | null): Promise<Scenario> {
-    const used = usedTileIds(p);
+    const view = carrelageView(p);
+    const used = view ? usedTileIds(view) : null;
     const s: Scenario = {
       schemaVersion: SCENARIO_SCHEMA,
       id: newId(),
       projectId: p.id,
       slot,
       name,
-      snapshot: { project: structuredClone(p), tiles: structuredClone(this.tiles.filter((t) => used.has(t.id))) },
+      snapshot: { project: structuredClone(p), tiles: structuredClone(this.tiles.filter((t) => !!used?.has(t.id))) },
       metrics,
       thumbnailId: null,
       createdAt: Date.now(),
@@ -178,22 +180,16 @@ export class CarrelageState {
   }
 
   /**
-   * Remet le projet dans l'état du scénario (surfaces, pièce, réglages, prix ; nom et identité conservés).
+   * Remet les données carrelage du projet dans l'état du scénario (surfaces, pièce, réglages, prix ; nom,
+   * identité, plan et autres modules conservés).
    * Les carreaux du scénario absents de la bibliothèque y sont remis. Renvoie l'état remplacé (annulation).
    */
   async loadScenario(s: Scenario): Promise<Project | null> {
     const p = app.project(s.projectId);
     if (!p) return null;
     for (const t of s.snapshot.tiles) if (!this.tile(t.id)) this.putTile(t);
-    const snap = s.snapshot.project;
-    await app.saveProject({
-      ...p,
-      surfaces: snap.surfaces,
-      room: snap.room,
-      settings: snap.settings,
-      prices: snap.prices,
-      updatedAt: Date.now(),
-    });
+    const data = carrelageData(s.snapshot.project);
+    if (data) await app.saveProject({ ...withCarrelage(p, data), updatedAt: Date.now() });
     return p;
   }
 
@@ -201,6 +197,12 @@ export class CarrelageState {
   async restoreProject(p: Project): Promise<void> {
     await app.saveProject({ ...p, updatedAt: Date.now() });
   }
+}
+
+/** Le projet utilise ce carreau (projets sans carrelage : non). */
+function uses(p: Project, tileId: Id): boolean {
+  const v = carrelageView(p);
+  return !!v && usedTileIds(v).has(tileId);
 }
 
 export const carrelage = new CarrelageState();

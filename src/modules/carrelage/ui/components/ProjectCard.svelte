@@ -4,6 +4,7 @@
   import { projectArea, projectCost } from '../../state/pricing';
   import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
+  import { carrelageView } from '../../state/data';
   import PlanPreview from './PlanPreview.svelte';
   import { dateShort, euros, m2 } from '../../../../ui/lib/format';
   import { go } from '../../../../ui/lib/router.svelte';
@@ -12,7 +13,9 @@
   import IconButton from '../../../../ui/components/IconButton.svelte';
   import TextField from '../../../../ui/components/TextField.svelte';
 
-  let { project }: { project: Project } = $props();
+  /** Projet avec le carrelage activé. */
+  let { project: doc }: { project: Project } = $props();
+  const project = $derived(carrelageView(doc)!);
 
   let result = $state.raw<ProjectResult | null>(null);
   let menu = $state(false);
@@ -32,7 +35,7 @@
   async function rename() {
     const name = newName.trim();
     if (!name) return;
-    await app.saveProject({ ...project, name, updatedAt: Date.now() });
+    await app.saveProject({ ...doc, name, updatedAt: Date.now() });
     renaming = false;
     menu = false;
   }
@@ -50,7 +53,7 @@
     {/if}
   </div>
   <div class="info">
-    <h2><a href="#/p/{project.id}/m/carrelage" data-stretched>{project.name}</a></h2>
+    <h2><a href="#/p/{project.id}" data-stretched>{project.name}</a></h2>
     <p class="muted">
       {project.surfaces.length > 1 ? `${project.surfaces.length} surfaces · ` : ''}modifié {dateShort(
         project.updatedAt,

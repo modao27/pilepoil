@@ -21,6 +21,17 @@ Réglages (unités d'affichage, thème, données, à propos)
 Routage par hash (`#/p/:id/s/:surfaceId`), bouton retour du téléphone respecté.
 
 ## Écrans
+**Projet** (`#/p/:id`, depuis S2) : vignette du plan (toucher : éditeur de plan), une carte par outil activé
+avec son résumé (« 44 carreaux, 7,92 m² ») et ses alertes, « Ajouter un outil » pour les autres modules.
+
+**Plan** (`#/p/:id/plan`) : plan d'ensemble en SVG, mêmes gestes que l'éditeur de surface (pincer, glisser,
+toucher = sélection, panneau tiré à 3 crans ; inspecteur à droite sur ordinateur). Pièce choisie : poignées
+sur les coins (glisser, aimantation grille 1 cm et angles droits), « + » au milieu des murs (ajouter un
+point), cote de chaque mur (toucher : régler le mur). Ajout rapide : rectangle, L, U (cotes) ou dessin libre
+point par point (fermer sur le premier point). Ouvertures glissées le long de leur mur ; « Relier à une autre
+porte » place la seconde pièce pour que les portes se fassent face. Le panneau permet tout sans pointeur
+(listes des pièces, murs, ouvertures, obstacles, portes à relier) ; problèmes listés en « À corriger ».
+
 **Accueil** : cartes projet (vignette 3D, nom, date, m², coût). Bouton « Nouveau projet ». Vide : invitation à créer.
 
 **Assistant** (4 étapes, aperçu en direct à chaque étape) : type (mur, sol, pièce) → dimensions →

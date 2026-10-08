@@ -9,7 +9,9 @@ import { toProjectSpec } from '../../state/selectors';
 import { createProjectStore, type ProjectStore } from '../../../../state/store';
 import { applyRoom, type RoomUpdate } from '../../state/templates';
 import { carrelage } from '../state.svelte';
-import { reduce, type Action } from '../../state/actions';
+import type { Action } from '../../state/actions';
+import { carrelageView, dataOf, type CarrelageProject } from '../../state/data';
+import { reduceProject, type ProjectAction } from '../../../../state/project';
 import { createSaver, type Saver } from '../../../../storage/autosave';
 import { app } from '../../../../ui/lib/app.svelte';
 import { toast } from '../../../../ui/lib/toasts.svelte';
@@ -31,7 +33,10 @@ export interface ColorClip {
 }
 
 export class EditorState {
-  project = $state.raw<Project>(null as never);
+  /** Projet entier (v2) : plan commun et données de tous les modules, historique unique. */
+  doc = $state.raw<Project>(null as never);
+  /** Vue carrelage du projet, lue par l'éditeur. */
+  project = $state.raw<CarrelageProject>(null as never);
   canUndo = $state(false);
   canRedo = $state(false);
   surfaceId = $state<Id>('');
@@ -46,7 +51,7 @@ export class EditorState {
   optimizing = $state<{ zone: number; percent: number } | null>(null);
   colorClip = $state.raw<ColorClip | null>(null);
 
-  readonly store: ProjectStore<Project, Action>;
+  readonly store: ProjectStore<Project, ProjectAction>;
   private saver: Saver<Project>;
   private abort: AbortController | null = null;
 
@@ -68,19 +73,24 @@ export class EditorState {
       : 0,
   );
 
+  /** `p` doit avoir le carrelage activé (EditorScreen le vérifie). */
   constructor(p: Project, surfaceId: Id | null) {
     this.saver = createSaver(
       (q) => app.saveProject(q),
       300,
       () => toast('Enregistrement impossible : stockage plein ou indisponible.', { tone: 'error' }),
     );
-    this.store = createProjectStore(p, reduce, { onChange: (q) => this.saver.schedule(q) });
+    this.store = createProjectStore(p, (q: Project, a: ProjectAction) => reduceProject(q, a), {
+      onChange: (q) => this.saver.schedule(q),
+    });
     this.store.subscribe((s) => {
-      this.project = s.project;
+      this.doc = s.project;
+      this.project = carrelageView(s.project)!;
       this.canUndo = s.canUndo;
       this.canRedo = s.canRedo;
     });
-    this.surfaceId = p.surfaces.some((s) => s.id === surfaceId) ? surfaceId! : p.surfaces[0]!.id;
+    const v = this.project;
+    this.surfaceId = v.surfaces.some((s) => s.id === surfaceId) ? surfaceId! : v.surfaces[0]!.id;
   }
 
   /** Calcule le projet (dernière demande seulement) ; appelé à chaque changement du projet ou de la bibliothèque. */
@@ -97,7 +107,7 @@ export class EditorState {
     return this.saver.flush();
   }
 
-  dispatch(a: Action, key?: string): void {
+  dispatch(a: ProjectAction | Action, key?: string): void {
     this.store.dispatch(a, key);
   }
 
@@ -117,7 +127,7 @@ export class EditorState {
   /* ---------- surface ---------- */
 
   updateSurface(patch: Partial<Omit<Surface, 'id' | 'zones' | 'openings' | 'corners'>>, key?: string): void {
-    this.dispatch({ type: 'surface/update', surfaceId: this.surface.id, patch }, key);
+    this.dispatch({ type: 'carrelage/surface/update', surfaceId: this.surface.id, patch }, key);
   }
 
   addSurface(): void {
@@ -135,7 +145,7 @@ export class EditorState {
         ...s.plinth,
         zoneId: s.zones[copy.zones.findIndex((z) => z.id === copy.plinth!.zoneId)]?.id ?? s.zones[0]!.id,
       };
-    this.dispatch({ type: 'surface/add', surface: s });
+    this.dispatch({ type: 'carrelage/surface/add', surface: s });
     this.setSurface(s.id);
   }
 
@@ -143,20 +153,20 @@ export class EditorState {
     if (this.project.surfaces.length < 2) return;
     const i = this.surfaceIndex,
       name = this.surface.name;
-    this.dispatch({ type: 'surface/remove', surfaceId: this.surface.id });
+    this.dispatch({ type: 'carrelage/surface/remove', surfaceId: this.surface.id });
     this.setSurface(this.project.surfaces[Math.max(0, i - 1)]!.id);
     toast(`Surface « ${name} » supprimée.`, { action: { label: 'Annuler', run: () => this.store.undo() } });
   }
 
   applyRoom(i: RoomUpdate): void {
-    this.dispatch({ type: 'project/replace', project: applyRoom(this.project, this.surface, i) });
+    this.dispatch({ type: 'carrelage/replace', data: dataOf(applyRoom(this.project, this.surface, i)) });
   }
 
   /* ---------- zones ---------- */
 
   updateZone(patch: Partial<Omit<Zone, 'id'>>, key?: string, index = this.zoneIndex): void {
     const z = this.surface.zones[index];
-    if (z) this.dispatch({ type: 'zone/update', surfaceId: this.surface.id, zoneId: z.id, patch }, key);
+    if (z) this.dispatch({ type: 'carrelage/zone/update', surfaceId: this.surface.id, zoneId: z.id, patch }, key);
   }
 
   addZone(): void {
@@ -171,13 +181,13 @@ export class EditorState {
       unit: hasRest ? 'rows' : 'rest',
       size: 3,
     });
-    this.dispatch({ type: 'zone/add', surfaceId: this.surface.id, zone: nz, index: this.zoneIndex + 1 });
+    this.dispatch({ type: 'carrelage/zone/add', surfaceId: this.surface.id, zone: nz, index: this.zoneIndex + 1 });
     this.select({ zone: this.zoneIndex + 1 });
   }
 
   removeZone(): void {
     if (this.surface.zones.length < 2) return;
-    this.dispatch({ type: 'zone/remove', surfaceId: this.surface.id, zoneId: this.zone.id });
+    this.dispatch({ type: 'carrelage/zone/remove', surfaceId: this.surface.id, zoneId: this.zone.id });
     this.select({ zone: Math.max(0, this.zoneIndex - 1) });
     toast('Zone supprimée.', { action: { label: 'Annuler', run: () => this.store.undo() } });
   }
@@ -185,7 +195,7 @@ export class EditorState {
   moveZone(from: number, to: number): void {
     const z = this.surface.zones[from];
     if (!z) return;
-    this.dispatch({ type: 'zone/move', surfaceId: this.surface.id, zoneId: z.id, to });
+    this.dispatch({ type: 'carrelage/zone/move', surfaceId: this.surface.id, zoneId: z.id, to });
     if (this.zoneIndex === from) this.select({ zone: to });
   }
 
@@ -198,7 +208,7 @@ export class EditorState {
       createZone(z.tileId, { ...base, unit: 'rest', pattern: 'herring' }),
       createZone(z.tileId, { ...base, unit: 'rows', size: 3, pattern: 'half' }),
     ];
-    this.dispatch({ type: 'zone/replaceAll', surfaceId: this.surface.id, zones, split: 'h' });
+    this.dispatch({ type: 'carrelage/zone/replaceAll', surfaceId: this.surface.id, zones, split: 'h' });
     this.select({ zone: 1 });
   }
 
@@ -224,7 +234,7 @@ export class EditorState {
     this.dispatch({
       type: 'batch',
       actions: this.surface.zones.map((q) => ({
-        type: 'zone/update' as const,
+        type: 'carrelage/zone/update' as const,
         surfaceId: this.surface.id,
         zoneId: q.id,
         patch,
@@ -244,19 +254,19 @@ export class EditorState {
         ? Math.round((s.height - height) / 2)
         : Math.round(Math.max(0, Math.min(d.sill, s.height - height)));
     const o: Opening = { ...d, width, height, sill, x: Math.round((s.width - width) / 2) };
-    this.dispatch({ type: 'opening/add', surfaceId: s.id, opening: o });
+    this.dispatch({ type: 'carrelage/opening/add', surfaceId: s.id, opening: o });
     this.select({ opening: s.openings.length });
   }
 
   updateOpening(patch: Partial<Omit<Opening, 'id'>>, key?: string, index = this.sel.opening): void {
     const o = this.surface.openings[index];
-    if (o) this.dispatch({ type: 'opening/update', surfaceId: this.surface.id, openingId: o.id, patch }, key);
+    if (o) this.dispatch({ type: 'carrelage/opening/update', surfaceId: this.surface.id, openingId: o.id, patch }, key);
   }
 
   removeOpening(): void {
     const o = this.surface.openings[this.sel.opening];
     if (!o) return;
-    this.dispatch({ type: 'opening/remove', surfaceId: this.surface.id, openingId: o.id });
+    this.dispatch({ type: 'carrelage/opening/remove', surfaceId: this.surface.id, openingId: o.id });
     this.select({ opening: -1 });
     toast('Ouverture supprimée.', { action: { label: 'Annuler', run: () => this.store.undo() } });
   }
@@ -270,19 +280,19 @@ export class EditorState {
     let gi = 0;
     for (let i = 0; i < bs.length - 1; i++) if (bs[i + 1]! - bs[i]! > bs[gi + 1]! - bs[gi]!) gi = i;
     const c: Corner = createCorner({ x: Math.round((bs[gi]! + bs[gi + 1]!) / 2) });
-    this.dispatch({ type: 'corner/add', surfaceId: s.id, corner: c });
+    this.dispatch({ type: 'carrelage/corner/add', surfaceId: s.id, corner: c });
     this.select({ corner: s.corners.length });
   }
 
   updateCorner(patch: Partial<Omit<Corner, 'id'>>, key?: string, index = this.sel.corner): void {
     const c = this.surface.corners[index];
-    if (c) this.dispatch({ type: 'corner/update', surfaceId: this.surface.id, cornerId: c.id, patch }, key);
+    if (c) this.dispatch({ type: 'carrelage/corner/update', surfaceId: this.surface.id, cornerId: c.id, patch }, key);
   }
 
   removeCorner(): void {
     const c = this.surface.corners[this.sel.corner];
     if (!c) return;
-    this.dispatch({ type: 'corner/remove', surfaceId: this.surface.id, cornerId: c.id });
+    this.dispatch({ type: 'carrelage/corner/remove', surfaceId: this.surface.id, cornerId: c.id });
     this.select({ corner: -1 });
   }
 
@@ -305,7 +315,7 @@ export class EditorState {
         return z
           ? [
               {
-                type: 'zone/update' as const,
+                type: 'carrelage/zone/update' as const,
                 surfaceId: s.id,
                 zoneId: z.id,
                 patch: { offsetX: r.offsetX, offsetY: r.offsetY, start: r.start },

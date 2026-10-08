@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Export PDF (A4) : téléchargement, ou partage du fichier quand le téléphone le permet. */
   import type { ProjectResult } from '../../core';
-  import type { Project } from '../../../../state/model';
+  import type { CarrelageProject } from '../../state/data';
   import { carrelage } from '../state.svelte';
   import Button from '../../../../ui/components/Button.svelte';
   import Dialog from '../../../../ui/components/Dialog.svelte';
@@ -10,7 +10,7 @@
     open = $bindable(false),
     project,
     result,
-  }: { open: boolean; project: Project; result: ProjectResult } = $props();
+  }: { open: boolean; project: CarrelageProject; result: ProjectResult } = $props();
 
   let status = $state('');
   let busy = $state(false);

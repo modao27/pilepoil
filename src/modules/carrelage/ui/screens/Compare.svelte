@@ -13,13 +13,14 @@
   import TextField from '../../../../ui/components/TextField.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
+  import { carrelageView } from '../../state/data';
   import { dateShort } from '../../../../ui/lib/format';
   import { COMPARE_ROWS, compareValue, projectDescription, type CompareMetrics } from '../lib/labels';
   import { toast } from '../../../../ui/lib/toasts.svelte';
 
   let { projectId: id }: ModuleScreenProps = $props();
 
-  const project = $derived(app.project(id));
+  const project = $derived(carrelage.view(id));
   let current = $state.raw<ProjectResult | null>(null);
   let scen = $state.raw<Record<'A' | 'B', Scenario | null>>({ A: null, B: null });
   let results = $state.raw<Record<string, ProjectResult>>({});
@@ -50,8 +51,11 @@
     return () => (live = false);
   });
 
+  /** Vue carrelage de l'instantané d'un scénario. */
+  const snap = (s: Scenario) => carrelageView(s.snapshot.project)!;
+
   function metricsOf(r: ProjectResult, s: Scenario | null): CompareMetrics {
-    const p = s ? s.snapshot.project : project!;
+    const p = s ? snap(s) : project!;
     const tiles = s ? s.snapshot.tiles : carrelage.tiles;
     return { ...r.metrics, cost: projectCost(p, tiles, r).total };
   }
@@ -59,7 +63,7 @@
   async function save(slot: 'A' | 'B') {
     if (!project || !current) return;
     const name = scen[slot]?.name || `Scénario ${slot}`;
-    await carrelage.saveScenario(project, slot, name, current.metrics);
+    await carrelage.saveScenario(app.project(id)!, slot, name, current.metrics);
     toast(`État actuel enregistré dans le scénario ${slot}.`);
     version++;
   }
@@ -135,9 +139,9 @@
             <div class="thumb">
               {#if r && first?.ok}
                 <PlanPreview
-                  surface={toProjectSpec(s.snapshot.project, s.snapshot.tiles).spec.surfaces[0]!}
+                  surface={toProjectSpec(snap(s), s.snapshot.tiles).spec.surfaces[0]!}
                   pieces={first.value.pieces}
-                  grout={s.snapshot.project.surfaces[0]?.zones[0]?.groutColor}
+                  grout={snap(s).surfaces[0]?.zones[0]?.groutColor}
                   label="Aperçu du scénario {slot}"
                 />
               {/if}
@@ -149,7 +153,7 @@
               onchange={() => rename(slot)}
             />
             <p class="muted small">
-              {projectDescription(s.snapshot.project, s.snapshot.tiles)}<br />Enregistré {dateShort(s.createdAt)}
+              {projectDescription(snap(s), s.snapshot.tiles)}<br />Enregistré {dateShort(s.createdAt)}
             </p>
             <div class="row">
               <Button onclick={() => (confirm = slot)}>Charger</Button>

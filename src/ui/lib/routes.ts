@@ -6,6 +6,10 @@ export type Route =
   | { name: 'tile'; id: string | null }
   | { name: 'settings' }
   | { name: 'demo' }
+  /** Écran Projet : plan, outils activés, ajout d'un outil. */
+  | { name: 'project'; id: string }
+  /** Éditeur du plan commun. */
+  | { name: 'plan'; id: string }
   /** Écran d'un module : #/p/:id/m/:module/…path ; path vide = éditeur du module. */
   | { name: 'module'; id: string; module: string; path: string }
   /** Ancienne adresse : remplacée par `to` sans nouvelle entrée d'historique. */
@@ -28,8 +32,9 @@ export function parseRoute(hash: string): Route {
   if (a === 'settings' && !b) return { name: 'settings' };
   if (a === 'demo' && !b) return { name: 'demo' };
   if (a === 'p' && b && c === 'm' && d) return { name: 'module', id: b, module: d, path: parts.slice(4).join('/') };
-  // anciennes adresses du carrelage (favoris) ; en S1, #/p/:id ouvre le carrelage
-  if (a === 'p' && b && !c) return { name: 'redirect', to: moduleRoute(b, '') };
+  if (a === 'p' && b && !c) return { name: 'project', id: b };
+  if (a === 'p' && b && c === 'plan' && !d) return { name: 'plan', id: b };
+  // anciennes adresses du carrelage (favoris)
   if (a === 'p' && b && (c === 'results' || c === 'room' || c === 'compare') && !d)
     return { name: 'redirect', to: moduleRoute(b, c) };
   if (a === 'p' && b && c === 's' && d && !e) return { name: 'redirect', to: moduleRoute(b, 's/' + d) };
@@ -50,6 +55,10 @@ export function href(r: Route): string {
       return '#/settings';
     case 'demo':
       return '#/demo';
+    case 'project':
+      return '#/p/' + encodeURIComponent(r.id);
+    case 'plan':
+      return '#/p/' + encodeURIComponent(r.id) + '/plan';
     case 'module':
       return (
         '#/p/' +

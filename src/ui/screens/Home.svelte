@@ -5,6 +5,7 @@
   import IconButton from '../components/IconButton.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
+  import { dateShort } from '../lib/format';
 </script>
 
 <Screen title="Mes projets">
@@ -32,13 +33,43 @@
     </div>
     <ul class="list" aria-label="Projets">
       {#each app.projects as p (p.id)}
-        <li>{#await ui.ProjectCard() then { default: ProjectCard }}<ProjectCard project={p} />{/await}</li>
+        <li>
+          {#if Object.hasOwn(p.modules, 'carrelage')}
+            {#await ui.ProjectCard() then { default: ProjectCard }}<ProjectCard project={p} />{/await}
+          {:else}
+            <a class="plain" href="#/p/{p.id}">
+              <span class="pname">{p.name}</span>
+              <span class="muted"
+                >{p.plan.rooms.length} pièce{p.plan.rooms.length > 1 ? 's' : ''} · modifié {dateShort(
+                  p.updatedAt,
+                )}</span
+              >
+            </a>
+          {/if}
+        </li>
       {/each}
     </ul>
   {/if}
 </Screen>
 
 <style>
+  .plain {
+    display: grid;
+    gap: var(--space-1);
+    min-height: var(--touch);
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--r-panel);
+    background: var(--sheet);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .pname {
+    font-weight: 600;
+  }
+  .muted {
+    color: var(--muted);
+  }
   .first {
     display: grid;
     gap: var(--space-4);

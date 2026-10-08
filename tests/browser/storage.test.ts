@@ -1,6 +1,13 @@
 import { deleteDB, openDB } from 'idb';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createProject, createSurface, createTile, newId } from '../../src/modules/carrelage/state/factories';
+import {
+  createProject as createView,
+  createSurface,
+  createTile,
+  newId,
+} from '../../src/modules/carrelage/state/factories';
+import { migrateProject, migrateScenario, projectFromV1 } from '../../src/storage/migrations';
+import { V1_ROOM, V1_SCENARIO } from '../unit/fixtures/v1';
 import type { Photo, Project, Scenario } from '../../src/state/model';
 import { DB_VERSION, openDb, type Db } from '../../src/storage/db';
 import {
@@ -19,6 +26,9 @@ import {
   saveTile,
   setPref,
 } from '../../src/storage/repo';
+
+/** Projet v2 avec le carrelage. */
+const createProject = (...a: Parameters<typeof createView>): Project => projectFromV1(createView(...a));
 
 const opened: { db: Db; name: string }[] = [];
 async function fresh(): Promise<Db> {
@@ -42,7 +52,7 @@ const photo = (id = newId()): Photo => ({
   createdAt: 0,
 });
 const scenario = (p: Project, slot: 'A' | 'B', o: Partial<Scenario> = {}): Scenario => ({
-  schemaVersion: 1,
+  schemaVersion: 2,
   id: newId(),
   projectId: p.id,
   slot,
@@ -58,7 +68,7 @@ describe('base IndexedDB', () => {
   it('crée les magasins à la version courante', async () => {
     const db = await fresh();
     expect(db.version).toBe(DB_VERSION);
-    expect([...db.objectStoreNames].sort()).toEqual(['photos', 'prefs', 'projects', 'scenarios', 'tiles']);
+    expect([...db.objectStoreNames].sort()).toEqual(['boards', 'photos', 'prefs', 'projects', 'scenarios', 'tiles']);
   });
 
   it('projets : enregistrement, liste du plus récent au plus ancien, suppression avec scénarios', async () => {
@@ -116,6 +126,35 @@ describe('base IndexedDB', () => {
       ['A', 'second'],
       ['B', 'Scénario B'],
     ]);
+  });
+
+  it('base v1 réelle : passe en v2 (magasin boards), documents migrés à la lecture puis réécrits', async () => {
+    const name = 'test-' + newId();
+    // schéma de la version 1 publiée (UPGRADES[0]), avec un projet et un scénario v1
+    const old = await openDB(name, 1, {
+      upgrade(db) {
+        db.createObjectStore('projects', { keyPath: 'id' }).createIndex('updatedAt', 'updatedAt');
+        const tiles = db.createObjectStore('tiles', { keyPath: 'id' });
+        tiles.createIndex('name', 'name');
+        tiles.createIndex('updatedAt', 'updatedAt');
+        db.createObjectStore('photos', { keyPath: 'id' });
+        db.createObjectStore('scenarios', { keyPath: 'id' }).createIndex('projectId', 'projectId');
+        db.createObjectStore('prefs', { keyPath: 'key' });
+      },
+    });
+    await old.put('projects', structuredClone(V1_ROOM));
+    await old.put('scenarios', structuredClone(V1_SCENARIO));
+    old.close();
+
+    const db = await openDb(name);
+    opened.push({ db, name });
+    expect(db.version).toBe(2);
+    expect(db.objectStoreNames.contains('boards')).toBe(true);
+    expect(await listProjects(db)).toEqual([migrateProject(V1_ROOM).doc]);
+    expect(await listScenarios(db, 'p-mur')).toEqual([migrateScenario(V1_SCENARIO).doc]);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(await db.get('projects', 'p-sdb')).toEqual(migrateProject(V1_ROOM).doc);
+    expect((await db.get('scenarios', 'sc1'))!.schemaVersion).toBe(2);
   });
 
   it('préférences', async () => {
