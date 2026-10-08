@@ -34,6 +34,11 @@ export async function expectTouchTargets(page: Page): Promise<void> {
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height || getComputedStyle(el).visibility === 'hidden') return false;
         if (el.tagName === 'A' && el.closest('p')) return false;
+        // lien étiré sur toute sa carte (::after) : la cible réelle est la carte
+        if (el.hasAttribute('data-stretched')) {
+          const card = el.closest('article')?.getBoundingClientRect();
+          return !card || card.height < 43.5;
+        }
         if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'file' || el.type === 'color'))
           return false;
         return r.width < 43.5 || r.height < 43.5;

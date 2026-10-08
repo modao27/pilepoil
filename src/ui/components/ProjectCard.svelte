@@ -49,7 +49,7 @@
     {/if}
   </div>
   <div class="info">
-    <h2><a href="#/p/{project.id}">{project.name}</a></h2>
+    <h2><a href="#/p/{project.id}" data-stretched>{project.name}</a></h2>
     <p class="muted">
       {project.surfaces.length > 1 ? `${project.surfaces.length} surfaces · ` : ''}modifié {dateShort(
         project.updatedAt,

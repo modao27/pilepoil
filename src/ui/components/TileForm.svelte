@@ -61,7 +61,7 @@
         { value: 'rect', label: 'Rectangle' },
         { value: 'hex', label: 'Hexagone' },
         { value: 'octo', label: 'Octogone' },
-        { value: 'chevron', label: 'Lame Hongrie' },
+        { value: 'chevron', label: 'Hongrie' },
       ]}
     />
   </div>

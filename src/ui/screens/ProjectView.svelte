@@ -57,7 +57,7 @@
             options={project.surfaces.map((s) => ({ value: s.id, label: s.name }))}
           />
         {/if}
-        <div class="plan">
+        <div class="plan" style="aspect-ratio: {surface!.width || 1} / {surface!.height || 1}">
           {#if sres?.ok && spec}
             <PlanPreview
               surface={spec.surfaces[index]!}
@@ -154,8 +154,11 @@
     border-radius: var(--r-panel);
     background: var(--sheet);
   }
+  /* proportions de la surface, sans dépasser 60 % de la hauteur d'écran */
   .plan {
-    height: clamp(220px, 50dvh, 560px);
+    width: 100%;
+    min-height: 160px;
+    max-height: 60dvh;
     display: grid;
     place-items: center;
   }

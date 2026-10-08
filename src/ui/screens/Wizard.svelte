@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Assistant de création : type → dimensions → carreau → motif, aperçu en direct à chaque étape. */
   import { PATTERNS, type PatternId, type ProjectResult } from '../../core';
-  import { createTile } from '../../state/factories';
+  import { createTile, tileName } from '../../state/factories';
   import type { Project, RoomWallKey, Tile } from '../../state/model';
   import { toProjectSpec } from '../../state/selectors';
   import { createRoomProject, createSingleSurfaceProject } from '../../state/templates';
@@ -115,7 +115,10 @@
 <Screen title="Nouveau projet" backHref="#/" backLabel="Annuler et revenir à l’accueil" wide>
   <div class="wiz">
     <aside class="preview" aria-label="Aperçu">
-      <div class="plan">
+      <div
+        class="plan"
+        style="aspect-ratio: {previewSpec?.surfaces[0]?.width || 4} / {previewSpec?.surfaces[0]?.height || 3}"
+      >
         {#if first?.ok && previewSpec}
           <PlanPreview
             surface={previewSpec.surfaces[0]!}
@@ -226,7 +229,12 @@
               >
                 <TileSwatch tile={t} size={40} />
                 <span class="tt"
-                  ><strong>{t.name}</strong><span class="muted">{tileSize(t.length, t.width, t.shape)}</span></span
+                  ><strong>{t.name}</strong><span class="muted"
+                    >{t.name === tileName(t.shape, t.length, t.width)
+                      ? ''
+                      : tileSize(t.length, t.width, t.shape) + ' · '}ép.
+                    {mm(t.thickness)}{t.m2PerBox > 0 ? ` · ${t.m2PerBox.toLocaleString('fr-FR')} m²/carton` : ''}</span
+                  ></span
                 >
               </button>
             {/each}
@@ -302,9 +310,16 @@
     background: var(--sheet);
   }
   .plan {
-    height: clamp(160px, 32dvh, 420px);
+    width: 100%;
+    min-height: 120px;
+    max-height: 32dvh;
     display: grid;
     place-items: center;
+  }
+  @media (min-width: 900px) {
+    .plan {
+      max-height: 60dvh;
+    }
   }
   .cap {
     display: flex;
