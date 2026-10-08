@@ -4,11 +4,22 @@
   import Segmented from '../components/Segmented.svelte';
   import { app, type Theme } from '../lib/app.svelte';
   import { count } from '../lib/format';
+  import { APP_VERSION, pwa } from '../lib/pwa.svelte';
   import { toast } from '../lib/toasts.svelte';
 
   let input: HTMLInputElement;
   let status = $state('');
   let busy = $state(false);
+
+  let appStatus = $state('');
+  let checking = $state(false);
+
+  async function checkUpdate() {
+    checking = true;
+    appStatus = 'Recherche en cours…';
+    appStatus = await pwa.check();
+    checking = false;
+  }
 
   async function importFile(file: File | undefined) {
     if (!file) return;
@@ -69,6 +80,50 @@
       <p class="status" role="status">{status}</p>
     </section>
 
+    <section aria-labelledby="s-app">
+      <h2 id="s-app">Application</h2>
+      <ul class="facts">
+        <li>
+          {#if pwa.offlineReady}
+            Fonctionne sans connexion : l’application et vos projets sont sur cet appareil.
+          {:else if pwa.supported}
+            Préparation du mode sans connexion…
+          {:else}
+            Ce navigateur ne permet pas d’utiliser l’application sans connexion.
+          {/if}
+        </li>
+        {#if !pwa.online}
+          <li>Vous êtes hors ligne. Tout reste utilisable ; le partage du PDF peut attendre le retour du réseau.</li>
+        {/if}
+        <li>
+          {#if pwa.persisted}
+            Données protégées : le navigateur ne les effacera pas pour faire de la place.
+          {:else}
+            Le navigateur peut effacer les données s’il manque de place. Installer l’application les protège.
+          {/if}
+        </li>
+      </ul>
+      <div class="actions">
+        {#if pwa.updateReady}
+          <Button variant="primary" icon="download" onclick={() => void pwa.update()}>Mettre à jour maintenant</Button>
+        {:else}
+          <Button icon="download" disabled={checking || !pwa.supported} onclick={checkUpdate}
+            >Rechercher une mise à jour</Button
+          >
+        {/if}
+        {#if pwa.installable}
+          <Button icon="plus" onclick={() => void pwa.install()}>Installer l’application</Button>
+        {/if}
+      </div>
+      {#if !pwa.installable && !pwa.standalone}
+        <p class="muted">
+          Pour l’installer sur iPhone ou iPad : bouton Partager de Safari, puis « Sur l’écran d’accueil ».
+        </p>
+      {/if}
+      <p class="status" role="status">{appStatus}</p>
+      <p class="muted">Version {APP_VERSION}.</p>
+    </section>
+
     <section aria-labelledby="s-about">
       <h2 id="s-about">À propos</h2>
       <p>Calepinage — préparation de pose de carrelage : coupes, chutes, quantités et liste d’achat.</p>
@@ -98,6 +153,17 @@
   }
   .status:empty {
     display: none;
+  }
+  .facts {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-left: var(--space-4);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
   }
   a {
     display: inline-block;

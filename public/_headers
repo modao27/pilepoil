@@ -1,0 +1,20 @@
+# En-têtes HTTP pour Netlify et Cloudflare Pages (ignoré par les autres hébergeurs, voir docs/DEPLOY.md).
+
+# Service worker et page : toujours revalidés, pour que les mises à jour arrivent.
+/sw.js
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+# Fichiers dont le nom contient une empreinte : jamais modifiés.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(self), geolocation=(), microphone=()

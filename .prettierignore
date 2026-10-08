@@ -7,3 +7,5 @@ test-results/
 package-lock.json
 tests/parity/fixtures/
 *.md
+reports/
+screenshots/

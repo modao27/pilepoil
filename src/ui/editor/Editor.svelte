@@ -16,6 +16,7 @@
   import Icon from '../icons/Icon.svelte';
   import { app } from '../lib/app.svelte';
   import { euros } from '../lib/format';
+  import { pwa } from '../lib/pwa.svelte';
   import Alerts from './Alerts.svelte';
   import { EditorState, type Tab } from './editorState.svelte';
   import FinishTab from './FinishTab.svelte';
@@ -96,6 +97,7 @@
     mq.addEventListener('change', upd);
     const flush = () => void ed.flush();
     window.addEventListener('pagehide', flush);
+    const offUpdate = pwa.beforeUpdate(() => ed.flush());
     const keys = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.closest('input, textarea, select, [contenteditable]')) return;
@@ -113,6 +115,7 @@
       mq.removeEventListener('change', upd);
       window.removeEventListener('pagehide', flush);
       window.removeEventListener('keydown', keys);
+      offUpdate();
       void ed.flush();
     };
   });
@@ -175,7 +178,7 @@
     <IconButton icon="list" label="Résultats" href="#/p/{ed.project.id}/results" />
   </header>
 
-  <div class="body">
+  <main class="body">
     {#if desktop}<div class="tools">{@render tools()}</div>{/if}
     <div class="planwrap" style={desktop ? '' : `bottom: ${snap === 0 ? '128px' : '50%'}`}>
       {#if ed.mode === '3d' && ed.spec && ed.result && layout3d}
@@ -219,7 +222,7 @@
         {@render panel()}
       </BottomSheet>
     {/if}
-  </div>
+  </main>
 </div>
 
 <SurfaceDialog {ed} bind:open={surfaceDialog} />

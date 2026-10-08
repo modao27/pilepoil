@@ -16,11 +16,12 @@ export function dismiss(id: number): void {
 
 export function toast(
   message: string,
-  opts: { action?: ToastItem['action']; tone?: ToastItem['tone']; timeout?: number } = {},
+  /** timeout null : le message reste jusqu'à ce qu'on le ferme ou qu'on touche l'action. */
+  opts: { action?: ToastItem['action']; tone?: ToastItem['tone']; timeout?: number | null } = {},
 ): number {
   const id = next++;
   toasts.push({ id, message, tone: opts.tone ?? 'info', action: opts.action });
   if (toasts.length > 3) toasts.shift();
-  setTimeout(() => dismiss(id), opts.timeout ?? (opts.action ? 6000 : 4000));
+  if (opts.timeout !== null) setTimeout(() => dismiss(id), opts.timeout ?? (opts.action ? 6000 : 4000));
   return id;
 }

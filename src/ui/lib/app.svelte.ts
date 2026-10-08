@@ -319,7 +319,15 @@ export class AppState {
 function applyTheme(t: Theme) {
   if (t === 'auto') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = t;
+  // barre d'état du téléphone (index.html : une couleur par mode système) ; thème forcé : même couleur partout
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    const own = meta.media.includes('dark') ? THEME_COLORS.dark : THEME_COLORS.light;
+    meta.content = t === 'auto' ? own : THEME_COLORS[t];
+  }
 }
+
+/** --paper clair et sombre (tokens.css). */
+const THEME_COLORS = { light: '#e6ebee', dark: '#0e161b' };
 
 function importMessage(s: ImportSummary): string {
   const parts = [`${s.surfaces} surface${s.surfaces > 1 ? 's' : ''}`, `${s.tiles} carreau${s.tiles > 1 ? 'x' : ''}`];
