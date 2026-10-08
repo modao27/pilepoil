@@ -1,58 +1,83 @@
-# Calepinage — PWA de calepinage carrelage
+# Boîte à outils rénovation — PWA
 
-Application web progressive (installable, hors ligne) pour préparer une pose de carrelage :
-calepinage par zones et motifs, coupes, réemploi des chutes, quantités, liste d'achat, rendu 2D/3D.
-Utilisateur principal : un artisan / bricoleur averti, surtout sur téléphone, parfois sur ordinateur.
+Application web progressive (installable, hors ligne) qui regroupe des outils de rénovation autour d'un même
+projet : un plan de pièces commun, des modules de calcul (carrelage, parquet, puis d'autres), une liste d'achat
+consolidée. Utilisateur principal : un artisan / bricoleur averti, surtout sur téléphone, parfois sur ordinateur.
 
-## Référence fonctionnelle
-`legacy/calepinage.html` est la version actuelle (fichier unique, testée). C'est la **source de vérité**
-pour les règles métier et les résultats chiffrés. Toute fonction portée doit donner les mêmes résultats
-(mêmes quantités, mêmes coupes) tant qu'une évolution n'est pas décidée explicitement.
-Règles métier détaillées : `docs/DOMAIN.md`. Écrans et interactions : `docs/UX.md`. Phases : `docs/PLAN.md`.
+Nom de l'application : **Pilepoil** (identifiant technique `pilepoil`), mis en place en phase S3.
+Jusque-là, l'appli publiée garde le nom « Calepinage ». Décisions prises : `docs/BOITE.md` §11.
+
+## Documents
+| Fichier | Contenu |
+|---|---|
+| `docs/BOITE.md` | Architecture de la boîte à outils : contrat de module, plan commun, modèle v2, achats, routes |
+| `docs/PLAN.md` | Phases en cours (socle puis parquet), critères de fin |
+| `docs/PROMPTS.md` | Consignes à coller par phase |
+| `docs/UX.md` | Système de design et principes d'interface (communs à tous les modules) |
+| `docs/MODEL.md` | Modèle persisté v1 et stockage (la v2 est décrite dans `docs/BOITE.md`) |
+| `docs/carrelage/` | Module carrelage : règles métier (`DOMAIN.md`), historique des phases |
+| `docs/parquet/SPEC.md` | Module parquet : spécification complète (cible V3) |
+| `docs/DEPLOY.md` | Mise en ligne statique |
+| `legacy/calepinage.html` | Ancienne version du carrelage, référence de parité |
 
 ## Pile
 - Vite + TypeScript (strict) + Svelte 5 (runes)
-- three.js pour la vue 3D
+- three.js pour la 3D, jsPDF pour les PDF
 - idb (IndexedDB) pour le stockage, vite-plugin-pwa (Workbox) pour le hors ligne
-- Vitest (unitaires), Playwright (parcours complets, profil mobile + desktop)
-- Pas de framework CSS : variables CSS et composants maison (voir `docs/UX.md`)
+- Vitest (unitaires, parité), Playwright (parcours complets, profil mobile 390 px + desktop)
+- Pas de framework CSS : variables CSS et composants maison (`docs/UX.md`)
+- Toute nouvelle dépendance doit être justifiée dans le message de commit (taille, maintenance, licence).
 
-## Architecture
+## Architecture cible
 ```
 src/
-  core/        logique pure : AUCUN import de DOM, Svelte, three.js ou stockage
-    geometry/  polygones, clip, inset, aires, tests point-dans-polygone
-    patterns/  un module par motif : { id, label, geo(), generate(), icon }
-    layout/    zones, angles de mur, ouvertures/réservations, tableaux, plinthes
-    cutting/   construction des pièces, bords d'usine, coupes apparentes, réemploi des chutes
-    optimizer/ recherche du meilleur départ (exécutée dans un worker)
-    rules/     encollage, joint, consommables : tables de données + fonctions
-    shopping/  commande par produit, liste d'achat, coûts
-  state/       store projet (immutable), historique annuler/rétablir, sélecteurs, migrations
-  storage/     IndexedDB : projets, bibliothèque de carreaux, photos (Blob), import de l'ancienne version
-  workers/     compute.worker.ts : calcul d'une surface / d'un projet, optimisation
-  render/      plan2d, render2d (canvas), scene3d (three.js) — lisent l'état, n'écrivent jamais
-  ui/          écrans, composants, design system
-  pwa/         manifeste, icônes
-tests/         unit/ (core), e2e/
+  core/              partagé, logique pure : AUCUN import de DOM, Svelte, three.js ou stockage
+    geometry/        polygones (existant) + booléens sur polygones quelconques avec trous
+    plan/            modèle du plan commun : pièces polygonales, ouvertures, obstacles, passages
+    cutting/         outils de découpe partagés : barres 1D, stock de chutes
+    shopping/        lignes d'achat consolidées, conditionnements, prix
+    hash, units…
+  modules/
+    registry.ts      liste des modules (ordre d'affichage)
+    types.ts         contrat ToolModule
+    carrelage/       core/ state/ ui/ render/ — code carrelage existant, déplacé
+    parquet/         core/ state/ ui/ render/
+  state/             store projet (immutable), historique, actions du plan, aiguillage vers les modules
+  storage/           IndexedDB : projets, bibliothèques (carreaux, lames), photos, migrations, import legacy
+  workers/           compute.worker.ts : aiguille chaque demande vers le moteur du module
+  render/            rendus partagés : vue du plan, base de scène 3D, aides SVG/canvas
+  ui/                coquille, écrans communs (accueil, projet, plan, achats, bibliothèques, réglages),
+                     design system
+  pwa/
+tests/               unit/, parity/ (carrelage), browser/, e2e/
 ```
-Règles :
-- `core` est déterministe et sérialisable (entrées/sorties en JSON simple) pour passer par le worker.
-- L'UI ne calcule rien de métier : elle appelle `core` via le worker et affiche.
+
+## Règles d'architecture
+- `core` et `modules/*/core` sont déterministes et sérialisables (JSON simple) pour passer par le worker.
+- Un module n'importe **jamais** un autre module. Ce qui sert à deux modules descend dans `src/core`,
+  `src/render` ou `src/ui` (avec ses tests), et les tests de parité carrelage doivent rester verts.
+- Un module expose un seul point d'entrée (`modules/<id>/index.ts`) conforme au contrat de `docs/BOITE.md`.
+- L'UI ne calcule rien de métier : elle appelle le moteur via le worker et affiche.
 - Les rendus ne modifient pas l'état ; les interactions passent par des actions du store.
-- Un motif = un fichier dans `core/patterns/`, enregistré dans un registre. Ajouter un motif ne touche rien d'autre.
+- Les alertes du moteur sont des codes ; le texte est produit par l'interface (`ui/lib/messages.ts` ou celui
+  du module).
+- Ajouter un module ne modifie que : `modules/registry.ts`, le module lui-même, et si besoin une migration.
+- Pendant S1 seulement, la coquille peut importer `modules/carrelage/index.ts` (jamais ses fichiers
+  internes) ; les tests peuvent importer les internes d'un module.
+- Code commun extrait au moment où un second module en a besoin, pas avant (`docs/BOITE.md` §10).
 
 ## Conventions
-- **Unités internes : millimètres** partout dans `core` et `state`. Conversion uniquement à l'affichage.
-  Affichage : carreaux et coupes en mm ; surfaces, ouvertures, zones, plinthes en cm ; m² pour les quantités.
-- Repère d'une surface : origine en haut à gauche, x vers la droite, y vers le bas.
-- Interface **en français**, phrases courtes, verbes d'action, pas de majuscules partout, pas de jargon technique.
-- Nommage du code en anglais. Pas de `any`. Fonctions pures et petites dans `core`.
+- **Unités internes : millimètres** partout dans `core`, `modules` et `state`. Conversion à l'affichage.
+- Points en tuples `[x, y]`. Repère : origine en haut à gauche, x vers la droite, y vers le bas.
+- Interface **en français**, phrases courtes, verbes d'action, pas de majuscules partout, pas de jargon.
+- Nommage du code en anglais. Pas de `any`. Fonctions pures et petites dans les `core`.
 - Accessibilité : cibles tactiles ≥ 44 px, focus visible, contraste AA, `prefers-reduced-motion`, mode sombre.
 
 ## Qualité
-- Chaque module `core` a ses tests. Reprendre les invariants de `docs/DOMAIN.md` §Invariants
-  (couverture exacte à joint 0, pas de chevauchement, pièces ≤ carreau, chutes ≤ carreau…).
-- Tests de parité avec `legacy/` sur un jeu de configurations de référence (motifs × angles × départs × options).
+- Chaque module `core` a ses tests, y compris les invariants listés dans sa spécification.
+- Carrelage : la parité avec `legacy/` reste à 100 % pendant toute la restructuration. Un test de parité
+  rouge bloque la phase.
+- Parquet : tests unitaires, tests de propriétés (`fast-check`) sur les invariants, cas de référence chiffrés.
 - `npm run check` (types + lint + tests) doit passer avant chaque commit.
-- Commits petits et décrits en français.
+- Commits petits et décrits en français. Une phase = une branche, fusionnée quand ses critères sont remplis.
+- Avant de coder une phase : montrer le plan (fichiers touchés, types, étapes), attendre la validation.

@@ -16,9 +16,11 @@ rendu 2D et 3D. Installable, fonctionne hors ligne ; les projets restent sur l'a
 
 ## Documentation
 - `CLAUDE.md` : contexte permanent (pile, architecture, conventions)
-- `docs/PLAN.md` : phases et critères de validation ; `docs/PROMPTS.md` : consignes par phase
-- `docs/DOMAIN.md` : règles métier et invariants
+- `docs/BOITE.md` : architecture de la boîte à outils (modules, plan commun, modèle v2, achats)
+- `docs/PLAN.md` : phases en cours et critères de validation ; `docs/PROMPTS.md` : consignes par phase
 - `docs/UX.md` : écrans, interactions, système de design
-- `docs/MODEL.md` : modèle de données et stockage
+- `docs/MODEL.md` : modèle de données v1 et stockage
 - `docs/DEPLOY.md` : mise en ligne statique
-- `legacy/calepinage.html` : ancienne version, référence fonctionnelle
+- `docs/carrelage/` : règles métier et historique du module carrelage
+- `docs/parquet/SPEC.md` : spécification du module parquet
+- `legacy/calepinage.html` : ancienne version, référence fonctionnelle du carrelage

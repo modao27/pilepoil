@@ -1,5 +1,8 @@
 # Modèle de données et stockage (phase 2)
 
+> Version 1 du modèle. La version 2 (plan commun, données par module) est décrite dans `docs/BOITE.md` §4.
+> Mettre ce fichier à jour en fin de phase S2.
+
 Proposition. Unités : mm (surfaces, carreaux, ouvertures), ms depuis 1970 pour les dates, € pour les prix.
 Les identifiants sont des chaînes uniques (`crypto.randomUUID()`).
 
@@ -133,7 +136,7 @@ type Pref =
   | { key: 'legacyImport'; value: { at: number; projectId: Id | null } };
 ```
 
-Écarts avec `DOMAIN.md` : `Tile.shape` (un hexagone est un produit, pas un motif) ; `Zone.tileUpright` (legacy
+Écarts avec `carrelage/DOMAIN.md` : `Tile.shape` (un hexagone est un produit, pas un motif) ; `Zone.tileUpright` (legacy
 distingue 300 × 600 de 600 × 300 tourné à 90° : départs différents) ; sens du carreau sur `Tile` et non plus
 global ; côtés en toutes lettres (`left`…). État d'interface (surface active, sélection, vue) hors du projet.
 
@@ -208,4 +211,4 @@ Deux sources :
 
 Limites connues : un hexagone ou un octogone legacy saisi avec une hauteur b ≠ a devient un carreau a × a ;
 les comptes sont identiques, seule la taille de grille de l'optimiseur peut différer. Les résultats legacy
-d'une surface active autre que la première suivent l'ordre fixe des surfaces (voir DOMAIN.md).
+d'une surface active autre que la première suivent l'ordre fixe des surfaces (voir `carrelage/DOMAIN.md`).
