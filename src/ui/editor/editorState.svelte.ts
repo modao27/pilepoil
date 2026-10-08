@@ -36,7 +36,9 @@ export class EditorState {
   surfaceId = $state<Id>('');
   sel = $state<Selection>({ zone: 0, opening: -1, corner: -1, piece: -1 });
   tab = $state<Tab>('tile');
-  mode = $state<'plan' | 'render'>('plan');
+  mode = $state<'plan' | 'render' | '3d'>('plan');
+  /** Vue 3D : surface seule ou toute la pièce (legacy « Surface / Pièce »). */
+  scope3d = $state<'surface' | 'room'>('surface');
   result = $state.raw<ProjectResult | null>(null);
   spec = $state.raw<ProjectSpec | null>(null);
   guides = $state.raw<{ zone: number; x: number | null; y: number | null } | null>(null);

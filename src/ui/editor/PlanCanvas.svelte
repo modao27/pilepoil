@@ -100,7 +100,7 @@
       view,
       width: size.w,
       height: size.h,
-      mode: ed.mode,
+      mode: ed.mode === 'render' ? 'render' : 'plan',
       colors,
       selection: { ...ed.sel, zone: ed.zoneIndex },
       showNumbers: app.showCutNumbers,

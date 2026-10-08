@@ -78,7 +78,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
   await page.getByRole('button', { name: 'Actions pour Crédence cuisine' }).click();
   await page.getByRole('button', { name: 'Dupliquer' }).click();
-  await expect(page.getByText('Crédence cuisine (copie)')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Crédence cuisine \(copie\)/ })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('link', { name: /Crédence cuisine/ })).toHaveCount(2);
 

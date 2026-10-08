@@ -10,6 +10,7 @@
   import Library from './screens/Library.svelte';
   import Editor from './editor/Editor.svelte';
   import Results from './screens/Results.svelte';
+  import Room from './screens/Room.svelte';
   import Settings from './screens/Settings.svelte';
   import TileEdit from './screens/TileEdit.svelte';
   import Wizard from './screens/Wizard.svelte';
@@ -37,6 +38,8 @@
   <Demo />
 {:else if route.name === 'project' && app.project(route.id)}
   {#key route.id}<Editor project={app.project(route.id)!} surfaceId={route.surfaceId} />{/key}
+{:else if route.name === 'room'}
+  {#key route.id}<Room id={route.id} />{/key}
 {:else if route.name === 'results'}
   {#key route.id}<Results id={route.id} />{/key}
 {:else if route.name === 'project'}
