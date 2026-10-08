@@ -17,7 +17,7 @@ import { V1_ROOM, V1_SCENARIO } from '../unit/fixtures/v1';
 import type { Photo, Project } from '../../src/state/model';
 import type { Scenario, Tile } from '../../src/modules/carrelage/state/model';
 import { BOARD_TEMPLATES } from '../../src/modules/parquet/core/board';
-import { DB_VERSION, openDb, type Db } from '../../src/storage/db';
+import { copyOldDb, DB_NAME, DB_VERSION, OLD_DB_NAME, openDb, type Db } from '../../src/storage/db';
 import {
   collectPhotos,
   deleteProject,
@@ -163,6 +163,61 @@ describe('base IndexedDB', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(await db.get('projects', 'p-sdb')).toEqual(migrateProject(V1_ROOM).doc);
     expect(((await db.get('scenarios', 'sc1')) as Scenario).schemaVersion).toBe(2);
+  });
+
+  it('nom de la base : pilepoil ; ancienne base : calepinage', () => {
+    expect([DB_NAME, OLD_DB_NAME]).toEqual(['pilepoil', 'calepinage']);
+  });
+
+  it('ancien nom : copie unique de tous les magasins, ancienne base intacte', async () => {
+    const oldName = 'old-' + newId();
+    const old = await openDb(oldName);
+    const t = createTile({ name: 'Zellige' });
+    const p = createProject([createSurface(t.id)], { name: 'Salle de bain' }, 1000);
+    await saveProject(old, p);
+    await putItem(old, 'tiles', t);
+    await setPref(old, 'palette', { tiles: ['#123456'], grouts: [] });
+    old.close();
+
+    const db = await fresh();
+    expect(await copyOldDb(db, oldName)).toEqual({ from: oldName, projects: 1 });
+    expect(await listProjects(db)).toEqual([p]);
+    expect(await listItems(db, 'tiles')).toEqual([t]);
+    expect(await getPref(db, 'palette')).toEqual({ tiles: ['#123456'], grouts: [] });
+    expect(await getPref(db, 'copiedFrom')).toMatchObject({ from: oldName, projects: 1 });
+    // une seule fois, même si l'ancienne base change ensuite
+    expect(await copyOldDb(db, oldName)).toBeNull();
+
+    // ancienne base : rien n'a changé
+    const again = await openDB(oldName);
+    expect(await again.getAll('projects')).toEqual([p]);
+    expect(await again.get('prefs', 'copiedFrom')).toBeUndefined();
+    again.close();
+    await deleteDB(oldName);
+  });
+
+  it('ancien nom : base restée en version 1, projets migrés à la lecture', async () => {
+    const oldName = 'old-' + newId();
+    const old = await openDB(oldName, 1, {
+      upgrade(d) {
+        d.createObjectStore('projects', { keyPath: 'id' }).createIndex('updatedAt', 'updatedAt');
+        d.createObjectStore('prefs', { keyPath: 'key' });
+      },
+    });
+    await old.put('projects', structuredClone(V1_ROOM));
+    old.close();
+    const db = await fresh();
+    expect(await copyOldDb(db, oldName)).toEqual({ from: oldName, projects: 1 });
+    expect(await listProjects(db)).toEqual([migrateProject(V1_ROOM).doc]);
+    await deleteDB(oldName);
+  });
+
+  it('rien à copier : marqueur posé, aucune base créée', async () => {
+    const db = await fresh();
+    const absent = 'absent-' + newId();
+    expect(await copyOldDb(db, absent)).toBeNull();
+    expect(await getPref(db, 'copiedFrom')).toMatchObject({ from: null, projects: 0 });
+    expect((await indexedDB.databases()).some((d) => d.name === absent)).toBe(false);
   });
 
   it('préférences', async () => {

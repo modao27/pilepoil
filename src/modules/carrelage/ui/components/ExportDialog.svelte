@@ -69,7 +69,7 @@
     const f = await make();
     if (!f) return;
     try {
-      await navigator.share({ files: [f], title: project.name, text: `Calepinage : ${project.name}` });
+      await navigator.share({ files: [f], title: project.name, text: `Pilepoil : ${project.name}` });
       status = 'PDF partagé.';
     } catch (e) {
       status = e instanceof DOMException && e.name === 'AbortError' ? '' : 'Partage impossible. Téléchargez le PDF.';

@@ -22,7 +22,7 @@
     <EmptyState
       icon="room"
       title="Aucun projet pour l’instant"
-      text="Préparez votre premier calepinage : un mur, un sol ou une pièce entière. Les quantités et les coupes se calculent toutes seules."
+      text="Préparez votre premier chantier : un mur, un sol ou une pièce entière. Les quantités et les coupes se calculent toutes seules."
     >
       {#snippet action()}
         <div class="first">

@@ -29,7 +29,7 @@
 {#snippet libraryNav()}<LibraryNav current={route.name === 'library' ? route.lib : ''} />{/snippet}
 
 {#if app.fatal}
-  <Screen title="Calepinage">
+  <Screen title="Pilepoil">
     <EmptyState icon="warn" title="Impossible d’ouvrir vos données" text={app.fatal} />
   </Screen>
 {:else if !app.ready}

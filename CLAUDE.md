@@ -4,8 +4,9 @@ Application web progressive (installable, hors ligne) qui regroupe des outils de
 projet : un plan de pièces commun, des modules de calcul (carrelage, parquet, puis d'autres), une liste d'achat
 consolidée. Utilisateur principal : un artisan / bricoleur averti, surtout sur téléphone, parfois sur ordinateur.
 
-Nom de l'application : **Pilepoil** (identifiant technique `pilepoil`), mis en place en phase S3.
-Jusque-là, l'appli publiée garde le nom « Calepinage ». Décisions prises : `docs/BOITE.md` §11.
+Nom de l'application : **Pilepoil** (identifiant technique `pilepoil`, base IndexedDB `pilepoil`), depuis
+la phase S3 ; avant, « Calepinage » (base `calepinage`, copiée une fois puis gardée intacte). « Calepinage » reste
+le terme du métier dans le module carrelage. Décisions prises : `docs/BOITE.md` §11.
 
 ## Documents
 | Fichier | Contenu |

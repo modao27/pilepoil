@@ -1,7 +1,9 @@
-# Calepinage
+# Pilepoil
 
-PWA de calepinage carrelage : zones et motifs, coupes, réemploi des chutes, quantités, liste d'achat, plans PDF,
-rendu 2D et 3D. Installable, fonctionne hors ligne ; les projets restent sur l'appareil.
+Boîte à outils de rénovation en PWA : plan des pièces commun, calepinage du carrelage (zones et motifs, coupes,
+réemploi des chutes, plans PDF, rendu 2D et 3D), bibliothèques de carreaux et de lames, liste d'achat consolidée
+du projet. Le module parquet arrive ensuite. Installable, fonctionne hors ligne ; les projets restent sur
+l'appareil. Anciennement « Calepinage ».
 
 ## Commandes
 | Commande | Rôle |

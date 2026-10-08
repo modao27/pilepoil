@@ -315,6 +315,7 @@ seul le parquet s'en sert au début.
 | 2026-10-08 | Magasin `scenarios` : déplacé dans le module carrelage en S3 (avec le ramassage des photos) | §4 |
 | 2026-10-08 | Achats : quantité = quantité sur laquelle porte le prix (m² pour un carreau), coût identique au carrelage | §7 |
 | 2026-10-08 | Contrat : `priceAction` (prix modifiés par l'écran Achats via le module) | §2, §7 |
+| 2026-10-08 | Icône Pilepoil : niveau à bulle ; redirection de l'ancienne adresse par un dépôt `calepinage-pwa` dédié | S3 |
 | 2026-10-08 | Coquille indépendante du carrelage dès S3 (contrat : `start`, `usedPhotos`, `screens.create/card/settings`) | §2 |
 | 2026-10-08 | Bibliothèques tenues par la coquille ; parquet créé avec sa seule bibliothèque de lames avant P1 | §2, S3 |
 | 2026-10-08 | Éditeur de plan en SVG ; activer un module = action `project/module/add` (données créées hors réducteur) | §5, §9 |

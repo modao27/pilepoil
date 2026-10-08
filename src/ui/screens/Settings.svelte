@@ -49,6 +49,12 @@
     <section aria-labelledby="s-app">
       <h2 id="s-app">Application</h2>
       <ul class="facts">
+        {#if app.oldApp}
+          <li>
+            Vos projets de l’ancienne appli Calepinage ont été repris ici. Si elle est encore installée sur cet
+            appareil, vous pouvez la désinstaller : ses données restent intactes, mais elle n’est plus mise à jour.
+          </li>
+        {/if}
         <li>
           {#if pwa.offlineReady}
             Fonctionne sans connexion : l’application et vos projets sont sur cet appareil.
@@ -92,7 +98,9 @@
 
     <section aria-labelledby="s-about">
       <h2 id="s-about">À propos</h2>
-      <p>Calepinage — préparation de pose de carrelage : coupes, chutes, quantités et liste d’achat.</p>
+      <p>
+        Pilepoil — boîte à outils de rénovation : plan des pièces, calepinage du carrelage, quantités et liste d’achat.
+      </p>
       <p class="muted">Les calculs sont indicatifs ; vérifiez les conseils de pose du fabricant.</p>
       <p><a href="#/demo">Voir le système de design</a></p>
     </section>

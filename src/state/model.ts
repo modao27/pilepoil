@@ -59,7 +59,9 @@ export type Pref =
   | { key: 'showCutNumbers'; value: boolean }
   /** Bibliothèques dont les modèles types ont été posés (une seule fois). */
   | { key: 'librarySeeded'; value: string[] }
-  | { key: 'legacyImport'; value: { at: number; projectId: Id | null } };
+  | { key: 'legacyImport'; value: { at: number; projectId: Id | null } }
+  /** Copie unique de l'ancienne base « calepinage » (from null : rien à copier). */
+  | { key: 'copiedFrom'; value: { from: string | null; at: number; projects: number } };
 
 export type PrefKey = Pref['key'];
 export type PrefValue<K extends PrefKey> = Extract<Pref, { key: K }>['value'];

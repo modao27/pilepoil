@@ -312,7 +312,7 @@ export function buildPdf(input: PdfInput): Blob {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(7.5);
     pdf.setTextColor(...MUTED);
-    pdf.text(pdfText(`Calepinage · ${project.name}`), M, h - 7);
+    pdf.text(pdfText(`Pilepoil · ${project.name}`), M, h - 7);
     pdf.text(`${i} / ${n}`, w - M, h - 7, { align: 'right' });
   }
   return pdf.output('blob');
