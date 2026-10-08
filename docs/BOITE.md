@@ -134,6 +134,10 @@ son épaisseur, la première garde son `id`, chaque ouverture va sur la moitié 
 recalculé). Retirer un point fusionne deux murs : le mur fusionné garde l'`id` du premier, les ouvertures
 de l'autre y sont reportées.
 
+Épaisseur par défaut d'un mur : **72 mm**, cloison placo standard 72/48 (une plaque BA13 de chaque côté
+d'une ossature de 48 mm). Elle sert pour tout nouveau mur et pour la migration v1 → v2 ; l'utilisateur la
+modifie mur par mur.
+
 Un passage est la bande `largeur de l'ouverture × épaisseur du mur` entre les deux pièces : c'est ce qui
 relie les surfaces des pièces voisines (pose continue du parquet, 3D).
 
@@ -182,7 +186,7 @@ export interface CarrelageData {
 Migration `v1 → v2` (testée sur des documents figés) :
 - `surfaces`, `room`, `settings`, `prices` passent dans `modules.carrelage.data` ;
 - `plan` vide ; si `room` existe, créer une pièce rectangulaire `length × width` nommée comme le projet,
-  murs de 100 mm d'épaisseur par défaut ;
+  murs de 72 mm d'épaisseur par défaut ;
 - aucune autre donnée ne change.
 
 Scénarios A/B : le magasin `scenarios` appartient au module carrelage (types, lecture, écriture, migration).
@@ -286,6 +290,7 @@ seul le parquet s'en sert au début.
 | 2026-10-08 | Contrat écrit en entier en S1, rempli par le carrelage en S1–S3 | §2 |
 | 2026-10-08 | `ModuleId` ouvert, `Project.modules` en `Record<string, ModuleDoc>` | §2, §4 |
 | 2026-10-08 | Murs avec identifiant stable et épaisseur propre ; ouvertures rattachées à l'`id` du mur | §3 |
+| 2026-10-08 | Épaisseur de mur par défaut : 72 mm (cloison placo 72/48, BA13) | §3, §4 |
 | 2026-10-08 | Magasin `scenarios` géré par le module carrelage | §4 |
 | 2026-10-08 | Renommage complet : base `pilepoil` avec copie depuis `calepinage`, manifeste et dépôt renommés | §4, PLAN S3 |
 | 2026-10-08 | Unités d'achat communes étendues à `sachet`, `cartridge`, `litre` | §7 |
