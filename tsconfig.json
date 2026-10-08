@@ -18,5 +18,6 @@
     "noEmit": true,
     "allowJs": false
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/**/*.ts", "scripts/**/*.ts", "*.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/**/*.ts", "scripts/**/*.ts", "*.config.ts"],
+  "exclude": ["**/*.local.ts"]
 }

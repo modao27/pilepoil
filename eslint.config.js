@@ -6,7 +6,7 @@ import globals from 'globals';
 import svelteConfig from './svelte.config.js';
 
 export default ts.config(
-  { ignores: ['dist/', 'node_modules/', 'legacy/', 'playwright-report/', 'test-results/'] },
+  { ignores: ['dist/', 'node_modules/', 'legacy/', 'playwright-report/', 'test-results/', '**/*.local.ts'] },
   js.configs.recommended,
   ...ts.configs.strict,
   ...svelte.configs.recommended,
@@ -17,6 +17,7 @@ export default ts.config(
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', ignoreRestSiblings: true }],
     },
   },
   {

@@ -1,6 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { describe, it } from 'vitest';
+import fixtureJson from './fixtures/legacy-results.json';
 import { buildSurface } from '../../src/core/cutting/buildSurface';
+import { planCuts } from '../../src/core/cutting/planCuts';
 import { area } from '../../src/core/geometry/polygon';
 import type { Piece, ProjectSpec, SurfaceError } from '../../src/core/types';
 import { expectSame } from './compare';
@@ -16,12 +17,11 @@ interface LegacyResult {
   input: LegacyProject;
   error?: string;
   pieces: LegacyPiece[];
+  groups: ({ label: string } & Record<string, unknown>)[];
   note: string;
 }
 
-const fixture = JSON.parse(readFileSync(new URL('./fixtures/legacy-results.json', import.meta.url), 'utf8')) as {
-  results: Record<string, LegacyResult>;
-};
+const fixture = fixtureJson as unknown as { results: Record<string, LegacyResult> };
 
 const REVEAL_NAMES = { L: 'tableau gauche', R: 'tableau droit', T: 'linteau', B: 'appui' } as const;
 
@@ -105,5 +105,36 @@ describe.each(Object.entries(fixture.results))('parité : %s', (_name, L) => {
   it.skipIf(!!L.error)('pièces identiques', () => {
     const expected = L.pieces.map((p) => Object.fromEntries(PIECE_FIELDS.map((k) => [k, p[k]])));
     expectSame(pieces.map(project), expected, 'pièces');
+  });
+
+  it.skipIf(!!L.error)('plan de découpe identique (groupes, carreaux numérotés, réemploi)', () => {
+    const plan = planCuts(pieces, spec.settings);
+    expectSame(
+      plan.groups.map((g) => ({
+        key: g.key,
+        shape: g.shape,
+        W: g.tileWidth,
+        H: g.tileHeight,
+        tA: g.tileArea,
+        color: g.color,
+        box: g.m2PerBox,
+        kind: g.kind,
+        full: g.full,
+        cuts: g.cuts,
+        tiles: g.tiles,
+      })),
+      L.groups.map(({ label: _label, ...g }) => g),
+      'groupes',
+    );
+    expectSame(
+      plan.source,
+      L.pieces.map((p) => p.source),
+      'source',
+    );
+    expectSame(
+      plan.reused,
+      L.pieces.map((p) => p.reused),
+      'réemploi',
+    );
   });
 });
