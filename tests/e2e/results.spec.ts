@@ -29,7 +29,7 @@ async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
   await depth.press('Enter');
   await page.waitForTimeout(400);
   const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
-  await page.goto(`/#/p/${id}/results`);
+  await page.goto(`/#/p/${id}/m/carrelage/results`);
   await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
   return id;
 }
@@ -73,14 +73,14 @@ test('comparer deux scénarios, charger puis annuler', async ({ page }, info) =>
   await expect(page.getByRole('table')).toContainText('État actuel');
 
   // modifier le projet : motif bâtons rompus à 45°
-  await page.goto(`/#/p/${id}`);
+  await page.goto(`/#/p/${id}/m/carrelage`);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Motif' }).click();
   await page.getByRole('radio', { name: 'Bâtons rompus' }).click();
   await page.getByRole('radio', { name: '45°' }).click();
   await page.waitForTimeout(400);
 
-  await page.goto(`/#/p/${id}/compare`);
+  await page.goto(`/#/p/${id}/m/carrelage/compare`);
   await page.getByLabel('Nom du scénario A').fill('Décalé droit');
   await page.getByLabel('Nom du scénario A').press('Tab');
   await page.getByRole('button', { name: 'Enregistrer l’état actuel' }).click(); // B
@@ -94,7 +94,7 @@ test('comparer deux scénarios, charger puis annuler', async ({ page }, info) =>
   await page.getByRole('button', { name: 'Charger le scénario' }).click();
   await expect(page.getByText('Scénario « Décalé droit » chargé.')).toBeVisible();
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
-  await page.goto(`/#/p/${id}`);
+  await page.goto(`/#/p/${id}/m/carrelage`);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Motif' }).click();
   await expect(page.getByRole('radio', { name: 'Bâtons rompus' })).toHaveAttribute('aria-checked', 'true');

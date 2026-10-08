@@ -175,8 +175,8 @@
     </button>
     <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
-    {#if ed.project.room}<IconButton icon="room" label="Pièce" href="#/p/{ed.project.id}/room" />{/if}
-    <IconButton icon="list" label="Résultats" href="#/p/{ed.project.id}/results" />
+    {#if ed.project.room}<IconButton icon="room" label="Pièce" href="#/p/{ed.project.id}/m/carrelage/room" />{/if}
+    <IconButton icon="list" label="Résultats" href="#/p/{ed.project.id}/m/carrelage/results" />
   </header>
 
   <main class="body">
@@ -213,12 +213,12 @@
       {/if}
     </div>
     {#if desktop}
-      <a class="summary bottom" href="#/p/{ed.project.id}/results">{summary}</a>
+      <a class="summary bottom" href="#/p/{ed.project.id}/m/carrelage/results">{summary}</a>
       <aside class="inspector" aria-label="Réglages">{@render panel()}</aside>
     {:else}
       <BottomSheet label="Réglages" bind:snap contained peek={128}>
         {#snippet header()}
-          <a class="summary" href="#/p/{ed.project.id}/results">{summary}</a>
+          <a class="summary" href="#/p/{ed.project.id}/m/carrelage/results">{summary}</a>
         {/snippet}
         {@render panel()}
       </BottomSheet>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { ModuleScreenProps } from '../../../types';
   /** Résultats du projet : onglets Commande, Découpe, Achats (prix modifiables), Encollage ; PDF et partage. */
   import type { ProjectResult } from '../../core';
   import { itemPrice, projectArea, projectCost } from '../../state/pricing';
@@ -16,7 +17,7 @@
   import { glueRows, pieceCutText, shoppingLabel } from '../lib/labels';
   import { errorText, productName } from '../lib/messages';
 
-  let { id }: { id: string } = $props();
+  let { projectId: id }: ModuleScreenProps = $props();
 
   type Tab = 'order' | 'cuts' | 'shop' | 'glue';
   const project = $derived(app.project(id));
@@ -67,9 +68,9 @@
     </EmptyState>
   </Screen>
 {:else}
-  <Screen title="Résultats — {project.name}" backHref="#/p/{project.id}" backLabel="Retour au plan">
+  <Screen title="Résultats — {project.name}" backHref="#/p/{project.id}/m/carrelage" backLabel="Retour au plan">
     {#snippet actions()}
-      <Button variant="ghost" href="#/p/{project.id}/compare">Comparer</Button>
+      <Button variant="ghost" href="#/p/{project.id}/m/carrelage/compare">Comparer</Button>
       <Button icon="download" disabled={!result} onclick={() => (exporting = true)}>PDF</Button>
     {/snippet}
     {#if !result}

@@ -50,7 +50,7 @@
     {/if}
   </div>
   <div class="info">
-    <h2><a href="#/p/{project.id}" data-stretched>{project.name}</a></h2>
+    <h2><a href="#/p/{project.id}/m/carrelage" data-stretched>{project.name}</a></h2>
     <p class="muted">
       {project.surfaces.length > 1 ? `${project.surfaces.length} surfaces · ` : ''}modifié {dateShort(
         project.updatedAt,
@@ -89,7 +89,7 @@
         onclick={async () => {
           menu = false;
           const c = await app.duplicateProject(project.id);
-          if (c) go({ name: 'project', id: c.id, surfaceId: null });
+          if (c) go({ name: 'module', id: c.id, module: 'carrelage', path: '' });
         }}>Dupliquer</Button
       >
       <Button

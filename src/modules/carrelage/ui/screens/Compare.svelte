@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { ModuleScreenProps } from '../../../types';
   /** Comparaison de deux scénarios A / B (ou d'un scénario et de l'état actuel), comme legacy. */
   import type { ProjectResult } from '../../core';
   import type { Scenario } from '../../../../state/model';
@@ -16,7 +17,7 @@
   import { COMPARE_ROWS, compareValue, projectDescription, type CompareMetrics } from '../lib/labels';
   import { toast } from '../../../../ui/lib/toasts.svelte';
 
-  let { id }: { id: string } = $props();
+  let { projectId: id }: ModuleScreenProps = $props();
 
   const project = $derived(app.project(id));
   let current = $state.raw<ProjectResult | null>(null);
@@ -111,7 +112,11 @@
     </EmptyState>
   </Screen>
 {:else}
-  <Screen title="Comparer — {project.name}" backHref="#/p/{project.id}/results" backLabel="Retour aux résultats">
+  <Screen
+    title="Comparer — {project.name}"
+    backHref="#/p/{project.id}/m/carrelage/results"
+    backLabel="Retour aux résultats"
+  >
     <p class="muted intro">
       Enregistrez l’état actuel dans A, modifiez le projet (motif, carreau, départ…), puis comparez avec B ou avec
       l’état actuel.

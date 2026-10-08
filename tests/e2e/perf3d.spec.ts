@@ -21,7 +21,7 @@ test('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en r
   await page.waitForTimeout(500);
 
   const id = /#\/p\/([^/]+)/.exec(page.url())![1];
-  await page.goto(`/#/p/${id}/room`);
+  await page.goto(`/#/p/${id}/m/carrelage/room`);
   await page.getByRole('radio', { name: '3D' }).click();
   await sceneStats(page);
   await page.getByRole('button', { name: 'Faire tourner' }).click();

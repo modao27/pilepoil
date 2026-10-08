@@ -101,7 +101,7 @@
     const p = build(tile);
     const now = Date.now();
     await app.saveProject({ ...p, createdAt: now, updatedAt: now });
-    go({ name: 'project', id: p.id, surfaceId: null }, true);
+    go({ name: 'module', id: p.id, module: 'carrelage', path: '' }, true);
   }
 
   const WALL_LABELS: [RoomWallKey, string][] = [

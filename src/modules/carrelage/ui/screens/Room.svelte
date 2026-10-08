@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { ModuleScreenProps } from '../../../types';
   /** Pièce : vue de dessus (murs dépliés, surfaces cliquables) et maquette 3D. */
   import type { ProjectResult } from '../../core';
   import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
@@ -12,7 +13,7 @@
   import { carrelage } from '../state.svelte';
   import { scenePhoto } from '../lib/photos';
 
-  let { id }: { id: string } = $props();
+  let { projectId: id }: ModuleScreenProps = $props();
 
   const project = $derived(app.project(id));
   const spec = $derived(project ? carrelage.spec(project) : null);
@@ -45,7 +46,7 @@
 {:else}
   <Screen
     title={project.room ? `Pièce — ${project.name}` : project.name}
-    backHref="#/p/{project.id}"
+    backHref="#/p/{project.id}/m/carrelage"
     backLabel="Retour au plan"
     wide
   >

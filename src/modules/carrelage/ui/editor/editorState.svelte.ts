@@ -112,7 +112,7 @@ export class EditorState {
     if (id === this.surfaceId) return;
     this.surfaceId = id;
     this.sel = { zone: 0, opening: -1, corner: -1, piece: -1 };
-    history.replaceState(null, '', `#/p/${this.project.id}/s/${id}`);
+    history.replaceState(null, '', `#/p/${this.project.id}/m/carrelage/s/${id}`);
   }
 
   /* ---------- surface ---------- */

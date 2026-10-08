@@ -65,7 +65,7 @@ test('hors ligne : ouvrir, créer, calculer, 3D, résultats et PDF sans réseau'
   await sceneStats(page);
 
   const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
-  await page.goto(`/#/p/${id}/results`);
+  await page.goto(`/#/p/${id}/m/carrelage/results`);
   await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
   await page.getByRole('button', { name: 'PDF' }).click();
   const [download] = await Promise.all([

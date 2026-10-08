@@ -82,7 +82,7 @@
       {@const s = spec.surfaces[p.i]!}
       {@const d = drawing(p.i)}
       {@const name = project.surfaces[p.i]?.name ?? ''}
-      <a href="#/p/{project.id}/s/{project.surfaces[p.i]?.id}" aria-label="Ouvrir {name}">
+      <a href="#/p/{project.id}/m/carrelage/s/{project.surfaces[p.i]?.id}" aria-label="Ouvrir {name}">
         <g transform={p.transform}>
           <rect width={s.width} height={s.height} fill={project.surfaces[p.i]?.zones[0]?.groutColor ?? '#8f8a83'} />
           {#each d.shapes as sh, k (k)}<path d={sh.d} fill={sh.fill} />{/each}
@@ -98,7 +98,7 @@
     {#each project.surfaces as s, i (s.id)}
       {@const d = drawing(i)}
       <li>
-        <a href="#/p/{project.id}/s/{s.id}">
+        <a href="#/p/{project.id}/m/carrelage/s/{s.id}">
           <svg viewBox={d.viewBox} role="img" aria-label="Aperçu de {s.name}">
             <rect width={d.width} height={d.height} fill={s.zones[0]?.groutColor} />
             {#each d.shapes as sh, k (k)}<path d={sh.d} fill={sh.fill} />{/each}
