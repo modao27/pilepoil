@@ -3,14 +3,13 @@
  * calcul (worker), optimisation. Toutes les modifications passent par des actions du store.
  */
 import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../core';
-import type { Action } from '../../state/actions';
 import { createCorner, createOpening, createZone, newId } from '../../state/factories';
 import type { Corner, Id, Opening, OpeningType, Project, Surface, Zone } from '../../../../state/model';
 import { toProjectSpec } from '../../state/selectors';
 import { createProjectStore, type ProjectStore } from '../../../../state/store';
 import { applyRoom, type RoomUpdate } from '../../state/templates';
 import { carrelage } from '../state.svelte';
-import { reduce } from '../../state/actions';
+import { reduce, type Action } from '../../state/actions';
 import { createSaver, type Saver } from '../../../../storage/autosave';
 import { app } from '../../../../ui/lib/app.svelte';
 import { toast } from '../../../../ui/lib/toasts.svelte';

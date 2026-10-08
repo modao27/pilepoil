@@ -1,5 +1,5 @@
 /** Ce qui se trouve sous un point du plan (repère surface, mm). Lecture seule. */
-import { pointInPolygon, type Piece, type Point, type SurfaceSpec, type ZoneRect } from '..';
+import { pointInPolygon, type Piece, type Point, type SurfaceSpec, type ZoneRect } from '../core';
 
 export type Hit =
   | { kind: 'opening'; index: number }

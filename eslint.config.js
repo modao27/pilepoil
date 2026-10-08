@@ -27,11 +27,13 @@ const onlyIndex = {
   message: 'Importer un module par son index.ts seulement.',
 };
 
-/** Un module n'importe jamais un autre module. */
-const otherModules = (m) =>
-  modules
+/** Un module n'importe jamais un autre module, ni son propre index.ts (dossier parent : '..', '../..'). */
+const otherModules = (m) => [
+  ...modules
     .filter((o) => o !== m)
-    .map((o) => ({ regex: `(^|/)${o}(/|$)`, message: 'Un module n’importe jamais un autre module.' }));
+    .map((o) => ({ regex: `(^|/)${o}(/|$)`, message: 'Un module n’importe jamais un autre module.' })),
+  { regex: '^([.]{1,2}/?)+$', message: 'Dans un module, importer ses fichiers internes, pas son index.ts.' },
+];
 
 export default ts.config(
   { ignores: ['dist/', 'node_modules/', 'legacy/', 'playwright-report/', 'test-results/', '**/*.local.ts'] },

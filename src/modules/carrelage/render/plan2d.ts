@@ -3,8 +3,8 @@
  * Mode « plan » : statuts de coupe, coupes apparentes, cotes, numéros. Mode « rendu » : couleurs, photos,
  * variation de teinte, joints. Lit les données, n'écrit jamais l'état.
  */
-import { area, bbox, hash, type CutPlan, type Piece, type Polygon, type SurfaceSpec } from '..';
-import type { SurfaceBuild } from '..';
+import { area, bbox, hash, type CutPlan, type Piece, type Polygon, type SurfaceSpec } from '../core';
+import type { SurfaceBuild } from '../core';
 import type { View } from '../../../render/view';
 
 export interface PlanColors {
