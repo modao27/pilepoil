@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ui } from '../modules/carrelage';
   import Button from './components/Button.svelte';
   import EmptyState from './components/EmptyState.svelte';
   import Screen from './components/Screen.svelte';
@@ -7,14 +8,7 @@
   import { router } from './lib/router.svelte';
   import Demo from './screens/Demo.svelte';
   import Home from './screens/Home.svelte';
-  import Library from './screens/Library.svelte';
-  import Editor from './editor/Editor.svelte';
-  import Compare from './screens/Compare.svelte';
-  import Results from './screens/Results.svelte';
-  import Room from './screens/Room.svelte';
   import Settings from './screens/Settings.svelte';
-  import TileEdit from './screens/TileEdit.svelte';
-  import Wizard from './screens/Wizard.svelte';
 
   const route = $derived(router.route);
 </script>
@@ -28,23 +22,26 @@
 {:else if route.name === 'home'}
   <Home />
 {:else if route.name === 'new'}
-  <Wizard />
+  {#await ui.Wizard() then { default: Wizard }}<Wizard />{/await}
 {:else if route.name === 'library'}
-  <Library />
+  {#await ui.Library() then { default: Library }}<Library />{/await}
 {:else if route.name === 'tile'}
-  {#key route.id}<TileEdit id={route.id} />{/key}
+  {#key route.id}{#await ui.TileEdit() then { default: TileEdit }}<TileEdit id={route.id} />{/await}{/key}
 {:else if route.name === 'settings'}
   <Settings />
 {:else if route.name === 'demo'}
   <Demo />
 {:else if route.name === 'project' && app.project(route.id)}
-  {#key route.id}<Editor project={app.project(route.id)!} surfaceId={route.surfaceId} />{/key}
+  {#key route.id}{#await ui.Editor() then { default: Editor }}<Editor
+        project={app.project(route.id)!}
+        surfaceId={route.surfaceId}
+      />{/await}{/key}
 {:else if route.name === 'room'}
-  {#key route.id}<Room id={route.id} />{/key}
+  {#key route.id}{#await ui.Room() then { default: Room }}<Room id={route.id} />{/await}{/key}
 {:else if route.name === 'compare'}
-  {#key route.id}<Compare id={route.id} />{/key}
+  {#key route.id}{#await ui.Compare() then { default: Compare }}<Compare id={route.id} />{/await}{/key}
 {:else if route.name === 'results'}
-  {#key route.id}<Results id={route.id} />{/key}
+  {#key route.id}{#await ui.Results() then { default: Results }}<Results id={route.id} />{/await}{/key}
 {:else if route.name === 'project'}
   <Screen title="Projet introuvable" backHref="#/" backLabel="Accueil">
     <EmptyState icon="info" title="Ce projet n’existe plus" text="Il a peut-être été supprimé.">

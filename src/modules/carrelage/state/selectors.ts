@@ -1,4 +1,4 @@
-import type { ProjectSpec, RoomSpec, SurfaceSpec, TileSpec, ZoneSpec } from '..';
+import type { ProjectSpec, RoomSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../core';
 import type { Edges, Id, Project, Surface, Tile, Zone } from '../../../state/model';
 
 /** Correspondance entre indices du moteur et identifiants du modèle. */

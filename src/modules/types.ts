@@ -28,13 +28,17 @@ export interface Progress {
   part?: number;
 }
 
-/** Face moteur : importable par le worker, sans DOM ni Svelte. */
-export interface ModuleEngine<Spec, Result> {
+/**
+ * Face moteur : exportée par `modules/<id>/engine.ts`, importée seulement par `modules/engines.ts`
+ * (le worker), sans DOM ni Svelte. L'optimisation peut avoir sa propre entrée et son propre résultat
+ * (carrelage : une surface et des zones, pas le projet entier).
+ */
+export interface ModuleEngine<Spec, Result, OptSpec = Spec, OptResult = Result> {
   id: ModuleId;
   /** Calcul complet ; doit être déterministe pour une même entrée. */
   compute(spec: Spec, ctx: EngineContext): Result;
   /** Calcul long découpé en tranches (optimisation), annulable par `return()`. Facultatif. */
-  optimize?(spec: Spec, ctx: EngineContext): Generator<Progress, Result, void>;
+  optimize?(spec: OptSpec, ctx: EngineContext): Generator<Progress, OptResult, void>;
 }
 
 /* ------------------------------------------------------------ application */

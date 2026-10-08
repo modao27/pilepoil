@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ui } from '../../modules/carrelage';
   import type { ProjectResult } from '../../modules/carrelage';
   import type { Project } from '../../state/model';
   import { projectArea, projectCost } from '../../modules/carrelage';
@@ -8,7 +9,6 @@
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import IconButton from './IconButton.svelte';
-  import PlanPreview from './PlanPreview.svelte';
   import TextField from './TextField.svelte';
 
   let { project }: { project: Project } = $props();
@@ -40,12 +40,14 @@
 <article class="card">
   <div class="thumb">
     {#if first?.ok}
-      <PlanPreview
-        surface={app.spec(project).surfaces[0]!}
-        pieces={first.value.pieces}
-        grout={firstGrout}
-        label="Aperçu de {project.surfaces[0]!.name}"
-      />
+      {#await ui.PlanPreview() then { default: PlanPreview }}
+        <PlanPreview
+          surface={app.spec(project).surfaces[0]!}
+          pieces={first.value.pieces}
+          grout={firstGrout}
+          label="Aperçu de {project.surfaces[0]!.name}"
+        />
+      {/await}
     {/if}
   </div>
   <div class="info">

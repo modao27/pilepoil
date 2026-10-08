@@ -1,4 +1,6 @@
-import { computeProject, optimizeZones, type OptimizeProgress, type OptimizeResult } from '../modules/carrelage';
+import type { OptimizeResult } from '../modules/carrelage';
+import { engines } from '../modules/engines';
+import type { Progress } from '../modules/types';
 
 import type { Request, Response } from './protocol';
 
@@ -20,7 +22,9 @@ export interface HandlerEnv {
 export function createHandler(env: HandlerEnv): (req: Request) => void {
   let pending: Extract<Request, { type: 'compute' }> | null = null;
   let computeScheduled = false;
-  const jobs = new Map<number, Generator<OptimizeProgress, OptimizeResult, void>>();
+  const jobs = new Map<number, Generator<Progress, OptimizeResult, void>>();
+  const ctx = { now: env.now };
+  const carrelage = engines.carrelage;
 
   const fail = (id: number, e: unknown) =>
     env.post({ type: 'error', id, message: e instanceof Error ? e.message : String(e) });
@@ -31,7 +35,7 @@ export function createHandler(env: HandlerEnv): (req: Request) => void {
     pending = null;
     if (!req) return;
     try {
-      env.post({ type: 'result', id: req.id, result: computeProject(req.spec) });
+      env.post({ type: 'result', id: req.id, result: carrelage.compute(req.spec, ctx) });
     } catch (e) {
       fail(req.id, e);
     }
@@ -50,7 +54,7 @@ export function createHandler(env: HandlerEnv): (req: Request) => void {
           return;
         }
         if (env.now() >= end) {
-          env.post({ type: 'progress', id, zone: r.value.zone, percent: r.value.percent });
+          env.post({ type: 'progress', id, zone: r.value.part ?? 0, percent: r.value.percent });
           env.defer(() => step(id));
           return;
         }
@@ -72,7 +76,10 @@ export function createHandler(env: HandlerEnv): (req: Request) => void {
         }
         return;
       case 'optimize':
-        jobs.set(req.id, optimizeZones(req.surface, req.zones, req.goal, req.settings));
+        jobs.set(
+          req.id,
+          carrelage.optimize!({ surface: req.surface, zones: req.zones, goal: req.goal, settings: req.settings }, ctx),
+        );
         env.defer(() => step(req.id));
         return;
       case 'cancel': {

@@ -1,5 +1,5 @@
 /** Projets créés par l'assistant : mur ou sol seul, ou pièce complète (murs A à D + sol, comme legacy). */
-import type { PatternId } from '..';
+import type { PatternId } from '../core';
 import { createProject, createSurface, createZone, newId } from './factories';
 import type { Id, Project, RoomWallKey, Surface } from '../../../state/model';
 

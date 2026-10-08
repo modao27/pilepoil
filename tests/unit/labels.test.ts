@@ -8,7 +8,13 @@ import {
   createZone,
 } from '../../src/modules/carrelage/state/factories';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
-import { compareValue, glueRows, pieceCutText, projectDescription, shoppingLabel } from '../../src/ui/lib/labels';
+import {
+  compareValue,
+  glueRows,
+  pieceCutText,
+  projectDescription,
+  shoppingLabel,
+} from '../../src/modules/carrelage/ui/lib/labels';
 
 const tile = createTile({ name: '60 × 30 cm' });
 

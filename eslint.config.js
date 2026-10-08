@@ -21,7 +21,7 @@ const pure = [
 ];
 const pureGlobals = ['error', 'window', 'document', 'localStorage', 'navigator', 'self'];
 
-/** Hors d'un module, on n'en importe que le point d'entrée index.ts. */
+/** Hors d'un module, on n'en importe que le point d'entrée index.ts (engine.ts : seulement engines.ts). */
 const onlyIndex = {
   regex: '(^|/)modules/[^/]+/(?!index([.]ts)?$)',
   message: 'Importer un module par son index.ts seulement.',
@@ -61,11 +61,29 @@ export default ts.config(
   {
     // Registre : seulement les index.ts des modules.
     files: ['src/modules/*.ts'],
+    ignores: ['src/modules/engines.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         { patterns: [{ regex: '^[.]/[^/]+/(?!index([.]ts)?$)', message: onlyIndex.message }] },
       ],
+    },
+  },
+  {
+    // Moteurs (importés par le worker) : seulement les engine.ts des modules, purs.
+    files: ['src/modules/engines.ts'],
+    languageOptions: { globals: { ...globals.es2022 } },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            ...pure,
+            { regex: '^[.]/[^/]+/(?!engine([.]ts)?$)', message: 'Le worker n’importe que les engine.ts.' },
+          ],
+        },
+      ],
+      'no-restricted-globals': pureGlobals,
     },
   },
   {
@@ -82,11 +100,12 @@ export default ts.config(
   ...modules.flatMap((m) => [
     {
       files: [`src/modules/${m}/**/*.{ts,svelte}`],
-      ignores: [`src/modules/${m}/core/**`],
+      ignores: [`src/modules/${m}/core/**`, `src/modules/${m}/engine.ts`],
       rules: { 'no-restricted-imports': ['error', { patterns: otherModules(m) }] },
     },
     {
-      files: [`src/modules/${m}/core/**/*.ts`],
+      // Moteur du module et sa face exportée au worker.
+      files: [`src/modules/${m}/core/**/*.ts`, `src/modules/${m}/engine.ts`],
       languageOptions: { globals: { ...globals.es2022 } },
       rules: {
         'no-restricted-imports': ['error', { patterns: [...pure, ...otherModules(m)] }],

@@ -1,4 +1,4 @@
-import type { ProjectResult, ShoppingItem } from '..';
+import type { ProjectResult, ShoppingItem } from '../core';
 import type { Project, Tile } from '../../../state/model';
 
 /**

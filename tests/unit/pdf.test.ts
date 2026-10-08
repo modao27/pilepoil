@@ -9,7 +9,7 @@ import {
   createZone,
 } from '../../src/modules/carrelage/state/factories';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
-import { buildPdf, pdfText } from '../../src/ui/lib/pdf';
+import { buildPdf, pdfText } from '../../src/modules/carrelage/ui/lib/pdf';
 
 /** Texte de chaque page, extrait comme le ferait un lecteur PDF. */
 async function pagesText(blob: Blob): Promise<{ text: string; width: number; height: number }[]> {
