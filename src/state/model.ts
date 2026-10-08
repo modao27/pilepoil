@@ -1,5 +1,6 @@
 /** Modèle persisté (voir docs/MODEL.md). Unités : mm, dates en ms. */
 import type { Metrics, OptimizerGoal, Orientation, PatternId } from '../core';
+import type { Plan } from '../core/plan/types';
 
 export type Id = string;
 
@@ -109,6 +110,27 @@ export interface Project {
   settings: ProjectSettings;
   /** Prix unitaires par clé d'article de la liste d'achat. */
   prices: Record<string, number>;
+}
+
+/**
+ * Projet v2 (docs/BOITE.md §4) : plan commun + données de chaque module activé.
+ * Défini en S1 pour le contrat des modules ; la migration v1 → v2 arrive en S2.
+ */
+export interface ProjectV2 {
+  schemaVersion: 2;
+  id: Id;
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+  plan: Plan;
+  /** Données de chaque module activé, avec leur propre version ; clé = identifiant du module. */
+  modules: Record<string, ModuleDoc>;
+}
+
+/** Chaque module type et valide ses propres `data`. */
+export interface ModuleDoc {
+  schemaVersion: number;
+  data: unknown;
 }
 
 export type TileShape = 'rect' | 'hex' | 'octo' | 'chevron';
