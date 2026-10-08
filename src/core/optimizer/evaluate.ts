@@ -27,6 +27,7 @@ export function evaluateZone(s: SurfaceSpec, zi: number, over: Partial<ZonePlace
     color: '#000',
     label: { shape: pc.shape, size: [0, 0] },
     m2PerBox: 0,
+    orientation: z.tile.orientation,
   }));
   const plan = planCuts(list, settings);
   return {

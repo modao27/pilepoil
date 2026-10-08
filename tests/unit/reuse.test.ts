@@ -10,7 +10,7 @@ import type { Piece, Settings, SurfaceSpec } from '../../src/core/types';
 import { surface, tileFor, zone } from './fixtures';
 
 const ctx: CutContext = { orientation: 'free', kerf: 2, minOffcut: 20 };
-const settings: Settings = { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20, orientation: 'free' };
+const settings: Settings = { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20 };
 const tile = { n: 1, pieces: [] };
 const fresh = (): RectStock => ({
   type: 'rect',

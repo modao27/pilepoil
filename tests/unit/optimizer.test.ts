@@ -4,7 +4,7 @@ import { optimizeZones, optimizeZonesSync } from '../../src/core/optimizer/optim
 import type { Settings } from '../../src/core/types';
 import { surface, zone } from './fixtures';
 
-const settings: Settings = { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20, orientation: 'free' };
+const settings: Settings = { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20 };
 
 describe('score', () => {
   const r = { needed: 10, thin: 2, vis: 1, minD: 30 };

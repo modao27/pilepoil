@@ -14,7 +14,7 @@ export function zone(o: Partial<ZoneSpec> = {}, tile: Partial<ZoneSpec['tile']> 
     colorB: '#3f5a6b',
     groutColor: '#8f8a83',
     ...o,
-    tile: { width: 600, height: 300, thickness: 9, color: '#d8cfc2', m2PerBox: 1.44, ...tile },
+    tile: { width: 600, height: 300, thickness: 9, color: '#d8cfc2', m2PerBox: 1.44, orientation: 'free', ...tile },
   };
 }
 

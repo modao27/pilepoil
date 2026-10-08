@@ -76,6 +76,7 @@ function finishPiece(pc: RawPiece, i: number, s: SurfaceSpec, zb: ZoneBuild, sur
     color,
     label: productLabel(pc, z, zb, s.joint),
     m2PerBox: pc.kind === 'main' ? z.tile.m2PerBox : 0,
+    orientation: z.tile.orientation,
     key:
       pc.shape +
       (pc.shape === 'chevron' ? pc.par : '') +

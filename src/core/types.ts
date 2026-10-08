@@ -36,6 +36,8 @@ export interface TileSpec {
   color: string;
   /** m² par carton [box] ; 0 = vendu à la pièce. */
   m2PerBox: number;
+  /** Rotations permises au réemploi des chutes [orient, réglage global dans legacy]. */
+  orientation: Orientation;
 }
 
 export interface ZoneSpec {
@@ -129,8 +131,6 @@ export interface Settings {
   kerf: number;
   /** Plus petite chute gardée [minr]. */
   minOffcut: number;
-  /** [orient] */
-  orientation: Orientation;
 }
 
 export type RoomWall = 'A' | 'B' | 'C' | 'D';
@@ -214,10 +214,12 @@ export interface Piece {
   key: string;
   label: ProductLabel;
   m2PerBox: number;
+  /** Sens du carreau, pour le réemploi. */
+  orientation: Orientation;
 }
 
 /** Pièce avant attribution de couleur et de produit (sortie de buildZone, tableaux, plinthes). */
-export type RawPiece = Omit<Piece, 'surface' | 'color' | 'key' | 'label' | 'm2PerBox'>;
+export type RawPiece = Omit<Piece, 'surface' | 'color' | 'key' | 'label' | 'm2PerBox' | 'orientation'>;
 
 /** Alertes de calcul d'une surface ; le texte est produit par l'interface. */
 export type SurfaceWarning =
@@ -249,6 +251,7 @@ export interface ProductGroup {
   label: ProductLabel;
   color: string;
   m2PerBox: number;
+  orientation: Orientation;
   kind: 'main' | 'cab';
   zones: { surface: number; zone: number }[];
   full: number;

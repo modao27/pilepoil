@@ -70,6 +70,7 @@ describe('quantités', () => {
     label: { shape: 'rect', size: [600, 300] },
     color: '#fff',
     m2PerBox: 1.44,
+    orientation: 'free',
     kind: 'main',
     zones: [],
     full: 20,
@@ -95,7 +96,7 @@ describe('quantités', () => {
 describe('projet', () => {
   const proj = (surfaces: SurfaceSpec[], o: Partial<ProjectSpec> = {}): ProjectSpec => ({
     surfaces,
-    settings: { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20, orientation: 'free' },
+    settings: { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20 },
     room: null,
     ...o,
   });

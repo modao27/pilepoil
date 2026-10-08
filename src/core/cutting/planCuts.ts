@@ -1,20 +1,20 @@
-import type { CutPlan, CutTile, Piece, ProductGroup, Settings } from '../types';
+import type { CutPlan, CutTile, Orientation, Piece, ProductGroup, Settings } from '../types';
 import { polyReuse } from './polyReuse';
 import { biasComplement, pieceDims, pieceNeed, placeInPoly, placeRect } from './rectReuse';
 import type { CutContext, RectStock, Stock } from './stock';
 
-/** Réglages de découpe normalisés comme legacy (kerf négatif ou absent → 0). */
-export function cutContext(s: Settings): CutContext {
-  return { orientation: s.orientation, kerf: Math.max(0, s.kerf || 0), minOffcut: s.minOffcut };
+/** Réglages de découpe d'un produit, normalisés comme legacy (kerf négatif ou absent → 0). */
+export function cutContext(s: Settings, orientation: Orientation): CutContext {
+  return { orientation, kerf: Math.max(0, s.kerf || 0), minOffcut: s.minOffcut };
 }
 
 /**
  * Plan de découpe du projet [planCuts] : regroupement par produit sur toutes les surfaces, puis pour chaque
  * produit, pièces coupées par aire décroissante, chacune dans la plus petite chute compatible, sinon un
  * nouveau carreau. Carreaux numérotés de 1 à n sur tout le projet.
+ * Le sens du produit est celui de sa première pièce.
  */
 export function planCuts(pieces: Piece[], settings: Settings): CutPlan {
-  const ctx = cutContext(settings);
   const source: (number | null)[] = pieces.map(() => null);
   const reused: boolean[] = pieces.map(() => false);
   const groups = new Map<string, ProductGroup>();
@@ -32,6 +32,7 @@ export function planCuts(pieces: Piece[], settings: Settings): CutPlan {
         label: pc.label,
         color: pc.color,
         m2PerBox: pc.m2PerBox,
+        orientation: pc.orientation,
         kind: pc.kind,
         zones: [],
         full: 0,
@@ -64,6 +65,7 @@ export function planCuts(pieces: Piece[], settings: Settings): CutPlan {
       return t;
     };
     const cuts = g.cuts.map((i) => ({ pc: pieces[i]!, i }));
+    const ctx = cutContext(settings, g.orientation);
     if (!settings.reuseOffcuts || g.shape === 'cab' || (g.shape !== 'rect' && !cuts.every(({ pc }) => pc.pparts))) {
       for (const { i } of cuts) assign(i, newTile(), false);
       continue;

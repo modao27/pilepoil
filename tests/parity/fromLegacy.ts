@@ -1,4 +1,4 @@
-import type { ColorMix, PatternId, ProjectSpec, SurfaceSpec } from '../../src/core/types';
+import type { ColorMix, Orientation, PatternId, ProjectSpec, SurfaceSpec } from '../../src/core/types';
 import type { LegacyProject, LegacySurface } from './legacyTypes';
 
 const MIX: Record<string, ColorMix> = { uni: 'solid', alt: 'alternate', rand: 'random' };
@@ -12,14 +12,8 @@ export function fromLegacy(p: LegacyProject): ProjectSpec {
   const act = p.surfaces[p.active]!;
   const room = p.room;
   return {
-    surfaces: p.surfaces.map(surfaceFromLegacy),
-    settings: {
-      margin: act.margin,
-      reuseOffcuts: act.reuse,
-      kerf: act.kerf,
-      minOffcut: act.minr,
-      orientation: act.orient,
-    },
+    surfaces: p.surfaces.map((s) => surfaceFromLegacy(s, act.orient)),
+    settings: { margin: act.margin, reuseOffcuts: act.reuse, kerf: act.kerf, minOffcut: act.minr },
     room: room
       ? {
           length: room.L,
@@ -36,7 +30,8 @@ export function fromLegacy(p: LegacyProject): ProjectSpec {
   };
 }
 
-export function surfaceFromLegacy(s: LegacySurface): SurfaceSpec {
+/** orient : sens global de legacy (réglage de la surface active), porté par chaque carreau. */
+export function surfaceFromLegacy(s: LegacySurface, orient: Orientation): SurfaceSpec {
   return {
     kind: s.kind,
     width: s.W,
@@ -47,7 +42,7 @@ export function surfaceFromLegacy(s: LegacySurface): SurfaceSpec {
       size: z.unit === 'cm' ? z.size * 10 : z.size,
       unit: z.unit === 'cm' ? 'length' : z.unit,
       pattern: z.pattern as PatternId,
-      tile: { width: z.a, height: z.b, thickness: z.th, color: z.c1, m2PerBox: z.box },
+      tile: { width: z.a, height: z.b, thickness: z.th, color: z.c1, m2PerBox: z.box, orientation: orient },
       angle: z.angle,
       start: z.start,
       offsetX: z.dx,

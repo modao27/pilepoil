@@ -6,7 +6,8 @@ import configs from './configs';
 import type { GlueNote, Notch } from '../../src/core/rules/glue';
 import type { Piece, SurfaceError, SurfaceWarning } from '../../src/core/types';
 import { expectSame } from './compare';
-import fixtureJson from './fixtures/legacy-results.json';
+// En texte : un import JSON typé ferait inférer à TypeScript un type de 2 Mo.
+import fixtureRaw from './fixtures/legacy-results.json?raw';
 import { fromLegacy } from './fromLegacy';
 import type { LegacyProject } from './legacyTypes';
 
@@ -35,7 +36,7 @@ interface LegacyResult {
   optimizedMetrics?: { needed: number; thin: number; vis: number };
 }
 
-const fixture = fixtureJson as unknown as { results: Record<string, LegacyResult> };
+const fixture = JSON.parse(fixtureRaw) as { results: Record<string, LegacyResult> };
 const CONFIGS = new Map(configs.map((c) => [c.name, c]));
 
 /* ---------- textes legacy, reconstitués depuis les codes du moteur ---------- */
