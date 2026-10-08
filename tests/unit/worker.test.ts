@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeProject, optimizeZonesSync, type ProjectSpec } from '../../src/core';
+import { computeProject, optimizeZonesSync, type ProjectSpec } from '../../src/modules/carrelage/core';
 import { createComputeClient, SupersededError, type Port } from '../../src/workers/client';
 import { createHandler } from '../../src/workers/handler';
 import type { Request, Response } from '../../src/workers/protocol';

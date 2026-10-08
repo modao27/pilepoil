@@ -1,4 +1,4 @@
-import { SQRT2 } from '../constants';
+import { SQRT2 } from '../../../../core/constants';
 import { collector, ICON_FRAME, type PatternModule } from './types';
 
 /**

@@ -2,7 +2,7 @@
  * Conversion pure des données legacy vers le modèle (voir docs/MODEL.md, Import legacy).
  * Aucun accès au stockage ici : les photos restent en dataURL, l'écriture est faite par import.ts.
  */
-import type { Metrics, OptimizerGoal, PatternId } from '../../core';
+import type { Metrics, OptimizerGoal, PatternId } from '../../modules/carrelage';
 import { newId, tileName } from '../../state/factories';
 import {
   PROJECT_SCHEMA,

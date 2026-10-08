@@ -1,4 +1,4 @@
-import { SQRT2 } from '../constants';
+import { SQRT2 } from '../../../../core/constants';
 import { collector, type PatternModule } from './types';
 
 function icon(): string {

@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Assistant de création : type → dimensions → carreau → motif, aperçu en direct à chaque étape. */
-  import { PATTERNS, type PatternId, type ProjectResult } from '../../core';
+  import { PATTERNS, type PatternId, type ProjectResult } from '../../modules/carrelage';
   import { createTile, tileName } from '../../state/factories';
   import type { Project, RoomWallKey, Tile } from '../../state/model';
   import { toProjectSpec } from '../../state/selectors';

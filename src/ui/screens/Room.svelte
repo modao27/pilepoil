@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Pièce : vue de dessus (murs dépliés, surfaces cliquables) et maquette 3D. */
-  import type { ProjectResult } from '../../core';
+  import type { ProjectResult } from '../../modules/carrelage';
   import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';

@@ -19,7 +19,7 @@
   import { app } from '../lib/app.svelte';
   import { toast } from '../lib/toasts.svelte';
   import PatternPicker from '../components/PatternPicker.svelte';
-  import type { PatternId } from '../../core';
+  import type { PatternId } from '../../modules/carrelage';
 
   let width = $state(3000);
   let joint = $state(3);

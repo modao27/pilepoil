@@ -12,7 +12,7 @@ import {
   type ProjectResult,
   type ProjectSpec,
   type SurfaceSpec,
-} from '../../core';
+} from '../../modules/carrelage';
 import { frameAt, wallPoint, type SceneLayout, type Vec3, type WallFrame } from './placement';
 
 export interface MeshData {

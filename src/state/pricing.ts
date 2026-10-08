@@ -1,4 +1,4 @@
-import type { ProjectResult, ShoppingItem } from '../core';
+import type { ProjectResult, ShoppingItem } from '../modules/carrelage';
 import type { Project, Tile } from './model';
 
 /**

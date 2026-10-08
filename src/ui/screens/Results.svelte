@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Résultats du projet : onglets Commande, Découpe, Achats (prix modifiables), Encollage ; PDF et partage. */
-  import type { ProjectResult } from '../../core';
+  import type { ProjectResult } from '../../modules/carrelage';
   import { itemPrice, projectArea, projectCost } from '../../state/pricing';
   import Button from '../components/Button.svelte';
   import DataTable from '../components/DataTable.svelte';

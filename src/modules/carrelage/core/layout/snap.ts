@@ -1,5 +1,5 @@
 import { patternFrame } from '../cutting/buildZone';
-import { bbox, inset } from '../geometry/polygon';
+import { bbox, inset } from '../../../../core/geometry/polygon';
 import type { ZoneSpec } from '../types';
 
 export interface SnapResult {

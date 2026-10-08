@@ -1,4 +1,4 @@
-import { computeProject, optimizeZones, type OptimizeProgress, type OptimizeResult } from '../core';
+import { computeProject, optimizeZones, type OptimizeProgress, type OptimizeResult } from '../modules/carrelage';
 
 import type { Request, Response } from './protocol';
 

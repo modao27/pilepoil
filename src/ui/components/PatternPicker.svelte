@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PATTERNS, type PatternId, type PatternModule } from '../../core';
+  import { PATTERNS, type PatternId, type PatternModule } from '../../modules/carrelage';
 
   let {
     value = $bindable(),

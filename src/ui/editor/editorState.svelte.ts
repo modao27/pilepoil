@@ -2,7 +2,7 @@
  * État de l'éditeur de surface : projet (store + historique), surface et sélection courantes, résultat du
  * calcul (worker), optimisation. Toutes les modifications passent par des actions du store.
  */
-import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../core';
+import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../modules/carrelage';
 import type { Action } from '../../state/actions';
 import { createCorner, createOpening, createZone, newId } from '../../state/factories';
 import type { Corner, Id, Opening, OpeningType, Project, Surface, Zone } from '../../state/model';

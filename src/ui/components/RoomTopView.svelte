@@ -3,7 +3,7 @@
    * Vue de dessus de la pièce : le sol, et les murs A, B, C, D dépliés autour (posés à plat contre leur
    * bord). Chaque surface est un lien vers son éditeur. Projet sans pièce : les surfaces côte à côte.
    */
-  import type { ProjectResult, ProjectSpec } from '../../core';
+  import type { ProjectResult, ProjectSpec } from '../../modules/carrelage';
   import type { Project } from '../../state/model';
   import { planDrawing } from '../../render/planSvg';
 

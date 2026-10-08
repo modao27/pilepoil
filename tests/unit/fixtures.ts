@@ -1,4 +1,4 @@
-import type { PatternId, SurfaceSpec, ZoneSpec } from '../../src/core/types';
+import type { PatternId, SurfaceSpec, ZoneSpec } from '../../src/modules/carrelage/core/types';
 
 /** Zone par défaut (valeurs par défaut de legacy). */
 export function zone(o: Partial<ZoneSpec> = {}, tile: Partial<ZoneSpec['tile']> = {}): ZoneSpec {

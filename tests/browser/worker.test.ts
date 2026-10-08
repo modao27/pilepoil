@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeProject, type ProjectSpec } from '../../src/core';
+import { computeProject, type ProjectSpec } from '../../src/modules/carrelage/core';
 import { createWorkerClient } from '../../src/workers/client';
 import { surface, zone } from '../unit/fixtures';
 

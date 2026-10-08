@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { OptimizerGoal } from '../../core';
+  import type { OptimizerGoal } from '../../modules/carrelage';
   import Button from '../components/Button.svelte';
   import NumberField from '../components/NumberField.svelte';
   import PatternPicker from '../components/PatternPicker.svelte';

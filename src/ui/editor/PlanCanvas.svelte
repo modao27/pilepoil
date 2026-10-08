@@ -5,7 +5,7 @@
    * Clavier : flèches pour déplacer l'élément sélectionné, + / − pour zoomer, 0 pour ajuster.
    */
   import { onMount } from 'svelte';
-  import { snapOffset } from '../../core';
+  import { snapOffset } from '../../modules/carrelage';
   import { drawPlan, type PlanColors } from '../../render/plan2d';
   import { hitTest, pieceAt } from '../../render/hitTest';
   import { fitView, panBy, toWorld, zoomAt, type View } from '../../render/view';

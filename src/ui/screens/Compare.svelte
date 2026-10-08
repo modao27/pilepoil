@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Comparaison de deux scénarios A / B (ou d'un scénario et de l'état actuel), comme legacy. */
-  import type { ProjectResult } from '../../core';
+  import type { ProjectResult } from '../../modules/carrelage';
   import type { Scenario } from '../../state/model';
   import { projectCost } from '../../state/pricing';
   import { toProjectSpec } from '../../state/selectors';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layoutZones, rowThickness, zoneLength } from '../../src/core/layout/zones';
+import { layoutZones, rowThickness, zoneLength } from '../../src/modules/carrelage/core/layout/zones';
 import { surface, zone } from './fixtures';
 
 describe('zones', () => {

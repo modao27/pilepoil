@@ -1,4 +1,4 @@
-import { rectPoly } from '../geometry/polygon';
+import { rectPoly } from '../../../../core/geometry/polygon';
 import type { BBox } from '../types';
 import { collector, type Cell } from './types';
 

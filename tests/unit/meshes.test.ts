@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeProject, type OpeningSpec, type ProjectSpec } from '../../src/core';
+import { computeProject, type OpeningSpec, type ProjectSpec } from '../../src/modules/carrelage/core';
 import { buildMeshes, type MeshData } from '../../src/render/scene3d/meshes';
 import { roomLayout, surfaceLayout } from '../../src/render/scene3d/placement';
 import { surface, zone } from './fixtures';

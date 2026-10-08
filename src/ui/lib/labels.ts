@@ -12,7 +12,7 @@ import {
   type ProjectResult,
   type ShoppingItem,
   type ZoneGlue,
-} from '../../core';
+} from '../../modules/carrelage';
 import type { Project, Tile } from '../../state/model';
 import { productName } from './messages';
 

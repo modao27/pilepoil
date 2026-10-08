@@ -1,4 +1,11 @@
-import type { OptimizeResult, OptimizerGoal, ProjectResult, ProjectSpec, Settings, SurfaceSpec } from '../core';
+import type {
+  OptimizeResult,
+  OptimizerGoal,
+  ProjectResult,
+  ProjectSpec,
+  Settings,
+  SurfaceSpec,
+} from '../modules/carrelage';
 
 /** Messages vers le worker. */
 export type Request =

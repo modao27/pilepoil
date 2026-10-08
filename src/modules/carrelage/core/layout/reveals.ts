@@ -1,4 +1,4 @@
-import { EPS, SIDES } from '../constants';
+import { EPS, SIDES } from '../../../../core/constants';
 import { pattern } from '../patterns/registry';
 import type { Point, Polygon, RawPiece, Side, SurfaceSpec, SurfaceWarning } from '../types';
 import { hasReveal } from './openings';

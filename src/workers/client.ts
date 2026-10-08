@@ -6,7 +6,7 @@ import type {
   ProjectSpec,
   Settings,
   SurfaceSpec,
-} from '../core';
+} from '../modules/carrelage';
 import type { Request, Response } from './protocol';
 
 /** Canal vers le worker (un Worker, ou un faux canal en test). */

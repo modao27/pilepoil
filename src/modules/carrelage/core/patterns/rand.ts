@@ -1,4 +1,4 @@
-import { hash } from '../hash';
+import { hash } from '../../../../core/hash';
 import { rowCells } from './rows';
 import { ICON_FRAME, rectGeo, type PatternModule } from './types';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectSpec } from '../../src/core';
+import type { ProjectSpec } from '../../src/modules/carrelage/core';
 import {
   cameraFor,
   frameAt,

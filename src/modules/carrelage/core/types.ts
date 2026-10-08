@@ -3,9 +3,9 @@
  * (passage par le worker). Les noms legacy sont rappelés entre crochets.
  */
 
-import type { Point, Polygon, Segment } from './geometry/types';
+import type { Point, Polygon, Segment } from '../../../core/geometry/types';
 
-export type { BBox, Point, Polygon, Segment } from './geometry/types';
+export type { BBox, Point, Polygon, Segment } from '../../../core/geometry/types';
 
 export type Side = 'L' | 'R' | 'T' | 'B';
 export type SideFlags = Record<Side, boolean>;

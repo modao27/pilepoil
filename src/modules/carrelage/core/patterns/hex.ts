@@ -1,4 +1,4 @@
-import { SQRT3 } from '../constants';
+import { SQRT3 } from '../../../../core/constants';
 import type { Polygon } from '../types';
 import { collector, type PatternModule } from './types';
 

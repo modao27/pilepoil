@@ -3,7 +3,7 @@
  * Mode « tiles » : couleurs des carreaux sur fond de joint. Mode « status » : statuts de coupe
  * (entière, coupée, taillée dans une chute, coupe fine) selon docs/UX.md.
  */
-import type { CutPlan, Piece, Polygon, SurfaceSpec } from '../core';
+import type { CutPlan, Piece, Polygon, SurfaceSpec } from '../modules/carrelage';
 
 export type PlanMode = 'tiles' | 'status';
 export type PieceStatus = 'full' | 'cut' | 'reuse' | 'thin';

@@ -1,4 +1,4 @@
-import { area } from '../geometry/polygon';
+import { area } from '../../../../core/geometry/polygon';
 import { pattern } from '../patterns/registry';
 import { groutKg } from '../rules/consumables';
 import { glueAdvice, type GlueAdvice } from '../rules/glue';

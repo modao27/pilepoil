@@ -1,5 +1,5 @@
 /** Objets neufs avec les valeurs par défaut de legacy. */
-import { OPENING_DEFAULTS } from '../core';
+import { OPENING_DEFAULTS } from '../modules/carrelage';
 import type { Corner, Id, Opening, OpeningType, Project, Surface, Tile, TileShape, Zone } from './model';
 import { PROJECT_SCHEMA, TILE_SCHEMA } from './model';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildSurface } from '../../src/core/cutting/buildSurface';
-import { snapOffset } from '../../src/core/layout/snap';
+import { buildSurface } from '../../src/modules/carrelage/core/cutting/buildSurface';
+import { snapOffset } from '../../src/modules/carrelage/core/layout/snap';
 import { surface, zone } from './fixtures';
 
 const rc = { w: 2000, h: 1500 };

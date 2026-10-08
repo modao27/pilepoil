@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Description de l'élément touché sur le plan (pièce, ouverture, angle) [info]. */
-  import { pattern } from '../../core';
+  import { pattern } from '../../modules/carrelage';
   import { cm } from '../lib/format';
   import type { EditorState } from './editorState.svelte';
 

@@ -2,7 +2,7 @@
  * État global de l'application : base IndexedDB, bibliothèque, projets, préférences, calcul.
  * L'interface lit cet état et appelle ses méthodes ; aucun calcul métier ici (tout passe par le worker).
  */
-import type { Metrics, ProjectResult, ProjectSpec } from '../../core';
+import type { Metrics, ProjectResult, ProjectSpec } from '../../modules/carrelage';
 import { reduce } from '../../state/actions';
 import { DEFAULT_PALETTE, newId } from '../../state/factories';
 import { createLibraryStore, type LibraryStore } from '../../state/library';

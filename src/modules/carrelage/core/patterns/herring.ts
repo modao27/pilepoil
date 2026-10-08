@@ -1,4 +1,4 @@
-import { rectPoly } from '../geometry/polygon';
+import { rectPoly } from '../../../../core/geometry/polygon';
 import type { Point } from '../types';
 import { collector, ICON_FRAME, type PatternModule } from './types';
 

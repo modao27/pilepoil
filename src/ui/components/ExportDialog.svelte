@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Export PDF (A4) : téléchargement, ou partage du fichier quand le téléphone le permet. */
-  import type { ProjectResult } from '../../core';
+  import type { ProjectResult } from '../../modules/carrelage';
   import type { Project } from '../../state/model';
   import { app } from '../lib/app.svelte';
   import Button from './Button.svelte';

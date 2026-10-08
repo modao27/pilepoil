@@ -4,7 +4,7 @@
  * C retour le long de −x (z = l), D retour le long de −z (x = 0) ; normale vers l'intérieur.
  * Un mur se replie à chaque angle (rentrant : vers l'intérieur, sortant : vers l'extérieur).
  */
-import type { ProjectSpec, SurfaceSpec } from '../../core';
+import type { ProjectSpec, SurfaceSpec } from '../../modules/carrelage';
 
 export type Vec3 = [number, number, number];
 

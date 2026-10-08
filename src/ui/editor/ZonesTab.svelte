@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { pattern } from '../../core';
+  import { pattern } from '../../modules/carrelage';
   import type { Zone } from '../../state/model';
   import Button from '../components/Button.svelte';
   import ListReorder from '../components/ListReorder.svelte';

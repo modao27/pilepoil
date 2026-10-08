@@ -1,4 +1,4 @@
-import { hash } from '../hash';
+import { hash } from '../../../../core/hash';
 import { buildPlinth } from '../layout/plinth';
 import { buildReveals, type RevealGeometry } from '../layout/reveals';
 import { layoutZones, type ZoneLayout } from '../layout/zones';

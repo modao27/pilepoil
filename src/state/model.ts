@@ -1,5 +1,5 @@
 /** Modèle persisté (voir docs/MODEL.md). Unités : mm, dates en ms. */
-import type { Metrics, OptimizerGoal, Orientation, PatternId } from '../core';
+import type { Metrics, OptimizerGoal, Orientation, PatternId } from '../modules/carrelage';
 import type { Plan } from '../core/plan/types';
 
 export type Id = string;

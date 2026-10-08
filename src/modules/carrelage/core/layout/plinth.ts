@@ -1,4 +1,4 @@
-import { EPS } from '../constants';
+import { EPS } from '../../../../core/constants';
 import { pattern } from '../patterns/registry';
 import type { RawPiece, SurfaceSpec, SurfaceWarning } from '../types';
 

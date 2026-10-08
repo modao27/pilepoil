@@ -1,5 +1,5 @@
-import { EPS } from '../constants';
-import { area, bbox, centroid, clipHalf, insideConvex } from '../geometry/polygon';
+import { EPS } from '../../../../core/constants';
+import { area, bbox, centroid, clipHalf, insideConvex } from '../../../../core/geometry/polygon';
 import type { CutTile, Orientation, Piece, Point, Polygon, TileShape } from '../types';
 import type { CutContext, PolyStock } from './stock';
 

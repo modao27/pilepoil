@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeProject } from '../../src/core';
+import { computeProject } from '../../src/modules/carrelage/core';
 import { reduce } from '../../src/state/actions';
 import {
   createCorner,

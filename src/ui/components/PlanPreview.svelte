@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CutPlan, Piece, SurfaceSpec } from '../../core';
+  import type { CutPlan, Piece, SurfaceSpec } from '../../modules/carrelage';
   import { planDrawing, type PlanMode } from '../../render/planSvg';
 
   let {

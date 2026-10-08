@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeProject } from '../../src/core';
+import { computeProject } from '../../src/modules/carrelage/core';
 import { createOpening, createProject, createSurface, createTile, createZone } from '../../src/state/factories';
 import { toProjectSpec } from '../../src/state/selectors';
 import { compareValue, glueRows, pieceCutText, projectDescription, shoppingLabel } from '../../src/ui/lib/labels';

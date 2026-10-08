@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ProjectResult } from '../../core';
+  import type { ProjectResult } from '../../modules/carrelage';
   import type { Project } from '../../state/model';
   import { projectArea, projectCost } from '../../state/pricing';
   import { app } from '../lib/app.svelte';

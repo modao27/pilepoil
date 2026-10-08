@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeProject } from '../../src/core';
+import { computeProject } from '../../src/modules/carrelage/core';
 import { createTile } from '../../src/state/factories';
 import { projectArea, projectCost } from '../../src/state/pricing';
 import { toProjectSpec } from '../../src/state/selectors';

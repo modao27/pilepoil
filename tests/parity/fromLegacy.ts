@@ -1,4 +1,10 @@
-import type { ColorMix, Orientation, PatternId, ProjectSpec, SurfaceSpec } from '../../src/core/types';
+import type {
+  ColorMix,
+  Orientation,
+  PatternId,
+  ProjectSpec,
+  SurfaceSpec,
+} from '../../src/modules/carrelage/core/types';
 import type { LegacyProject, LegacySurface } from './legacyTypes';
 
 const MIX: Record<string, ColorMix> = { uni: 'solid', alt: 'alternate', rand: 'random' };

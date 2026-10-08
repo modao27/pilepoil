@@ -4,7 +4,7 @@
    * deux doigts pour déplacer. Clavier : flèches pour tourner, + / − pour zoomer.
    */
   import { onMount } from 'svelte';
-  import type { ProjectResult, ProjectSpec } from '../../core';
+  import type { ProjectResult, ProjectSpec } from '../../modules/carrelage';
   import type { CameraPreset, SceneLayout } from '../../render/scene3d/placement';
   import type { Scene3D, SceneStats } from '../../render/scene3d/scene';
   import IconButton from './IconButton.svelte';

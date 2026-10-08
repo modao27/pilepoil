@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateZone, scoreOf } from '../../src/core/optimizer/evaluate';
-import { optimizeZones, optimizeZonesSync } from '../../src/core/optimizer/optimize';
-import type { Settings } from '../../src/core/types';
+import { evaluateZone, scoreOf } from '../../src/modules/carrelage/core/optimizer/evaluate';
+import { optimizeZones, optimizeZonesSync } from '../../src/modules/carrelage/core/optimizer/optimize';
+import type { Settings } from '../../src/modules/carrelage/core/types';
 import { surface, zone } from './fixtures';
 
 const settings: Settings = { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20 };

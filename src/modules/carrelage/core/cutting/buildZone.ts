@@ -1,5 +1,5 @@
-import { EPS } from '../constants';
-import { area, bbox, centroid, clipBox, clipRect, inset, onLine } from '../geometry/polygon';
+import { EPS } from '../../../../core/constants';
+import { area, bbox, centroid, clipBox, clipRect, inset, onLine } from '../../../../core/geometry/polygon';
 import { openingRect, zoneCutouts } from '../layout/openings';
 import type { ZoneRect } from '../layout/zones';
 import { pattern } from '../patterns/registry';

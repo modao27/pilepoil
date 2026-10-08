@@ -1,5 +1,5 @@
-import { EPS, SIDES } from '../constants';
-import { area, bbox, insideConvex } from '../geometry/polygon';
+import { EPS, SIDES } from '../../../../core/constants';
+import { area, bbox, insideConvex } from '../../../../core/geometry/polygon';
 import type { CutTile, Piece, Point, Polygon, SideFlags } from '../types';
 import { rotateReq, rotations, type CutContext, type PolyStock, type RectStock } from './stock';
 

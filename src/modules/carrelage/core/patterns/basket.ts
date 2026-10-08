@@ -1,4 +1,4 @@
-import { rectPoly } from '../geometry/polygon';
+import { rectPoly } from '../../../../core/geometry/polygon';
 import { collector, ICON_FRAME, type PatternModule } from './types';
 
 /** Vannerie : carrés S = long + j de n = round(S/(court + j)) lames, largeur ramenée à S/n − j. */
