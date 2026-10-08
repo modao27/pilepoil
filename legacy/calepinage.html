@@ -239,6 +239,12 @@ tfoot td{font-weight:600;border-top:2px solid var(--accent)}
           <tbody id="cmpBody"></tbody>
         </table></div>
       </div>
+      <div class="cmp">
+        <h3>Passer à la nouvelle version</h3>
+        <p class="hint">Enregistre vos surfaces, scénarios, photos et nuancier dans un fichier à importer dans la nouvelle application.</p>
+        <button type="button" class="btn" id="dataExport">Exporter mes données</button>
+        <p class="hint" id="dataExportMsg" role="status"></p>
+      </div>
     </section>
 
     <div class="controls">
@@ -2622,6 +2628,16 @@ new ResizeObserver(redraw).observe(wrap);
 window.addEventListener('resize', redraw);
 try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw); }catch(e){}
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+
+/* ---------- export vers la nouvelle version (format lu par src/storage/legacy/import.ts) ---------- */
+$('dataExport').addEventListener('click', () => {
+  let v2 = null; try{ v2 = localStorage.getItem(KEY); }catch(e){}
+  const data = {}; data[KEY3] = JSON.stringify(proj); data[KEY] = v2; data[SKEY] = JSON.stringify(scen); data[PKEY] = JSON.stringify(pal);
+  const blob = new Blob([JSON.stringify({format:'calepinage-legacy-export', version:1, date:new Date().toISOString(), data})], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'calepinage-export-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  $('dataExportMsg').textContent = 'Fichier enregistré dans vos téléchargements. Importez-le dans la nouvelle application.';
+});
 
 loadPal(); load(); syncSurfaces(); { const p = CAMS[st.kind==='floor'?'floor':'wall'].biais; cam = {yaw:p[0], pitch:p[1], dist:p[2]}; } syncGlobal(); syncZone(); syncRes(); syncPlinth(); syncFolds(); loadScen(); $('optGoal').value = st.optGoal || 'thin'; compute(); renderScen();
 })();
