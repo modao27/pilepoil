@@ -86,7 +86,8 @@ export interface LayoutSpec {
   rooms: { id: Id; outline: Polygon; obstacles: Polygon[]; openings: WallOpeningSpec[] }[];
   /** depth = épaisseur du mur traversé par le passage. */
   passages: { a: Id; b: Id; segment: Segment; width: number; depth: number }[];
-  board: BoardSpec;
+  /** null : lame introuvable dans la bibliothèque (erreur `missing-board`). */
+  board: BoardSpec | null;
   pattern: Pattern;
   /** Degrés, sens horaire à l'écran ; 0 = lames parallèles au mur de référence. */
   angle: number;

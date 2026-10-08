@@ -134,8 +134,8 @@ function antiparallel(u: Point, v: Point): boolean {
   return u[0] * v[0] + u[1] * v[1] < -1 + 1e-6;
 }
 
-/** Deux segments non adjacents du contour se touchent ou se croisent. */
-function selfIntersecting(pts: Point[]): boolean {
+/** Deux segments non adjacents du contour se touchent ou se croisent (contour non simple). */
+export function selfIntersecting(pts: Point[]): boolean {
   const n = pts.length;
   for (let i = 0; i < n; i++)
     for (let j = i + 1; j < n; j++) {
