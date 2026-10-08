@@ -3,11 +3,9 @@
  * (passage par le worker). Les noms legacy sont rappelés entre crochets.
  */
 
-export type Point = [number, number];
-export type Polygon = Point[];
-export type Segment = [Point, Point];
-/** Boîte englobante [x0, x1, y0, y1]. */
-export type BBox = [number, number, number, number];
+import type { Point, Polygon, Segment } from './geometry/types';
+
+export type { BBox, Point, Polygon, Segment } from './geometry/types';
 
 export type Side = 'L' | 'R' | 'T' | 'B';
 export type SideFlags = Record<Side, boolean>;

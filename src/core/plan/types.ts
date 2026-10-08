@@ -2,7 +2,7 @@
  * Plan commun à tous les modules (docs/BOITE.md §3). Unités : mm.
  * Types seuls en S1 ; validation et réducteur arrivent en S2.
  */
-import type { Point, Polygon } from '../types';
+import type { Point, Polygon } from '../geometry/types';
 
 export type Id = string;
 
