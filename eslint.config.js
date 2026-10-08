@@ -1,9 +1,37 @@
+import { readdirSync } from 'node:fs';
 import js from '@eslint/js';
 import ts from 'typescript-eslint';
 import svelte from 'eslint-plugin-svelte';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 import svelteConfig from './svelte.config.js';
+
+/** Modules présents dans src/modules (un dossier = un module). */
+const modules = readdirSync('src/modules', { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map((d) => d.name);
+
+/** Moteur pur : ni DOM, ni interface, ni stockage, ni three.js. */
+const pure = [
+  { group: ['svelte', 'svelte/*', 'three', 'three/*', 'idb', 'idb/*'], message: 'Le moteur est pur.' },
+  {
+    group: ['**/state/**', '**/storage/**', '**/render/**', '**/ui/**', '**/workers/**'],
+    message: 'Le moteur ne dépend que de core.',
+  },
+];
+const pureGlobals = ['error', 'window', 'document', 'localStorage', 'navigator', 'self'];
+
+/** Hors d'un module, on n'en importe que le point d'entrée index.ts. */
+const onlyIndex = {
+  regex: '(^|/)modules/[^/]+/(?!index([.]ts)?$)',
+  message: 'Importer un module par son index.ts seulement.',
+};
+
+/** Un module n'importe jamais un autre module. */
+const otherModules = (m) =>
+  modules
+    .filter((o) => o !== m)
+    .map((o) => ({ regex: `(^|/)${o}(/|$)`, message: 'Un module n’importe jamais un autre module.' }));
 
 export default ts.config(
   { ignores: ['dist/', 'node_modules/', 'legacy/', 'playwright-report/', 'test-results/', '**/*.local.ts'] },
@@ -25,23 +53,45 @@ export default ts.config(
     languageOptions: { parserOptions: { parser: ts.parser, svelteConfig } },
   },
   {
-    // Le moteur reste pur : ni DOM, ni interface, ni stockage, ni three.js.
+    // Coquille : pas d'import interne d'un module (les tests, hors de src, le peuvent).
+    files: ['src/**/*.{ts,svelte}'],
+    ignores: ['src/modules/**'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [onlyIndex] }] },
+  },
+  {
+    // Registre : seulement les index.ts des modules.
+    files: ['src/modules/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ regex: '^[.]/[^/]+/(?!index([.]ts)?$)', message: onlyIndex.message }] },
+      ],
+    },
+  },
+  {
     files: ['src/core/**/*.ts'],
     languageOptions: { globals: { ...globals.es2022 } },
     rules: {
       'no-restricted-imports': [
         'error',
-        {
-          patterns: [
-            { group: ['svelte', 'svelte/*', 'three', 'three/*', 'idb', 'idb/*'], message: 'core est pur.' },
-            {
-              group: ['**/state/**', '**/storage/**', '**/render/**', '**/ui/**', '**/workers/**'],
-              message: 'core ne dépend que de core.',
-            },
-          ],
-        },
+        { patterns: [...pure, { regex: '(^|/)modules(/|$)', message: 'core n’importe pas les modules.' }] },
       ],
-      'no-restricted-globals': ['error', 'window', 'document', 'localStorage', 'navigator', 'self'],
+      'no-restricted-globals': pureGlobals,
     },
   },
+  ...modules.flatMap((m) => [
+    {
+      files: [`src/modules/${m}/**/*.{ts,svelte}`],
+      ignores: [`src/modules/${m}/core/**`],
+      rules: { 'no-restricted-imports': ['error', { patterns: otherModules(m) }] },
+    },
+    {
+      files: [`src/modules/${m}/core/**/*.ts`],
+      languageOptions: { globals: { ...globals.es2022 } },
+      rules: {
+        'no-restricted-imports': ['error', { patterns: [...pure, ...otherModules(m)] }],
+        'no-restricted-globals': pureGlobals,
+      },
+    },
+  ]),
 );
