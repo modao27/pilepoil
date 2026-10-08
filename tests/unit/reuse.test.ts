@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildSurface } from '../../src/core/cutting/buildSurface';
-import { planCuts } from '../../src/core/cutting/planCuts';
-import { polyComplement, symmetryAngles } from '../../src/core/cutting/polyReuse';
-import { axisStarts, cutRect, placeRect } from '../../src/core/cutting/rectReuse';
-import { rotateReq, rotations, type CutContext, type RectStock } from '../../src/core/cutting/stock';
+import { buildSurface } from '../../src/modules/carrelage/core/cutting/buildSurface';
+import { planCuts } from '../../src/modules/carrelage/core/cutting/planCuts';
+import { polyComplement, symmetryAngles } from '../../src/modules/carrelage/core/cutting/polyReuse';
+import { axisStarts, cutRect, placeRect } from '../../src/modules/carrelage/core/cutting/rectReuse';
+import { rotateReq, rotations, type CutContext, type RectStock } from '../../src/modules/carrelage/core/cutting/stock';
 import { area, rectPoly } from '../../src/core/geometry/polygon';
-import { PATTERNS } from '../../src/core/patterns/registry';
-import type { Piece, Settings, SurfaceSpec } from '../../src/core/types';
+import { PATTERNS } from '../../src/modules/carrelage/core/patterns/registry';
+import type { Piece, Settings, SurfaceSpec } from '../../src/modules/carrelage/core/types';
 import { surface, tileFor, zone } from './fixtures';
 
 const ctx: CutContext = { orientation: 'free', kerf: 2, minOffcut: 20 };

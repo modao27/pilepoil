@@ -1,6 +1,6 @@
 import { deleteDB } from 'idb';
 import { afterEach, describe, expect, it } from 'vitest';
-import { newId } from '../../src/state/factories';
+import { newId } from '../../src/modules/carrelage/state/factories';
 import { openDb, type Db } from '../../src/storage/db';
 import { EMPTY_STORAGE } from '../../src/storage/legacy/convert';
 import { autoImportLegacy, importLegacy } from '../../src/storage/legacy/import';

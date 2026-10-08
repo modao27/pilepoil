@@ -1,22 +1,26 @@
 <script lang="ts">
+  import { ui } from '../modules/carrelage';
   import Button from './components/Button.svelte';
   import EmptyState from './components/EmptyState.svelte';
   import Screen from './components/Screen.svelte';
   import ToastHost from './components/ToastHost.svelte';
+  import { moduleById } from '../modules/registry';
   import { app } from './lib/app.svelte';
+  import { matchScreen } from './lib/moduleRoutes';
   import { router } from './lib/router.svelte';
   import Demo from './screens/Demo.svelte';
   import Home from './screens/Home.svelte';
-  import Library from './screens/Library.svelte';
-  import Editor from './editor/Editor.svelte';
-  import Compare from './screens/Compare.svelte';
-  import Results from './screens/Results.svelte';
-  import Room from './screens/Room.svelte';
   import Settings from './screens/Settings.svelte';
-  import TileEdit from './screens/TileEdit.svelte';
-  import Wizard from './screens/Wizard.svelte';
 
   const route = $derived(router.route);
+  const screen = $derived.by(() => {
+    if (route.name !== 'module') return null;
+    const m = moduleById(route.module);
+    return m ? matchScreen(m.screens, route.path) : null;
+  });
+  // séparés : changer de paramètre (autre surface) ne recharge pas l'écran
+  const load = $derived(screen?.load);
+  const params = $derived(screen?.params ?? {});
 </script>
 
 {#if app.fatal}
@@ -28,29 +32,17 @@
 {:else if route.name === 'home'}
   <Home />
 {:else if route.name === 'new'}
-  <Wizard />
+  {#await ui.Wizard() then { default: Wizard }}<Wizard />{/await}
 {:else if route.name === 'library'}
-  <Library />
+  {#await ui.Library() then { default: Library }}<Library />{/await}
 {:else if route.name === 'tile'}
-  {#key route.id}<TileEdit id={route.id} />{/key}
+  {#key route.id}{#await ui.TileEdit() then { default: TileEdit }}<TileEdit id={route.id} />{/await}{/key}
 {:else if route.name === 'settings'}
   <Settings />
 {:else if route.name === 'demo'}
   <Demo />
-{:else if route.name === 'project' && app.project(route.id)}
-  {#key route.id}<Editor project={app.project(route.id)!} surfaceId={route.surfaceId} />{/key}
-{:else if route.name === 'room'}
-  {#key route.id}<Room id={route.id} />{/key}
-{:else if route.name === 'compare'}
-  {#key route.id}<Compare id={route.id} />{/key}
-{:else if route.name === 'results'}
-  {#key route.id}<Results id={route.id} />{/key}
-{:else if route.name === 'project'}
-  <Screen title="Projet introuvable" backHref="#/" backLabel="Accueil">
-    <EmptyState icon="info" title="Ce projet n’existe plus" text="Il a peut-être été supprimé.">
-      {#snippet action()}<Button variant="primary" href="#/">Voir mes projets</Button>{/snippet}
-    </EmptyState>
-  </Screen>
+{:else if route.name === 'module' && load}
+  {#key route.id}{#await load() then ModuleScreen}<ModuleScreen projectId={route.id} {params} />{/await}{/key}
 {:else}
   <Screen title="Page introuvable" backHref="#/" backLabel="Accueil">
     <EmptyState icon="info" title="Cette page n’existe pas" text="Le lien est peut-être ancien. Revenez à vos projets.">

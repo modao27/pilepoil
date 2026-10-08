@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSaver } from '../../src/storage/autosave';
 import { FutureVersionError, migrate, migrateProject, type Step } from '../../src/storage/migrations';
-import { createProject } from '../../src/state/factories';
+import { createProject } from '../../src/modules/carrelage/state/factories';
 
 describe('migrations de documents', () => {
   const steps: Record<number, Step> = {

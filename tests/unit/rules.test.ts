@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { computeProject } from '../../src/core/project';
-import { groutKg } from '../../src/core/rules/consumables';
-import { glueAdvice } from '../../src/core/rules/glue';
-import { edgeLengths } from '../../src/core/shopping/items';
-import { orderLine } from '../../src/core/shopping/order';
-import type { ProductGroup, ProjectSpec, SurfaceSpec } from '../../src/core/types';
+import { computeProject } from '../../src/modules/carrelage/core/project';
+import { groutKg } from '../../src/modules/carrelage/core/rules/consumables';
+import { glueAdvice } from '../../src/modules/carrelage/core/rules/glue';
+import { edgeLengths } from '../../src/modules/carrelage/core/shopping/items';
+import { orderLine } from '../../src/modules/carrelage/core/shopping/order';
+import type { ProductGroup, ProjectSpec, SurfaceSpec } from '../../src/modules/carrelage/core/types';
 import { surface, zone } from './fixtures';
 
 /** Carreau carré de S cm². */

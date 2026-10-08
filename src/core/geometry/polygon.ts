@@ -1,5 +1,5 @@
 import { EPS } from '../constants';
-import type { BBox, Point, Polygon } from '../types';
+import type { BBox, Point, Polygon } from './types';
 
 export function signedArea(p: Polygon): number {
   let s = 0;

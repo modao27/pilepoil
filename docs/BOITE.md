@@ -19,12 +19,12 @@ Deux faces : une face moteur (pure, exécutée dans le worker) et une face appli
 // src/modules/types.ts
 
 /** Face moteur : importable par le worker, sans DOM ni Svelte. */
-export interface ModuleEngine<Spec, Result> {
+export interface ModuleEngine<Spec, Result, OptSpec = Spec, OptResult = Result> {
   id: ModuleId;
   /** Calcul complet ; doit être déterministe pour une même entrée. */
   compute(spec: Spec, ctx: EngineContext): Result;
   /** Calcul long découpé en tranches (optimisation), annulable. Facultatif. */
-  optimize?(spec: Spec, ctx: EngineContext): Generator<Progress, Result>;
+  optimize?(spec: OptSpec, ctx: EngineContext): Generator<Progress, OptResult>;
 }
 
 /** Face application : état, sélecteurs, écrans. */
@@ -59,6 +59,10 @@ export interface ToolModule<Data, Spec, Result> {
 
 Registre : `src/modules/registry.ts` exporte la liste ordonnée des `ToolModule`, et
 `src/modules/engines.ts` la liste des `ModuleEngine` (seul fichier importé par le worker).
+
+Chaque module a deux points d'entrée, un par face : `modules/<id>/index.ts` (le `ToolModule`, écrans
+chargés à la demande) et `modules/<id>/engine.ts` (le `ModuleEngine`, pur), importé seulement par
+`engines.ts`. Ainsi le worker n'embarque jamais d'interface. Règles ESLint correspondantes.
 
 Précisions (décidées le 2026-10-08) :
 - `ModuleId` est un `string` (liste ouverte) : ajouter un module ne touche pas aux types communs.
@@ -289,6 +293,8 @@ seul le parquet s'en sert au début.
 | 2026-10-08 | En S1, la coquille peut importer `modules/carrelage/index.ts`, rien d'autre | §2 |
 | 2026-10-08 | Contrat écrit en entier en S1, rempli par le carrelage en S1–S3 | §2 |
 | 2026-10-08 | `ModuleId` ouvert, `Project.modules` en `Record<string, ModuleDoc>` | §2, §4 |
+| 2026-10-08 | Deux points d'entrée par module : `index.ts` (application) et `engine.ts` (moteur, worker) | §2 |
+| 2026-10-08 | `ModuleEngine` : entrée et résultat propres à l'optimisation (`OptSpec`, `OptResult`) | §2 |
 | 2026-10-08 | Murs avec identifiant stable et épaisseur propre ; ouvertures rattachées à l'`id` du mur | §3 |
 | 2026-10-08 | Épaisseur de mur par défaut : 72 mm (cloison placo 72/48, BA13) | §3, §4 |
 | 2026-10-08 | Magasin `scenarios` géré par le module carrelage | §4 |

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildSurface } from '../../src/core/cutting/buildSurface';
+import { buildSurface } from '../../src/modules/carrelage/core/cutting/buildSurface';
 import { area, bbox, pointInPolygon } from '../../src/core/geometry/polygon';
-import { PATTERNS } from '../../src/core/patterns/registry';
-import type { OpeningSpec, Piece, Point, SurfaceSpec, ZoneStart } from '../../src/core/types';
+import { PATTERNS } from '../../src/modules/carrelage/core/patterns/registry';
+import type { OpeningSpec, Piece, Point, SurfaceSpec, ZoneStart } from '../../src/modules/carrelage/core/types';
 import { expectSame } from '../parity/compare';
 import { surface, tileFor, zone } from './fixtures';
 

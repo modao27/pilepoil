@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { computeProject } from '../../src/core';
-import { reduce } from '../../src/state/actions';
+import { computeProject } from '../../src/modules/carrelage/core';
+import { reduce } from '../../src/modules/carrelage/state/actions';
 import {
   createCorner,
   createOpening,
@@ -8,9 +8,10 @@ import {
   createSurface,
   createTile,
   createZone,
-} from '../../src/state/factories';
+} from '../../src/modules/carrelage/state/factories';
 import { HISTORY_LIMIT, initHistory, record, redo, undo } from '../../src/state/history';
-import { toProjectSpec, tileSpec } from '../../src/state/selectors';
+import { toProjectSpec, tileSpec } from '../../src/modules/carrelage/state/selectors';
+import type { Project } from '../../src/state/model';
 import { createProjectStore, type ProjectState } from '../../src/state/store';
 
 const tile = createTile();
@@ -131,8 +132,8 @@ describe('store', () => {
   it('notifie, date les modifications, annule et enregistre', () => {
     let t = 5000;
     const saved: number[] = [];
-    const store = createProjectStore(make(), { now: () => t, onChange: (p) => saved.push(p.updatedAt) });
-    const states: ProjectState[] = [];
+    const store = createProjectStore(make(), reduce, { now: () => t, onChange: (p) => saved.push(p.updatedAt) });
+    const states: ProjectState<Project>[] = [];
     const off = store.subscribe((s) => states.push(s));
     store.dispatch({ type: 'project/rename', name: 'Salle de bain' });
     expect(store.get()).toMatchObject({ canUndo: true, canRedo: false });

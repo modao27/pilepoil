@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ui } from '../../modules/carrelage';
   /** Démonstration du système de design : tous les composants, en clair et en sombre. */
   import BottomSheet from '../components/BottomSheet.svelte';
   import Button from '../components/Button.svelte';
@@ -18,8 +19,7 @@
   import TextField from '../components/TextField.svelte';
   import { app } from '../lib/app.svelte';
   import { toast } from '../lib/toasts.svelte';
-  import PatternPicker from '../components/PatternPicker.svelte';
-  import type { PatternId } from '../../core';
+  import type { PatternId } from '../../modules/carrelage';
 
   let width = $state(3000);
   let joint = $state(3);
@@ -126,7 +126,7 @@
 
     <section>
       <h2>Motifs</h2>
-      <PatternPicker bind:value={pattern} />
+      {#await ui.PatternPicker() then { default: PatternPicker }}<PatternPicker bind:value={pattern} />{/await}
     </section>
 
     <section>

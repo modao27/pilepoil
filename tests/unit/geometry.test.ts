@@ -14,7 +14,7 @@ import {
   signedArea,
 } from '../../src/core/geometry/polygon';
 import { hash } from '../../src/core/hash';
-import type { Polygon } from '../../src/core/types';
+import type { Polygon } from '../../src/modules/carrelage/core/types';
 
 const square = rectPoly(0, 0, 100, 100);
 const hexagon = (r: number): Polygon =>

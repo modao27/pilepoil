@@ -4,8 +4,8 @@
  * et doit donner exactement le résultat de la conversion directe (lui-même identique à legacy).
  */
 import { describe, expect, it } from 'vitest';
-import { computeProject, type ProjectResult } from '../../src/core';
-import { toProjectSpec } from '../../src/state/selectors';
+import { computeProject, type ProjectResult } from '../../src/modules/carrelage/core';
+import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { convertLegacy, EMPTY_STORAGE, readLegacyProject } from '../../src/storage/legacy/convert';
 import { expectSame } from './compare';
 import configs from './configs';

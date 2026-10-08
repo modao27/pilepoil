@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { ui } from '../../modules/carrelage';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
   import IconButton from '../components/IconButton.svelte';
-  import ProjectCard from '../components/ProjectCard.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
 </script>
@@ -32,7 +32,7 @@
     </div>
     <ul class="list" aria-label="Projets">
       {#each app.projects as p (p.id)}
-        <li><ProjectCard project={p} /></li>
+        <li>{#await ui.ProjectCard() then { default: ProjectCard }}<ProjectCard project={p} />{/await}</li>
       {/each}
     </ul>
   {/if}

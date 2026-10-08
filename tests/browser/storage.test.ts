@@ -1,6 +1,6 @@
 import { deleteDB, openDB } from 'idb';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createProject, createSurface, createTile, newId } from '../../src/state/factories';
+import { createProject, createSurface, createTile, newId } from '../../src/modules/carrelage/state/factories';
 import type { Photo, Project, Scenario } from '../../src/state/model';
 import { DB_VERSION, openDb, type Db } from '../../src/storage/db';
 import {

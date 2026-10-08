@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectSpec } from '../../src/core';
+import type { ProjectSpec } from '../../src/modules/carrelage/core';
 import {
   cameraFor,
   frameAt,
@@ -7,7 +7,7 @@ import {
   surfaceLayout,
   wallFrames,
   wallPoint,
-} from '../../src/render/scene3d/placement';
+} from '../../src/modules/carrelage/render/scene3d/placement';
 import { surface } from './fixtures';
 
 const settings = { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20 };

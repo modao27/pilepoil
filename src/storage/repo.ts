@@ -1,4 +1,4 @@
-import { usedTileIds } from '../state/selectors';
+import { usedTileIds } from '../modules/carrelage';
 import type { Id, Photo, Pref, PrefKey, PrefValue, Project, Scenario, Tile } from '../state/model';
 import type { Db } from './db';
 import { migrateProject, migrateScenario, migrateTile } from './migrations';

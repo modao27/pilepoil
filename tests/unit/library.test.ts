@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createTile } from '../../src/state/factories';
-import { createLibraryStore } from '../../src/state/library';
+import { createTile } from '../../src/modules/carrelage/state/factories';
+import { createLibraryStore } from '../../src/modules/carrelage/state/library';
 
 describe('bibliothèque de carreaux', () => {
   it('tri par nom, ajout, modification horodatée, enregistrement', () => {

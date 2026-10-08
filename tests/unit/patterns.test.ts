@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { area, centroid, clipBox, pointInPolygon } from '../../src/core/geometry/polygon';
-import { PATTERNS, pattern } from '../../src/core/patterns/registry';
-import type { BBox, Point } from '../../src/core/types';
+import { PATTERNS, pattern } from '../../src/modules/carrelage/core/patterns/registry';
+import type { BBox, Point } from '../../src/modules/carrelage/core/types';
 
 const sizes: Record<string, [number, number]> = {
   hex: [200, 200],
