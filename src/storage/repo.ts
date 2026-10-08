@@ -1,4 +1,4 @@
-import { usedTileIds } from '../modules/carrelage';
+import { carrelageView, usedTileIds } from '../modules/carrelage';
 import type { Id, Photo, Pref, PrefKey, PrefValue, Project, Scenario, Tile } from '../state/model';
 import type { Db } from './db';
 import { migrateProject, migrateScenario, migrateTile } from './migrations';
@@ -50,7 +50,11 @@ export async function saveTile(db: Db, t: Tile): Promise<void> {
 /** Refuse (false) si un projet utilise encore le carreau. */
 export async function deleteTile(db: Db, id: Id): Promise<boolean> {
   const projects = await db.getAll('projects');
-  if (projects.some((p) => usedTileIds(p).has(id))) return false;
+  const uses = (raw: unknown) => {
+    const v = carrelageView(migrateProject(raw).doc);
+    return !!v && usedTileIds(v).has(id);
+  };
+  if (projects.some(uses)) return false;
   await db.delete('tiles', id);
   await collectPhotos(db);
   return true;
@@ -88,7 +92,13 @@ export async function collectPhotos(db: Db): Promise<number> {
 
 export async function listScenarios(db: Db, projectId: Id): Promise<Scenario[]> {
   const all = await db.getAllFromIndex('scenarios', 'projectId', projectId);
-  return all.map((s) => migrateScenario(s).doc).sort((a, b) => a.slot.localeCompare(b.slot));
+  return all
+    .map((raw) => {
+      const { doc, changed } = migrateScenario(raw);
+      if (changed) void db.put('scenarios', doc);
+      return doc;
+    })
+    .sort((a, b) => a.slot.localeCompare(b.slot));
 }
 
 /** Un seul scénario par emplacement A/B : l'ancien est remplacé. */

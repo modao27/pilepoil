@@ -12,7 +12,9 @@ import {
 import { HISTORY_LIMIT, initHistory, record, redo, undo } from '../../src/state/history';
 import { toProjectSpec, tileSpec } from '../../src/modules/carrelage/state/selectors';
 import type { Project } from '../../src/state/model';
+import { reduceProject } from '../../src/state/project';
 import { createProjectStore, type ProjectState } from '../../src/state/store';
+import { projectFromV1 } from '../../src/storage/migrations';
 
 const tile = createTile();
 const make = () => createProject([createSurface(tile.id)], {}, 1000);
@@ -22,12 +24,19 @@ describe('réducteur', () => {
     const p = make();
     const frozen = JSON.stringify(p);
     const s = p.surfaces[0]!;
-    const q = reduce(p, { type: 'zone/update', surfaceId: s.id, zoneId: s.zones[0]!.id, patch: { angle: 45 } });
+    const q = reduce(p, {
+      type: 'carrelage/zone/update',
+      surfaceId: s.id,
+      zoneId: s.zones[0]!.id,
+      patch: { angle: 45 },
+    });
     expect(JSON.stringify(p)).toBe(frozen);
     expect(q.surfaces[0]!.zones[0]!.angle).toBe(45);
     expect(q.surfaces[0]!.openings).toBe(s.openings);
-    expect(reduce(p, { type: 'zone/update', surfaceId: s.id, zoneId: s.zones[0]!.id, patch: { angle: 0 } })).toBe(p);
-    expect(reduce(p, { type: 'surface/update', surfaceId: 'inconnu', patch: { width: 1 } })).toBe(p);
+    expect(
+      reduce(p, { type: 'carrelage/zone/update', surfaceId: s.id, zoneId: s.zones[0]!.id, patch: { angle: 0 } }),
+    ).toBe(p);
+    expect(reduce(p, { type: 'carrelage/surface/update', surfaceId: 'inconnu', patch: { width: 1 } })).toBe(p);
   });
 
   it('zones : ajout, déplacement, suppression (jamais la dernière, plinthe reportée)', () => {
@@ -35,17 +44,17 @@ describe('réducteur', () => {
     const s = p.surfaces[0]!,
       z0 = s.zones[0]!,
       z1 = createZone(tile.id);
-    p = reduce(p, { type: 'zone/add', surfaceId: s.id, zone: z1 });
+    p = reduce(p, { type: 'carrelage/zone/add', surfaceId: s.id, zone: z1 });
     p = reduce(p, {
-      type: 'surface/update',
+      type: 'carrelage/surface/update',
       surfaceId: s.id,
       patch: { plinth: { length: 1000, height: 80, zoneId: z0.id } },
     });
-    p = reduce(p, { type: 'zone/move', surfaceId: s.id, zoneId: z1.id, to: 0 });
+    p = reduce(p, { type: 'carrelage/zone/move', surfaceId: s.id, zoneId: z1.id, to: 0 });
     expect(p.surfaces[0]!.zones.map((z) => z.id)).toEqual([z1.id, z0.id]);
-    p = reduce(p, { type: 'zone/remove', surfaceId: s.id, zoneId: z0.id });
+    p = reduce(p, { type: 'carrelage/zone/remove', surfaceId: s.id, zoneId: z0.id });
     expect(p.surfaces[0]!.plinth!.zoneId).toBe(z1.id);
-    expect(reduce(p, { type: 'zone/remove', surfaceId: s.id, zoneId: z1.id })).toBe(p);
+    expect(reduce(p, { type: 'carrelage/zone/remove', surfaceId: s.id, zoneId: z1.id })).toBe(p);
   });
 
   it('ouvertures et angles', () => {
@@ -53,17 +62,12 @@ describe('réducteur', () => {
     const sid = p.surfaces[0]!.id,
       o = createOpening('door'),
       c = createCorner();
-    p = reduce(p, { type: 'opening/add', surfaceId: sid, opening: o });
-    p = reduce(p, { type: 'opening/update', surfaceId: sid, openingId: o.id, patch: { x: 50 } });
-    p = reduce(p, { type: 'corner/add', surfaceId: sid, corner: c });
+    p = reduce(p, { type: 'carrelage/opening/add', surfaceId: sid, opening: o });
+    p = reduce(p, { type: 'carrelage/opening/update', surfaceId: sid, openingId: o.id, patch: { x: 50 } });
+    p = reduce(p, { type: 'carrelage/corner/add', surfaceId: sid, corner: c });
     expect(p.surfaces[0]!.openings[0]).toMatchObject({ type: 'door', x: 50, width: 830 });
-    p = reduce(p, {
-      type: 'batch',
-      actions: [
-        { type: 'opening/remove', surfaceId: sid, openingId: o.id },
-        { type: 'corner/remove', surfaceId: sid, cornerId: c.id },
-      ],
-    });
+    p = reduce(p, { type: 'carrelage/opening/remove', surfaceId: sid, openingId: o.id });
+    p = reduce(p, { type: 'carrelage/corner/remove', surfaceId: sid, cornerId: c.id });
     expect(p.surfaces[0]!.openings).toEqual([]);
     expect(p.surfaces[0]!.corners).toEqual([]);
   });
@@ -71,9 +75,9 @@ describe('réducteur', () => {
   it('supprimer une surface la retire de la pièce', () => {
     let p = make();
     const s2 = createSurface(tile.id, { name: 'Sol', kind: 'floor' });
-    p = reduce(p, { type: 'surface/add', surface: s2 });
+    p = reduce(p, { type: 'carrelage/surface/add', surface: s2 });
     p = reduce(p, {
-      type: 'project/room',
+      type: 'carrelage/room',
       room: {
         length: 2000,
         width: 1500,
@@ -82,17 +86,17 @@ describe('réducteur', () => {
         walls: { A: p.surfaces[0]!.id, floor: s2.id },
       },
     });
-    p = reduce(p, { type: 'surface/remove', surfaceId: s2.id });
+    p = reduce(p, { type: 'carrelage/surface/remove', surfaceId: s2.id });
     expect(p.room!.walls).toEqual({ A: p.surfaces[0]!.id });
-    p = reduce(p, { type: 'surface/add', surface: s2 });
-    p = reduce(p, { type: 'surface/remove', surfaceId: p.surfaces[0]!.id });
+    p = reduce(p, { type: 'carrelage/surface/add', surface: s2 });
+    p = reduce(p, { type: 'carrelage/surface/remove', surfaceId: p.surfaces[0]!.id });
     expect(p.room).toBeNull();
   });
 
   it('prix : saisie et effacement', () => {
-    let p = reduce(make(), { type: 'project/price', key: 'colle', value: 18.5 });
+    let p = reduce(make(), { type: 'carrelage/price', key: 'colle', value: 18.5 });
     expect(p.prices).toEqual({ colle: 18.5 });
-    p = reduce(p, { type: 'project/price', key: 'colle', value: null });
+    p = reduce(p, { type: 'carrelage/price', key: 'colle', value: null });
     expect(p.prices).toEqual({});
   });
 });
@@ -132,7 +136,10 @@ describe('store', () => {
   it('notifie, date les modifications, annule et enregistre', () => {
     let t = 5000;
     const saved: number[] = [];
-    const store = createProjectStore(make(), reduce, { now: () => t, onChange: (p) => saved.push(p.updatedAt) });
+    const store = createProjectStore(projectFromV1(make()), reduceProject, {
+      now: () => t,
+      onChange: (p) => saved.push(p.updatedAt),
+    });
     const states: ProjectState<Project>[] = [];
     const off = store.subscribe((s) => states.push(s));
     store.dispatch({ type: 'project/rename', name: 'Salle de bain' });

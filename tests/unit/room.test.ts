@@ -52,9 +52,10 @@ describe('pièce complète (roomGo)', () => {
     const s = createSurface(tile.id, { plinth: { length: 1000, height: 80, zoneId: 'x' } });
     const p = createProject([s]);
     const zones = [createZone(tile.id, { unit: 'rows', size: 3 }), createZone(tile.id, { pattern: 'herring' })];
-    const q = reduce(p, { type: 'zone/replaceAll', surfaceId: s.id, zones, split: 'v' });
+    const q = reduce(p, { type: 'carrelage/zone/replaceAll', surfaceId: s.id, zones, split: 'v' });
     expect(q.surfaces[0]).toMatchObject({ split: 'v', plinth: { zoneId: zones[0]!.id } });
-    expect(reduce(q, { type: 'project/replace', project: p })).toBe(p);
-    expect(reduce(q, { type: 'project/replace', project: { ...p, id: 'autre' } })).toBe(q);
+    // remplacement : toutes les données carrelage, champs communs (id, nom) conservés
+    const r = reduce(q, { type: 'carrelage/replace', data: { ...p, surfaces: [] } });
+    expect(r).toEqual({ ...q, surfaces: [], room: p.room, settings: p.settings, prices: p.prices });
   });
 });

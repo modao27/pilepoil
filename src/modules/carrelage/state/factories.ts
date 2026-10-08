@@ -1,7 +1,8 @@
 /** Objets neufs avec les valeurs par défaut de legacy. */
 import { OPENING_DEFAULTS } from '../core';
-import type { Corner, Id, Opening, OpeningType, Project, Surface, Tile, TileShape, Zone } from '../../../state/model';
-import { PROJECT_SCHEMA, TILE_SCHEMA } from '../../../state/model';
+import type { Corner, Id, Opening, OpeningType, Surface, Tile, TileShape, Zone } from '../../../state/model';
+import { DEFAULT_SETTINGS, type CarrelageProject } from './data';
+import { TILE_SCHEMA } from '../../../state/model';
 
 export function newId(): Id {
   return crypto.randomUUID();
@@ -101,16 +102,20 @@ export function createSurface(tileId: Id, o: Partial<Surface> = {}): Surface {
   };
 }
 
-export function createProject(surfaces: Surface[], o: Partial<Project> = {}, now = Date.now()): Project {
+/** Projet carrelage neuf (vue) ; à enregistrer via `projectFromV1` (storage/migrations). */
+export function createProject(
+  surfaces: Surface[],
+  o: Partial<CarrelageProject> = {},
+  now = Date.now(),
+): CarrelageProject {
   return {
-    schemaVersion: PROJECT_SCHEMA,
     id: newId(),
     name: 'Nouveau projet',
     createdAt: now,
     updatedAt: now,
     surfaces,
     room: null,
-    settings: { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20, shadeVariation: 0.06, optimizerGoal: 'thin' },
+    settings: { ...DEFAULT_SETTINGS },
     prices: {},
     ...o,
   };

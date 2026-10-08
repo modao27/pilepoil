@@ -1,5 +1,6 @@
 import { deleteDB } from 'idb';
 import { afterEach, describe, expect, it } from 'vitest';
+import { carrelageView } from '../../src/modules/carrelage/state/data';
 import { newId } from '../../src/modules/carrelage/state/factories';
 import { openDb, type Db } from '../../src/storage/db';
 import { EMPTY_STORAGE } from '../../src/storage/legacy/convert';
@@ -43,7 +44,8 @@ describe('import legacy en base', () => {
     expect(sum).toMatchObject({ surfaces: 1, tiles: 1, photos: 2, scenarios: 1, palette: true });
     const p = (await getProject(db, sum!.projectId!))!;
     const [tile] = await listTiles(db);
-    expect(p.surfaces[0]!.zones[0]!.tileId).toBe(tile!.id);
+    expect(p.schemaVersion).toBe(2);
+    expect(carrelageView(p)!.surfaces[0]!.zones[0]!.tileId).toBe(tile!.id);
     const photo = (await getPhoto(db, tile!.photoId!))!;
     expect(photo.blob.type).toBe('image/png');
     expect([photo.width, photo.height]).toEqual([2, 1]);

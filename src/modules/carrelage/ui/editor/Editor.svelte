@@ -50,7 +50,7 @@
   // récente. Ses propres enregistrements renvoient le même objet et ne déclenchent rien.
   $effect(() => {
     const ext = app.project(project.id);
-    const own = untrack(() => ed.project);
+    const own = untrack(() => ed.doc);
     if (ext && ext !== own && ext.updatedAt > own.updatedAt) ed.store.reset(ext);
   });
 

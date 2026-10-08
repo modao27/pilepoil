@@ -128,7 +128,7 @@
       <Segmented
         label="Variation de teinte"
         value={ed.project.settings.shadeVariation}
-        onchange={(v) => ed.dispatch({ type: 'project/settings', patch: { shadeVariation: v } })}
+        onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { shadeVariation: v } })}
         options={[
           { value: 0, label: 'Aucune' },
           { value: 0.06, label: 'Légère' },

@@ -15,7 +15,7 @@
 
   let { projectId: id }: ModuleScreenProps = $props();
 
-  const project = $derived(app.project(id));
+  const project = $derived(carrelage.view(id));
   const spec = $derived(project ? carrelage.spec(project) : null);
   let result = $state.raw<ProjectResult | null>(null);
   let view = $state<'top' | '3d'>('top');

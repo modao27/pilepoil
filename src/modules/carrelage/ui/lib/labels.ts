@@ -13,7 +13,8 @@ import {
   type ShoppingItem,
   type ZoneGlue,
 } from '../../core';
-import type { Project, Tile } from '../../../../state/model';
+import type { Tile } from '../../../../state/model';
+import type { CarrelageProject } from '../../state/data';
 import { productName } from './messages';
 
 const fr = (v: number, d = 0) => v.toLocaleString('fr-FR', { maximumFractionDigits: d, minimumFractionDigits: 0 });
@@ -127,7 +128,7 @@ export interface GlueRow {
 }
 
 /** Une ligne par zone carrelée : carreau, spatule, simple ou double encollage, colle estimée. */
-export function glueRows(project: Project, result: ProjectResult): GlueRow[] {
+export function glueRows(project: CarrelageProject, result: ProjectResult): GlueRow[] {
   const multi = project.surfaces.length > 1;
   return result.glue.map((g: ZoneGlue) => {
     const s = project.surfaces[g.surface];
@@ -150,7 +151,7 @@ const SIDE = { L: 'tableau gauche', R: 'tableau droit', T: 'linteau', B: 'appui'
 const mm = (v: number) => fr(Math.round(v * 10) / 10, 1);
 
 /** Pièce du plan de découpe : « encoche 600 × 120 (F1 linteau) [Mur B] » (comme legacy). */
-export function pieceCutText(pc: Piece, project: Project): string {
+export function pieceCutText(pc: Piece, project: CarrelageProject): string {
   const kind = pc.notch ? 'encoche ' : pc.rect ? '' : 'biais ';
   const extra = pc.plinth ? ' (plinthe)' : pc.reveal ? ` (F${pc.reveal.opening + 1} ${SIDE[pc.reveal.side]})` : '';
   const where = project.surfaces.length > 1 ? ` [${project.surfaces[pc.surface]?.name ?? ''}]` : '';
@@ -196,7 +197,7 @@ export function compareValue(a: number, b: number, dir: number): { delta: number
 }
 
 /** « 2 surfaces, décalé ½ 60 × 30 / bâtons rompus 60 × 30 » [metrics.desc]. */
-export function projectDescription(project: Project, tiles: readonly Tile[]): string {
+export function projectDescription(project: CarrelageProject, tiles: readonly Tile[]): string {
   const byId = new Map(tiles.map((t) => [t.id, t]));
   const zones = project.surfaces.flatMap((s) => s.zones);
   const parts = [

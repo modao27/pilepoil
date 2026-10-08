@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSaver } from '../../src/storage/autosave';
-import { FutureVersionError, migrate, migrateProject, type Step } from '../../src/storage/migrations';
+import { FutureVersionError, migrate, migrateProject, projectFromV1, type Step } from '../../src/storage/migrations';
 import { createProject } from '../../src/modules/carrelage/state/factories';
 
 describe('migrations de documents', () => {
@@ -17,7 +17,7 @@ describe('migrations de documents', () => {
   });
 
   it('document à jour : inchangé', () => {
-    const p = createProject([]);
+    const p = projectFromV1(createProject([]));
     const r = migrateProject(p);
     expect(r.changed).toBe(false);
     expect(r.doc).toBe(p);

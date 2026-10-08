@@ -1,5 +1,6 @@
 import type { ProjectSpec, RoomSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../core';
-import type { Edges, Id, Project, Surface, Tile, Zone } from '../../../state/model';
+import type { Edges, Id, Surface, Tile, Zone } from '../../../state/model';
+import type { CarrelageProject } from './data';
 
 /** Correspondance entre indices du moteur et identifiants du modèle. */
 export interface SpecIds {
@@ -82,7 +83,7 @@ export function surfaceSpec(s: Surface, tiles: ReadonlyMap<Id, Tile>): SurfaceSp
 }
 
 /** Projet du modèle → entrée du moteur, carreaux résolus dans la bibliothèque. */
-export function toProjectSpec(project: Project, library: readonly Tile[]): ProjectSpecResult {
+export function toProjectSpec(project: CarrelageProject, library: readonly Tile[]): ProjectSpecResult {
   const tiles = new Map(library.map((t) => [t.id, t]));
   const index = new Map(project.surfaces.map((s, i) => [s.id, i]));
   const missingTiles: ProjectSpecResult['missingTiles'] = [];
@@ -117,6 +118,6 @@ export function toProjectSpec(project: Project, library: readonly Tile[]): Proje
 }
 
 /** Identifiants des carreaux utilisés par un projet. */
-export function usedTileIds(project: Project): Set<Id> {
+export function usedTileIds(project: CarrelageProject): Set<Id> {
   return new Set(project.surfaces.flatMap((s) => s.zones.map((z) => z.tileId)));
 }

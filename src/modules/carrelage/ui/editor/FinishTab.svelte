@@ -154,7 +154,7 @@
       label="Réutiliser les chutes de coupe"
       hint="Les pièces de même numéro sortent du même carreau."
       checked={settings.reuseOffcuts}
-      onchange={(v) => ed.dispatch({ type: 'project/settings', patch: { reuseOffcuts: v } })}
+      onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { reuseOffcuts: v } })}
     />
     <Checkbox
       label="Numéros de coupe sur le plan"
@@ -168,7 +168,7 @@
         unit="mm"
         min={0}
         step={0.5}
-        onchange={(v) => ed.dispatch({ type: 'project/settings', patch: { kerf: v } })}
+        onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { kerf: v } })}
       />
       <NumberField
         label="Chute minimale gardée"
@@ -176,7 +176,7 @@
         unit="mm"
         min={1}
         step={5}
-        onchange={(v) => ed.dispatch({ type: 'project/settings', patch: { minOffcut: v } })}
+        onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { minOffcut: v } })}
       />
       <NumberField
         label="Marge de casse"
@@ -184,7 +184,7 @@
         unit="%"
         min={0}
         max={50}
-        onchange={(v) => ed.dispatch({ type: 'project/settings', patch: { margin: v } })}
+        onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { margin: v } })}
       />
     </div>
     <p class="muted">

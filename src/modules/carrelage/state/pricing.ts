@@ -1,5 +1,6 @@
 import type { ProjectResult, ShoppingItem } from '../core';
-import type { Project, Tile } from '../../../state/model';
+import type { Tile } from '../../../state/model';
+import type { CarrelageProject } from './data';
 
 /**
  * Prix unitaire d'un article : prix saisi dans le projet, sinon prix au m² du carreau de la bibliothèque
@@ -7,7 +8,7 @@ import type { Project, Tile } from '../../../state/model';
  */
 export function itemPrice(
   item: ShoppingItem,
-  project: Project,
+  project: CarrelageProject,
   tiles: ReadonlyMap<string, Tile>,
   result: ProjectResult,
 ): number | undefined {
@@ -22,7 +23,7 @@ export function itemPrice(
 
 /** Coût total estimé et nombre d'articles sans prix. */
 export function projectCost(
-  project: Project,
+  project: CarrelageProject,
   tiles: readonly Tile[],
   result: ProjectResult,
 ): { total: number; unpriced: number } {
@@ -38,6 +39,6 @@ export function projectCost(
 }
 
 /** Surface carrelée totale en m² (dimensions des surfaces). */
-export function projectArea(project: Project): number {
+export function projectArea(project: CarrelageProject): number {
   return project.surfaces.reduce((t, s) => t + (s.width * s.height) / 1e6, 0);
 }

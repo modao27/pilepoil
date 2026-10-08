@@ -1,19 +1,18 @@
 /**
  * Conversion pure des données legacy vers le modèle (voir docs/MODEL.md, Import legacy).
  * Aucun accès au stockage ici : les photos restent en dataURL, l'écriture est faite par import.ts.
+ * Produit des documents v1 (projet carrelage seul) ; import.ts les migre en v2 avant de les écrire.
  */
 import { newId, tileName, type Metrics, type OptimizerGoal, type PatternId } from '../../modules/carrelage';
 import {
-  PROJECT_SCHEMA,
-  SCENARIO_SCHEMA,
   TILE_SCHEMA,
   type Id,
   type Opening,
   type Palette,
-  type Project,
+  type ProjectV1,
   type Room,
   type RoomWallKey,
-  type Scenario,
+  type ScenarioV1,
   type Surface,
   type Tile,
   type TileShape,
@@ -242,7 +241,7 @@ function surfaceFrom(S: LegacySurface, i: number, tiles: TileCollector, orientat
 }
 
 export interface ConvertedProject {
-  project: Project;
+  project: ProjectV1;
   tiles: Tile[];
 }
 
@@ -273,8 +272,8 @@ export function convertProject(
       if (t && price > 0 && t.pricePerM2 == null) t.pricePerM2 = price;
     }),
   );
-  const project: Project = {
-    schemaVersion: PROJECT_SCHEMA,
+  const project: ProjectV1 = {
+    schemaVersion: 1,
     id: newId(),
     name: opts.name ?? 'Projet importé',
     createdAt: opts.now,
@@ -297,11 +296,11 @@ export function convertProject(
 /* ---------- import complet ---------- */
 
 export interface LegacyImport {
-  project: Project | null;
+  project: ProjectV1 | null;
   tiles: Tile[];
   /** Photos à écrire : id du modèle → dataURL legacy. */
   photos: { id: Id; dataUrl: string }[];
-  scenarios: Scenario[];
+  scenarios: ScenarioV1[];
   palette: Palette | null;
 }
 
@@ -339,7 +338,7 @@ export function convertLegacy(store: LegacyStorage, now: number): LegacyImport {
   };
 
   const main = L ? convertProject(L, { now, photoId }) : null;
-  const scenarios: Scenario[] = [];
+  const scenarios: ScenarioV1[] = [];
   if (main) {
     const sc = obj(parse(store['calepinage-scenarios']));
     for (const slot of ['A', 'B'] as const) {
@@ -358,7 +357,7 @@ export function convertLegacy(store: LegacyStorage, now: number): LegacyImport {
         photos.push({ id: thumbnailId, dataUrl: c.thumb });
       }
       scenarios.push({
-        schemaVersion: SCENARIO_SCHEMA,
+        schemaVersion: 1,
         id: newId(),
         projectId: main.project.id,
         slot,

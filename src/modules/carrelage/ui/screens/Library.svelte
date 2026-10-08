@@ -4,6 +4,7 @@
   import Screen from '../../../../ui/components/Screen.svelte';
   import TileSwatch from '../components/TileSwatch.svelte';
   import { usedTileIds } from '../../state/selectors';
+  import { carrelageView } from '../../state/data';
   import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
   import { count, euros, mm, tileSize } from '../../../../ui/lib/format';
@@ -12,7 +13,10 @@
     // table locale recalculée à chaque changement (dans $derived), pas d'état mutable partagé
     // eslint-disable-next-line svelte/prefer-svelte-reactivity
     const n = new Map<string, number>();
-    for (const p of app.projects) for (const id of usedTileIds(p)) n.set(id, (n.get(id) ?? 0) + 1);
+    for (const p of app.projects) {
+      const v = carrelageView(p);
+      if (v) for (const id of usedTileIds(v)) n.set(id, (n.get(id) ?? 0) + 1);
+    }
     return n;
   });
 </script>

@@ -1,7 +1,8 @@
 /** Projets créés par l'assistant : mur ou sol seul, ou pièce complète (murs A à D + sol, comme legacy). */
 import type { PatternId } from '../core';
 import { createProject, createSurface, createZone, newId } from './factories';
-import type { Id, Project, RoomWallKey, Surface } from '../../../state/model';
+import type { Id, RoomWallKey, Surface } from '../../../state/model';
+import type { CarrelageProject } from './data';
 
 export interface LayoutChoice {
   tileId: Id;
@@ -37,7 +38,7 @@ function surfaceWith(c: LayoutChoice, o: Partial<Surface>): Surface {
   });
 }
 
-export function createSingleSurfaceProject(i: SingleSurfaceInput, now = Date.now()): Project {
+export function createSingleSurfaceProject(i: SingleSurfaceInput, now = Date.now()): CarrelageProject {
   const label = i.kind === 'floor' ? 'Sol' : 'Mur';
   const s = surfaceWith(i, { name: label, kind: i.kind, width: i.width, height: i.height });
   return createProject([s], { name: i.name?.trim() || `${label} ${cm(i.width)} × ${cm(i.height)}` }, now);
@@ -58,7 +59,7 @@ export interface RoomUpdate {
  * `template` sans ouvertures, angles ni plinthe ; la première surface est reprise si elle est seule et hors
  * pièce), puis toutes prennent les dimensions de la pièce. Les surfaces décochées restent, hors pièce.
  */
-export function applyRoom(project: Project, template: Surface, i: RoomUpdate): Project {
+export function applyRoom(project: CarrelageProject, template: Surface, i: RoomUpdate): CarrelageProject {
   let walls: Partial<Record<RoomWallKey, Id>> = { ...(project.room?.walls ?? {}) };
   let surfaces = project.surfaces.slice();
   const inRoom = new Set(Object.values(walls));
@@ -116,7 +117,7 @@ export function applyRoom(project: Project, template: Surface, i: RoomUpdate): P
 }
 
 /** Murs A et C sur la longueur, B et D sur la largeur, carrelés sur tiledHeight ; sol longueur × largeur. */
-export function createRoomProject(i: RoomInput, now = Date.now()): Project {
+export function createRoomProject(i: RoomInput, now = Date.now()): CarrelageProject {
   const keys = (['A', 'B', 'C', 'D', 'floor'] as const).filter((k) => i.walls[k]);
   const walls: Partial<Record<RoomWallKey, Id>> = {};
   const surfaces = keys.map((k) => {

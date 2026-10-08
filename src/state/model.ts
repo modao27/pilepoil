@@ -97,10 +97,14 @@ export interface Surface {
   junctionsCovered: boolean;
 }
 
-export const PROJECT_SCHEMA = 1;
+export const PROJECT_SCHEMA = 2;
 
-export interface Project {
-  schemaVersion: typeof PROJECT_SCHEMA;
+/**
+ * Projet v1 (avant la boîte à outils) : le carrelage seul. Lu seulement par la migration v1 → v2 et
+ * produit par la conversion legacy ; les données carrelage gardent cette forme (`CarrelageData`).
+ */
+export interface ProjectV1 {
+  schemaVersion: 1;
   id: Id;
   name: string;
   createdAt: number;
@@ -112,12 +116,9 @@ export interface Project {
   prices: Record<string, number>;
 }
 
-/**
- * Projet v2 (docs/BOITE.md §4) : plan commun + données de chaque module activé.
- * Défini en S1 pour le contrat des modules ; la migration v1 → v2 arrive en S2.
- */
-export interface ProjectV2 {
-  schemaVersion: 2;
+/** Projet v2 (docs/BOITE.md §4) : plan commun + données de chaque module activé. */
+export interface Project {
+  schemaVersion: typeof PROJECT_SCHEMA;
   id: Id;
   name: string;
   createdAt: number;
@@ -165,7 +166,7 @@ export interface Photo {
   createdAt: number;
 }
 
-export const SCENARIO_SCHEMA = 1;
+export const SCENARIO_SCHEMA = 2;
 
 export interface Scenario {
   schemaVersion: typeof SCENARIO_SCHEMA;
@@ -173,11 +174,18 @@ export interface Scenario {
   projectId: Id;
   slot: 'A' | 'B';
   name: string;
+  /** Projet entier figé (v2) ; seules les données carrelage sont rétablies au chargement. */
   snapshot: { project: Project; tiles: Tile[] };
   metrics: Metrics | null;
   thumbnailId: Id | null;
   createdAt: number;
 }
+
+/** Scénario v1 : instantané d'un projet v1 (conversion legacy, migration). */
+export type ScenarioV1 = Omit<Scenario, 'schemaVersion' | 'snapshot'> & {
+  schemaVersion: 1;
+  snapshot: { project: ProjectV1; tiles: Tile[] };
+};
 
 export interface Palette {
   tiles: string[];

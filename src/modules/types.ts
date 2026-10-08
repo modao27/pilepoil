@@ -7,7 +7,7 @@ import type { Component } from 'svelte';
 
 import type { Plan } from '../core/plan/types';
 import type { ShoppingLine } from '../core/shopping/types';
-import type { Id, ProjectV2 } from '../state/model';
+import type { Id, Project } from '../state/model';
 
 /** 'carrelage', 'parquet'… Liste ouverte : ajouter un module ne touche pas aux types communs. */
 export type ModuleId = string;
@@ -145,7 +145,7 @@ export interface ToolModule<Data, Spec, Result, Action extends ModuleAction = Mo
   /** Réducteur pur des actions du module ; renvoie `data` inchangé si rien ne change. */
   reduce(data: Data, action: Action, plan: Plan): Data;
   /** État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. */
-  toSpec(project: ProjectV2, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
+  toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
   /** Lignes d'achat consolidables. */
   shopping(result: Result, data: Data, libraries: Libraries): ShoppingLine[];
   /** Résumé court pour la carte du module (« 46 carreaux, 312 € »). */
@@ -159,7 +159,12 @@ export interface ToolModule<Data, Spec, Result, Action extends ModuleAction = Mo
 }
 
 /**
- * Ce que le carrelage implémente en S1 (docs/BOITE.md §2) ; le reste est branché en S2 et S3.
+ * Ce que le carrelage implémente en S2 (docs/BOITE.md §2) : tout sauf les achats et la bibliothèque (S3).
  * Disparaît quand tous les modules remplissent le contrat complet.
  */
-export type ToolModuleS1 = Pick<ToolModule<unknown, unknown, unknown>, 'id' | 'label' | 'icon' | 'screens'>;
+export type ToolModuleS2<
+  Data = unknown,
+  Spec = unknown,
+  Result = unknown,
+  Action extends ModuleAction = ModuleAction,
+> = Omit<ToolModule<Data, Spec, Result, Action>, 'shopping' | 'library'>;

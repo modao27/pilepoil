@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction, type StoreNames } from 'idb';
+import type { LibraryItem } from '../modules/types';
 import type { Photo, Pref, PrefKey, Project, Scenario, Tile } from '../state/model';
 
 export interface CalepinageDB extends DBSchema {
@@ -7,6 +8,8 @@ export interface CalepinageDB extends DBSchema {
   photos: { key: string; value: Photo };
   scenarios: { key: string; value: Scenario; indexes: { projectId: string } };
   prefs: { key: PrefKey; value: Pref };
+  /** Bibliothèque de lames du parquet (le type précis arrive avec le module, P1). */
+  boards: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
 }
 
 export type Db = IDBPDatabase<CalepinageDB>;
@@ -27,6 +30,12 @@ const UPGRADES: ((db: Db, tx: UpgradeTx) => void)[] = [
     db.createObjectStore('photos', { keyPath: 'id' });
     db.createObjectStore('scenarios', { keyPath: 'id' }).createIndex('projectId', 'projectId');
     db.createObjectStore('prefs', { keyPath: 'key' });
+  },
+  // v2 (S2) : bibliothèque de lames. Les projets passent en v2 à la lecture (migrations.ts).
+  (db) => {
+    const boards = db.createObjectStore('boards', { keyPath: 'id' });
+    boards.createIndex('name', 'name');
+    boards.createIndex('updatedAt', 'updatedAt');
   },
 ];
 
