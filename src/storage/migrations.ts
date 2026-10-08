@@ -1,16 +1,7 @@
 import { rectRoom } from '../core/plan/factories';
 import type { Plan } from '../core/plan/types';
 import { moduleById } from '../modules/registry';
-import {
-  PROJECT_SCHEMA,
-  SCENARIO_SCHEMA,
-  TILE_SCHEMA,
-  type ModuleDoc,
-  type Project,
-  type ProjectV1,
-  type Scenario,
-  type Tile,
-} from '../state/model';
+import { PROJECT_SCHEMA, type ModuleDoc, type Project, type ProjectV1 } from '../state/model';
 
 /** Étape de migration : document en version n → version n + 1. */
 export type Step = (doc: Record<string, unknown>) => Record<string, unknown>;
@@ -79,21 +70,7 @@ export function projectFromV1(v1: Omit<ProjectV1, 'schemaVersion'>): Project {
 export const PROJECT_STEPS: Record<number, Step> = {
   1: (doc) => projectFromV1(doc as unknown as ProjectV1) as unknown as Record<string, unknown>,
 };
-export const TILE_STEPS: Record<number, Step> = {};
-export const SCENARIO_STEPS: Record<number, Step> = {
-  /** L'instantané est migré comme un projet. */
-  1: (doc) => ({
-    ...doc,
-    snapshot: {
-      ...(doc.snapshot as object),
-      project: migrateProject((doc.snapshot as { project: unknown }).project).doc,
-    },
-  }),
-};
-
 export const migrateProject = (doc: unknown) => migrateModules(migrate<Project>(doc, PROJECT_SCHEMA, PROJECT_STEPS));
-export const migrateTile = (doc: unknown) => migrate<Tile>(doc, TILE_SCHEMA, TILE_STEPS);
-export const migrateScenario = (doc: unknown) => migrate<Scenario>(doc, SCENARIO_SCHEMA, SCENARIO_STEPS);
 
 /**
  * Migre les données de chaque module avec les étapes du module (`migrations`, version `schemaVersion`).

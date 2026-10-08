@@ -2,10 +2,13 @@
  * État du module carrelage : bibliothèque de carreaux, calculs (worker), prix, scénarios A/B.
  * Les projets, préférences et photos restent dans l'état de la coquille (`app`).
  */
-import type { Id, Project, Scenario, Tile } from '../../../state/model';
-import { SCENARIO_SCHEMA } from '../../../state/model';
+import type { Id, Project } from '../../../state/model';
+import type { Scenario, Tile } from '../state/model';
+import { SCENARIO_SCHEMA } from '../state/model';
 import type { Db } from '../../../storage/db';
-import * as repo from '../../../storage/repo';
+import { toast } from '../../../ui/lib/toasts.svelte';
+import { autoImportLegacy, importMessage } from '../storage/legacy/import';
+import { deleteScenario, listScenarios, saveScenario } from '../storage/scenarios';
 import { app } from '../../../ui/lib/app.svelte';
 import { SupersededError } from '../../../workers/client';
 import type {
@@ -20,40 +23,37 @@ import type {
 } from '../core';
 import type { OptimizeSpec } from '../engine';
 import { newId } from '../state/factories';
-import { createLibraryStore, type LibraryStore } from '../state/library';
 import { toProjectSpec, usedTileIds } from '../state/selectors';
 import { carrelageData, carrelageView, withCarrelage, type CarrelageProject } from '../state/data';
 import { reduceProject } from '../../../state/project';
 import type { Action } from '../state/actions';
 
 const MODULE = 'carrelage';
+const TILES = 'tiles';
 
 export class CarrelageState {
-  // Données immuables, remplacées à chaque modification : $state.raw évite les proxys, que ni IndexedDB
-  // ni postMessage ne savent cloner.
-  tiles = $state.raw<readonly Tile[]>([]);
-
   private db!: Db;
-  private library!: LibraryStore;
-  // Caches internes, volontairement non réactifs (l'interface lit tiles, pas ces tables).
+  // Cache interne, volontairement non réactif (l'interface lit les projets et la bibliothèque, pas cette table).
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   private cache = new Map<string, ProjectResult>();
-  private tilesVersion = 0;
 
-  /** (Re)charge la bibliothèque ; ouvre les workers au premier appel. */
-  async load(db: Db): Promise<void> {
+  /**
+   * Démarrage (avant le chargement des projets) : import automatique des données de l'ancienne version, une
+   * seule fois et seulement si elle a laissé des données sur cette origine.
+   */
+  async start(db: Db): Promise<void> {
     this.db = db;
-    const tiles = await repo.listTiles(db);
-    this.library = createLibraryStore(tiles, {
-      isUsed: (id) => app.projects.some((p) => uses(p, id)),
-      onSave: (t) => void repo.saveTile(this.db, t),
-      onDelete: (id) => void repo.deleteTile(this.db, id),
-    });
-    this.library.subscribe((t) => {
-      this.tiles = t;
-      app.setLibrary('tiles', t);
-      this.tilesVersion++;
-    });
+    try {
+      const imported = await autoImportLegacy(db, localStorage);
+      if (imported?.projectId) toast(importMessage(imported));
+    } catch {
+      // stockage legacy illisible : on continue sans import
+    }
+  }
+
+  /** Bibliothèque de carreaux, tenue par la coquille (`app.libraries.tiles`). */
+  get tiles(): readonly Tile[] {
+    return (app.libraries[TILES] ?? []) as readonly Tile[];
   }
 
   /* ---------- bibliothèque ---------- */
@@ -63,14 +63,14 @@ export class CarrelageState {
   }
 
   putTile(t: Tile): void {
-    this.library.put(t);
+    app.putLibraryItem(TILES, t);
   }
 
   /** null si supprimé, sinon le nom d'un projet qui l'utilise. */
   deleteTile(id: Id): string | null {
     const user = app.projects.find((p) => uses(p, id));
     if (user) return user.name;
-    this.library.remove(id);
+    app.removeLibraryItem(TILES, id);
     return null;
   }
 
@@ -114,7 +114,7 @@ export class CarrelageState {
 
   /** Résultat d'un projet enregistré, mis en cache tant que ni le projet ni la bibliothèque ne changent. */
   result(p: CarrelageProject): Promise<ProjectResult> {
-    return this.cached(`${p.id}:${p.updatedAt}:${this.tilesVersion}`, () => this.spec(p));
+    return this.cached(`${p.id}:${p.updatedAt}:${app.libraryVersion}`, () => this.spec(p));
   }
 
   /** Résultat d'un scénario : son projet figé avec ses propres carreaux. */
@@ -149,7 +149,7 @@ export class CarrelageState {
   /* ---------- scénarios A/B ---------- */
 
   scenarios(projectId: Id): Promise<Scenario[]> {
-    return repo.listScenarios(this.db, projectId);
+    return listScenarios(this.db, projectId);
   }
 
   /** Enregistre l'état actuel du projet dans l'emplacement A ou B (copie figée avec ses carreaux). */
@@ -167,16 +167,17 @@ export class CarrelageState {
       thumbnailId: null,
       createdAt: Date.now(),
     };
-    await repo.saveScenario(this.db, s);
+    if (await saveScenario(this.db, s)) app.collectPhotos();
     return s;
   }
 
   async renameScenario(s: Scenario, name: string): Promise<void> {
-    await repo.saveScenario(this.db, { ...s, name });
+    await saveScenario(this.db, { ...s, name });
   }
 
   async deleteScenario(s: Scenario): Promise<void> {
-    await repo.deleteScenario(this.db, s.id);
+    await deleteScenario(this.db, s.id);
+    app.collectPhotos();
   }
 
   /**

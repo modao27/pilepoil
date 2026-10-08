@@ -1,14 +1,17 @@
 <script lang="ts">
   /** Écran Projet (#/p/:id) : plan des pièces, outils activés avec leur résumé, ajout d'un outil. */
   import { modules } from '../../modules/registry';
-  import type { ModuleSummary, ToolModuleS2 } from '../../modules/types';
+  import type { ShoppingLine } from '../../core/shopping/types';
+  import type { ModuleSummary, ToolModule } from '../../modules/types';
   import { reduceProject } from '../../state/project';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
   import { go } from '../lib/router.svelte';
-  import { moduleSummary } from '../lib/summaries';
+  import { euros } from '../lib/format';
+  import { moduleOutput } from '../lib/moduleOutputs';
+  import { consolidate } from '../lib/shopping';
   import PlanThumb from '../plan/PlanThumb.svelte';
 
   let { id }: { id: string } = $props();
@@ -19,20 +22,28 @@
   const rooms = $derived(project?.plan.rooms.length ?? 0);
 
   let summaries = $state.raw<Record<string, ModuleSummary | null | undefined>>({});
+  let lines = $state.raw<Record<string, ShoppingLine[]>>({});
+  const cost = $derived(
+    active.every((m) => summaries[m.id] !== undefined) ? consolidate(active.flatMap((m) => lines[m.id] ?? [])) : null,
+  );
   $effect(() => {
     const p = project;
     void app.libraries;
     if (!p) return;
     let live = true;
     for (const m of active)
-      void moduleSummary(p, m).then(
-        (s) => live && (summaries = { ...summaries, [m.id]: s }),
+      void moduleOutput(p, m).then(
+        (o) => {
+          if (!live) return;
+          summaries = { ...summaries, [m.id]: o.summary };
+          lines = { ...lines, [m.id]: o.lines };
+        },
         () => live && (summaries = { ...summaries, [m.id]: null }),
       );
     return () => (live = false);
   });
 
-  async function addTool(m: ToolModuleS2) {
+  async function addTool(m: ToolModule) {
     const p = project;
     if (!p) return;
     const next = reduceProject(p, {
@@ -91,6 +102,22 @@
             </li>
           {/each}
         </ul>
+        {#if active.length}
+          <a class="card shop" href="#/p/{project.id}/achats">
+            <span class="text">
+              <span class="title">Achats</span>
+              <span class="muted num"
+                >{!cost
+                  ? 'Calcul…'
+                  : cost.total > 0
+                    ? `Total estimé ${euros(cost.total)}`
+                    : 'Liste d’achat, prix à saisir'}{cost?.unpriced
+                  ? ` · ${cost.unpriced} article${cost.unpriced > 1 ? 's' : ''} sans prix`
+                  : ''}</span
+              >
+            </span>
+          </a>
+        {/if}
         {#if available.length}
           <h3>Ajouter un outil</h3>
           <ul class="tools">
@@ -192,5 +219,8 @@
   }
   .add {
     flex-wrap: wrap;
+  }
+  .shop {
+    margin-top: var(--space-2);
   }
 </style>

@@ -1,7 +1,7 @@
-import { carrelageView, usedTileIds } from '../modules/carrelage';
-import type { Id, Photo, Pref, PrefKey, PrefValue, Project, Scenario, Tile } from '../state/model';
+import type { LibraryItem } from '../modules/types';
+import type { Id, Photo, Pref, PrefKey, PrefValue, Project } from '../state/model';
 import type { Db } from './db';
-import { migrateProject, migrateScenario, migrateTile } from './migrations';
+import { migrateProject } from './migrations';
 
 /* ---------- projets ---------- */
 
@@ -34,30 +34,30 @@ export async function deleteProject(db: Db, id: Id): Promise<void> {
   const scen = tx.objectStore('scenarios');
   for (const key of await scen.index('projectId').getAllKeys(id)) await scen.delete(key);
   await tx.done;
-  await collectPhotos(db);
 }
 
-/* ---------- bibliothèque de carreaux ---------- */
+/* ---------- bibliothèques de produits (carreaux, lames) ---------- */
 
-export async function listTiles(db: Db): Promise<Tile[]> {
-  return (await db.getAllFromIndex('tiles', 'name')).map((t) => migrateTile(t).doc);
+/** Magasins de bibliothèque : `LibraryDefinition.store` des modules. */
+export const LIBRARY_STORES = ['tiles', 'boards'] as const;
+export type LibraryStore = (typeof LIBRARY_STORES)[number];
+
+export function libraryStore(store: string): LibraryStore {
+  if (!(LIBRARY_STORES as readonly string[]).includes(store)) throw new Error(`Magasin inconnu : ${store}`);
+  return store as LibraryStore;
 }
 
-export async function saveTile(db: Db, t: Tile): Promise<void> {
-  await db.put('tiles', t);
+/** Documents bruts (migrés par la coquille avec les étapes du module). */
+export function listItems(db: Db, store: LibraryStore): Promise<unknown[]> {
+  return db.getAll(store);
 }
 
-/** Refuse (false) si un projet utilise encore le carreau. */
-export async function deleteTile(db: Db, id: Id): Promise<boolean> {
-  const projects = await db.getAll('projects');
-  const uses = (raw: unknown) => {
-    const v = carrelageView(migrateProject(raw).doc);
-    return !!v && usedTileIds(v).has(id);
-  };
-  if (projects.some(uses)) return false;
-  await db.delete('tiles', id);
-  await collectPhotos(db);
-  return true;
+export async function putItem(db: Db, store: LibraryStore, item: LibraryItem): Promise<void> {
+  await db.put(store, item as never);
+}
+
+export async function deleteItem(db: Db, store: LibraryStore, id: Id): Promise<void> {
+  await db.delete(store, id);
 }
 
 /* ---------- photos ---------- */
@@ -70,14 +70,14 @@ export function getPhoto(db: Db, id: Id): Promise<Photo | undefined> {
   return db.get('photos', id);
 }
 
-/** Supprime les photos qu'aucun carreau ni scénario ne référence. Renvoie le nombre supprimé. */
-export async function collectPhotos(db: Db): Promise<number> {
-  const used = new Set<Id>();
-  for (const t of await db.getAll('tiles')) if (t.photoId) used.add(t.photoId);
-  for (const s of await db.getAll('scenarios')) {
-    if (s.thumbnailId) used.add(s.thumbnailId);
-    for (const t of s.snapshot.tiles) if (t.photoId) used.add(t.photoId);
-  }
+/**
+ * Supprime les photos qu'aucun élément de bibliothèque ne référence, sauf celles de `keep` (photos utilisées
+ * par les modules : scénarios…). Renvoie le nombre supprimé.
+ */
+export async function collectPhotos(db: Db, keep: Iterable<Id> = []): Promise<number> {
+  const used = new Set<Id>(keep);
+  for (const s of LIBRARY_STORES)
+    for (const t of (await db.getAll(s)) as LibraryItem[]) if (t.photoId) used.add(t.photoId);
   let n = 0;
   for (const key of await db.getAllKeys('photos')) {
     if (!used.has(key)) {
@@ -86,36 +86,6 @@ export async function collectPhotos(db: Db): Promise<number> {
     }
   }
   return n;
-}
-
-/* ---------- scénarios ---------- */
-
-export async function listScenarios(db: Db, projectId: Id): Promise<Scenario[]> {
-  const all = await db.getAllFromIndex('scenarios', 'projectId', projectId);
-  return all
-    .map((raw) => {
-      const { doc, changed } = migrateScenario(raw);
-      if (changed) void db.put('scenarios', doc);
-      return doc;
-    })
-    .sort((a, b) => a.slot.localeCompare(b.slot));
-}
-
-/** Un seul scénario par emplacement A/B : l'ancien est remplacé. */
-export async function saveScenario(db: Db, s: Scenario): Promise<void> {
-  const old = (await db.getAllFromIndex('scenarios', 'projectId', s.projectId)).filter(
-    (o) => o.slot === s.slot && o.id !== s.id,
-  );
-  const tx = db.transaction('scenarios', 'readwrite');
-  for (const o of old) await tx.store.delete(o.id);
-  await tx.store.put(s);
-  await tx.done;
-  if (old.length) await collectPhotos(db);
-}
-
-export async function deleteScenario(db: Db, id: Id): Promise<void> {
-  await db.delete('scenarios', id);
-  await collectPhotos(db);
 }
 
 /* ---------- préférences ---------- */

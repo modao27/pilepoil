@@ -21,10 +21,13 @@ const pure = [
 ];
 const pureGlobals = ['error', 'window', 'document', 'localStorage', 'navigator', 'self'];
 
-/** Hors d'un module, on n'en importe que le point d'entrée index.ts (engine.ts : seulement engines.ts). */
+/**
+ * Hors des modules, on ne voit que le registre, le contrat et les moteurs (docs/BOITE.md §2) : aucun module
+ * n'est importé directement (index.ts : seulement par le registre ; engine.ts : seulement par engines.ts).
+ */
 const onlyIndex = {
-  regex: '(^|/)modules/[^/]+/(?!index([.]ts)?$)',
-  message: 'Importer un module par son index.ts seulement.',
+  regex: '(^|/)modules/(?!(registry|types|engines)([.]ts)?$)',
+  message: 'La coquille passe par modules/registry.ts, jamais par un module.',
 };
 
 /** Un module n'importe jamais un autre module, ni son propre index.ts (dossier parent : '..', '../..'). */

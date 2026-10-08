@@ -1,16 +1,20 @@
 <script lang="ts">
-  import { ui } from '../../modules/carrelage';
+  import { modules } from '../../modules/registry';
+  import type { Project } from '../../state/model';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
   import IconButton from '../components/IconButton.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
   import { dateShort } from '../lib/format';
+
+  /** Carte du projet : celle du premier outil activé qui en propose une. */
+  const cardOf = (p: Project) => modules.find((m) => Object.hasOwn(p.modules, m.id) && m.screens.card);
 </script>
 
 <Screen title="Mes projets">
   {#snippet actions()}
-    <IconButton icon="tiles" label="Bibliothèque de carreaux" href="#/library" />
+    <IconButton icon="tiles" label="Bibliothèques" href="#/library/tiles" />
     <IconButton icon="settings" label="Réglages" href="#/settings" />
   {/snippet}
 
@@ -18,7 +22,7 @@
     <EmptyState
       icon="room"
       title="Aucun projet pour l’instant"
-      text="Préparez votre premier calepinage : un mur, un sol ou une pièce entière. Les quantités et les coupes se calculent toutes seules."
+      text="Préparez votre premier chantier : un mur, un sol ou une pièce entière. Les quantités et les coupes se calculent toutes seules."
     >
       {#snippet action()}
         <div class="first">
@@ -33,9 +37,10 @@
     </div>
     <ul class="list" aria-label="Projets">
       {#each app.projects as p (p.id)}
+        {@const withCard = cardOf(p)}
         <li>
-          {#if Object.hasOwn(p.modules, 'carrelage')}
-            {#await ui.ProjectCard() then { default: ProjectCard }}<ProjectCard project={p} />{/await}
+          {#if withCard?.screens.card}
+            {#await withCard.screens.card() then Card}<Card project={p} />{/await}
           {:else}
             <a class="plain" href="#/p/{p.id}">
               <span class="pname">{p.name}</span>

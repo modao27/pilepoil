@@ -6,7 +6,7 @@ import { serveDist } from './static-server';
 /** Première visite : attend que le service worker ait tout mis en cache (message « sans connexion »). */
 async function firstVisit(page: Page, url = '/'): Promise<void> {
   await page.goto(url);
-  await expect(page.getByText('Calepinage fonctionne maintenant sans connexion.')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('Pilepoil fonctionne maintenant sans connexion.')).toBeVisible({ timeout: 20_000 });
   await page.evaluate(() => navigator.serviceWorker.ready);
 }
 
@@ -24,7 +24,7 @@ test('manifeste et icônes : application installable', async ({ page, request },
     start_url: string;
     icons: { src: string; sizes: string; purpose: string }[];
   };
-  expect(m.short_name).toBe('Calepinage');
+  expect(m.short_name).toBe('Pilepoil');
   expect(m.lang).toBe('fr');
   expect(m.display).toBe('standalone');
   expect(m.icons.map((i) => `${i.sizes} ${i.purpose}`)).toEqual(

@@ -35,3 +35,17 @@ les changements de format passent par les migrations (`src/storage/migrations.ts
 
 ## Icônes
 Source : `src/pwa/icon.ts`. Après modification : `npm run icons` (régénère `public/favicon.svg` et `public/icons/`).
+
+## Renommage en Pilepoil (S3)
+L'application s'appelait « Calepinage » (dépôt `calepinage-pwa`, base IndexedDB `calepinage`). GitHub Pages ne
+redirige pas un site quand on renomme son dépôt, d'où cette marche à suivre :
+
+1. Renommer le dépôt `calepinage-pwa` en `pilepoil` (Réglages du dépôt → General → Repository name). Le site est
+   alors publié sur https://modao27.github.io/pilepoil/ ; `git remote set-url origin` vers la nouvelle adresse.
+2. Créer un nouveau dépôt `calepinage-pwa` contenant le dossier `redirect/` de ce dépôt (à la racine) et activer
+   Pages (branche `main`, racine). L'ancienne adresse redirige alors vers la nouvelle en gardant le chemin `#/…`,
+   et son `sw.js` désinstalle proprement l'ancienne appli installée (il ne vide que ses propres caches).
+3. Rien à faire pour les données : les deux adresses sont sur la même origine (`modao27.github.io`). Au premier
+   lancement, Pilepoil copie une fois la base `calepinage` dans `pilepoil` (`copyOldDb`, `src/storage/db.ts`) et
+   propose de désinstaller l'ancienne appli. L'ancienne base n'est jamais modifiée ; elle sera supprimée par une
+   version ultérieure.

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { ui } from '../../modules/carrelage';
   /** Démonstration du système de design : tous les composants, en clair et en sombre. */
   import BottomSheet from '../components/BottomSheet.svelte';
   import Button from '../components/Button.svelte';
@@ -19,7 +18,6 @@
   import TextField from '../components/TextField.svelte';
   import { app } from '../lib/app.svelte';
   import { toast } from '../lib/toasts.svelte';
-  import type { PatternId } from '../../modules/carrelage';
 
   let width = $state(3000);
   let joint = $state(3);
@@ -31,7 +29,6 @@
   let dialog = $state(false);
   let snap = $state<0 | 1 | 2>(1);
   let photo = $state<string | null>(null);
-  let pattern = $state<PatternId>('half');
   let zones = $state([
     { id: 'a', label: 'Zone 1 — frise, 3 rangées' },
     { id: 'b', label: 'Zone 2 — décalé ½' },
@@ -122,11 +119,6 @@
       </div>
       <ColorSwatch label="Couleur du carreau" bind:value={color} palette={app.palette.tiles} />
       <PhotoPicker url={photo} onpick={(p) => (photo = URL.createObjectURL(p.blob))} onremove={() => (photo = null)} />
-    </section>
-
-    <section>
-      <h2>Motifs</h2>
-      {#await ui.PatternPicker() then { default: PatternPicker }}<PatternPicker bind:value={pattern} />{/await}
     </section>
 
     <section>

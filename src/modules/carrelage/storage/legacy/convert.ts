@@ -3,21 +3,10 @@
  * Aucun accès au stockage ici : les photos restent en dataURL, l'écriture est faite par import.ts.
  * Produit des documents v1 (projet carrelage seul) ; import.ts les migre en v2 avant de les écrire.
  */
-import { newId, tileName, type Metrics, type OptimizerGoal, type PatternId } from '../../modules/carrelage';
-import {
-  TILE_SCHEMA,
-  type Id,
-  type Opening,
-  type Palette,
-  type ProjectV1,
-  type Room,
-  type RoomWallKey,
-  type ScenarioV1,
-  type Surface,
-  type Tile,
-  type TileShape,
-  type Zone,
-} from '../../state/model';
+import type { Metrics, OptimizerGoal, PatternId } from '../../core';
+import { newId, tileName } from '../../state/factories';
+import type { Id, Palette } from '../../../../state/model';
+import { TILE_SCHEMA, type CarrelageProjectV1, type Opening, type Room, type RoomWallKey, type ScenarioV1, type Surface, type Tile, type TileShape, type Zone } from '../../state/model';
 import type {
   LegacyFold,
   LegacyOpening,
@@ -241,7 +230,7 @@ function surfaceFrom(S: LegacySurface, i: number, tiles: TileCollector, orientat
 }
 
 export interface ConvertedProject {
-  project: ProjectV1;
+  project: CarrelageProjectV1;
   tiles: Tile[];
 }
 
@@ -272,7 +261,7 @@ export function convertProject(
       if (t && price > 0 && t.pricePerM2 == null) t.pricePerM2 = price;
     }),
   );
-  const project: ProjectV1 = {
+  const project: CarrelageProjectV1 = {
     schemaVersion: 1,
     id: newId(),
     name: opts.name ?? 'Projet importé',
@@ -296,7 +285,7 @@ export function convertProject(
 /* ---------- import complet ---------- */
 
 export interface LegacyImport {
-  project: ProjectV1 | null;
+  project: CarrelageProjectV1 | null;
   tiles: Tile[];
   /** Photos à écrire : id du modèle → dataURL legacy. */
   photos: { id: Id; dataUrl: string }[];

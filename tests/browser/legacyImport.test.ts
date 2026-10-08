@@ -3,9 +3,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { carrelageView } from '../../src/modules/carrelage/state/data';
 import { newId } from '../../src/modules/carrelage/state/factories';
 import { openDb, type Db } from '../../src/storage/db';
-import { EMPTY_STORAGE } from '../../src/storage/legacy/convert';
-import { autoImportLegacy, importLegacy } from '../../src/storage/legacy/import';
-import { getPhoto, getPref, getProject, listProjects, listScenarios, listTiles } from '../../src/storage/repo';
+import { EMPTY_STORAGE } from '../../src/modules/carrelage/storage/legacy/convert';
+import { autoImportLegacy, importLegacy } from '../../src/modules/carrelage/storage/legacy/import';
+import { getPhoto, getPref, getProject, listItems, listProjects } from '../../src/storage/repo';
+import { listScenarios } from '../../src/modules/carrelage/storage/scenarios';
+import type { Tile } from '../../src/modules/carrelage/state/model';
+
+const listTiles = async (db: Db) => (await listItems(db, 'tiles')) as Tile[];
 
 /** Image PNG 2 × 1 réelle, pour vérifier la lecture des dimensions. */
 async function png(): Promise<string> {

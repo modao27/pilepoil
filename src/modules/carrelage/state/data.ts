@@ -2,7 +2,8 @@
  * Données du carrelage dans un projet v2 (`project.modules.carrelage`) et vue utilisée par le code du
  * module : champs communs du projet + données carrelage, soit la forme de l'ancien projet v1.
  */
-import type { Id, Project, ProjectSettings, Room, Surface } from '../../../state/model';
+import type { Id, Project } from '../../../state/model';
+import type { ProjectSettings, Room, Surface } from './model';
 
 export const CARRELAGE_ID = 'carrelage';
 export const CARRELAGE_SCHEMA = 1;

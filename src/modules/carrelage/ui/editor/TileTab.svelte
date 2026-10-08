@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createTile } from '../../state/factories';
-  import type { Tile } from '../../../../state/model';
+  import type { Tile } from '../../state/model';
   import Button from '../../../../ui/components/Button.svelte';
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import ColorSwatch from '../../../../ui/components/ColorSwatch.svelte';

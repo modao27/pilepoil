@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Formulaire de carreau (bibliothèque et assistant). */
   import type { Snippet } from 'svelte';
-  import type { Tile, TileShape } from '../../../../state/model';
+  import type { Tile, TileShape } from '../../state/model';
   import { tileName } from '../../state/factories';
   import { app } from '../../../../ui/lib/app.svelte';
   import Button from '../../../../ui/components/Button.svelte';

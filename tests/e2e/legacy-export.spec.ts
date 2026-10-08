@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { convertLegacy } from '../../src/storage/legacy/convert';
-import { parseLegacyExport } from '../../src/storage/legacy/import';
+import { convertLegacy } from '../../src/modules/carrelage/storage/legacy/convert';
+import { parseLegacyExport } from '../../src/modules/carrelage/storage/legacy/import';
 
 const legacy = readFileSync(new URL('../../legacy/calepinage.html', import.meta.url), 'utf8');
 const PHOTO = 'data:image/png;base64,iVBORw0KGgo=';

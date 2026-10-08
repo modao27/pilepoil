@@ -8,6 +8,9 @@
   import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
   import { count, euros, mm, tileSize } from '../../../../ui/lib/format';
+  import type { LibraryScreenProps } from '../../../types';
+
+  let { nav }: LibraryScreenProps = $props();
 
   const uses = $derived.by(() => {
     // table locale recalculée à chaque changement (dans $derived), pas d'état mutable partagé
@@ -21,23 +24,24 @@
   });
 </script>
 
-<Screen title="Bibliothèque de carreaux" backHref="#/" backLabel="Accueil">
+<Screen title="Bibliothèques" backHref="#/" backLabel="Accueil">
+  {@render nav?.()}
   {#if carrelage.tiles.length === 0}
     <EmptyState
       icon="tiles"
       title="Aucun carreau"
       text="Ajoutez vos carreaux une fois : dimensions, couleur ou photo, carton et prix. Vous les choisirez ensuite dans vos projets."
     >
-      {#snippet action()}<Button variant="primary" icon="plus" href="#/library/new">Ajouter un carreau</Button
+      {#snippet action()}<Button variant="primary" icon="plus" href="#/library/tiles/new">Ajouter un carreau</Button
         >{/snippet}
     </EmptyState>
   {:else}
-    <div class="top"><Button variant="primary" icon="plus" href="#/library/new">Ajouter un carreau</Button></div>
+    <div class="top"><Button variant="primary" icon="plus" href="#/library/tiles/new">Ajouter un carreau</Button></div>
     <ul class="list" aria-label="Carreaux">
       {#each carrelage.tiles as t (t.id)}
         {@const n = uses.get(t.id) ?? 0}
         <li>
-          <a href="#/library/{t.id}">
+          <a href="#/library/tiles/{t.id}">
             <TileSwatch tile={t} size={56} />
             <span class="txt">
               <span class="name">{t.name}</span>

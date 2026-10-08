@@ -3,9 +3,10 @@ import type { ManifestOptions } from 'vite-plugin-pwa';
 /** Manifeste de l'application installable (chemins relatifs à la base de publication). */
 export const manifest: Partial<ManifestOptions> = {
   id: './',
-  name: 'Calepinage — pose de carrelage',
-  short_name: 'Calepinage',
-  description: 'Préparer une pose de carrelage : calepinage, coupes, réemploi des chutes, quantités et liste d’achat.',
+  name: 'Pilepoil — boîte à outils rénovation',
+  short_name: 'Pilepoil',
+  description:
+    'Préparer ses travaux de rénovation : plan des pièces, carrelage, parquet, coupes, quantités et liste d’achat.',
   lang: 'fr',
   dir: 'ltr',
   start_url: './',

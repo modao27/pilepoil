@@ -2,7 +2,7 @@
   import type { ModuleScreenProps } from '../../../types';
   /** Comparaison de deux scénarios A / B (ou d'un scénario et de l'état actuel), comme legacy. */
   import type { ProjectResult } from '../../core';
-  import type { Scenario } from '../../../../state/model';
+  import type { Scenario } from '../../state/model';
   import { projectCost } from '../../state/pricing';
   import { toProjectSpec } from '../../state/selectors';
   import Button from '../../../../ui/components/Button.svelte';

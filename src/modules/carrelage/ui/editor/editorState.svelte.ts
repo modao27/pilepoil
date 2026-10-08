@@ -4,7 +4,8 @@
  */
 import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../core';
 import { createCorner, createOpening, createZone, newId } from '../../state/factories';
-import type { Corner, Id, Opening, OpeningType, Project, Surface, Zone } from '../../../../state/model';
+import type { Id, Project } from '../../../../state/model';
+import type { Corner, Opening, OpeningType, Surface, Zone } from '../../state/model';
 import { toProjectSpec } from '../../state/selectors';
 import { createProjectStore, type ProjectStore } from '../../../../state/store';
 import { applyRoom, type RoomUpdate } from '../../state/templates';

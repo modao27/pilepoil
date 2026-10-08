@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Calepinage s’appelle maintenant Pilepoil</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href="https://modao27.github.io/pilepoil/" />
+    <meta http-equiv="refresh" content="3; url=https://modao27.github.io/pilepoil/" />
+    <script>
+      // ancienne appli installée : son service worker est retiré (voir sw.js) ; favoris : le chemin #/… est gardé
+      if ('serviceWorker' in navigator)
+        navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
+      location.replace('https://modao27.github.io/pilepoil/' + location.hash);
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px 16px;
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        background: #e6ebee;
+        color: #15232c;
+      }
+      main {
+        max-width: 560px;
+        margin: 0 auto;
+      }
+      a {
+        color: #2747c9;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Calepinage s’appelle maintenant Pilepoil</h1>
+      <p>Vos projets sont repris automatiquement à la première ouverture.</p>
+      <p><a href="https://modao27.github.io/pilepoil/">Ouvrir Pilepoil</a></p>
+    </main>
+  </body>
+</html>

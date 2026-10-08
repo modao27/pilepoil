@@ -19,4 +19,8 @@ export interface ShoppingLine {
   /** « 49 lames + 5 % ». */
   detail?: string;
   unitPrice: number | null;
+  /** Prix venu de la bibliothèque (carreau, lame), pas saisi dans le projet : affiché comme suggestion. */
+  priceFromLibrary?: boolean;
+  /** Pastille de couleur (carreau, joint). */
+  color?: string;
 }

@@ -36,9 +36,6 @@ test('composants : saisie calculée, onglets, liste, dialogue, panneau, message'
   await page.getByRole('button', { name: 'Descendre Zone 1 — frise, 3 rangées' }).click();
   await expect(page.getByRole('list', { name: 'Zones' }).getByRole('listitem').first()).toContainText('Zone 2');
 
-  await page.getByRole('radio', { name: 'Bâtons rompus' }).click();
-  await expect(page.getByRole('radio', { name: 'Bâtons rompus' })).toHaveAttribute('aria-checked', 'true');
-
   await page.getByRole('button', { name: 'Ouvrir un dialogue' }).click();
   await expect(page.getByRole('dialog', { name: 'Supprimer la zone ?' })).toBeVisible();
   await page.keyboard.press('Escape');

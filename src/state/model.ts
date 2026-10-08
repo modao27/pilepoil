@@ -1,107 +1,13 @@
 /** Modèle persisté (voir docs/MODEL.md). Unités : mm, dates en ms. */
-import type { Metrics, OptimizerGoal, Orientation, PatternId } from '../modules/carrelage';
 import type { Plan } from '../core/plan/types';
 
 export type Id = string;
 
-export interface Edges {
-  top: boolean;
-  bottom: boolean;
-  left: boolean;
-  right: boolean;
-}
-
-export interface ProjectSettings {
-  /** % */
-  margin: number;
-  reuseOffcuts: boolean;
-  kerf: number;
-  minOffcut: number;
-  /** Variation de nuance du rendu, 0 à 1. */
-  shadeVariation: number;
-  optimizerGoal: OptimizerGoal;
-}
-
-export type RoomWallKey = 'A' | 'B' | 'C' | 'D' | 'floor';
-
-export interface Room {
-  length: number;
-  width: number;
-  height: number;
-  tiledHeight: number;
-  /** Surface de chaque mur et du sol. */
-  walls: Partial<Record<RoomWallKey, Id>>;
-}
-
-export interface Zone {
-  id: Id;
-  /** Rangées, ou mm si unit = 'length'. */
-  size: number;
-  unit: 'rows' | 'length' | 'rest';
-  tileId: Id;
-  /** Carreau debout : long côté vertical à 0°. */
-  tileUpright: boolean;
-  pattern: PatternId;
-  angle: number;
-  start: 'corner' | 'tile' | 'joint';
-  offsetX: number;
-  offsetY: number;
-  mix: 'solid' | 'alternate' | 'random';
-  colorB: string;
-  groutColor: string;
-  photoRandomFlip: boolean;
-}
-
-export type OpeningType = 'window' | 'door' | 'socket' | 'trap' | 'tub' | 'other';
-
-export interface Opening {
-  id: Id;
-  type: OpeningType;
-  x: number;
-  sill: number;
-  width: number;
-  height: number;
-  covered: boolean;
-  revealDepth: number;
-  reveals: Edges;
-  projection: number;
-}
-
-export interface Corner {
-  id: Id;
-  x: number;
-  type: 'in' | 'out';
-  angle: number;
-  covered: boolean;
-}
-
-export interface Plinth {
-  length: number;
-  height: number;
-  zoneId: Id;
-}
-
-export interface Surface {
-  id: Id;
-  name: string;
-  kind: 'wall' | 'floor';
-  width: number;
-  height: number;
-  joint: number;
-  split: 'h' | 'v';
-  zones: Zone[];
-  openings: Opening[];
-  corners: Corner[];
-  plinth: Plinth | null;
-  hiddenEdges: Edges;
-  junctionsCovered: boolean;
-}
-
 export const PROJECT_SCHEMA = 2;
 
 /**
- * Projet v1 (avant la boîte à outils) : le carrelage seul. Lu seulement par la migration v1 → v2 et
- * produit par la conversion legacy ; les données carrelage gardent cette forme (`CarrelageData`).
+ * Projet v1 (avant la boîte à outils) : le carrelage seul. La coquille n'en connaît que ce qu'il faut pour la
+ * migration v1 → v2 (`storage/migrations.ts`) ; le type complet est celui du module carrelage.
  */
 export interface ProjectV1 {
   schemaVersion: 1;
@@ -109,10 +15,9 @@ export interface ProjectV1 {
   name: string;
   createdAt: number;
   updatedAt: number;
-  surfaces: Surface[];
-  room: Room | null;
-  settings: ProjectSettings;
-  /** Prix unitaires par clé d'article de la liste d'achat. */
+  surfaces: unknown[];
+  room: { length: number; width: number; height: number } | null;
+  settings: unknown;
   prices: Record<string, number>;
 }
 
@@ -134,30 +39,6 @@ export interface ModuleDoc {
   data: unknown;
 }
 
-export type TileShape = 'rect' | 'hex' | 'octo' | 'chevron';
-
-export const TILE_SCHEMA = 1;
-
-export interface Tile {
-  schemaVersion: typeof TILE_SCHEMA;
-  id: Id;
-  name: string;
-  shape: TileShape;
-  /** Long côté ; hexagone et octogone : largeur plat à plat. */
-  length: number;
-  /** Court côté ; hexagone et octogone : égal à length. */
-  width: number;
-  thickness: number;
-  color: string;
-  photoId: Id | null;
-  /** 0 = vendu à la pièce. */
-  m2PerBox: number;
-  pricePerM2: number | null;
-  orientation: Orientation;
-  createdAt: number;
-  updatedAt: number;
-}
-
 export interface Photo {
   id: Id;
   blob: Blob;
@@ -165,27 +46,6 @@ export interface Photo {
   height: number;
   createdAt: number;
 }
-
-export const SCENARIO_SCHEMA = 2;
-
-export interface Scenario {
-  schemaVersion: typeof SCENARIO_SCHEMA;
-  id: Id;
-  projectId: Id;
-  slot: 'A' | 'B';
-  name: string;
-  /** Projet entier figé (v2) ; seules les données carrelage sont rétablies au chargement. */
-  snapshot: { project: Project; tiles: Tile[] };
-  metrics: Metrics | null;
-  thumbnailId: Id | null;
-  createdAt: number;
-}
-
-/** Scénario v1 : instantané d'un projet v1 (conversion legacy, migration). */
-export type ScenarioV1 = Omit<Scenario, 'schemaVersion' | 'snapshot'> & {
-  schemaVersion: 1;
-  snapshot: { project: ProjectV1; tiles: Tile[] };
-};
 
 export interface Palette {
   tiles: string[];
@@ -197,7 +57,11 @@ export type Pref =
   | { key: 'theme'; value: 'auto' | 'light' | 'dark' }
   | { key: 'lastProjectId'; value: Id }
   | { key: 'showCutNumbers'; value: boolean }
-  | { key: 'legacyImport'; value: { at: number; projectId: Id | null } };
+  /** Bibliothèques dont les modèles types ont été posés (une seule fois). */
+  | { key: 'librarySeeded'; value: string[] }
+  | { key: 'legacyImport'; value: { at: number; projectId: Id | null } }
+  /** Copie unique de l'ancienne base « calepinage » (from null : rien à copier). */
+  | { key: 'copiedFrom'; value: { from: string | null; at: number; projects: number } };
 
 export type PrefKey = Pref['key'];
 export type PrefValue<K extends PrefKey> = Extract<Pref, { key: K }>['value'];

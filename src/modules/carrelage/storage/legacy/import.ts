@@ -1,7 +1,9 @@
-import type { Id, Photo, Tile } from '../../state/model';
-import type { Db } from '../db';
-import { getPref, saveProject, saveScenario, saveTile, savePhoto, setPref } from '../repo';
-import { migrateProject, migrateScenario } from '../migrations';
+import type { Id, Photo } from '../../../../state/model';
+import type { Tile } from '../../state/model';
+import type { Db } from '../../../../storage/db';
+import { getPref, putItem, saveProject, savePhoto, setPref } from '../../../../storage/repo';
+import { migrateScenario, saveScenario } from '../scenarios';
+import { migrateProject } from '../../../../storage/migrations';
 import { convertLegacy } from './convert';
 import { LEGACY_EXPORT_FORMAT, LEGACY_KEYS, type LegacyStorage } from './format';
 
@@ -85,7 +87,7 @@ export async function importLegacy(db: Db, store: LegacyStorage, now = Date.now(
   }
   const ref = (id: Id | null) => (id && saved.has(id) ? id : null);
   const fixTile = (t: Tile): Tile => (t.photoId === ref(t.photoId) ? t : { ...t, photoId: null });
-  for (const t of r.tiles) await saveTile(db, fixTile(t));
+  for (const t of r.tiles) await putItem(db, 'tiles', fixTile(t));
   // documents v1 : migrés en v2 avant écriture
   if (r.project) await saveProject(db, migrateProject(r.project).doc);
   for (const v1 of r.scenarios) {
@@ -117,4 +119,11 @@ export async function importLegacy(db: Db, store: LegacyStorage, now = Date.now(
 export async function autoImportLegacy(db: Db, ls: Pick<Storage, 'getItem'>): Promise<ImportSummary | null> {
   if (await getPref(db, 'legacyImport')) return null;
   return importLegacy(db, readLocalStorage(ls));
+}
+
+/** Message après import : « Projet de l'ancienne version importé : 3 surfaces, 2 carreaux. » */
+export function importMessage(s: ImportSummary): string {
+  const parts = [`${s.surfaces} surface${s.surfaces > 1 ? 's' : ''}`, `${s.tiles} carreau${s.tiles > 1 ? 'x' : ''}`];
+  if (s.scenarios) parts.push(`${s.scenarios} scénario${s.scenarios > 1 ? 's' : ''}`);
+  return `Projet de l’ancienne version importé : ${parts.join(', ')}.`;
 }

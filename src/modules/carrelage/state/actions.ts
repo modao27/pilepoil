@@ -1,4 +1,5 @@
-import type { Corner, Id, Opening, ProjectSettings, Room, Surface, Zone } from '../../../state/model';
+import type { Id } from '../../../state/model';
+import type { Corner, Opening, ProjectSettings, Room, Surface, Zone } from './model';
 import { dataOf, type CarrelageData } from './data';
 
 type SurfacePatch = Partial<Omit<Surface, 'id' | 'zones' | 'openings' | 'corners'>>;

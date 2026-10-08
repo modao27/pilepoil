@@ -1,14 +1,16 @@
 /**
- * État de la coquille : base IndexedDB, projets, préférences, photos, import legacy.
+ * État de la coquille : base IndexedDB, projets, bibliothèques, préférences, photos, workers de calcul.
  * L'état propre à chaque module vit dans le module (carrelage : bibliothèque, calculs, scénarios).
  * L'interface lit cet état et appelle ses méthodes ; aucun calcul métier ici (tout passe par le worker).
  */
-import { DEFAULT_PALETTE, newId, ui } from '../../modules/carrelage';
 import type { Id, Palette, Photo, Project } from '../../state/model';
-import { openDb, type Db } from '../../storage/db';
-import { autoImportLegacy, importLegacy, parseLegacyExport, type ImportSummary } from '../../storage/legacy/import';
+import { copyOldDb, openDb, type Db } from '../../storage/db';
 import * as repo from '../../storage/repo';
-import type { Libraries, LibraryItem, ModuleId } from '../../modules/types';
+import { libraries as libraryDefs, modules } from '../../modules/registry';
+import type { Libraries, LibraryDefinition, LibraryItem, ModuleId } from '../../modules/types';
+import { migrate, type Step } from '../../storage/migrations';
+import { upsertItem } from './library';
+import { DEFAULT_PALETTE } from './palette';
 import { createWorkerClient, type ComputeClient } from '../../workers/client';
 import { toast } from './toasts.svelte';
 
@@ -28,6 +30,8 @@ export class AppState {
 
   /** Bibliothèques chargées par les modules ('tiles'…), pour `toSpec` de chaque module. */
   libraries = $state.raw<Libraries>({});
+  /** Données reprises de l'ancienne appli Calepinage sur cet appareil. */
+  oldApp = $state(false);
 
   /** Aperçu en direct : seule la dernière demande de chaque module compte (docs/BOITE.md §6). */
   live!: ComputeClient;
@@ -41,21 +45,24 @@ export class AppState {
   async init(): Promise<void> {
     try {
       this._db = await openDb();
+      // ancien nom : données reprises une fois, avant tout le reste (import legacy déjà fait compris)
+      const copied = await copyOldDb(this.db);
       this.live = createWorkerClient();
       this.batch = createWorkerClient();
-      let imported: ImportSummary | null = null;
-      try {
-        imported = await autoImportLegacy(this.db, localStorage);
-      } catch {
-        // stockage legacy illisible : on continue sans import
-      }
+      // démarrage des modules (import de données…) avant le chargement des projets
+      for (const m of modules) await m.start?.(this.db);
       await this.reload();
       this.theme = (await repo.getPref(this.db, 'theme')) ?? 'auto';
       this.palette = (await repo.getPref(this.db, 'palette')) ?? DEFAULT_PALETTE;
       this.showCutNumbers = (await repo.getPref(this.db, 'showCutNumbers')) ?? true;
       applyTheme(this.theme);
+      this.oldApp = (await repo.getPref(this.db, 'copiedFrom'))?.from != null;
       this.ready = true;
-      if (imported?.projectId) toast(importMessage(imported));
+      if (copied?.projects)
+        toast(
+          'Vos projets de l’ancienne appli Calepinage sont ici. Si elle est installée sur cet appareil, vous pouvez la désinstaller.',
+          { timeout: null, action: { label: 'Compris', run: () => {} } },
+        );
     } catch (e) {
       this.fatal =
         'Stockage indisponible : ouvrez l’application hors navigation privée, ou libérez de l’espace. (' +
@@ -64,9 +71,9 @@ export class AppState {
     }
   }
 
-  private async reload() {
-    const { carrelage } = await ui.state();
-    await carrelage.load(this.db);
+  /** Recharge bibliothèques et projets depuis la base (après un import, par exemple). */
+  async reload(): Promise<void> {
+    await this.loadLibraries();
     this.projects = (await repo.listProjects(this.db)).filter((p) => !this.pendingDeletes.has(p.id));
   }
 
@@ -88,7 +95,7 @@ export class AppState {
     const now = Date.now();
     const copy: Project = {
       ...structuredClone(p),
-      id: newId(),
+      id: crypto.randomUUID(),
       name: p.name + ' (copie)',
       createdAt: now,
       updatedAt: now,
@@ -104,7 +111,7 @@ export class AppState {
     this.projects = this.projects.filter((x) => x.id !== id);
     const timer = setTimeout(() => {
       this.pendingDeletes.delete(id);
-      void repo.deleteProject(this.db, id);
+      void repo.deleteProject(this.db, id).then(() => this.collectPhotos());
     }, 6500);
     this.pendingDeletes.set(id, timer);
     toast(`Projet « ${p.name} » supprimé.`, {
@@ -122,7 +129,7 @@ export class AppState {
   /* ---------- photos ---------- */
 
   async savePhoto(blob: Blob, width: number, height: number): Promise<Id> {
-    const photo: Photo = { id: newId(), blob, width, height, createdAt: Date.now() };
+    const photo: Photo = { id: crypto.randomUUID(), blob, width, height, createdAt: Date.now() };
     await repo.savePhoto(this.db, photo);
     this.photoUrls = { ...this.photoUrls, [photo.id]: URL.createObjectURL(blob) };
     return photo.id;
@@ -136,8 +143,11 @@ export class AppState {
     });
   }
 
+  /** Supprime les photos devenues inutiles (gardées : bibliothèques et photos déclarées par les modules). */
   collectPhotos(): void {
-    void repo.collectPhotos(this.db);
+    void Promise.all(modules.map((m) => m.usedPhotos?.(this.db) ?? Promise.resolve([]))).then((keep) =>
+      repo.collectPhotos(this.db, keep.flat()),
+    );
   }
 
   /* ---------- préférences et données ---------- */
@@ -158,13 +168,6 @@ export class AppState {
     await repo.setPref(this.db, 'showCutNumbers', v);
   }
 
-  async importLegacyFile(file: File): Promise<string> {
-    const store = parseLegacyExport(await file.text());
-    const sum = await importLegacy(this.db, store);
-    await this.reload();
-    return sum ? importMessage(sum) : 'Ce fichier ne contient aucun projet.';
-  }
-
   /* ---------- calcul et bibliothèques ---------- */
 
   /** Calcul en file (vignettes, résumés) : toutes les demandes sont faites, l'une après l'autre. */
@@ -174,14 +177,74 @@ export class AppState {
     return job;
   }
 
-  setLibrary(id: string, items: readonly LibraryItem[]): void {
-    this.libraries = { ...this.libraries, [id]: items };
+  /** Incrémenté à chaque modification d'une bibliothèque (clés de cache des calculs). */
+  libraryVersion = 0;
+
+  /** Charge chaque bibliothèque déclarée par les modules ; pose ses modèles types une seule fois. */
+  private async loadLibraries(): Promise<void> {
+    const seeded = [...((await repo.getPref(this.db, 'librarySeeded')) ?? [])];
+    const next: Record<string, readonly LibraryItem[]> = {};
+    let seededNow = false;
+    for (const def of libraryDefs) {
+      const store = repo.libraryStore(def.store);
+      let items: readonly LibraryItem[] = [];
+      for (const raw of await repo.listItems(this.db, store)) {
+        const { doc, changed } = migrateItem(def, raw);
+        if (changed) void repo.putItem(this.db, store, doc);
+        items = upsertItem(items, doc);
+      }
+      if (def.templates && !seeded.includes(def.id)) {
+        for (const t of def.templates())
+          if (!items.some((x) => x.id === t.id)) {
+            await repo.putItem(this.db, store, t);
+            items = upsertItem(items, t);
+          }
+        seeded.push(def.id);
+        seededNow = true;
+      }
+      next[def.id] = items;
+    }
+    if (seededNow) await repo.setPref(this.db, 'librarySeeded', seeded);
+    this.libraries = next;
+    this.libraryVersion++;
+  }
+
+  libraryItem<T extends LibraryItem>(lib: string, id: Id): T | undefined {
+    return this.libraries[lib]?.find((x) => x.id === id) as T | undefined;
+  }
+
+  /** Ajoute ou remplace un élément (horodaté), trié par nom. */
+  putLibraryItem(lib: string, item: LibraryItem): void {
+    const def = libraryDefs.find((d) => d.id === lib);
+    if (!def) return;
+    const stamped = { ...item, updatedAt: Date.now() };
+    this.libraries = { ...this.libraries, [lib]: upsertItem(this.libraries[lib] ?? [], stamped) };
+    this.libraryVersion++;
+    void repo.putItem(this.db, repo.libraryStore(def.store), stamped);
+  }
+
+  removeLibraryItem(lib: string, id: Id): void {
+    const def = libraryDefs.find((d) => d.id === lib);
+    if (!def) return;
+    this.libraries = { ...this.libraries, [lib]: (this.libraries[lib] ?? []).filter((x) => x.id !== id) };
+    this.libraryVersion++;
+    void repo.deleteItem(this.db, repo.libraryStore(def.store), id).then(() => this.collectPhotos());
   }
 
   /** Base ouverte (modules). */
   get db(): Db {
     return this._db;
   }
+}
+
+function migrateItem(def: LibraryDefinition, raw: unknown): { doc: LibraryItem; changed: boolean } {
+  const steps: Record<number, Step> = Object.fromEntries(
+    Object.entries(def.migrations).map(([v, f]) => [
+      v,
+      (d: Record<string, unknown>) => f(d) as Record<string, unknown>,
+    ]),
+  );
+  return migrate<LibraryItem>(raw, def.schemaVersion, steps);
 }
 
 function applyTheme(t: Theme) {
@@ -196,11 +259,5 @@ function applyTheme(t: Theme) {
 
 /** --paper clair et sombre (tokens.css). */
 const THEME_COLORS = { light: '#e6ebee', dark: '#0e161b' };
-
-function importMessage(s: ImportSummary): string {
-  const parts = [`${s.surfaces} surface${s.surfaces > 1 ? 's' : ''}`, `${s.tiles} carreau${s.tiles > 1 ? 'x' : ''}`];
-  if (s.scenarios) parts.push(`${s.scenarios} scénario${s.scenarios > 1 ? 's' : ''}`);
-  return `Projet de l’ancienne version importé : ${parts.join(', ')}.`;
-}
 
 export const app = new AppState();

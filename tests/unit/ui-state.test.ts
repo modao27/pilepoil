@@ -64,12 +64,14 @@ describe('routes', () => {
     ['', { name: 'home' }],
     ['#/', { name: 'home' }],
     ['#/new', { name: 'new' }],
-    ['#/library/', { name: 'library' }],
-    ['#/library/new', { name: 'tile', id: null }],
-    ['#/library/abc', { name: 'tile', id: 'abc' }],
+    ['#/library/tiles', { name: 'library', lib: 'tiles' }],
+    ['#/library/boards/new', { name: 'libraryItem', lib: 'boards', id: null }],
+    ['#/library/tiles/abc', { name: 'libraryItem', lib: 'tiles', id: 'abc' }],
+    ['#/library/abc/def', { name: 'notFound', path: '/library/abc/def' }],
     ['#/settings', { name: 'settings' }],
     ['#/p/x1', { name: 'project', id: 'x1' }],
     ['#/p/x1/plan', { name: 'plan', id: 'x1' }],
+    ['#/p/x1/achats', { name: 'shopping', id: 'x1' }],
     ['#/p/x1/m/carrelage', { name: 'module', id: 'x1', module: 'carrelage', path: '' }],
     ['#/p/x1/m/carrelage/s/s2', { name: 'module', id: 'x1', module: 'carrelage', path: 's/s2' }],
     ['#/p/x1/m/carrelage/results', { name: 'module', id: 'x1', module: 'carrelage', path: 'results' }],
@@ -85,6 +87,9 @@ describe('routes', () => {
     ['#/p/x1/results', '#/p/x1/m/carrelage/results'],
     ['#/p/x1/room', '#/p/x1/m/carrelage/room'],
     ['#/p/x1/compare', '#/p/x1/m/carrelage/compare'],
+    ['#/library', '#/library/tiles'],
+    ['#/library/new', '#/library/tiles/new'],
+    ['#/library/abc', '#/library/tiles/abc'],
   ])('ancienne adresse %s → %s', (old, now) => {
     const r = parseRoute(old);
     expect(r.name).toBe('redirect');

@@ -6,24 +6,31 @@ import {
   createTile,
   newId,
 } from '../../src/modules/carrelage/state/factories';
-import { migrateProject, migrateScenario, projectFromV1 } from '../../src/storage/migrations';
+import { migrateProject, projectFromV1 } from '../../src/storage/migrations';
+import {
+  listScenarios,
+  migrateScenario,
+  saveScenario,
+  scenarioPhotos,
+} from '../../src/modules/carrelage/storage/scenarios';
 import { V1_ROOM, V1_SCENARIO } from '../unit/fixtures/v1';
-import type { Photo, Project, Scenario } from '../../src/state/model';
-import { DB_VERSION, openDb, type Db } from '../../src/storage/db';
+import type { Photo, Project } from '../../src/state/model';
+import type { Scenario, Tile } from '../../src/modules/carrelage/state/model';
+import { BOARD_TEMPLATES } from '../../src/modules/parquet/core/board';
+import { copyOldDb, DB_NAME, DB_VERSION, OLD_DB_NAME, openDb, type Db } from '../../src/storage/db';
 import {
   collectPhotos,
   deleteProject,
-  deleteTile,
+  deleteItem,
   getPhoto,
   getPref,
   getProject,
   listProjects,
-  listScenarios,
-  listTiles,
+  listItems,
+  libraryStore,
+  putItem,
   saveProject,
   savePhoto,
-  saveScenario,
-  saveTile,
   setPref,
 } from '../../src/storage/repo';
 
@@ -86,17 +93,18 @@ describe('base IndexedDB', () => {
     expect(await listScenarios(db, a.id)).toEqual([]);
   });
 
-  it('carreaux : tri par nom, suppression refusée s’ils sont utilisés', async () => {
+  it('bibliothèques : carreaux et lames, magasins génériques', async () => {
     const db = await fresh();
     const t1 = createTile({ name: 'Zellige' }),
       t2 = createTile({ name: 'Ardoise' });
-    await saveTile(db, t1);
-    await saveTile(db, t2);
-    expect((await listTiles(db)).map((t) => t.name)).toEqual(['Ardoise', 'Zellige']);
-    await saveProject(db, createProject([createSurface(t1.id)]));
-    expect(await deleteTile(db, t1.id)).toBe(false);
-    expect(await deleteTile(db, t2.id)).toBe(true);
-    expect((await listTiles(db)).map((t) => t.name)).toEqual(['Zellige']);
+    await putItem(db, 'tiles', t1);
+    await putItem(db, 'tiles', t2);
+    await putItem(db, 'boards', BOARD_TEMPLATES[0]!);
+    expect(((await listItems(db, 'tiles')) as Tile[]).map((t) => t.name).sort()).toEqual(['Ardoise', 'Zellige']);
+    await deleteItem(db, 'tiles', t2.id);
+    expect(((await listItems(db, 'tiles')) as Tile[]).map((t) => t.name)).toEqual(['Zellige']);
+    expect(await listItems(db, 'boards')).toEqual([BOARD_TEMPLATES[0]]);
+    expect(() => libraryStore('scenarios')).toThrow(/Magasin inconnu/);
   });
 
   it('photos en Blob ; les orphelines sont supprimées', async () => {
@@ -106,10 +114,10 @@ describe('base IndexedDB', () => {
       orphan = photo();
     for (const p of [kept, thumb, orphan]) await savePhoto(db, p);
     const t = createTile({ photoId: kept.id });
-    await saveTile(db, t);
+    await putItem(db, 'tiles', t);
     const p = createProject([createSurface(t.id)]);
     await saveScenario(db, scenario(p, 'A', { thumbnailId: thumb.id }));
-    expect(await collectPhotos(db)).toBe(1);
+    expect(await collectPhotos(db, await scenarioPhotos(db))).toBe(1);
     const back = await getPhoto(db, kept.id);
     expect(back!.blob).toBeInstanceOf(Blob);
     expect(await back!.blob.text()).toBe('x');
@@ -154,7 +162,62 @@ describe('base IndexedDB', () => {
     expect(await listScenarios(db, 'p-mur')).toEqual([migrateScenario(V1_SCENARIO).doc]);
     await new Promise((r) => setTimeout(r, 50));
     expect(await db.get('projects', 'p-sdb')).toEqual(migrateProject(V1_ROOM).doc);
-    expect((await db.get('scenarios', 'sc1'))!.schemaVersion).toBe(2);
+    expect(((await db.get('scenarios', 'sc1')) as Scenario).schemaVersion).toBe(2);
+  });
+
+  it('nom de la base : pilepoil ; ancienne base : calepinage', () => {
+    expect([DB_NAME, OLD_DB_NAME]).toEqual(['pilepoil', 'calepinage']);
+  });
+
+  it('ancien nom : copie unique de tous les magasins, ancienne base intacte', async () => {
+    const oldName = 'old-' + newId();
+    const old = await openDb(oldName);
+    const t = createTile({ name: 'Zellige' });
+    const p = createProject([createSurface(t.id)], { name: 'Salle de bain' }, 1000);
+    await saveProject(old, p);
+    await putItem(old, 'tiles', t);
+    await setPref(old, 'palette', { tiles: ['#123456'], grouts: [] });
+    old.close();
+
+    const db = await fresh();
+    expect(await copyOldDb(db, oldName)).toEqual({ from: oldName, projects: 1 });
+    expect(await listProjects(db)).toEqual([p]);
+    expect(await listItems(db, 'tiles')).toEqual([t]);
+    expect(await getPref(db, 'palette')).toEqual({ tiles: ['#123456'], grouts: [] });
+    expect(await getPref(db, 'copiedFrom')).toMatchObject({ from: oldName, projects: 1 });
+    // une seule fois, même si l'ancienne base change ensuite
+    expect(await copyOldDb(db, oldName)).toBeNull();
+
+    // ancienne base : rien n'a changé
+    const again = await openDB(oldName);
+    expect(await again.getAll('projects')).toEqual([p]);
+    expect(await again.get('prefs', 'copiedFrom')).toBeUndefined();
+    again.close();
+    await deleteDB(oldName);
+  });
+
+  it('ancien nom : base restée en version 1, projets migrés à la lecture', async () => {
+    const oldName = 'old-' + newId();
+    const old = await openDB(oldName, 1, {
+      upgrade(d) {
+        d.createObjectStore('projects', { keyPath: 'id' }).createIndex('updatedAt', 'updatedAt');
+        d.createObjectStore('prefs', { keyPath: 'key' });
+      },
+    });
+    await old.put('projects', structuredClone(V1_ROOM));
+    old.close();
+    const db = await fresh();
+    expect(await copyOldDb(db, oldName)).toEqual({ from: oldName, projects: 1 });
+    expect(await listProjects(db)).toEqual([migrateProject(V1_ROOM).doc]);
+    await deleteDB(oldName);
+  });
+
+  it('rien à copier : marqueur posé, aucune base créée', async () => {
+    const db = await fresh();
+    const absent = 'absent-' + newId();
+    expect(await copyOldDb(db, absent)).toBeNull();
+    expect(await getPref(db, 'copiedFrom')).toMatchObject({ from: null, projects: 0 });
+    expect((await indexedDB.databases()).some((d) => d.name === absent)).toBe(false);
   });
 
   it('préférences', async () => {

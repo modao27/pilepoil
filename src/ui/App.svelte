@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { ui } from '../modules/carrelage';
   import Button from './components/Button.svelte';
   import EmptyState from './components/EmptyState.svelte';
   import Screen from './components/Screen.svelte';
   import ToastHost from './components/ToastHost.svelte';
-  import { moduleById } from '../modules/registry';
+  import { libraryById, moduleById, modules } from '../modules/registry';
+  import LibraryNav from './components/LibraryNav.svelte';
   import { app } from './lib/app.svelte';
   import { matchScreen } from './lib/moduleRoutes';
   import { router } from './lib/router.svelte';
@@ -14,6 +14,8 @@
   import Settings from './screens/Settings.svelte';
 
   const route = $derived(router.route);
+  /** Assistant de création (#/new) : celui du premier outil qui en a un. */
+  const creator = modules.find((m) => m.screens.create);
   const screen = $derived.by(() => {
     if (route.name !== 'module') return null;
     const m = moduleById(route.module);
@@ -24,8 +26,10 @@
   const params = $derived(screen?.params ?? {});
 </script>
 
+{#snippet libraryNav()}<LibraryNav current={route.name === 'library' ? route.lib : ''} />{/snippet}
+
 {#if app.fatal}
-  <Screen title="Calepinage">
+  <Screen title="Pilepoil">
     <EmptyState icon="warn" title="Impossible d’ouvrir vos données" text={app.fatal} />
   </Screen>
 {:else if !app.ready}
@@ -33,17 +37,26 @@
 {:else if route.name === 'home'}
   <Home />
 {:else if route.name === 'new'}
-  {#await ui.Wizard() then { default: Wizard }}<Wizard />{/await}
+  {#await creator?.screens.create?.() then Create}{#if Create}<Create />{/if}{/await}
 {:else if route.name === 'library'}
-  {#await ui.Library() then { default: Library }}<Library />{/await}
-{:else if route.name === 'tile'}
-  {#key route.id}{#await ui.TileEdit() then { default: TileEdit }}<TileEdit id={route.id} />{/await}{/key}
+  {#await libraryById(route.lib)?.screens.list() then LibraryList}{#if LibraryList}<LibraryList
+        itemId={null}
+        nav={libraryNav}
+      />{/if}{/await}
+{:else if route.name === 'libraryItem'}
+  {#key route.lib + '/' + route.id}{#await libraryById(route.lib)?.screens.edit() then LibraryEdit}{#if LibraryEdit}<LibraryEdit
+          itemId={route.id}
+        />{/if}{/await}{/key}
 {:else if route.name === 'settings'}
   <Settings />
 {:else if route.name === 'demo'}
   <Demo />
 {:else if route.name === 'project'}
   {#key route.id}<Project id={route.id} />{/key}
+{:else if route.name === 'shopping'}
+  {#key route.id}{#await import('./screens/Shopping.svelte') then { default: Shopping }}<Shopping
+        id={route.id}
+      />{/await}{/key}
 {:else if route.name === 'plan' && app.project(route.id)}
   {#key route.id}{#await import('./plan/PlanEditor.svelte') then { default: PlanEditor }}<PlanEditor
         project={app.project(route.id)!}

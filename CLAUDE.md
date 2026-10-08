@@ -4,8 +4,9 @@ Application web progressive (installable, hors ligne) qui regroupe des outils de
 projet : un plan de pièces commun, des modules de calcul (carrelage, parquet, puis d'autres), une liste d'achat
 consolidée. Utilisateur principal : un artisan / bricoleur averti, surtout sur téléphone, parfois sur ordinateur.
 
-Nom de l'application : **Pilepoil** (identifiant technique `pilepoil`), mis en place en phase S3.
-Jusque-là, l'appli publiée garde le nom « Calepinage ». Décisions prises : `docs/BOITE.md` §11.
+Nom de l'application : **Pilepoil** (identifiant technique `pilepoil`, base IndexedDB `pilepoil`), depuis
+la phase S3 ; avant, « Calepinage » (base `calepinage`, copiée une fois puis gardée intacte). « Calepinage » reste
+le terme du métier dans le module carrelage. Décisions prises : `docs/BOITE.md` §11.
 
 ## Documents
 | Fichier | Contenu |
@@ -64,8 +65,9 @@ tests/               unit/, parity/ (carrelage), browser/, e2e/
 - Les alertes du moteur sont des codes ; le texte est produit par l'interface (`ui/lib/messages.ts` ou celui
   du module).
 - Ajouter un module ne modifie que : `modules/registry.ts`, le module lui-même, et si besoin une migration.
-- Pendant S1 seulement, la coquille peut importer `modules/carrelage/index.ts` (jamais ses fichiers
-  internes) ; les tests peuvent importer les internes d'un module.
+- La coquille (`core`, `state`, `storage`, `render`, `ui`, `workers`) ne voit les modules que par
+  `modules/registry.ts`, `modules/types.ts` et `modules/engines.ts` (règle ESLint) ; les tests peuvent importer
+  les internes d'un module.
 - Code commun extrait au moment où un second module en a besoin, pas avant (`docs/BOITE.md` §10).
 
 ## Conventions
