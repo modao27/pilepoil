@@ -199,3 +199,13 @@ Suppression d'une photo seulement si plus aucun carreau ni scénario ne la réf�
 - scénarios A/B rattachés au projet importé, vignette en photo ; nuancier → préférence `palette` ;
 - marqueur `legacyImport` : l'import ne se fait qu'une fois, les clés legacy ne sont jamais effacées.
 - Critère : chaque configuration de `tests/parity` importée redonne les résultats extraits de legacy.
+
+Deux sources :
+- **même origine** (PWA servie à l'adresse où legacy était utilisé) : `autoImportLegacy` au premier lancement ;
+- **fichier** : bouton « Exporter mes données » ajouté à legacy (fichier `calepinage-export-AAAA-MM-JJ.json`,
+  `{ format: 'calepinage-legacy-export', version: 1, data: { <clé localStorage>: <texte> } }`), lu par
+  `parseLegacyExport` puis `importLegacy`. Le bouton d'import de la PWA vient avec l'interface (phase 3).
+
+Limites connues : un hexagone ou un octogone legacy saisi avec une hauteur b ≠ a devient un carreau a × a ;
+les comptes sont identiques, seule la taille de grille de l'optimiseur peut différer. Les résultats legacy
+d'une surface active autre que la première suivent l'ordre fixe des surfaces (voir DOMAIN.md).
