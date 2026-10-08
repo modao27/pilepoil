@@ -10,7 +10,7 @@
   import IconButton from '../../../../ui/components/IconButton.svelte';
   import Scene3DView from '../components/Scene3DView.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
-  import { roomLayout, surfaceLayout } from '../../../../render/scene3d/placement';
+  import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
   import { scenePhoto } from '../../../../ui/lib/photos';
   import Tabs from '../../../../ui/components/Tabs.svelte';
   import Icon from '../../../../ui/icons/Icon.svelte';

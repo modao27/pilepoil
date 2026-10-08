@@ -5,7 +5,7 @@
    */
   import type { ProjectResult, ProjectSpec } from '../../core';
   import type { Project } from '../../../../state/model';
-  import { planDrawing } from '../../../../render/planSvg';
+  import { planDrawing } from '../../render/planSvg';
 
   let { project, spec, result }: { project: Project; spec: ProjectSpec; result: ProjectResult } = $props();
 

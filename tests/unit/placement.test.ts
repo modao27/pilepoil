@@ -7,7 +7,7 @@ import {
   surfaceLayout,
   wallFrames,
   wallPoint,
-} from '../../src/render/scene3d/placement';
+} from '../../src/modules/carrelage/render/scene3d/placement';
 import { surface } from './fixtures';
 
 const settings = { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20 };

@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Pièce : vue de dessus (murs dépliés, surfaces cliquables) et maquette 3D. */
   import type { ProjectResult } from '../../core';
-  import { roomLayout, surfaceLayout } from '../../../../render/scene3d/placement';
+  import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
   import Button from '../../../../ui/components/Button.svelte';
   import EmptyState from '../../../../ui/components/EmptyState.svelte';
   import RoomTopView from '../components/RoomTopView.svelte';

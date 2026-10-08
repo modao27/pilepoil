@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSurface, layoutZones } from '../../src/modules/carrelage/core';
-import { cornerAt, hitTest, openingAt, pieceAt, zoneAt } from '../../src/render/hitTest';
+import { cornerAt, hitTest, openingAt, pieceAt, zoneAt } from '../../src/modules/carrelage/render/hitTest';
 import { fitView, panBy, toScreen, toWorld, zoomAt } from '../../src/render/view';
 import { surface, zone } from './fixtures';
 

@@ -6,8 +6,8 @@
    */
   import { onMount } from 'svelte';
   import { snapOffset } from '../../core';
-  import { drawPlan, type PlanColors } from '../../../../render/plan2d';
-  import { hitTest, pieceAt } from '../../../../render/hitTest';
+  import { drawPlan, type PlanColors } from '../../render/plan2d';
+  import { hitTest, pieceAt } from '../../render/hitTest';
   import { fitView, panBy, toWorld, zoomAt, type View } from '../../../../render/view';
   import { app } from '../../../../ui/lib/app.svelte';
   import type { EditorState } from './editorState.svelte';

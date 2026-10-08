@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CutPlan, Piece, SurfaceSpec } from '../../core';
-  import { planDrawing, type PlanMode } from '../../../../render/planSvg';
+  import { planDrawing, type PlanMode } from '../../render/planSvg';
 
   let {
     surface,

@@ -5,8 +5,8 @@
    */
   import { onMount } from 'svelte';
   import type { ProjectResult, ProjectSpec } from '../../core';
-  import type { CameraPreset, SceneLayout } from '../../../../render/scene3d/placement';
-  import type { Scene3D, SceneStats } from '../../../../render/scene3d/scene';
+  import type { CameraPreset, SceneLayout } from '../../render/scene3d/placement';
+  import type { Scene3D, SceneStats } from '../../render/scene3d/scene';
   import IconButton from '../../../../ui/components/IconButton.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
 
@@ -29,7 +29,7 @@
   let box: HTMLDivElement;
   let canvas: HTMLCanvasElement;
   let scene = $state.raw<Scene3D | null>(null);
-  let build = $state.raw<typeof import('../../../../render/scene3d/meshes').buildMeshes | null>(null);
+  let build = $state.raw<typeof import('../../render/scene3d/meshes').buildMeshes | null>(null);
   let preset = $state<CameraPreset>('biais');
   let stats = $state<SceneStats>({ drawCalls: 0, triangles: 0, fps: 0 });
   let error = $state('');
@@ -39,7 +39,7 @@
   onMount(() => {
     let disposed = false,
       ro: ResizeObserver | null = null;
-    void Promise.all([import('../../../../render/scene3d/scene'), import('../../../../render/scene3d/meshes')])
+    void Promise.all([import('../../render/scene3d/scene'), import('../../render/scene3d/meshes')])
       .then(([sc, me]) => {
         if (disposed) return;
         const s = new sc.Scene3D(canvas, { shadowSize: matchMedia('(max-width: 700px)').matches ? 1024 : 2048 });
