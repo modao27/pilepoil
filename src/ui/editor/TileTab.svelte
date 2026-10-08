@@ -11,6 +11,7 @@
   import TileSwatch from '../components/TileSwatch.svelte';
   import { app } from '../lib/app.svelte';
   import { mm, tileSize } from '../lib/format';
+  import { glueNoteText, NOTCH_LABEL } from '../lib/labels';
   import type { EditorState } from './editorState.svelte';
 
   let { ed }: { ed: EditorState } = $props();
@@ -21,20 +22,6 @@
   let draft = $state<Tile>(createTile({ name: '' }));
 
   const glue = $derived(ed.result?.glue.find((g) => g.surface === ed.surfaceIndex && g.zone === ed.zoneIndex));
-  const NOTCH = {
-    U3: 'U3 (3 mm)',
-    U6: 'U6 (6 mm)',
-    U9: 'U9 (9 mm)',
-    'U9-or-DL20': 'U9 ou demi-lune DL20',
-    DL20: 'Demi-lune DL20',
-  };
-  const NOTES = {
-    mosaic: 'Mosaïque : peigne fin, bien serrer la colle.',
-    deformable: 'Mortier-colle déformable (C2 S1) conseillé.',
-    'large-format': 'Grand format : mortier-colle déformable (C2 S1), support très plan.',
-    'beyond-dtu': 'Hors DTU : suivre l’avis technique du fabricant.',
-    elongated: 'Format allongé : double encollage contre le tuilage.',
-  };
 
   function openNew() {
     draft = createTile({ name: '' });
@@ -161,7 +148,7 @@
     <section class="glue" aria-labelledby="t-glue">
       <h3 id="t-glue">Encollage (indicatif)</h3>
       <p>
-        Spatule crantée <strong>{NOTCH[glue.advice.notch]}</strong>,
+        Spatule crantée <strong>{NOTCH_LABEL[glue.advice.notch]}</strong>,
         <strong class:dbl={glue.advice.double}>{glue.advice.double ? 'double encollage' : 'simple encollage'}</strong>.
       </p>
       <p class="muted">
@@ -169,7 +156,7 @@
         {glue.advice.kgPerM2.toLocaleString('fr-FR')} kg/m², soit {glue.kg} kg pour {glue.m2.toLocaleString('fr-FR', {
           maximumFractionDigits: 1,
         })} m² avec la marge.
-        {#each glue.advice.notes as n (n)}{' ' + NOTES[n]}{/each}
+        {#each glue.advice.notes as n (n)}{' ' + glueNoteText(n, ed.surface.kind)}{/each}
       </p>
     </section>
   {/if}

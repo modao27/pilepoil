@@ -14,7 +14,7 @@ export async function shot(page: Page, info: TestInfo, name: string): Promise<vo
 /** Aucune violation WCAG 2 A / AA détectée par axe (contrastes compris). */
 export async function expectAccessible(page: Page): Promise<void> {
   // couleurs mesurées après les transitions (changement de thème, survol)
-  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const summary = r.violations.map(
     (v) => `${v.id} (${v.impact}) : ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`,

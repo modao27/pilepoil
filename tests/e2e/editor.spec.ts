@@ -216,7 +216,8 @@ test('surfaces et pièce complète, puis résultats et plan de découpe', async 
     .getByRole('link', { name: /\d+ carreaux/ })
     .first()
     .click();
-  await expect(page.getByRole('heading', { name: 'Plan de découpe' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Découpe' }).click();
   await expect(page.getByText('n° 1', { exact: true })).toBeVisible();
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);

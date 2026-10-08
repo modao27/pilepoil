@@ -44,6 +44,14 @@
     { id: 'finish', label: 'Finitions' },
   ];
 
+  // Projet modifié ailleurs (chargement de scénario, annulation, import) : l'éditeur reprend la version la plus
+  // récente. Ses propres enregistrements renvoient le même objet et ne déclenchent rien.
+  $effect(() => {
+    const ext = app.project(project.id);
+    const own = untrack(() => ed.project);
+    if (ext && ext !== own && ext.updatedAt > own.updatedAt) ed.store.reset(ext);
+  });
+
   // Calcul à chaque modification du projet ou de la bibliothèque.
   $effect(() => {
     void ed.project;

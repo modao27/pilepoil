@@ -21,6 +21,8 @@
   /* texte d'erreur : --thin est trop clair pour du texte (4,4:1) */
   --thin-ink: #b5361d;
   --thin-soft: #fbe5e0;
+  /* écart favorable dans une comparaison (texte, ≥ 4,5:1) */
+  --better: #1d6e3f;
   --scrim: rgb(14 22 27 / 0.45);
   --shadow: 0 8px 28px rgb(21 35 44 / 0.18), 0 1px 3px rgb(21 35 44 / 0.12);
 
@@ -59,6 +61,7 @@
     --accent-soft: #24305a;
     --thin-ink: #ff8a70;
     --thin-soft: #3a1f1a;
+    --better: #8fd6aa;
     --scrim: rgb(0 0 0 / 0.6);
     --shadow: 0 8px 28px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
   }
@@ -77,6 +80,7 @@
   --accent-soft: #24305a;
   --thin-ink: #ff8a70;
   --thin-soft: #3a1f1a;
+  --better: #8fd6aa;
   --scrim: rgb(0 0 0 / 0.6);
   --shadow: 0 8px 28px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
 }

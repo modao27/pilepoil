@@ -28,6 +28,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.23.0",
     "globals": "^17.13.0",
+    "pdfjs-dist": "^6.4.299",
     "prettier": "^3.9.9",
     "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.57.2",
@@ -42,6 +43,7 @@
     "@fontsource/barlow": "^5.3.0",
     "@fontsource/barlow-condensed": "^5.3.0",
     "idb": "^8.0.4",
+    "jspdf": "^4.2.1",
     "three": "^0.186.1"
   }
 }

@@ -2,10 +2,19 @@
  * État global de l'application : base IndexedDB, bibliothèque, projets, préférences, calcul.
  * L'interface lit cet état et appelle ses méthodes ; aucun calcul métier ici (tout passe par le worker).
  */
-import type { ProjectResult, ProjectSpec } from '../../core';
+import type { Metrics, ProjectResult, ProjectSpec } from '../../core';
+import { reduce } from '../../state/actions';
 import { DEFAULT_PALETTE, newId } from '../../state/factories';
 import { createLibraryStore, type LibraryStore } from '../../state/library';
-import type { Id, Palette, Photo, Project, Tile } from '../../state/model';
+import {
+  SCENARIO_SCHEMA,
+  type Id,
+  type Palette,
+  type Photo,
+  type Project,
+  type Scenario,
+  type Tile,
+} from '../../state/model';
 import { toProjectSpec, usedTileIds } from '../../state/selectors';
 import { openDb, type Db } from '../../storage/db';
 import { autoImportLegacy, importLegacy, parseLegacyExport, type ImportSummary } from '../../storage/legacy/import';
@@ -216,16 +225,94 @@ export class AppState {
 
   /** Résultat d'un projet enregistré, mis en cache tant que ni le projet ni la bibliothèque ne changent. */
   result(p: Project): Promise<ProjectResult> {
-    const key = `${p.id}:${p.updatedAt}:${this.tilesVersion}`;
+    return this.cached(`${p.id}:${p.updatedAt}:${this.tilesVersion}`, () => this.spec(p));
+  }
+
+  /** Résultat d'un scénario : son projet figé avec ses propres carreaux. */
+  scenarioResult(s: Scenario): Promise<ProjectResult> {
+    return this.cached(
+      `scenario:${s.id}:${s.createdAt}`,
+      () => toProjectSpec(s.snapshot.project, s.snapshot.tiles).spec,
+    );
+  }
+
+  private cached(key: string, spec: () => ProjectSpec): Promise<ProjectResult> {
     const hit = this.cache.get(key);
     if (hit) return Promise.resolve(hit);
-    const spec = this.spec(p);
-    const job = this.queue.then(() => this.batch.compute(spec));
+    const sp = spec();
+    const job = this.queue.then(() => this.batch.compute(sp));
     this.queue = job.catch(() => undefined);
     return job.then((r) => {
       this.cache.set(key, r);
       return r;
     });
+  }
+
+  /* ---------- prix ---------- */
+
+  /** Prix unitaire saisi pour un article (null : effacer, revenir au prix du carreau s'il y en a un). */
+  async setPrice(projectId: Id, key: string, value: number | null): Promise<void> {
+    const p = this.project(projectId);
+    if (!p) return;
+    const next = reduce(p, { type: 'project/price', key, value });
+    if (next !== p) await this.saveProject({ ...next, updatedAt: Date.now() });
+  }
+
+  /* ---------- scénarios A/B ---------- */
+
+  scenarios(projectId: Id): Promise<Scenario[]> {
+    return repo.listScenarios(this.db, projectId);
+  }
+
+  /** Enregistre l'état actuel du projet dans l'emplacement A ou B (copie figée avec ses carreaux). */
+  async saveScenario(p: Project, slot: 'A' | 'B', name: string, metrics: Metrics | null): Promise<Scenario> {
+    const used = usedTileIds(p);
+    const s: Scenario = {
+      schemaVersion: SCENARIO_SCHEMA,
+      id: newId(),
+      projectId: p.id,
+      slot,
+      name,
+      snapshot: { project: structuredClone(p), tiles: structuredClone(this.tiles.filter((t) => used.has(t.id))) },
+      metrics,
+      thumbnailId: null,
+      createdAt: Date.now(),
+    };
+    await repo.saveScenario(this.db, s);
+    return s;
+  }
+
+  async renameScenario(s: Scenario, name: string): Promise<void> {
+    await repo.saveScenario(this.db, { ...s, name });
+  }
+
+  async deleteScenario(s: Scenario): Promise<void> {
+    await repo.deleteScenario(this.db, s.id);
+  }
+
+  /**
+   * Remet le projet dans l'état du scénario (surfaces, pièce, réglages, prix ; nom et identité conservés).
+   * Les carreaux du scénario absents de la bibliothèque y sont remis. Renvoie l'état remplacé (annulation).
+   */
+  async loadScenario(s: Scenario): Promise<Project | null> {
+    const p = this.project(s.projectId);
+    if (!p) return null;
+    for (const t of s.snapshot.tiles) if (!this.tile(t.id)) this.putTile(t);
+    const snap = s.snapshot.project;
+    await this.saveProject({
+      ...p,
+      surfaces: snap.surfaces,
+      room: snap.room,
+      settings: snap.settings,
+      prices: snap.prices,
+      updatedAt: Date.now(),
+    });
+    return p;
+  }
+
+  /** Rétablit un projet tel quel (annulation d'un chargement de scénario). */
+  async restoreProject(p: Project): Promise<void> {
+    await this.saveProject({ ...p, updatedAt: Date.now() });
   }
 }
 
