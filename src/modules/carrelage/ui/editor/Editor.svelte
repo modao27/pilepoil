@@ -10,7 +10,8 @@
   import IconButton from '../../../../ui/components/IconButton.svelte';
   import Scene3DView from '../components/Scene3DView.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
-  import { surfaceLayout } from '../../render/scene3d/placement';
+  import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
+  import { roomShape } from '../../state/surfaces';
   import { scenePhoto } from '../lib/photos';
   import Tabs from '../../../../ui/components/Tabs.svelte';
   import Icon from '../../../../ui/icons/Icon.svelte';
@@ -68,7 +69,11 @@
     if (untrack(() => snap) === 0 && ed.sel.opening >= 0) snap = 1;
   });
 
-  const layout3d = $derived(ed.spec ? surfaceLayout(ed.spec, ed.surfaceIndex) : null);
+  const layout3d = $derived.by(() => {
+    if (!ed.spec) return null;
+    const shape = ed.scope3d === 'room' ? roomShape(ed.project.plan, ed.project.surfaces, ed.surface.ref.room) : null;
+    return shape ? roomLayout(ed.spec, shape) : surfaceLayout(ed.spec, ed.surfaceIndex);
+  });
   const photo = $derived.by(() => {
     void app.photoUrls;
     return scenePhoto(ed.project);
@@ -145,6 +150,15 @@
       <IconButton icon="minus" variant="outline" label="Dézoomer" onclick={() => canvas?.zoomBy(0.8)} />
       <IconButton icon="fit" variant="outline" label="Ajuster à l’écran" onclick={() => canvas?.fit()} />
     </div>
+  {:else}
+    <Segmented
+      label="Contenu de la vue 3D"
+      bind:value={ed.scope3d}
+      options={[
+        { value: 'surface', label: 'Surface' },
+        { value: 'room', label: 'Pièce' },
+      ]}
+    />
   {/if}
 {/snippet}
 
@@ -157,6 +171,7 @@
     </button>
     <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
+    <IconButton icon="room" label="Pièce" href="#/p/{ed.project.id}/m/carrelage/room/{ed.surface.ref.room}" />
     <IconButton icon="list" label="Résultats" href="#/p/{ed.project.id}/m/carrelage/results" />
   </header>
 
@@ -170,7 +185,7 @@
           layout={layout3d}
           shade={ed.project.settings.shadeVariation}
           {photo}
-          label="Vue 3D de {ed.surface.name}"
+          label="Vue 3D de {ed.scope3d === 'room' ? 'la pièce' : ed.surface.name}"
         />
       {:else if ed.mode !== '3d'}
         <PlanCanvas bind:this={canvas} {ed} label="Plan de {ed.surface.name}, {summary}" />

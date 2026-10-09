@@ -42,6 +42,8 @@ export class EditorState {
   sel = $state<Selection>({ zone: 0, opening: -1, piece: -1 });
   tab = $state<Tab>('tile');
   mode = $state<'plan' | 'render' | '3d'>('plan');
+  /** Vue 3D : surface seule ou toute la pièce du plan. */
+  scope3d = $state<'surface' | 'room'>('surface');
   result = $state.raw<ProjectResult | null>(null);
   spec = $state.raw<ProjectSpec | null>(null);
   guides = $state.raw<{ zone: number; x: number | null; y: number | null } | null>(null);

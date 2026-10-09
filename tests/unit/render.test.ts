@@ -3,6 +3,7 @@ import { buildSurface, layoutZones } from '../../src/modules/carrelage/core';
 import { cornerAt, hitTest, openingAt, pieceAt, zoneAt } from '../../src/modules/carrelage/render/hitTest';
 import { fitView, panBy, toScreen, toWorld, zoomAt } from '../../src/render/view';
 import { planDrawing } from '../../src/modules/carrelage/render/planSvg';
+import { apply, boxOf, unfoldWall } from '../../src/modules/carrelage/render/roomTop';
 import type { Polygon } from '../../src/core/geometry/types';
 import { surface, zone } from './fixtures';
 
@@ -97,5 +98,28 @@ describe('plan SVG', () => {
     const d = planDrawing({ ...rect, kind: 'floor', outline: L }, []);
     expect(d.outline).toBe('M0 0L3000 0L3000 1000L1500 1000L1500 2000L0 2000ZM500 500L500 700L700 700L700 500Z');
     expect(d.viewBox).toBe('0 0 3000 2000');
+  });
+});
+
+describe('vue de dessus d’une pièce', () => {
+  const room: Polygon = [
+    [0, 0],
+    [4000, 0],
+    [4000, 3000],
+    [0, 3000],
+  ];
+
+  it('mur déplié vers l’extérieur : bas du mur sur son segment, haut à l’extérieur', () => {
+    // mur 1 (haut de la pièce) : l'extérieur est vers y < 0
+    const top = unfoldWall(room, 0, 4000, 2000);
+    expect(apply(top.matrix, [0, 2000])).toEqual([0, 0]);
+    expect(apply(top.matrix, [4000, 2000])).toEqual([4000, 0]);
+    expect(apply(top.matrix, [0, 0])).toEqual([0, -2000]);
+    // mur 2 (droite) : x le long du mur vers le bas, haut du mur vers x > 4000
+    const right = unfoldWall(room, 1, 3000, 1200);
+    const [x, y] = apply(right.matrix, [3000, 0]);
+    expect(x).toBeCloseTo(5200, 9);
+    expect(y).toBeCloseTo(3000, 9);
+    expect(boxOf([...top.corners, ...right.corners], 0)).toEqual([0, -2000, 5200, 5000]);
   });
 });

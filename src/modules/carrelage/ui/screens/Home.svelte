@@ -124,8 +124,8 @@
               {#each room.walls as w, i (w.id)}
                 <Checkbox
                   label="Mur {i + 1}"
-                  hint="{cm(wallLength(room, i))} cm{tiling?.walls[w.id]
-                    ? `, carrelé sur ${cm(wallHeight(room, tiling.walls[w.id]!))} cm`
+                  hint="{cm(wallLength(room, i))}{tiling?.walls[w.id]
+                    ? `, carrelé sur ${cm(wallHeight(room, tiling.walls[w.id]!))}`
                     : ''}"
                   checked={!!tiling?.walls[w.id]}
                   onchange={(v) => setTiled({ room: room.id, wall: w.id }, v)}

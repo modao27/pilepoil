@@ -47,6 +47,7 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
     results: () => import('./ui/screens/Results.svelte').then((m) => m.default),
     routes: [
       { path: 's/:surfaceId', load: editor },
+      { path: 'room/:roomId', load: () => import('./ui/screens/Room.svelte').then((m) => m.default) },
       { path: 'compare', load: () => import('./ui/screens/Compare.svelte').then((m) => m.default) },
     ],
     create: () => import('./ui/screens/Wizard.svelte').then((m) => m.default),
