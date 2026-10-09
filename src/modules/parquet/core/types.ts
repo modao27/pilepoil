@@ -197,6 +197,8 @@ export interface LaidPiece {
   source: { board: number } | { offcut: string };
   /** Coupée en largeur (rang de bord, contournement). */
   ripped: boolean;
+  /** Chutes mises au stock en taillant cette pièce (fiche de coupe). */
+  rest?: { id: string; length: number }[];
 }
 
 /** Lame neuve : sa longueur (longueurs mixtes) et les pièces qu'on y taille, dans l'ordre. */

@@ -44,6 +44,8 @@ interface Placed {
   x: number;
   len: number;
   source: { board: number } | { offcut: string };
+  /** Chute mise au stock en taillant ce morceau. */
+  rest?: { id: string; length: number };
 }
 
 export function layStraight(input: StraightInput): StraightOutput {
@@ -78,11 +80,14 @@ export function layStraight(input: StraightInput): StraightOutput {
     return b;
   };
   /** Reste d'une coupe : au stock s'il peut encore servir (≥ coupe mini). */
+  /** Dernière chute mise au stock (rattachée au morceau qu'on vient de tailler). */
+  let lastRest: Placed['rest'];
   const keep = (boardIndex: number, rest: number) => {
     if (!input.reuseOffcuts || rest < rules.minCutLength - EPS) return;
     const id = `${layout.id}-C-${String(++offcutSeq).padStart(2, '0')}`;
     stock.push({ id, board: boardIndex, variant: null, length: rest, polygon: null });
     stockHistory.set(id, boardIndex);
+    lastRest = { id, length: round2(rest) };
   };
   /** Prend `len` dans une chute (retirée du stock, son reste y revient) ; renvoie la provenance. */
   const fromOffcut = (o: Offcut, len: number): Placed['source'] => {
@@ -98,6 +103,12 @@ export function layStraight(input: StraightInput): StraightOutput {
     const b = newBoard(l);
     if (b.length - len > EPS) keep(b.index, b.length - len - kerf);
     return { board: b.index };
+  };
+  /** Morceau posé ; sa provenance est tirée ici pour lui rattacher la chute qu'elle met au stock. */
+  const take = (x: number, len: number, from: () => Placed['source']): Placed => {
+    lastRest = undefined;
+    const source = from();
+    return lastRest ? { x, len, source, rest: lastRest } : { x, len, source };
   };
   const sourceBoard = (s: Placed['source']): number => ('board' in s ? s.board : (stockHistory.get(s.offcut) ?? -1));
 
@@ -152,7 +163,7 @@ export function layStraight(input: StraightInput): StraightOutput {
       for (const o of [...stock].sort((p, q) => q.length - p.length)) {
         const len = Math.min(o.length, S);
         if (ok(len, maxLen)) {
-          first = { x: a, len, source: fromOffcut(o, len) };
+          first = take(a, len, () => fromOffcut(o, len));
           break;
         }
       }
@@ -180,7 +191,7 @@ export function layStraight(input: StraightInput): StraightOutput {
             break;
           }
       if (len < 0) len = Math.min(Lb, S);
-      first = { x: a, len, source: fromBoard(len, Lb) };
+      first = take(a, len, () => fromBoard(len, Lb));
     }
     out.push(first);
     fillRest(out, a + first.len, b, (need) => takeAny(need));
@@ -202,7 +213,7 @@ export function layStraight(input: StraightInput): StraightOutput {
     while (x < b - EPS) {
       const end = Math.min(next, b);
       const need = end - x;
-      out.push({ x, len: need, source: takeExact(need, len) });
+      out.push(take(x, need, () => takeExact(need, len)));
       x = end;
       next += len;
     }
@@ -216,17 +227,17 @@ export function layStraight(input: StraightInput): StraightOutput {
       const remaining = b - x;
       const Lb = drawLength();
       if (remaining <= Lb + EPS) {
-        out.push({ x, len: remaining, source: takeLast(remaining) });
+        out.push(take(x, remaining, () => takeLast(remaining)));
         return;
       }
       // dernière pièce trop courte après cette lame : on coupe celle-ci pour laisser la coupe mini
       if (remaining - Lb < rules.minCutLength - EPS && remaining - rules.minCutLength >= rules.minCutLength - EPS) {
         const len = remaining - rules.minCutLength;
-        out.push({ x, len, source: fromBoard(len, Lb) });
+        out.push(take(x, len, () => fromBoard(len, Lb)));
         x += len;
         continue;
       }
-      out.push({ x, len: Lb, source: fromBoard(Lb, Lb) });
+      out.push(take(x, Lb, () => fromBoard(Lb, Lb)));
       x += Lb;
     }
   }
@@ -299,6 +310,7 @@ export function layStraight(input: StraightInput): StraightOutput {
             cuts: cutsOf(ring, p.x, row.y0, p.len, w, sourceLength),
             source: p.source,
             ripped,
+            ...(p.rest && !k ? { rest: [p.rest] } : {}),
           });
           if (len < rules.minCutLength - EPS) warnings.push({ code: 'cut-too-short', piece: pid, length: round2(len) });
         });
