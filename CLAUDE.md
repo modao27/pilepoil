@@ -15,7 +15,8 @@ Décisions prises : `docs/BOITE.md` §11.
 | `docs/PLAN.md` | Phases en cours (socle puis parquet), critères de fin |
 | `docs/PROMPTS.md` | Consignes à coller par phase |
 | `docs/UX.md` | Système de design et principes d'interface (communs à tous les modules) |
-| `docs/MODEL.md` | Modèle persisté v1 et stockage (la v2 est décrite dans `docs/BOITE.md`) |
+| `docs/NAVIGATION.md` | Parcours cible : projet → pièce → surface → zone → pose, écrans et transitions |
+| `docs/MODEL.md` | Modèle persisté et stockage |
 | `docs/carrelage/` | Module carrelage : règles métier (`DOMAIN.md`), historique des phases |
 | `docs/parquet/SPEC.md` | Module parquet : spécification complète (cible V3) |
 | `docs/DEPLOY.md` | Mise en ligne statique |

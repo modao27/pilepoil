@@ -109,6 +109,12 @@ Réalise la phase C4 de docs/PLAN.md sur une branche phase/c4-nettoyage : retire
 mets la documentation à jour, lance npm run release.
 ```
 
+## N0 à N5 — Parcours centré sur le projet
+```
+Lis docs/NAVIGATION.md, puis réalise la phase N<k> de docs/PLAN.md sur une branche phase/n<k>-<nom>.
+Montre le plan (fichiers, types, étapes) avant de coder. Distingue ce qui existe de ce qui est à créer.
+```
+
 ## En cours de route
 
 Reprise après une interruption :
