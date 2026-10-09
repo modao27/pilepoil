@@ -10,14 +10,14 @@ import { chevronCells } from '../../../core/patterns/chevron';
 import { herring } from '../../../core/patterns/herring';
 import type { Cell } from '../../../core/patterns/types';
 import { components, keyhole } from './rings';
-import type { BoardUse, LaidPiece, LayoutSpec, Offcut, ParquetWarning } from './types';
+import type { BoardUse, LaidPiece, Offcut, ParquetWarning, PlacedLayout } from './types';
 
 const EPS = 1e-6;
 /** Pièce plus petite : ignorée (arrondi des booléens). */
 const MIN_AREA = 1;
 
 export interface PatternInput {
-  layout: LayoutSpec;
+  layout: PlacedLayout;
   /** Surface posable, repère du plan. */
   layable: Polygon[];
   kerf: number;
@@ -42,7 +42,7 @@ export interface Placement {
  * Rotation de base pour que l'axe du motif suive le mur de référence à 0° : le bâton rompu de core/patterns
  * a son axe sur la diagonale (1, 1), le point de Hongrie a ses colonnes (son axe) verticales.
  */
-export function placement(l: LayoutSpec): Placement {
+export function placement(l: PlacedLayout): Placement {
   const base = l.pattern.kind === 'herringbone' ? -45 : -90;
   const ref = (Math.atan2(l.referenceDirection[1], l.referenceDirection[0]) * 180) / Math.PI;
   const a = ((ref + l.angle + base) * Math.PI) / 180;
@@ -60,7 +60,7 @@ const toLocal = (p: Placement, q: Point): Point => {
 };
 
 /** Cellules du motif couvrant la surface, repère du plan. */
-export function patternCells(l: LayoutSpec, layable: Polygon[]): Cell[] {
+export function patternCells(l: PlacedLayout, layable: Polygon[]): Cell[] {
   const board = l.board!;
   const pl = placement(l);
   const local = layable.flat().map((q) => toLocal(pl, q));

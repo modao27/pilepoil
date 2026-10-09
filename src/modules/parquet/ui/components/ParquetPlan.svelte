@@ -1,7 +1,8 @@
 <script lang="ts">
   /**
    * Plan des lames posées (lecture seule) : pièces de la pose, lames entières dans la couleur de la lame,
-   * lames coupées en jaune, lames taillées dans une chute en vert. Toucher une lame la sélectionne.
+   * lames coupées en jaune, lames taillées dans une chute en vert, lames B des motifs plus foncées.
+   * Toucher une lame la sélectionne.
    */
   import type { Polygon } from '../../../../core/geometry/types';
   import type { LaidPiece } from '../../core/types';
@@ -10,12 +11,15 @@
     rooms,
     pieces,
     color,
+    variants = false,
     selected = $bindable(null),
     label,
   }: {
     rooms: Polygon[];
     pieces: LaidPiece[];
     color: string;
+    /** Motifs : lames B plus foncées que les lames A. */
+    variants?: boolean;
     selected?: string | null;
     label: string;
   } = $props();
@@ -30,6 +34,7 @@
       y0 = Math.min(...ys) - pad;
     return `${x0} ${y0} ${Math.max(...xs) + pad - x0} ${Math.max(...ys) + pad - y0}`;
   });
+  const dark = $derived(`color-mix(in srgb, ${color} 72%, black)`);
   const pts = (p: Polygon) => p.map((q) => q.join(',')).join(' ');
   const kind = (p: LaidPiece) => (p.cutType === 'full' ? 'full' : 'offcut' in p.source ? 'reuse' : 'cut');
 </script>
@@ -43,7 +48,7 @@
     <polygon
       class="piece {kind(p)}"
       class:sel={selected === p.id}
-      style={kind(p) === 'full' ? `fill: ${color}` : undefined}
+      style={kind(p) === 'full' ? `fill: ${variants && p.variant === 'B' ? dark : color}` : undefined}
       points={pts(p.polygon)}
       onclick={() => (selected = selected === p.id ? null : p.id)}
     />

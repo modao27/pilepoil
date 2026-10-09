@@ -6,7 +6,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import type { Polygon } from '../../src/core/geometry/types';
 import { computeParquet } from '../../src/modules/parquet/core/compute';
-import type { BoardSpec, Pattern } from '../../src/modules/parquet/core/types';
+import type { BoardSpec, LayoutSpec, Pattern } from '../../src/modules/parquet/core/types';
 import { expectInvariants, LAMINATE, rect, spec } from './parquetHelpers';
 
 const STICK: BoardSpec = { ...LAMINATE, id: 'baton', lengths: [600], width: 100, handed: true, boardsPerPack: 12 };
@@ -150,6 +150,16 @@ describe('placement de l’axe : trois propositions', () => {
     const wall = l.axisOptions!.find((o) => o.kind === 'reference-wall')!;
     // la limite de bande tombe sur le bord posable (jeu de 8 mm) : pas de coupe au ras du mur de référence
     expect(wall.point[1]).toBeCloseTo(8, 0);
+  });
+
+  it('proposition choisie par son nom : résolue par le moteur ; sans porte, centre de la pièce', () => {
+    const at = (axis: LayoutSpec['axis'], openings = s.layouts[0]!.rooms[0]!.openings) =>
+      computeParquet({
+        ...s,
+        layouts: [{ ...s.layouts[0]!, axis, rooms: [{ ...s.layouts[0]!.rooms[0]!, openings }] }],
+      }).layouts[0]!;
+    for (const o of l.axisOptions!) expect(at(o.kind).pieces).toEqual(at(o.point).pieces);
+    expect(at('main-door', []).pieces).toEqual(at('room-center').pieces);
   });
 
   it('pose droite : pas de proposition', () => {

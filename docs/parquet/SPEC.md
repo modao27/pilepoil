@@ -50,7 +50,7 @@ export interface Layout {
   angle: number;
   reference: { room: Id; wall: Id } | null;       // null = plus long mur de la première pièce
   /** Motifs à axe : position de l'axe. */
-  axis: 'room-center' | 'main-door' | { point: Point };
+  axis: 'room-center' | 'main-door' | 'reference-wall' | { point: Point };
   /** Décalage manuel de l'origine du motif (glisser sur le plan). */
   offset: Point;
   method: 'floating' | 'glued' | 'nailed';
@@ -175,7 +175,7 @@ export interface LayoutSpec {
   pattern: Pattern;
   angle: number;
   referenceDirection: Point;         // vecteur unitaire du mur de référence
-  axis: Point;                       // position résolue de l'axe
+  axis: Point | 'room-center' | 'main-door' | 'reference-wall';  // proposition résolue par le moteur
   offset: Point;
   method: 'floating' | 'glued' | 'nailed';
   rules: LayingRules;
@@ -282,6 +282,10 @@ Exécuté dans le worker. Déterministe : même `ParquetSpec` → même résulta
 3. Placement : le motif est tourné de `angle` autour de `axis`, puis décalé de `offset`. Proposer trois
    placements d'axe (centre de la pièce, centre de la porte principale, aligné sur le mur de référence) et
    afficher pour chacun la plus petite largeur de coupe en bord.
+   À 0°, l'axe du motif est parallèle au mur de référence. Le moteur calcule les trois propositions
+   (`axisOptions` du résultat) et résout celle que la pose désigne par son nom ; « porte principale » = la plus
+   large des portes et portes-fenêtres, à défaut le centre de la pièce. « Aligné sur le mur de référence » :
+   une limite de bande sur le bord posable le long de ce mur, pour ne pas avoir de bande coupée en long.
 4. Découpage : chaque cellule ∩ surface posable (booléens de `core/geometry`). Classement :
    `full` (≥ 99,9 % de l'aire), `straight` ou `angled` (une seule ligne de coupe), `complex` (plusieurs ou
    contournement), alerte `tiny-piece` sous 15 % de l'aire ou sous 20 mm de largeur.

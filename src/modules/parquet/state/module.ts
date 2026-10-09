@@ -40,9 +40,6 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
   if (!rooms.length) return null;
   const at = (r: PlanRoom, p: Point): Point => [r.origin[0] + p[0], r.origin[1] + p[1]];
   const ref = referenceWall(l, rooms);
-  const first = rooms[0]!;
-  const xs = first.outline.map((p) => p[0]),
-    ys = first.outline.map((p) => p[1]);
   return {
     id: l.id,
     rooms: rooms.map((r) => ({
@@ -72,7 +69,7 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
     pattern: l.pattern,
     angle: l.angle,
     referenceDirection: ref,
-    axis: at(first, [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]),
+    axis: typeof l.axis === 'string' ? l.axis : l.axis.point,
     offset: l.offset,
     method: l.method,
     rules: l.rules,

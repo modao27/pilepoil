@@ -70,9 +70,13 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
   if (estimate > MAX_PIECES) return empty(l, [{ code: 'too-many-pieces', estimate }], layable);
 
   const opts = { kerf: spec.settings.kerf, reuseOffcuts: spec.settings.reuseOffcuts };
+  const options = motif ? axisOptions(l, layable) : undefined;
   let out;
-  if (motif) out = layPattern({ layout: l, layable, ...opts });
-  else {
+  if (options) {
+    // proposition choisie ; « porte principale » sans porte : centre de la pièce
+    const axis = typeof l.axis === 'string' ? (options.find((o) => o.kind === l.axis) ?? options[0]!).point : l.axis;
+    out = layPattern({ layout: { ...l, axis }, layable, ...opts });
+  } else {
     const frame = layingFrame(l.referenceDirection, l.angle);
     out = layStraight({ layout: l, region: layable.map((r) => ringToFrame(frame, r)), frame, ...opts });
   }
@@ -92,7 +96,7 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
     boards: out.boards,
     offcuts: out.offcuts,
     thresholds: [],
-    ...(motif ? { axisOptions: axisOptions(l, layable) } : {}),
+    ...(options ? { axisOptions: options } : {}),
     warnings,
     errors: [],
   };

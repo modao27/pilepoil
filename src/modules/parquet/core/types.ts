@@ -93,8 +93,8 @@ export interface LayoutSpec {
   angle: number;
   /** Vecteur unitaire du mur de référence. */
   referenceDirection: Point;
-  /** Position résolue de l'axe (motifs à axe, P2). */
-  axis: Point;
+  /** Axe des motifs : point du plan, ou une des trois propositions résolue par le moteur (SPEC §4.3). */
+  axis: Point | AxisKind;
   /** Décalage manuel de l'origine du motif. */
   offset: Point;
   method: LayingMethod;
@@ -132,8 +132,13 @@ export interface LayoutResult {
   axisOptions?: AxisOption[];
 }
 
+export type AxisKind = 'room-center' | 'main-door' | 'reference-wall';
+
+/** Pose dont l'axe est résolu en point. */
+export type PlacedLayout = LayoutSpec & { axis: Point };
+
 export interface AxisOption {
-  kind: 'room-center' | 'main-door' | 'reference-wall';
+  kind: AxisKind;
   point: Point;
   /** Plus petite largeur de coupe en bord, mm. */
   minCutWidth: number;
