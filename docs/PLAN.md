@@ -164,8 +164,11 @@ projets existants : nouvelle version de la base, projets précédents retirés.
   parité legacy du moteur carrelage à 100 %.
 
 ### N2 — Moteur carrelage : poses continues
+- Nouveau projet : le plan d'abord (nom du projet et première pièce, pièce dessinée nommée à la fermeture),
+  pas de projet vide, revêtements choisis après le plan.
 - Pose sur plusieurs sols reliés par un passage (union des zones, même alignement, même plan de découpe).
-- Pose sur des murs qui se suivent (angles du moteur rebranchés depuis le plan).
+- Pose sur des murs qui se suivent (angles du moteur rebranchés depuis le plan), hauteur carrelée par mur.
+- Écran Carrelage : « Continuer la pose voisine / Nouvelle pose » ; retirer une surface sépare la pose.
 - Fini quand : cas chiffrés et invariants verts, parité à 100 %.
 
 ### N3 — Vue globale et écran Pièce
