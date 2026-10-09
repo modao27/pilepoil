@@ -4,15 +4,43 @@
   import type { Project } from '../../state/model';
   import BottomSheet from '../components/BottomSheet.svelte';
   import IconButton from '../components/IconButton.svelte';
+  import Button from '../components/Button.svelte';
+  import Dialog from '../components/Dialog.svelte';
+  import TextField from '../components/TextField.svelte';
   import { app } from '../lib/app.svelte';
+  import { go } from '../lib/router.svelte';
   import AddRoomDialog from './AddRoomDialog.svelte';
   import PlanCanvas from './PlanCanvas.svelte';
   import PlanPanel from './PlanPanel.svelte';
   import { PlanEditorState } from './planState.svelte';
 
-  let { project }: { project: Project } = $props();
+  /** `isNew` : projet pas encore enregistré (#/new), créé avec sa première pièce. */
+  let { project, isNew = false }: { project: Project; isNew?: boolean } = $props();
 
-  const st = untrack(() => new PlanEditorState(project));
+  const st = untrack(() => new PlanEditorState(project, { isNew }));
+  let renaming = $state(false);
+  let newName = $state('');
+  let roomName = $state('');
+
+  // projet neuf : enregistré dès sa première pièce, puis l'adresse devient celle de son plan (même éditeur)
+  $effect(() => {
+    if (!st.isNew || !st.plan.rooms.length) return;
+    st.isNew = false;
+    void st.flush().then(() => go({ name: 'plan', id: st.doc.id }, true));
+  });
+
+  // contour fermé : nom proposé pour la pièce
+  $effect(() => {
+    if (st.naming) untrack(() => (roomName = st.nextRoomName()));
+  });
+
+  function rename() {
+    const n = newName.trim();
+    if (n) st.dispatch({ type: 'project/rename', name: n });
+    renaming = false;
+    // enregistré tout de suite : un nom ne doit pas attendre
+    void st.flush();
+  }
   let desktop = $state(false);
   let snap = $state<0 | 1 | 2>(1);
   let adding = $state(false);
@@ -58,8 +86,13 @@
 
 <div class="editor" class:desktop>
   <header class="bar">
-    <IconButton icon="back" label="Projet" href="#/p/{st.doc.id}" />
+    {#if st.isNew}
+      <IconButton icon="back" label="Accueil" href="#/" />
+    {:else}
+      <IconButton icon="back" label="Projet" href="#/p/{st.doc.id}" />
+    {/if}
     <h1><span class="pname">{st.doc.name}</span><span class="sub">Plan des pièces</span></h1>
+    <IconButton icon="edit" label="Renommer le projet" onclick={() => ((newName = st.doc.name), (renaming = true))} />
     <IconButton icon="undo" label="Annuler" disabled={!st.canUndo} onclick={() => st.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!st.canRedo} onclick={() => st.redo()} />
     <IconButton icon="plus" label="Ajouter une pièce" onclick={() => (adding = true)} />
@@ -92,6 +125,38 @@
 </div>
 
 <AddRoomDialog {st} bind:open={adding} />
+
+<Dialog bind:open={renaming} title="Renommer le projet">
+  <form
+    class="form"
+    onsubmit={(e) => {
+      e.preventDefault();
+      rename();
+    }}
+  >
+    <TextField label="Nom du projet" bind:value={newName} maxlength={60} />
+  </form>
+  {#snippet actions()}
+    <Button variant="ghost" onclick={() => (renaming = false)}>Annuler</Button>
+    <Button variant="primary" onclick={rename}>Renommer</Button>
+  {/snippet}
+</Dialog>
+
+<Dialog open={st.naming} title="Nommer la pièce" onclose={() => (st.naming = false)}>
+  <form
+    class="form"
+    onsubmit={(e) => {
+      e.preventDefault();
+      st.finishDraw(roomName);
+    }}
+  >
+    <TextField label="Nom de la pièce" bind:value={roomName} maxlength={40} />
+  </form>
+  {#snippet actions()}
+    <Button variant="ghost" onclick={() => (st.naming = false)}>Retour au dessin</Button>
+    <Button variant="primary" onclick={() => st.finishDraw(roomName)}>Créer la pièce</Button>
+  {/snippet}
+</Dialog>
 
 <style>
   .editor {

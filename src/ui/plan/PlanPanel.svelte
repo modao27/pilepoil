@@ -103,8 +103,7 @@
     </p>
     <p class="num">{st.draft.length} point{st.draft.length > 1 ? 's' : ''}</p>
     <div class="row">
-      <Button variant="primary" disabled={st.draft.length < 3} onclick={() => st.finishDraw()}>Terminer la pièce</Button
-      >
+      <Button variant="primary" disabled={st.draft.length < 3} onclick={() => st.closeDraw()}>Terminer la pièce</Button>
       <Button icon="undo" disabled={!st.draft.length} onclick={() => st.undoDrawPoint()}
         >Retirer le dernier point</Button
       >
@@ -325,7 +324,12 @@
     {:else}
       <p class="muted">Aucune pièce. Ajoutez la première : rectangle, forme en L ou en U, ou dessin libre.</p>
     {/if}
-    <Button variant="primary" icon="plus" onclick={onaddroom}>Ajouter une pièce</Button>
+    <Button variant={st.plan.rooms.length ? 'secondary' : 'primary'} icon="plus" onclick={onaddroom}
+      >Ajouter une pièce</Button
+    >
+    {#if st.plan.rooms.length && !st.isNew}
+      <Button variant="primary" href="#/p/{st.doc.id}">Choisir les revêtements</Button>
+    {/if}
   {/if}
 
   {#if st.errors.length && st.mode === 'select'}

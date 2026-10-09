@@ -7,10 +7,11 @@
   import LibraryNav from './components/LibraryNav.svelte';
   import { app } from './lib/app.svelte';
   import { matchScreen } from './lib/moduleRoutes';
+  import { newProject } from './lib/newProject';
   import { router } from './lib/router.svelte';
+  import type { Project as ProjectDoc } from '../state/model';
   import Demo from './screens/Demo.svelte';
   import Home from './screens/Home.svelte';
-  import NewProject from './screens/NewProject.svelte';
   import Project from './screens/Project.svelte';
   import Settings from './screens/Settings.svelte';
 
@@ -24,6 +25,21 @@
   });
   // séparés : changer de paramètre (autre surface) ne recharge pas l'écran
   const load = $derived(screen?.load);
+
+  /**
+   * Plan : celui d'un projet enregistré, ou d'un projet neuf (#/new) gardé en mémoire jusqu'à sa première pièce.
+   * L'éditeur reste le même quand l'adresse passe de #/new à celle du plan (même identifiant).
+   */
+  let fresh: ProjectDoc | null = null;
+  const planDoc = $derived.by((): { project: ProjectDoc; isNew: boolean } | null => {
+    if (route.name === 'new' && !route.module) {
+      if (!fresh || app.project(fresh.id)) fresh = newProject();
+      return { project: fresh, isNew: true };
+    }
+    if (route.name !== 'plan') return null;
+    const p = app.project(route.id) ?? (fresh?.id === route.id ? fresh : undefined);
+    return p ? { project: p, isNew: false } : null;
+  });
   const params = $derived(screen?.params ?? {});
 </script>
 
@@ -37,8 +53,11 @@
   <p class="loading" role="status">Chargement…</p>
 {:else if route.name === 'home'}
   <Home />
-{:else if route.name === 'new' && !route.module}
-  <NewProject />
+{:else if planDoc}
+  {#key planDoc.project.id}{#await import('./plan/PlanEditor.svelte') then { default: PlanEditor }}<PlanEditor
+        project={planDoc.project}
+        isNew={planDoc.isNew}
+      />{/await}{/key}
 {:else if route.name === 'new'}
   {#await creator?.screens.create?.() then Create}{#if Create}<Create />{/if}{/await}
 {:else if route.name === 'library'}
@@ -59,10 +78,6 @@
 {:else if route.name === 'shopping'}
   {#key route.id}{#await import('./screens/Shopping.svelte') then { default: Shopping }}<Shopping
         id={route.id}
-      />{/await}{/key}
-{:else if route.name === 'plan' && app.project(route.id)}
-  {#key route.id}{#await import('./plan/PlanEditor.svelte') then { default: PlanEditor }}<PlanEditor
-        project={app.project(route.id)!}
       />{/await}{/key}
 {:else if route.name === 'module' && load}
   {#key route.id}{#await load() then ModuleScreen}<ModuleScreen projectId={route.id} {params} />{/await}{/key}

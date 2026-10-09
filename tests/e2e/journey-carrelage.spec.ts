@@ -23,9 +23,9 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   // 1. projet vide, le plan d'abord : salle de bain en L et chambre
   await page.goto('/');
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
-  await setNumber(page.locator('main'), 'Nom du projet', 'Appartement');
-  await page.getByRole('button', { name: 'Commencer : parquet' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  const first = page.getByRole('dialog', { name: 'Nouveau projet' });
+  await setNumber(first, 'Nom du projet', 'Appartement');
+  const dialog = page.getByRole('dialog', { name: /^(Nouveau projet|Ajouter une pièce)$/ });
   await dialog.getByRole('radio', { name: 'En L' }).click();
   await setNumber(dialog, 'Nom', 'Salle de bain');
   await setNumber(dialog, 'Longueur', '400');
@@ -73,7 +73,8 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await shot(page, info, 'C3-parcours-piece');
 
   // 4. le parquet dans la chambre
-  await page.goto(page.url().replace(/\/m\/carrelage\/room\/.*$/, '/m/parquet'));
+  await page.goto(page.url().replace(/\/m\/carrelage\/room\/.*$/, ''));
+  await page.getByRole('button', { name: 'Ajouter parquet' }).click();
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
   // la pose naît sur la première pièce dont le sol est libre ; la salle de bain est déjà carrelée
   await p.getByRole('button', { name: 'Créer une pose' }).click();

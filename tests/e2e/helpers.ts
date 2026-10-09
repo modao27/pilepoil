@@ -1,15 +1,41 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 
+export interface NewRoom {
+  /** Nom du projet (défaut : « Mon projet »). */
+  project?: string;
+  name: string;
+  /** Longueur × largeur, cm. */
+  size: [number, number];
+  /** Forme (défaut : rectangle) et cotes en plus (retraits du L…). */
+  shape?: 'Rectangle' | 'En L' | 'En U';
+  more?: Record<string, string>;
+}
+
 /**
- * Projet vide (plan sans pièce) avec un outil sans assistant (parquet), créé depuis « Nouveau projet » : l'éditeur
- * de plan s'ouvre. Renvoie l'identifiant du projet.
+ * Nouveau projet (#/new) : la fenêtre « Nouveau projet » demande le nom du projet et la première pièce ; le
+ * projet est enregistré avec elle et l'éditeur de plan reste ouvert (#/p/:id/plan). Renvoie l'identifiant.
  */
-export async function emptyProject(page: Page, tool = 'parquet'): Promise<string> {
-  await page.goto('/#/new');
-  await page.getByRole('button', { name: `Commencer : ${tool}` }).click();
+export async function createProject(page: Page, room: NewRoom, base = '/'): Promise<string> {
+  await page.goto(`${base}#/new`);
+  const dialog = page.getByRole('dialog', { name: 'Nouveau projet' });
+  if (room.project) await fillNumber(dialog, 'Nom du projet', room.project);
+  if (room.shape) await dialog.getByRole('radio', { name: room.shape }).click();
+  await fillNumber(dialog, 'Nom', room.name);
+  await fillNumber(dialog, 'Longueur', String(room.size[0]));
+  await fillNumber(dialog, 'Largeur', String(room.size[1]));
+  for (const [label, v] of Object.entries(room.more ?? {})) await fillNumber(dialog, label, v);
+  await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await expect(page).toHaveURL(/#\/p\/[^/]+\/plan$/);
+  await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
   return /#\/p\/([^/]+)/.exec(page.url())![1]!;
+}
+
+/** Ajoute un revêtement au projet depuis l'écran Projet (« Ajouter parquet ») : son écran s'ouvre. */
+export async function addTool(page: Page, id: string, tool: string, base = '/'): Promise<void> {
+  await page.goto(`${base}#/p/${id}`);
+  await page.getByRole('button', { name: `Ajouter ${tool}` }).click();
+  await expect(page).toHaveURL(new RegExp(`#/p/${id}/m/`));
 }
 
 /** Saisit un nombre (ou un texte) et le valide (Entrée). */
@@ -48,8 +74,8 @@ export async function newWall(page: Page, tile?: (() => Promise<void>) | null, b
 }
 
 /**
- * Nouveau projet carrelage nommé `name`, avec une pièce « Pièce » de `size` cm (longueur × largeur) dessinée sur
- * le plan et `height` cm sous plafond. Renvoie l'identifiant du projet.
+ * Nouveau projet nommé `name`, avec une pièce « Pièce » de `size` cm (longueur × largeur) et `height` cm sous
+ * plafond, puis le carrelage ajouté. Renvoie l'identifiant du projet.
  */
 export async function planRoom(
   page: Page,
@@ -58,20 +84,11 @@ export async function planRoom(
   height: number,
   base = '/',
 ): Promise<string> {
-  await page.goto(`${base}#/new`);
-  await page.getByLabel('Nom du projet', { exact: true }).fill(name);
-  await page.getByRole('button', { name: 'Commencer : carrelage' }).click();
-  await expect(page).toHaveURL(/#\/p\/[^/]+\/plan$/);
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
-  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
-  await fillNumber(dialog, 'Nom', 'Pièce');
-  await fillNumber(dialog, 'Longueur', String(size[0]));
-  await fillNumber(dialog, 'Largeur', String(size[1]));
-  await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  const id = await createProject(page, { project: name, name: 'Pièce', size }, base);
   const panel = page.getByRole('complementary', { name: 'Réglages du plan' }).or(page.locator('.sheet'));
   await expect(panel.getByRole('heading', { name: 'Pièce' })).toBeVisible();
   await fillNumber(panel, 'Hauteur sous plafond', String(height));
-  await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
+  await addTool(page, id, 'carrelage', base);
   return id;
 }
 

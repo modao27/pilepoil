@@ -19,8 +19,15 @@
   let arm = $state(1200);
   let depth = $state(1200);
 
+  /** Première pièce d'un projet neuf : on nomme aussi le projet. */
+  const first = $derived(st.isNew && !st.plan.rooms.length);
+  let projectName = $state('');
+
   $effect(() => {
-    if (open) name = st.nextRoomName();
+    if (open) {
+      name = st.nextRoomName();
+      projectName = st.doc.name;
+    }
   });
 
   const valid = $derived(
@@ -34,6 +41,7 @@
   function create() {
     if (!valid) return;
     const n = name.trim() || st.nextRoomName();
+    if (first && projectName.trim()) st.dispatch({ type: 'project/rename', name: projectName.trim() });
     if (kind === 'draw') st.startDraw();
     else if (kind === 'rect') st.addRoom({ kind, length, width }, n);
     else if (kind === 'l') st.addRoom({ kind, length, width, cutLength, cutWidth }, n);
@@ -42,8 +50,12 @@
   }
 </script>
 
-<Dialog bind:open title="Ajouter une pièce">
+<Dialog bind:open title={first ? 'Nouveau projet' : 'Ajouter une pièce'}>
   <div class="form">
+    {#if first}
+      <TextField label="Nom du projet" bind:value={projectName} maxlength={60} />
+      <p class="muted">Dessinez la première pièce ; le projet est créé avec elle.</p>
+    {/if}
     <Segmented
       label="Forme"
       bind:value={kind}
@@ -87,7 +99,8 @@
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    /* une colonne sur téléphone : le champ garde de la place entre ses boutons − et + */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
     gap: var(--space-3);
   }
   .muted {
