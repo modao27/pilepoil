@@ -141,6 +141,48 @@ Choix retenus :
 - Docs : `BOITE.md`, `MODEL.md`, `carrelage/DOMAIN.md`, règle de parité reformulée dans `CLAUDE.md`.
 - Fini quand : `npm run release` vert, plus de code mort lié aux anciens formats.
 
+## Parcours centré sur le projet (N0 à N5)
+
+Décidé le 2026-10-09 : cible et vocabulaire dans `docs/NAVIGATION.md` (projet → pièce → surface → zone → pose,
+carrelage et parquet de la même manière, vue globale au centre, sélection sur le dessin). Pas de conversion des
+projets existants : nouvelle version de la base, projets précédents retirés.
+
+### N0 — Sécurité des données
+- Annulation d'une suppression qui survit à la navigation : elle ne réécrit jamais un état plus ancien que
+  le projet actuel (plan, Achats).
+- Suppression d'une pièce revêtue : confirmation qui détaille ce qui sera perdu.
+- Tous les enregistrements hors éditeurs : erreur affichée, action réessayable, bouton rendu.
+- Fini quand : tests unitaires et e2e de ces trois cas sur téléphone et ordinateur.
+
+### N1 — Zones et poses dans le projet
+- `project.zones` et `project.poses` (`NAVIGATION.md` §4), règles de recouvrement et de continuité dans
+  `core`, réducteur `zone/*` et `pose/*`, contrat de module élargi ; réglages des modules rangés par pose.
+- Carrelage et parquet branchés sur ce modèle (le parquet perd ses listes de pièces et limites de zone
+  propres) ; « zone » du carrelage renommée « bande ». Assistant carrelage retiré.
+- Nouvelle version de la base, sans conversion.
+- Fini quand : tests du modèle et des règles verts ; les deux moteurs calculent une pose depuis ses zones ;
+  parité legacy du moteur carrelage à 100 %.
+
+### N2 — Moteur carrelage : poses continues
+- Pose sur plusieurs sols reliés par un passage (union des zones, même alignement, même plan de découpe).
+- Pose sur des murs qui se suivent (angles du moteur rebranchés depuis le plan).
+- Fini quand : cas chiffrés et invariants verts, parité à 100 %.
+
+### N3 — Vue globale et écran Pièce
+- Vue globale : plan cliquable, pièces, poses et états. Écran Pièce : sélection du sol et des murs sur le
+  dessin, découpe en zones (ligne, contour, crédence), poses (nouvelle, continuer, retirer). Fil de navigation.
+- Fini quand : parcours e2e « pièce → zones → poses carrelage et parquet » sur téléphone et ordinateur.
+
+### N4 — Coquille commune du calepinage
+- Même écran et mêmes étapes (Produit, Pose, Découpage, Finitions, Avancé) pour le carrelage et le parquet,
+  sans retirer de réglage.
+- Fini quand : les deux revêtements se règlent de la même façon, e2e verts.
+
+### N5 — Résultats, export et 3D
+- Résultats et PDF par surface, pièce et projet ; 3D de la pièce et du projet (revêtements ensemble).
+- Fini quand : parcours complet « nouveau projet → pièce → zones → poses → résultats → PDF → vue globale »
+  sur téléphone et ordinateur, budgets 3D tenus, `npm run release` vert.
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

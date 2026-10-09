@@ -326,3 +326,4 @@ seul le parquet s'en sert au début.
 | 2026-10-09 | `shopping` reçoit le plan du projet (le carrelage y retrouve ses surfaces) ; données carrelage par pièce et mur du plan (schéma 2), scénarios en schéma 3, anciens supprimés | §2, `PLAN.md` C2 |
 | 2026-10-09 | Carrelage : écran d'accueil par pièce du plan, assistant qui dessine la pièce (rectangle, L, U), vue de la pièce depuis le polygone | §8, `PLAN.md` C3 |
 | 2026-10-09 | Nettoyage : import de l'ancienne appli, copie de la base `calepinage`, migration des projets v1 et anciennes adresses retirés ; base v3 ; `legacy/` reste la référence de parité du moteur | §4, `PLAN.md` C4 |
+| 2026-10-09 | Parcours centré sur le projet : zones et poses dans le projet, carrelage et parquet de la même manière, résultats par surface, pièce et projet, assistant carrelage retiré, pas de conversion | `NAVIGATION.md`, `PLAN.md` N0–N5 |
