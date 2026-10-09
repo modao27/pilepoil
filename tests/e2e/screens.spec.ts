@@ -167,45 +167,15 @@ test('pièce en L : sol et murs cochés dans l’assistant', async ({ page }, in
   await shot(page, info, '22-projet-piece-sol');
 });
 
-test('réglages : thème sombre, import du fichier de l’ancienne version', async ({ page }, info) => {
+test('réglages : thème sombre', async ({ page }, info) => {
   await page.goto('/#/settings');
   await page.getByRole('radio', { name: 'Sombre' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await check(page);
   await shot(page, info, '50-reglages-sombre');
 
-  const exportFile = JSON.stringify({
-    format: 'calepinage-legacy-export',
-    version: 1,
-    data: {
-      'calepinage-v3': JSON.stringify({
-        surfaces: [{ name: 'Mur douche', W: 1800, H: 2100, zones: [{ pattern: 'herring', a: 450, b: 90 }] }],
-        active: 0,
-      }),
-      'calepinage-nuancier': JSON.stringify({ tiles: ['#aa5533'], grouts: ['#333333'] }),
-    },
-  });
-  const chooser = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Importer un fichier' }).click();
-  await (
-    await chooser
-  ).setFiles({ name: 'calepinage-export.json', mimeType: 'application/json', buffer: Buffer.from(exportFile) });
-  await expect(
-    page
-      .getByRole('status')
-      .filter({
-        hasText: 'Données de l’ancienne version importées : 1 carreau. Le carrelage est à refaire sur le plan.',
-      })
-      .first(),
-  ).toBeVisible();
-
-  const bad = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Importer un fichier' }).click();
-  await (await bad).setFiles({ name: 'photo.json', mimeType: 'application/json', buffer: Buffer.from('{"a":1}') });
-  await expect(page.getByText(/n’est pas un export de l’ancienne version/)).toBeVisible();
-
   await page.getByRole('link', { name: 'Accueil' }).click();
-  await expect(page.getByRole('link', { name: 'Projet importé' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Aucun projet pour l’instant' })).toBeVisible();
   await check(page);
-  await shot(page, info, '31-accueil-sombre-import');
+  await shot(page, info, '31-accueil-sombre');
 });

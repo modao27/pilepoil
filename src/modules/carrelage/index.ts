@@ -52,6 +52,5 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
     ],
     create: () => import('./ui/screens/Wizard.svelte').then((m) => m.default),
     card: () => import('./ui/components/ProjectCard.svelte').then((m) => m.default),
-    settings: () => import('./ui/components/LegacyImport.svelte').then((m) => m.default),
   },
 };

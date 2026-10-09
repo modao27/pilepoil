@@ -49,12 +49,6 @@
     <section aria-labelledby="s-app">
       <h2 id="s-app">Application</h2>
       <ul class="facts">
-        {#if app.oldApp}
-          <li>
-            Vos projets de l’ancienne appli Calepinage ont été repris ici. Si elle est encore installée sur cet
-            appareil, vous pouvez la désinstaller : ses données restent intactes, mais elle n’est plus mise à jour.
-          </li>
-        {/if}
         <li>
           {#if pwa.offlineReady}
             Fonctionne sans connexion : l’application et vos projets sont sur cet appareil.
