@@ -11,14 +11,16 @@ import { appliedThresholds, breakBand, fractioning, halfPlane, passageBand } fro
 import { layingFrame, ringFromFrame, ringToFrame } from './frame';
 import { axisOptions } from './axis';
 import { layPattern } from './patterned';
+import { computeSkirting } from './skirting';
 import { layStraight } from './straight';
 import type { LayoutResult, LayoutSpec, ParquetError, ParquetResult, ParquetSpec } from './types';
 
 /** Garde-fou : au-delà, le calcul est refusé (SPEC §6). */
 export const MAX_PIECES = 20000;
 
-export function computeParquet(spec: ParquetSpec): ParquetResult {
-  const layouts = spec.layouts.map((l) => computeLayout(l, spec));
+/** `axisOptions: false` : sans les propositions d'axe des motifs (optimisation : axe déjà choisi). */
+export function computeParquet(spec: ParquetSpec, o: { axisOptions?: boolean } = {}): ParquetResult {
+  const layouts = spec.layouts.map((l) => computeLayout(l, spec, o.axisOptions ?? true));
   // poses qui se recouvrent (même pièce dans deux poses sans zones séparées) : alerte sur la seconde
   layouts.forEach((b, j) => {
     for (const a of layouts.slice(0, j))
@@ -35,7 +37,7 @@ export function computeParquet(spec: ParquetSpec): ParquetResult {
   const pieceArea = pieces.reduce((t, p) => t + Math.abs(signedArea(p.polygon)), 0);
   return {
     layouts,
-    skirting: { bars: 0, cuts: [], offcuts: [] },
+    skirting: computeSkirting(spec),
     totals: {
       area: layouts.reduce((t, l) => t + regionArea(l.layable), 0) / 1e6,
       boards: boards.length,
@@ -52,7 +54,7 @@ function empty(l: LayoutSpec, errors: ParquetError[], layable: Polygon[] = []): 
   return { id: l.id, layable, pieces: [], boards: [], offcuts: [], thresholds: [], warnings: [], errors };
 }
 
-function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
+function computeLayout(l: LayoutSpec, spec: ParquetSpec, proposals: boolean): LayoutResult {
   if (!l.board) return empty(l, [{ code: 'missing-board' }]);
   const invalid = l.rooms.filter((r) => r.outline.length < 3 || selfIntersecting(r.outline) || !signedArea(r.outline));
   if (invalid.length)
@@ -79,11 +81,11 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
 
   const frame = layingFrame(l.referenceDirection, l.angle);
   const opts = { kerf: spec.settings.kerf, reuseOffcuts: spec.settings.reuseOffcuts };
-  const options = motif ? axisOptions(l, layable) : undefined;
+  const options = motif && (proposals || typeof l.axis === 'string') ? axisOptions(l, layable) : undefined;
   let out;
-  if (options) {
+  if (motif) {
     // proposition choisie ; « porte principale » sans porte : centre de la pièce
-    const axis = typeof l.axis === 'string' ? (options.find((o) => o.kind === l.axis) ?? options[0]!).point : l.axis;
+    const axis = typeof l.axis === 'string' ? (options!.find((o) => o.kind === l.axis) ?? options![0]!).point : l.axis;
     out = layPattern({ layout: { ...l, axis }, layable, ...opts });
   } else {
     out = layStraight({ layout: l, region: layable.map((r) => ringToFrame(frame, r)), frame, ...opts });

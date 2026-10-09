@@ -75,7 +75,7 @@ export const DEFAULT_SETTINGS: ParquetSettings = { reuseOffcuts: true, kerf: KER
 export const DEFAULT_ACCESSORIES: Accessories = {
   underlay: { enabled: true, m2PerRoll: 15, overlap: 0.05 },
   vaporBarrier: { enabled: false, m2PerRoll: 25, overlap: 0.1, upstand: 50 },
-  skirting: { enabled: true, barLength: 2400, height: 60, mitreAllowance: 10 },
+  skirting: { enabled: true, barLength: 2400, height: 60, mitreAllowance: 10, aroundObstacles: false },
   thresholds: { barLength: 930 },
   glue: null,
   fixings: null,

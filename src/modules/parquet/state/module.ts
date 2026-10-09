@@ -6,6 +6,7 @@ import type { ShoppingLine } from '../../../core/shopping/types';
 import type { Project } from '../../../state/model';
 import type { Libraries, ModuleError, ModuleSummary } from '../../types';
 import type { Board } from '../core/board';
+import { accessoryNeeds } from '../core/accessories';
 import { defaultMargin } from '../core/defaults';
 import type { LayoutSpec, ParquetResult, ParquetSpec } from '../core/types';
 import type { Action } from './actions';
@@ -157,7 +158,91 @@ export function shopping(r: ParquetResult, d: ParquetData, libraries: Libraries)
       });
     }
   }
-  return lines;
+  return [...lines, ...accessoryLines(r, d)];
+}
+
+/** Sous-couche, pare-vapeur, plinthes, seuils, colle ou fixations (quantités : core/accessories). */
+function accessoryLines(r: ParquetResult, d: ParquetData): ShoppingLine[] {
+  const fr = (v: number, k = 0) => v.toLocaleString('fr-FR', { maximumFractionDigits: k });
+  const methods = Object.fromEntries(d.layouts.map((l) => [l.id, l.method]));
+  const line = (
+    key: string,
+    group: ShoppingLine['group'],
+    label: string,
+    quantity: number,
+    unit: ShoppingLine['unit'],
+    detail: string,
+  ): ShoppingLine => {
+    const own = d.prices[`parquet:${key}`];
+    return {
+      module: PARQUET_ID,
+      key: `parquet:${key}`,
+      group,
+      label,
+      quantity,
+      unit,
+      detail,
+      unitPrice: own != null && own > 0 ? own : null,
+    };
+  };
+  return accessoryNeeds(r, methods, d.accessories).map((n) => {
+    switch (n.kind) {
+      case 'underlay':
+        return line(
+          'underlay',
+          'underlay',
+          'Sous-couche',
+          n.rolls,
+          'roll',
+          `${fr(n.area, 1)} m² + ${fr(n.overlap * 100)} % de recouvrement (${fr(n.m2PerRoll)} m² par rouleau)`,
+        );
+      case 'vapor-barrier':
+        return line(
+          'vapor-barrier',
+          'underlay',
+          'Pare-vapeur',
+          n.rolls,
+          'roll',
+          `${fr(n.area, 1)} m² avec recouvrement et remontée (${fr(n.m2PerRoll)} m² par rouleau)`,
+        );
+      case 'skirting':
+        return line(
+          'skirting',
+          'finish',
+          'Plinthes',
+          n.bars,
+          'bar',
+          `${fr(n.length / 1000, 1)} m, barres de ${fr(n.barLength / 1000, 2)} m`,
+        );
+      case 'threshold':
+        return line(
+          'threshold',
+          'finish',
+          'Barres de seuil',
+          n.bars,
+          'bar',
+          `${n.count} seuil${n.count > 1 ? 's' : ''}, barres de ${fr(n.barLength / 10)} cm`,
+        );
+      case 'glue':
+        return line(
+          'glue',
+          'consumable',
+          'Colle à parquet',
+          n.units,
+          'piece',
+          `${fr(n.area, 1)} m², ${fr(n.m2PerUnit)} m² par seau`,
+        );
+      case 'fixings':
+        return line(
+          'fixings',
+          'consumable',
+          'Clous ou agrafes',
+          n.units,
+          'piece',
+          `${fr(n.area, 1)} m², ${fr(n.perM2)} par m²`,
+        );
+    }
+  });
 }
 
 export const priceAction = (key: string, value: number | null): Action => ({ type: 'parquet/price', key, value });

@@ -19,7 +19,7 @@ import type {
 type Id = string;
 
 export const PARQUET_ID = 'parquet';
-export const PARQUET_SCHEMA = 2;
+export const PARQUET_SCHEMA = 3;
 
 export interface ParquetData {
   /** Une pose par groupe de pièces posées en continu. */
@@ -99,5 +99,10 @@ export const PARQUET_MIGRATIONS: Record<number, (doc: unknown) => unknown> = {
   2: (doc) => {
     const d = doc as { layouts: object[] };
     return { ...d, layouts: d.layouts.map((l) => ({ zone: [], ...l })) };
+  },
+  // 3 : plinthes autour des obstacles (option, décochée)
+  3: (doc) => {
+    const d = doc as { accessories: { skirting: object } };
+    return { ...d, accessories: { ...d.accessories, skirting: { aroundObstacles: false, ...d.accessories.skirting } } };
   },
 };

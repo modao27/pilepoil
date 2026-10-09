@@ -285,6 +285,12 @@ interface Threshold {
    - effet escalier : même décalage sur plus de 3 rangs consécutifs (coupe perdue) ;
    - pièces proches du minimum (< 1,2 × `minCutLength`).
    Le meilleur départ est appliqué à `offset` et `seed` par une action, annulable.
+   Fait en P4 (`core/optimize.ts`) : le départ actuel est le premier essai (jamais moins bon). Essais :
+   pose droite, 20 décalages en travers des rangs ; décalage régulier et motifs, grille 5 × 4 sur une
+   longueur et une largeur de lame (3 × 2 au-delà de 600 lames posées, pour rester vers 2 s). Graines :
+   10 en coupe perdue ou longueurs mixtes. En coupe perdue, la graine 1 garde la plus grande première pièce
+   possible ; une autre graine la tire parmi celles qui respectent les règles. Une pénalité vaut un dixième
+   de lame.
 
 ### 4.3 Bâton rompu et point de Hongrie
 1. Géométrie des motifs : réutiliser `herring` et `chevron` du carrelage avec joint 0, après les avoir
@@ -329,6 +335,21 @@ interface Threshold {
    `kerf` et `mitreAllowance` par coupe d'angle.
 3. Sortie : nombre de barres, liste de coupes par mur, chutes.
 
+Fait en P4 : `src/core/cutting/bars.ts` remplit chaque barre avec le sous-ensemble des coupes restantes qui
+la remplit le mieux (somme de sous-ensemble au dixième de millimètre), puis tente de vider la barre la moins
+remplie. Pièce plus longue qu'une barre : barres entières + reste. Plinthes (`core/skirting.ts`) : onglet aux
+bouts qui touchent un angle, coupe droite contre une porte, fenêtres sans effet ; option
+`skirting.aroundObstacles` (schéma 3). Une pièce partagée par deux poses n'est comptée qu'une fois.
+
+```ts
+interface SkirtingResult {
+  bars: number;
+  pieces: { id: string; room: string; wall: number; length: number; mitres: number }[];  // wall −1 : obstacle
+  plan: Bar[];                       // coupes de chaque barre (core/cutting/bars)
+  offcuts: number[];
+}
+```
+
 ### 4.6 Achats
 - Lames : `ceil(lames utilisées × (1 + marge) / boardsPerPack)` paquets, par variante si `handed`
   (lames A et B comptées et emballées séparément). `m2PerPack` n'entre pas dans le calcul.
@@ -336,7 +357,12 @@ interface Threshold {
 - Pare-vapeur : surface + recouvrement des lés + remontée périphérique.
 - Plinthes : barres. Seuils : un par seuil, barre coupée à la largeur.
 - Colle ou fixations selon `method`.
-- Clés de prix stables : `parquet:board:<id>[:A|:B]`, `parquet:underlay`, `parquet:skirting`…
+- Clés de prix stables : `parquet:board:<id>[:A|:B]`, `parquet:underlay`, `parquet:vapor-barrier`,
+  `parquet:skirting`, `parquet:threshold`, `parquet:glue`, `parquet:fixings`.
+- Fait en P4 (`core/accessories.ts`) : sous-couche pour les poses flottantes seulement ; pare-vapeur =
+  surface × (1 + recouvrement) + périmètre posable × remontée ; seuils = seuils posés (`breaks` et limites de
+  zone), une barre par seuil, plus si le seuil est plus large qu'une barre ; colle (m² par seau) ou fixations
+  (par m²) selon le mode de chaque pose.
 
 ### 4.7 Invariants (tests de propriétés)
 - Somme des aires des pièces = aire posable (écart < 0,1 %).
@@ -379,8 +405,16 @@ Panneau tiré (téléphone) ou inspecteur (ordinateur), onglets :
 
 Résumé permanent : « 52 lames · 6 paquets · perte 4 % · 389 € ». Toucher = Résultats.
 
+Fait en P4 : sections de l'éditeur en une colonne (Poses, Pièces et seuils, Lame, Pose avec « Optimiser le
+départ », Finitions, Règles) ; glisser sur le plan ou flèches du clavier décalent la pose (aimant au quart de
+la largeur de lame, un geste = une étape d'annulation).
+
 **Résultats** (`/results`) : onglets Plan, Coupes, Achats, 3D. Export PDF : plan coté à l'échelle,
 fiche de coupe, liste d'achat (A4, jsPDF, sur le modèle de `ui/lib/pdf.ts`).
+Fait en P4 : onglets Plan (plan coté de chaque pose), Coupes (fiche, plinthes par barre), Achats ; la 3D
+arrive en P5. PDF (`ui/lib/pdf.ts` du module, base partagée `src/ui/lib/pdf/doc.ts` extraite du
+carrelage) : résumé et liste d'achat, plan coté par pose à une échelle normalisée (1:20 à 1:500) avec noms
+des pièces et barre d'échelle, fiche de coupe, plinthes. Texte limité aux polices standard (pas de flèche).
 
 **Fiche de coupe** : dans l'ordre de pose.
 ```
@@ -390,6 +424,13 @@ Salon — rang 3
   6. lame neuve → couper à 842 mm      la chute C-12 (358 mm) va au stock
 ```
 Motifs : par ligne le long de l'axe, schéma de la coupe en biais avec ses cotes.
+
+Fait en P4 (`core/sheet.ts`, textes dans `ui/lib/sheetText.ts`) : groupes par pose, pièce et rang (ou
+ligne), dans l'ordre des pièces du moteur ; lames entières consécutives regroupées ; chaque pièce coupée
+garde les chutes que sa coupe met au stock (`LaidPiece.rest`) et la fiche indique d'où vient chaque chute
+utilisée (« chute C-07 (vient de Séjour — rang 3, n° 4) »), utile pour les motifs où une chute peut venir
+d'une pièce posée plus loin. Coupes en biais : longueurs des deux rives (le schéma coté reste à faire).
+Lame neuve gardée entière et recoupée en largeur : « lame entière recoupée à 104 mm de large ».
 
 **Chantier** (`/chantier`) : une ligne ou un rang à la fois, grandes cibles, cocher les pièces posées.
 La progression est gardée dans `worksite` avec l'empreinte du calcul ; si le calcul change, prévenir et

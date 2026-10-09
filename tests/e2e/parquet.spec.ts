@@ -46,7 +46,7 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   const id = await parquetProject(page);
 
   // R1 dans l'appli : 16 rangs de stratifié 1285 × 192 sur 3984 × 2984
-  const plan = page.getByRole('img', { name: /^Plan des lames : \d+ lames · \d+ paquets · perte \d+ %/ });
+  const plan = page.getByRole('application', { name: /^Plan des lames : \d+ lames · \d+ paquets · perte \d+ %/ });
   await expect(plan).toBeVisible();
   await expect(page.locator('polygon.piece')).toHaveCount(64);
   const summary = page.getByRole('link', { name: /lames · \d+ paquets/ }).first();
@@ -63,6 +63,24 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   await expect(summary).toContainText('52 lames · 7 paquets');
 
+  // glisser la pose sur le plan : les lames bougent ; un geste = une seule étape d'annulation
+  const firstPiece = page.locator('polygon.piece').first();
+  const before = await firstPiece.getAttribute('points');
+  const box = (await plan.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let k = 1; k <= 5; k++) await page.mouse.move(box.x + box.width / 2 + k * 6, box.y + box.height / 2 + k * 6);
+  await page.mouse.up();
+  await expect(firstPiece).not.toHaveAttribute('points', before!);
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await expect(firstPiece).toHaveAttribute('points', before!);
+  // au clavier : flèches
+  await plan.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(firstPiece).not.toHaveAttribute('points', before!);
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await expect(firstPiece).toHaveAttribute('points', before!);
+
   // diagonale
   await setNumber(p, 'Angle des lames', '45');
   await expect(summary).not.toContainText('52 lames');
@@ -70,10 +88,33 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   await expect(summary).toContainText('52 lames');
 
+  // optimisation du départ : progression puis départ appliqué (ou déjà le meilleur), jamais plus de lames
+  await p.getByRole('button', { name: 'Optimiser le départ' }).click();
+  await expect(page.getByText(/Départ optimisé : 52 → (5[0-2]|4\d) lames|déjà le meilleur/)).toBeVisible();
+  await expect(p.getByRole('button', { name: 'Optimiser le départ' })).toBeEnabled();
+
   // résultats et liste d'achat du projet
   await summary.click();
   await expect(page.getByRole('heading', { name: /^Résultats — / })).toBeVisible();
-  await expect(page.getByText('Stratifié 1285 × 192 : 7 paquets')).toBeVisible();
+  // plan coté, fiche de coupe, achats
+  await expect(page.getByRole('img', { name: 'Plan coté' })).toBeVisible();
+  await expect(page.locator('text.dim').first()).toHaveText('400');
+  await check(page);
+  await shot(page, info, '99-parquet-resultats-plan');
+  await page.getByRole('tab', { name: 'Coupes' }).click();
+  await expect(page.getByRole('heading', { name: 'Séjour — rang 1', exact: true })).toBeVisible();
+  await expect(page.getByText(/^1\. lame neuve → couper à/).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Plinthes : \d+ barres/ })).toBeVisible();
+  await check(page);
+  await shot(page, info, '99-parquet-resultats-coupes');
+  await page.getByRole('tab', { name: 'Achats' }).click();
+  await expect(page.getByText(/Stratifié 1285 × 192 : 7 paquets/)).toBeVisible();
+  await expect(page.getByText(/Sous-couche : 1 rouleau/)).toBeVisible();
+  await expect(page.getByText(/Plinthes : 6 barres/)).toBeVisible();
+  // export PDF
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporter en PDF' }).click();
+  expect((await download).suggestedFilename()).toMatch(/parquet\.pdf$/);
   await check(page);
   await page.goto(`/#/p/${id}/achats`);
   await expect(page.getByText('Stratifié 1285 × 192', { exact: true }).first()).toBeVisible();
@@ -115,6 +156,7 @@ test('parquet : bâton rompu et point de Hongrie, axe du motif, lames A et B', a
 
   // achats : lames A et B
   await summary.click();
+  await page.getByRole('tab', { name: 'Achats' }).click();
   await expect(page.getByText(/Point de Hongrie 60° 500 × 90 \(lames A\/B\) \(lames A\) : \d+ paquets?/)).toBeVisible();
   await expect(page.getByText(/\(lames B\) : \d+ paquets?/)).toBeVisible();
   await page.goto(`/#/p/${id}/m/parquet`);

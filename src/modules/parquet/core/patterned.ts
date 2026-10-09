@@ -167,7 +167,8 @@ export function layPattern(input: PatternInput): PatternOutput {
   let seq = 0;
   const source = new Map<string, LaidPiece['source']>();
   const boardOf = new Map<string, number>();
-  const keep = (boardIndex: number, variant: 'A' | 'B', rest: Polygon[]) => {
+  const rests = new Map<string, { id: string; length: number }[]>();
+  const keep = (boardIndex: number, variant: 'A' | 'B', rest: Polygon[], piece: string) => {
     if (!input.reuseOffcuts) return;
     for (const r of components(rest)) {
       const ring = keyhole(r);
@@ -175,14 +176,10 @@ export function layPattern(input: PatternInput): PatternOutput {
       const xs = ring.map((q) => q[0]);
       if (Math.max(...xs) - Math.min(...xs) < layout.rules.minCutLength * 0.5) continue;
       if (Math.abs(signedArea(ring)) < board.width * 50) continue;
-      stock.push({
-        id: `${layout.id}-C-${String(++seq).padStart(3, '0')}`,
-        board: boardIndex,
-        variant,
-        length: Math.max(...xs) - Math.min(...xs),
-        polygon: ring,
-        shape: ring,
-      });
+      const id = `${layout.id}-C-${String(++seq).padStart(3, '0')}`;
+      const length = Math.max(...xs) - Math.min(...xs);
+      stock.push({ id, board: boardIndex, variant, length, polygon: ring, shape: ring });
+      rests.set(piece, [...(rests.get(piece) ?? []), { id, length: round2(length) }]);
     }
   };
   /** Translation qui place la pièce dans la chute (le long de la lame), sinon null. */
@@ -208,7 +205,7 @@ export function layPattern(input: PatternInput): PatternOutput {
         const moved = fit(c.local, o.shape);
         if (!moved) continue;
         stock = stock.filter((x) => x !== o);
-        keep(o.board, c.variant, difference([o.shape], offset([moved], kerf)));
+        keep(o.board, c.variant, difference([o.shape], offset([moved], kerf)), c.id);
         source.set(c.id, { offcut: o.id });
         boardOf.set(c.id, o.board);
         used = true;
@@ -227,7 +224,7 @@ export function layPattern(input: PatternInput): PatternOutput {
     boards.push(b);
     source.set(c.id, { board: b.index });
     boardOf.set(c.id, b.index);
-    if (!c.full) keep(b.index, c.variant, difference([c.blank], offset([c.local], kerf)));
+    if (!c.full) keep(b.index, c.variant, difference([c.blank], offset([c.local], kerf)), c.id);
   }
 
   /* ---------- pièces ---------- */
@@ -259,6 +256,7 @@ export function layPattern(input: PatternInput): PatternOutput {
       cuts: newEdgesOf(c.local, c.blank),
       source: source.get(c.id)!,
       ripped: false,
+      ...(rests.has(c.id) ? { rest: rests.get(c.id) } : {}),
     };
   });
 
