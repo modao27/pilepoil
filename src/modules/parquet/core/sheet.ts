@@ -27,6 +27,8 @@ export type SheetItem =
       shape: Polygon | null;
       /** Coupe en biais : angle de chaque coupe avec la rive, degrés (90 = coupe droite). */
       angles: number[];
+      /** Coupe identique (forme au millimètre, angles) à une pièce plus haut dans le groupe : son numéro. */
+      sameAs: number | null;
       source: LaidPiece['source'];
       /** Chute utilisée : la pièce qui l'a produite (groupe de la fiche et numéro). */
       origin: { group: number; n: number } | null;
@@ -106,11 +108,21 @@ function itemsOf(pieces: LaidPiece[], boardLength: (index: number) => number): S
       edges: p.cutType === 'angled' ? rives(p.polygon) : null,
       shape: p.cutType === 'angled' ? boardShape(p.polygon) : null,
       angles: p.cutType === 'angled' ? cutAngles(boardShape(p.polygon)) : [],
+      sameAs: null,
       source: p.source,
       origin: null,
       rest: p.rest ?? [],
     });
   });
+  // un seul croquis par coupe : les suivantes renvoient à la première de même forme
+  const first = new Map<string, number>();
+  for (const it of items) {
+    if (it.kind !== 'cut' || !it.shape) continue;
+    const key = it.shape.map((p) => `${Math.round(p[0])},${Math.round(p[1])}`).join(' ') + '|' + it.angles.join(',');
+    const n = first.get(key);
+    if (n != null) it.sameAs = n;
+    else first.set(key, it.n);
+  }
   return items;
 }
 

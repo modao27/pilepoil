@@ -196,7 +196,10 @@
                 {#each g.items as it, i (i)}
                   <li class:cut={it.kind === 'cut'}>
                     {itemText(it, sheet, roomName)}
-                    {#if it.kind === 'cut' && it.shape}<CutSketch shape={it.shape} angles={it.angles} />{/if}
+                    {#if it.kind === 'cut' && it.shape && it.sameAs == null}<CutSketch
+                        shape={it.shape}
+                        angles={it.angles}
+                      />{/if}
                   </li>
                 {/each}
               </ul>

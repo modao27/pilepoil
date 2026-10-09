@@ -175,7 +175,10 @@
                 <input type="checkbox" checked={isDone(it)} onchange={(e) => mark(ids(it), e.currentTarget.checked)} />
                 <span>{itemText(it, sheet, roomName)}</span>
               </label>
-              {#if it.kind === 'cut' && it.shape}<CutSketch shape={it.shape} angles={it.angles} />{/if}
+              {#if it.kind === 'cut' && it.shape && it.sameAs == null}<CutSketch
+                  shape={it.shape}
+                  angles={it.angles}
+                />{/if}
             </li>
           {/each}
         </ul>

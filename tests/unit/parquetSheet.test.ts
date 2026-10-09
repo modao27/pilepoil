@@ -55,6 +55,17 @@ describe('fiche de coupe', () => {
     const angled = s.flatMap((g) => g.items).filter((i) => i.kind === 'cut' && i.cutType === 'angled');
     expect(angled.length).toBeGreaterThan(0);
     for (const i of angled) if (i.kind === 'cut' && i.edges) expect(i.edges[0]).toBeGreaterThanOrEqual(i.edges[1]);
+    // un seul croquis par coupe : les coupes identiques renvoient à la première du groupe
+    for (const g of s) {
+      const cuts = g.items.filter((i) => i.kind === 'cut' && i.shape);
+      for (const i of cuts)
+        if (i.kind === 'cut' && i.sameAs != null) {
+          const ref = cuts.find((x) => x.kind === 'cut' && x.n === i.sameAs);
+          expect(ref && ref.kind === 'cut' && ref.sameAs).toBeNull();
+          expect(ref && ref.kind === 'cut' && ref.n).toBeLessThan(i.n);
+        }
+    }
+    expect(s.some((g) => g.items.some((i) => i.kind === 'cut' && i.sameAs != null))).toBe(true);
     // chutes : provenance connue
     for (const i of s.flatMap((g) => g.items))
       if (i.kind === 'cut' && 'offcut' in i.source) expect(i.origin).not.toBeNull();

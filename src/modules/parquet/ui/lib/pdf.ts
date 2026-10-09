@@ -308,7 +308,7 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
     for (const it of g.items) {
       // flèche absente des polices standard : tiret demi-cadratin
       d.text(itemText(it, sheet, roomName).replace(' → ', ' – '), 8.5, { x: M + 4, gap: 0.4, bold: it.kind === 'cut' });
-      if (it.kind === 'cut' && it.shape) sketch(d, it.shape, it.angles);
+      if (it.kind === 'cut' && it.shape && it.sameAs == null) sketch(d, it.shape, it.angles);
     }
     d.y += 2;
   }
