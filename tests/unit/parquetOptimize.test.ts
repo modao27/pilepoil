@@ -85,3 +85,17 @@ describe('optimisation du départ', () => {
     expect(run(spec(rect(4000, 3000)), 'x').result.improved).toBe(false);
   });
 });
+
+describe('performances (SPEC §6)', () => {
+  it('100 m² en point de Hongrie, optimisation comprise : sous 2 s (garde à 3 s, tests en parallèle)', () => {
+    const s = spec(rect(10000, 10000), {
+      board: { id: 'b', lengths: [600], lengthMix: null, width: 90, thickness: 10, handed: true, boardsPerPack: 12 },
+      pattern: { kind: 'chevron', endAngle: 45 },
+      axis: 'room-center',
+    });
+    const t0 = performance.now();
+    const { result } = run(s);
+    expect(performance.now() - t0).toBeLessThan(3000);
+    expect(result.after.total).toBeLessThanOrEqual(result.before.total);
+  }, 20000);
+});
