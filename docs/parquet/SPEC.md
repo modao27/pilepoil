@@ -57,6 +57,8 @@ export interface Layout {
   rules: LayingRules;
   /** Seuils posés par l'utilisateur (fractionnement), segments dans le repère du plan. */
   breaks: Segment[];
+  /** Zone de la pose : demi-plans qui la limitent (poses séparées dans une même pièce, schéma 2). */
+  zone: { line: Segment; side: 1 | -1 }[];
   seed: number;
 }
 
@@ -169,8 +171,8 @@ export interface ParquetSpec {
 export interface LayoutSpec {
   id: string;
   rooms: { id: string; outline: Polygon; obstacles: Polygon[]; openings: WallOpeningSpec[] }[];
-  /** depth = épaisseur du mur traversé par le passage. */
-  passages: { a: string; b: string; segment: Segment; width: number; depth: number }[];
+  /** segment = ouverture côté a ; depth = épaisseur du mur traversé par le passage. */
+  passages: { id: string; a: string; b: string; segment: Segment; width: number; depth: number }[];
   board: BoardSpec;
   pattern: Pattern;
   angle: number;
@@ -197,7 +199,7 @@ export interface LayoutResult {
   pieces: LaidPiece[];
   boards: BoardUse[];                // lames neuves et ce qu'on y taille
   offcuts: Offcut[];                 // chutes restantes en fin de calcul
-  thresholds: Segment[];             // seuils proposés ou imposés
+  thresholds: Threshold[];           // seuils proposés ou posés (breaks, limites de zone)
   warnings: ParquetWarning[];
   errors: ParquetError[];
 }
@@ -223,7 +225,8 @@ export type ParquetWarning =
   | { code: 'joint-offset'; row: number; offset: number }
   | { code: 'fractioning-needed'; length: number; width: number }
   | { code: 'narrow-passage'; passage: string; width: number }
-  | { code: 'tiny-piece'; piece: string; area: number };
+  | { code: 'tiny-piece'; piece: string; area: number }
+  | { code: 'layout-overlap'; layout: string };
 
 export type ParquetError =
   | { code: 'invalid-room'; room: string }
@@ -243,6 +246,16 @@ Exécuté dans le worker. Déterministe : même `ParquetSpec` → même résulta
    est la bande `width × depth`, `depth` étant l'épaisseur du mur porteur de l'ouverture dans le plan).
 3. Seuils (`breaks` + seuils proposés retenus) : la surface est coupée le long de chaque seuil, avec un jeu
    de chaque côté. Chaque morceau est calculé avec le même repère de motif.
+4. Zone : la surface est limitée à chaque demi-plan de `zone`, en retrait d'un jeu sur sa ligne.
+
+```ts
+interface Threshold {
+  segment: Segment;                  // d'un bord posable à l'autre
+  passage: string | null;            // passage coupé
+  status: 'proposed' | 'applied';
+  reason?: 'narrow-passage' | 'fractioning';
+}
+```
 
 ### 4.2 Pose droite
 1. Repère de pose : axe des lames = `referenceDirection` tourné de `angle`. Toute la suite se fait dans ce
@@ -301,7 +314,13 @@ Exécuté dans le worker. Déterministe : même `ParquetSpec` → même résulta
   `maxFloatingWidth` dans le repère des lames, alerte `fractioning-needed` avec une proposition de seuil
   au passage le plus étroit.
 - Passage plus étroit que `minPassageWidth` : alerte `narrow-passage` et seuil proposé.
-- L'utilisateur accepte une proposition (elle passe dans `breaks`) ou crée deux poses séparées.
+- Sans passage dans le morceau trop grand, le seuil proposé coupe la dimension trop grande en son milieu.
+- L'utilisateur accepte une proposition (elle passe dans `breaks`) ou sépare la pose en deux le long du seuil
+  (`parquet/layout/split`) : la pose garde le côté 1 de la ligne, la nouvelle le côté −1, chacune avec ses
+  réglages. Un seuil posé sur cette ligne devient la limite des zones. Supprimer une pose retire ses limites
+  communes des autres poses, qui reprennent la surface. Une limite de zone est comptée comme seuil posé du
+  côté 1 seulement.
+- Deux poses qui se recouvrent (même pièce sans zones séparées) : alerte `layout-overlap` sur la seconde.
 
 ### 4.5 Plinthes (`core/cutting/bars.ts`, partagé)
 1. Longueurs : chaque mur de chaque pièce, moins les ouvertures au sol (portes, baies), autour des obstacles

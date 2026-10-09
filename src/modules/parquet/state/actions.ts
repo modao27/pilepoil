@@ -39,8 +39,15 @@ export function reduce(d: ParquetData, a: Action | RoomRemoved): ParquetData {
       return changed ? { ...d, layouts } : d;
     }
     case 'parquet/layout/remove': {
-      const layouts = d.layouts.filter((l) => l.id !== a.layoutId);
-      return layouts.length === d.layouts.length ? d : { ...d, layouts };
+      const gone = d.layouts.find((l) => l.id === a.layoutId);
+      if (!gone) return d;
+      // les autres poses reprennent la surface laissée : leurs limites communes avec elle disparaissent
+      const shared = (b: Layout['zone'][number]) =>
+        gone.zone.some((g) => g.side === -b.side && sameSegment(g.line, b.line));
+      const layouts = d.layouts
+        .filter((l) => l.id !== a.layoutId)
+        .map((l) => (l.zone.some(shared) ? { ...l, zone: l.zone.filter((b) => !shared(b)) } : l));
+      return { ...d, layouts };
     }
     case 'parquet/layout/split': {
       const l = d.layouts.find((x) => x.id === a.layoutId);

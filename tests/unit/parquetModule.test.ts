@@ -180,6 +180,10 @@ describe('plusieurs pièces (P3)', () => {
     expect(reduceProject(p2, { type: 'parquet/layout/split', layoutId: l.id, line, newId: 'L2' } as never)).toBe(p2);
     const r = computeParquet(specOf(p2));
     expect(r.layouts.map((x) => x.warnings.filter((w) => w.code === 'layout-overlap'))).toEqual([[], []]);
+    // supprimer la pose 2 : la pose 1 reprend toute la surface
+    const p3 = reduceProject(p2, { type: 'parquet/layout/remove', layoutId: 'L2' } as never);
+    expect(data(p3).layouts).toHaveLength(1);
+    expect(data(p3).layouts[0]!.zone).toEqual([]);
   });
 
   it('migration 1 → 2 : zone vide pour chaque pose', () => {

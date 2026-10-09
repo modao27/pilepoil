@@ -2,6 +2,7 @@
  * État de l'éditeur du parquet : projet (store + historique commun au projet), pose courante, résultat du
  * calcul (worker). Toutes les modifications passent par des actions.
  */
+import type { Segment } from '../../../core/geometry/types';
 import type { Project } from '../../../state/model';
 import { reduceProject, type ProjectAction } from '../../../state/project';
 import { createProjectStore, type ProjectStore } from '../../../state/store';
@@ -23,13 +24,15 @@ export class ParquetEditorState {
   result = $state.raw<ParquetResult | null>(null);
   /** Pièce touchée sur le plan (infos de coupe). */
   selected = $state<string | null>(null);
+  /** Pose affichée dans les réglages (null : la première). */
+  current = $state<string | null>(null);
   computing = $state(false);
 
   readonly store: ProjectStore<Project, ProjectAction>;
   private saver: Saver<Project>;
 
   data = $derived(parquetData(this.doc)!);
-  layout = $derived<Layout | undefined>(this.data.layouts[0]);
+  layout = $derived<Layout | undefined>(this.data.layouts.find((l) => l.id === this.current) ?? this.data.layouts[0]);
   boards = $derived((app.libraries.boards ?? []) as readonly Board[]);
   board = $derived(this.boards.find((b) => b.id === this.layout?.boardId));
 
@@ -94,9 +97,50 @@ export class ParquetEditorState {
     this.updateLayout({ rooms: on ? [...rooms, roomId] : rooms.filter((r) => r !== roomId) });
   }
 
-  /** Première pose (projet sans pose, ou pose supprimée avec ses pièces). */
+  /**
+   * Nouvelle pose : la première couvre la première pièce ; les suivantes partent sans pièce (à cocher) et
+   * reprennent la lame et les règles de la pose affichée.
+   */
   addLayout(): void {
+    const id = crypto.randomUUID();
+    const layouts = this.data.layouts;
+    const names = layouts.map((l) => l.name);
+    let n = layouts.length + 1;
+    while (names.includes(`Pose ${n}`)) n++;
     const room = this.doc.plan.rooms[0];
-    this.dispatch({ type: 'parquet/layout/add', layout: createLayout(crypto.randomUUID(), room ? [room.id] : []) });
+    const from = this.layout;
+    const layout = from
+      ? createLayout(id, [], {
+          name: `Pose ${n}`,
+          boardId: from.boardId,
+          method: from.method,
+          rules: { ...from.rules },
+        })
+      : createLayout(id, room ? [room.id] : []);
+    this.dispatch({ type: 'parquet/layout/add', layout });
+    this.current = id;
+  }
+
+  removeLayout(): void {
+    if (!this.layout) return;
+    this.dispatch({ type: 'parquet/layout/remove', layoutId: this.layout.id });
+    this.current = null;
+  }
+
+  /** Accepter un seuil proposé : il passe dans les seuils posés de la pose. */
+  addBreak(s: Segment): void {
+    if (this.layout) this.updateLayout({ breaks: [...this.layout.breaks, s] });
+  }
+
+  removeBreak(i: number): void {
+    if (this.layout) this.updateLayout({ breaks: this.layout.breaks.filter((_, k) => k !== i) });
+  }
+
+  /** Séparer la pose en deux le long d'une ligne ; la nouvelle pose devient la pose affichée. */
+  split(line: Segment): void {
+    if (!this.layout) return;
+    const newId = crypto.randomUUID();
+    this.dispatch({ type: 'parquet/layout/split', layoutId: this.layout.id, line, newId });
+    this.current = newId;
   }
 }
