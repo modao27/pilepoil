@@ -46,7 +46,7 @@
     <div class="stats">
       <StatCard label="Surface posable" value={fr(result.totals.area, 2)} unit="m²" />
       <StatCard label="Lames utilisées" value={fr(result.totals.boards)} />
-      <StatCard label="Paquets" value={fr(lines.reduce((t, l) => t + l.quantity, 0))} />
+      <StatCard label="Paquets" value={fr(lines.reduce((t, l) => t + (l.unit === 'pack' ? l.quantity : 0), 0))} />
       <StatCard
         label="Perte"
         value={fr(result.totals.wastePct, 1)}

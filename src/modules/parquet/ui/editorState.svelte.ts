@@ -13,7 +13,7 @@ import { SupersededError } from '../../../workers/client';
 import type { Board } from '../core/board';
 import { METHOD_BY_KIND, RULES_BY_KIND } from '../core/defaults';
 import type { OptimizeResult, OptimizeSpec } from '../core/optimize';
-import type { ParquetResult, ParquetSpec } from '../core/types';
+import type { Accessories, ParquetResult, ParquetSpec } from '../core/types';
 import type { Action } from '../state/actions';
 import { createLayout, PARQUET_ID, type Layout } from '../state/model';
 import { parquetData, toSpec } from '../state/module';
@@ -131,6 +131,10 @@ export class ParquetEditorState {
     const b = this.boards.find((x) => x.id === id);
     if (!b) return;
     this.updateLayout({ boardId: id, rules: { ...RULES_BY_KIND[b.kind] }, method: METHOD_BY_KIND[b.kind] });
+  }
+
+  updateAccessories(patch: Partial<Accessories>, key?: string): void {
+    this.dispatch({ type: 'parquet/accessories', patch }, key);
   }
 
   resetRules(): void {

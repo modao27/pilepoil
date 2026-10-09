@@ -80,7 +80,9 @@
     }),
   );
   const packs = $derived(
-    ed.result ? shopping(ed.result, ed.data, app.libraries).reduce((t, l) => t + l.quantity, 0) : 0,
+    ed.result
+      ? shopping(ed.result, ed.data, app.libraries).reduce((t, l) => t + (l.unit === 'pack' ? l.quantity : 0), 0)
+      : 0,
   );
   const summary = $derived(
     !ed.result || !result
@@ -114,6 +116,7 @@
     layout?.breaks.findIndex((b) =>
       b.every((q, i) => Math.abs(q[0] - t.segment[i]![0]) < 0.5 && Math.abs(q[1] - t.segment[i]![1]) < 0.5),
     ) ?? -1;
+  const acc = $derived(ed.data.accessories);
   const motif = $derived(layout ? family(layout.pattern) !== 'straight' : false);
   const piece = $derived(result?.pieces.find((p) => p.id === ed.selected));
   const CUT = { full: 'lame entière', straight: 'coupe droite', angled: 'coupe en biais', complex: 'découpe' };
@@ -327,6 +330,81 @@
           value={layout.method}
           options={METHODS}
           onchange={(method) => ed.updateLayout({ method })}
+        />
+      </section>
+
+      <section aria-labelledby="pq-finish">
+        <h2 id="pq-finish">Finitions</h2>
+        <Checkbox
+          label="Sous-couche"
+          hint="Pose flottante seulement."
+          checked={acc.underlay.enabled}
+          onchange={(enabled) => ed.updateAccessories({ underlay: { ...acc.underlay, enabled } })}
+        />
+        {#if acc.underlay.enabled}
+          <NumberField
+            label="Rouleau de sous-couche"
+            unit="m²"
+            min={1}
+            decimals={1}
+            value={acc.underlay.m2PerRoll}
+            onchange={(m2PerRoll) => ed.updateAccessories({ underlay: { ...acc.underlay, m2PerRoll } })}
+          />
+        {/if}
+        <Checkbox
+          label="Pare-vapeur"
+          hint="Sur dalle béton ou chape : recouvrement et remontée en bord de mur."
+          checked={acc.vaporBarrier.enabled}
+          onchange={(enabled) => ed.updateAccessories({ vaporBarrier: { ...acc.vaporBarrier, enabled } })}
+        />
+        {#if acc.vaporBarrier.enabled}
+          <NumberField
+            label="Rouleau de pare-vapeur"
+            unit="m²"
+            min={1}
+            decimals={1}
+            value={acc.vaporBarrier.m2PerRoll}
+            onchange={(m2PerRoll) => ed.updateAccessories({ vaporBarrier: { ...acc.vaporBarrier, m2PerRoll } })}
+          />
+        {/if}
+        <Checkbox
+          label="Plinthes"
+          checked={acc.skirting.enabled}
+          onchange={(enabled) => ed.updateAccessories({ skirting: { ...acc.skirting, enabled } })}
+        />
+        {#if acc.skirting.enabled}
+          <div class="grid">
+            <NumberField
+              label="Barre de plinthe"
+              unit="mm"
+              min={100}
+              decimals={0}
+              value={acc.skirting.barLength}
+              onchange={(barLength) => ed.updateAccessories({ skirting: { ...acc.skirting, barLength } })}
+            />
+            <NumberField
+              label="Supplément par onglet"
+              unit="mm"
+              min={0}
+              decimals={0}
+              value={acc.skirting.mitreAllowance}
+              onchange={(mitreAllowance) => ed.updateAccessories({ skirting: { ...acc.skirting, mitreAllowance } })}
+            />
+          </div>
+          <Checkbox
+            label="Plinthes autour des obstacles"
+            checked={acc.skirting.aroundObstacles}
+            onchange={(aroundObstacles) => ed.updateAccessories({ skirting: { ...acc.skirting, aroundObstacles } })}
+          />
+        {/if}
+        <NumberField
+          label="Barre de seuil"
+          unit="mm"
+          min={100}
+          decimals={0}
+          value={acc.thresholds.barLength}
+          hint="Une barre par seuil posé, coupée à la largeur du passage."
+          onchange={(barLength) => ed.updateAccessories({ thresholds: { barLength } })}
         />
       </section>
 

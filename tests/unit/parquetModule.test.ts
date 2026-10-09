@@ -87,7 +87,7 @@ describe('module parquet', () => {
     const p = project();
     const r = computeParquet(specOf(p));
     const used = r.totals.boards;
-    const lines = parquet.shopping(r, data(p), libraries);
+    const lines = parquet.shopping(r, data(p), libraries).filter((x) => x.group === 'covering');
     expect(lines).toEqual([
       expect.objectContaining({
         key: 'parquet:board:modele-stratifie',
@@ -112,11 +112,41 @@ describe('module parquet', () => {
       ...data(p),
       layouts: [createLayout(data(p).layouts[0]!.id, [], { boardId: 'modele-baton-rompu' })],
     };
-    const lines = parquet.shopping(handed, d, libraries);
+    const lines = parquet.shopping(handed, d, libraries).filter((x) => x.group === 'covering');
     expect(lines.map((l) => l.key)).toEqual([
       'parquet:board:modele-baton-rompu:A',
       'parquet:board:modele-baton-rompu:B',
     ]);
+  });
+
+  it('liste d’achat de R1 : 7 paquets, 1 rouleau de sous-couche, 6 barres de plinthe', () => {
+    const p = project();
+    const r = computeParquet(specOf(p));
+    expect(r.totals.boards).toBe(52);
+    const lines = parquet.shopping(r, data(p), libraries);
+    // 52 × 1,05 / 9 = 6,07 → 7 ; 11,888 × 1,05 / 15 = 0,83 → 1 ; plinthes : voir parquetSkirting (6 barres)
+    expect(lines.map((x) => [x.key, x.quantity, x.unit, x.detail])).toEqual([
+      ['parquet:board:modele-stratifie', 7, 'pack', '52 lames + 5 % (9 par paquet)'],
+      ['parquet:underlay', 1, 'roll', '11,9 m² + 5 % de recouvrement (15 m² par rouleau)'],
+      ['parquet:skirting', 6, 'bar', '14 m, barres de 2,4 m'],
+    ]);
+  });
+
+  it('pose collée ou clouée : pas de sous-couche, colle ou fixations', () => {
+    for (const [method, key] of [
+      ['glued', 'parquet:glue'],
+      ['nailed', 'parquet:fixings'],
+    ] as const) {
+      const p0 = project();
+      const p = reduceProject(p0, {
+        type: 'parquet/layout/update',
+        layoutId: data(p0).layouts[0]!.id,
+        patch: { method },
+      } as never);
+      const keys = parquet.shopping(computeParquet(specOf(p)), data(p), libraries).map((x) => x.key);
+      expect(keys).toContain(key);
+      expect(keys).not.toContain('parquet:underlay');
+    }
   });
 
   it('résumé : lames, surface, perte', () => {
@@ -184,6 +214,30 @@ describe('plusieurs pièces (P3)', () => {
     const p3 = reduceProject(p2, { type: 'parquet/layout/remove', layoutId: 'L2' } as never);
     expect(data(p3).layouts).toHaveLength(1);
     expect(data(p3).layouts[0]!.zone).toEqual([]);
+  });
+
+  it('liste d’achat de R7, seuil posé : lames, sous-couche, plinthes, barre de seuil', () => {
+    const p0 = r7();
+    const l = data(p0).layouts[0]!;
+    const line: [[number, number], [number, number]] = [
+      [4036, 1000],
+      [4036, 1830],
+    ];
+    const p = reduceProject(p0, { type: 'parquet/layout/update', layoutId: l.id, patch: { breaks: [line] } } as never);
+    const r = computeParquet(specOf(p));
+    const lines = parquet.shopping(r, data(p), libraries);
+    expect(lines.map((x) => [x.key, x.quantity, x.unit])).toEqual([
+      ['parquet:board:modele-stratifie', Math.ceil((r.totals.boards * 1.05) / 9), 'pack'],
+      // 2 × 3984 × 2984 + bande du passage 814 × 88 − bande du seuil 814 × 16 = 23,835 m² × 1,05 / 15 = 1,67
+      ['parquet:underlay', 2, 'roll'],
+      // 4 murs de 4000 et 2 de 3000 (onglets : + 20), 4 morceaux contre la porte (1000 et 1170, + 10) :
+      // 6 barres entières + [1620, 620] × 2 + [1180, 1010] × 2 + [1620] × 2 = 12 barres
+      ['parquet:skirting', 12, 'bar'],
+      // seuil de 830 : une barre de 93 cm
+      ['parquet:threshold', 1, 'bar'],
+    ]);
+    expect(r.totals.area).toBeCloseTo(23.835, 2);
+    expect(lines.find((x) => x.key === 'parquet:threshold')!.detail).toBe('1 seuil, barres de 93 cm');
   });
 
   it('migration 1 → 2 : zone vide pour chaque pose', () => {

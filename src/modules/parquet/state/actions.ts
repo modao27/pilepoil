@@ -3,7 +3,7 @@
  * d'origine si l'action est sans effet ou ne le concerne pas.
  */
 import type { Segment } from '../../../core/geometry/types';
-import type { ParquetSettings } from '../core/types';
+import type { Accessories, ParquetSettings } from '../core/types';
 import type { Layout, ParquetData } from './model';
 
 type Id = string;
@@ -15,6 +15,7 @@ export type Action =
   /** Sépare une pose en deux le long d'une ligne : elle garde le côté 1, la nouvelle (newId) le côté −1. */
   | { type: 'parquet/layout/split'; layoutId: Id; line: Segment; newId: Id }
   | { type: 'parquet/settings'; patch: Partial<ParquetSettings> }
+  | { type: 'parquet/accessories'; patch: Partial<Accessories> }
   | { type: 'parquet/price'; key: string; value: number | null };
 
 /** Prévenu par le plan : une pièce a disparu (docs/BOITE.md §5). */
@@ -72,6 +73,11 @@ export function reduce(d: ParquetData, a: Action | RoomRemoved): ParquetData {
       const keys = Object.keys(a.patch) as (keyof ParquetSettings)[];
       if (keys.every((k) => Object.is(d.settings[k], a.patch[k]))) return d;
       return { ...d, settings: { ...d.settings, ...a.patch } };
+    }
+    case 'parquet/accessories': {
+      const keys = Object.keys(a.patch) as (keyof Accessories)[];
+      if (keys.every((k) => Object.is(d.accessories[k], a.patch[k]))) return d;
+      return { ...d, accessories: { ...d.accessories, ...a.patch } };
     }
     case 'parquet/price': {
       const rest = Object.fromEntries(Object.entries(d.prices).filter(([k]) => k !== a.key));
