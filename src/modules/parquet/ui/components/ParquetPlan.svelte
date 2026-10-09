@@ -5,13 +5,15 @@
    * Toucher une lame la sélectionne.
    */
   import type { Polygon } from '../../../../core/geometry/types';
-  import type { LaidPiece } from '../../core/types';
+  import type { LaidPiece, Threshold } from '../../core/types';
 
   let {
     rooms,
     pieces,
     color,
     variants = false,
+    others = [],
+    thresholds = [],
     selected = $bindable(null),
     label,
   }: {
@@ -20,6 +22,10 @@
     color: string;
     /** Motifs : lames B plus foncées que les lames A. */
     variants?: boolean;
+    /** Lames des autres poses, atténuées. */
+    others?: { pieces: LaidPiece[]; color: string }[];
+    /** Seuils de la pose : proposés en pointillés, posés en trait plein. */
+    thresholds?: Threshold[];
     selected?: string | null;
     label: string;
   } = $props();
@@ -41,6 +47,17 @@
 
 <svg class="plan" viewBox={vb} role="img" aria-label={label} preserveAspectRatio="xMidYMid meet">
   {#each rooms as r, i (i)}<polygon class="room" points={pts(r)} />{/each}
+  {#each others as o, i (i)}
+    <g class="other" aria-hidden="true">
+      {#each o.pieces as p (p.id)}
+        <polygon
+          class="piece {kind(p)}"
+          style={kind(p) === 'full' ? `fill: ${o.color}` : undefined}
+          points={pts(p.polygon)}
+        />
+      {/each}
+    </g>
+  {/each}
   {#each pieces as p (p.id)}
     <!-- complément visuel au pointeur : longueur et coupe d'une lame ; la fiche de coupe complète, accessible
          au clavier, vient en P4 -->
@@ -51,6 +68,16 @@
       style={kind(p) === 'full' ? `fill: ${variants && p.variant === 'B' ? dark : color}` : undefined}
       points={pts(p.polygon)}
       onclick={() => (selected = selected === p.id ? null : p.id)}
+    />
+  {/each}
+  {#each thresholds as t, i (i)}
+    <line
+      class="threshold"
+      class:proposed={t.status === 'proposed'}
+      x1={t.segment[0][0]}
+      y1={t.segment[0][1]}
+      x2={t.segment[1][0]}
+      y2={t.segment[1][1]}
     />
   {/each}
 </svg>
@@ -79,6 +106,20 @@
   }
   .piece.reuse {
     fill: color-mix(in srgb, var(--reuse) 70%, var(--sheet));
+  }
+  .other {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  .threshold {
+    stroke: var(--thin);
+    stroke-width: 5px;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
+  .threshold.proposed {
+    stroke-dasharray: 8 6;
   }
   .piece.sel {
     stroke: var(--accent);

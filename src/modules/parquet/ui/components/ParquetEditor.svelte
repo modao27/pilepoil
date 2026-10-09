@@ -15,7 +15,7 @@
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import Select from '../../../../ui/components/Select.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
-  import type { AxisKind, LayingMethod, Pattern } from '../../core/types';
+  import type { AxisKind, LayingMethod, Pattern, Threshold } from '../../core/types';
   import { shopping } from '../../state/module';
   import { ParquetEditorState } from '../editorState.svelte';
   import { errorText, warningText } from '../lib/messages';
@@ -72,8 +72,9 @@
 
   const layout = $derived(ed.layout);
   const result = $derived(ed.result?.layouts.find((l) => l.id === layout?.id) ?? null);
+  // pièces de toutes les poses ; les lames des autres poses sont atténuées
   const roomShapes = $derived<Polygon[]>(
-    (layout?.rooms ?? []).flatMap((id) => {
+    [...new Set(ed.data.layouts.flatMap((l) => l.rooms))].flatMap((id) => {
       const r = ed.doc.plan.rooms.find((x) => x.id === id);
       return r ? [r.outline.map(([x, y]): [number, number] => [r.origin[0] + x, r.origin[1] + y])] : [];
     }),
@@ -88,6 +89,31 @@
         ? 'Calcul impossible : voir les réglages'
         : `${ed.result.totals.boards} lames · ${packs} paquet${packs > 1 ? 's' : ''} · perte ${Math.round(ed.result.totals.wastePct)} %`,
   );
+  const others = $derived(
+    (ed.result?.layouts ?? [])
+      .filter((r) => r.id !== layout?.id)
+      .map((r) => {
+        const l = ed.data.layouts.find((x) => x.id === r.id);
+        return { pieces: r.pieces, color: ed.boards.find((b) => b.id === l?.boardId)?.color ?? '#c9a77c' };
+      }),
+  );
+  const roomName = (id: string) => ed.doc.plan.rooms.find((r) => r.id === id)?.name ?? 'pièce';
+  /** Seuil dans un passage : « entre Séjour et Bureau ». */
+  function where(t: Threshold): string {
+    const p = t.passage ? ed.doc.plan.passages.find((x) => x.id === t.passage) : undefined;
+    return p ? ` entre ${roomName(p.a.room)} et ${roomName(p.b.room)}` : '';
+  }
+  function thresholdTitle(t: Threshold): string {
+    if (t.status === 'applied') return `Seuil posé${where(t)}`;
+    return t.reason === 'narrow-passage'
+      ? `Seuil conseillé${where(t)} : passage étroit`
+      : `Seuil conseillé${where(t)} : surface trop grande`;
+  }
+  /** Seuils posés de la pose (breaks) : index pour « Retirer » ; les limites de zone n'en ont pas. */
+  const breakIndex = (t: Threshold) =>
+    layout?.breaks.findIndex((b) =>
+      b.every((q, i) => Math.abs(q[0] - t.segment[i]![0]) < 0.5 && Math.abs(q[1] - t.segment[i]![1]) < 0.5),
+    ) ?? -1;
   const motif = $derived(layout ? family(layout.pattern) !== 'straight' : false);
   const piece = $derived(result?.pieces.find((p) => p.id === ed.selected));
   const CUT = { full: 'lame entière', straight: 'coupe droite', angled: 'coupe en biais', complex: 'découpe' };
@@ -131,6 +157,28 @@
         </section>
       {/if}
 
+      <section aria-labelledby="pq-layouts" class="layouts">
+        <h2 id="pq-layouts" class="visually-hidden">Poses</h2>
+        {#if ed.data.layouts.length > 1}
+          <Select
+            label="Pose affichée"
+            value={layout.id}
+            options={ed.data.layouts.map((l) => ({ value: l.id, label: l.name }))}
+            onchange={(id) => ((ed.current = String(id)), (ed.selected = null))}
+          />
+        {/if}
+        <div class="row">
+          <Button variant="ghost" icon="plus" onclick={() => ed.addLayout()}>Nouvelle pose</Button>
+          {#if ed.data.layouts.length > 1}
+            <Button variant="ghost" icon="trash" onclick={() => ed.removeLayout()}>Supprimer cette pose</Button>
+          {/if}
+        </div>
+      </section>
+
+      {#if !layout.rooms.length}
+        <p class="muted" role="status">Cochez les pièces de cette pose.</p>
+      {/if}
+
       {#if result?.errors.length || result?.warnings.length}
         <section class="alerts" aria-label="Alertes">
           <ul>
@@ -146,6 +194,27 @@
           <Checkbox label={r.name} checked={layout.rooms.includes(r.id)} onchange={(on) => ed.toggleRoom(r.id, on)} />
         {/each}
         <Button variant="ghost" href="#/p/{ed.doc.id}/plan">Modifier le plan</Button>
+        {#if result?.thresholds.length}
+          <h3>Seuils</h3>
+          <ul class="thresholds">
+            {#each result.thresholds as t, i (i)}
+              <li class:proposed={t.status === 'proposed'}>
+                <span>{thresholdTitle(t)}</span>
+                <div class="row">
+                  {#if t.status === 'proposed'}
+                    <Button variant="secondary" onclick={() => ed.addBreak(t.segment)}>Poser ce seuil</Button>
+                    <Button variant="ghost" onclick={() => ed.split(t.segment)}>Séparer en deux poses</Button>
+                  {:else if breakIndex(t) >= 0}
+                    <Button variant="ghost" onclick={() => ed.split(t.segment)}>Séparer en deux poses</Button>
+                    <Button variant="ghost" onclick={() => ed.removeBreak(breakIndex(t))}>Retirer</Button>
+                  {:else}
+                    <small class="muted">Limite avec une autre pose.</small>
+                  {/if}
+                </div>
+              </li>
+            {/each}
+          </ul>
+        {/if}
       </section>
 
       <section aria-labelledby="pq-board">
@@ -309,6 +378,8 @@
         pieces={result?.pieces ?? []}
         color={ed.board?.color ?? '#c9a77c'}
         variants={motif}
+        {others}
+        thresholds={result?.thresholds ?? []}
         bind:selected={ed.selected}
         label="Plan des lames : {summary}"
       />
@@ -402,6 +473,34 @@
   .muted {
     margin: 0;
     color: var(--muted);
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  h3 {
+    margin: 0;
+    font-size: var(--fs-base);
+  }
+  .thresholds {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .thresholds li {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--thin);
+    border-radius: var(--r-field);
+    background: var(--sheet);
+  }
+  .thresholds li.proposed {
+    border-left-style: dashed;
   }
   .axes {
     display: grid;

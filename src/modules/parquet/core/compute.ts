@@ -2,11 +2,12 @@
  * Moteur du parquet (docs/parquet/SPEC.md §4) : surface posable, pose de chaque pose, totaux, empreinte.
  * Déterministe : même entrée → même résultat. En P1 : pose droite seulement.
  */
-import { difference, offset, regionArea, union } from '../../../core/geometry/boolean';
+import { difference, intersection, offset, regionArea, union } from '../../../core/geometry/boolean';
 import { pointInPolygon, signedArea } from '../../../core/geometry/polygon';
 import type { Polygon } from '../../../core/geometry/types';
 import { fingerprint } from '../../../core/hash';
 import { selfIntersecting } from '../../../core/plan/validate';
+import { appliedThresholds, breakBand, fractioning, halfPlane, passageBand } from './fractioning';
 import { layingFrame, ringFromFrame, ringToFrame } from './frame';
 import { axisOptions } from './axis';
 import { layPattern } from './patterned';
@@ -18,6 +19,12 @@ export const MAX_PIECES = 20000;
 
 export function computeParquet(spec: ParquetSpec): ParquetResult {
   const layouts = spec.layouts.map((l) => computeLayout(l, spec));
+  // poses qui se recouvrent (même pièce dans deux poses sans zones séparées) : alerte sur la seconde
+  layouts.forEach((b, j) => {
+    for (const a of layouts.slice(0, j))
+      if (a.layable.length && b.layable.length && regionArea(intersection(a.layable, b.layable)) > 1e4)
+        b.warnings.push({ code: 'layout-overlap', layout: a.id });
+  });
   const pieces = layouts.flatMap((l) => l.pieces);
   const boards = layouts.flatMap((l) => l.boards);
   const widthOf = new Map(spec.layouts.map((l) => [l.id, l.board?.width ?? 0]));
@@ -59,7 +66,8 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
   if (!motif && l.rules.minCutLength + l.rules.minJointOffset > maxLen)
     return empty(l, [{ code: 'board-too-short-for-rules' }]);
 
-  const layable = layableSurface(l);
+  const base = layableSurface(l);
+  const layable = cutSurface(l, base);
   if (!layable.length)
     return empty(
       l,
@@ -69,6 +77,7 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
   const estimate = Math.ceil((regionArea(layable) / (meanLen * l.board.width)) * 1.2);
   if (estimate > MAX_PIECES) return empty(l, [{ code: 'too-many-pieces', estimate }], layable);
 
+  const frame = layingFrame(l.referenceDirection, l.angle);
   const opts = { kerf: spec.settings.kerf, reuseOffcuts: spec.settings.reuseOffcuts };
   const options = motif ? axisOptions(l, layable) : undefined;
   let out;
@@ -77,7 +86,6 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
     const axis = typeof l.axis === 'string' ? (options.find((o) => o.kind === l.axis) ?? options[0]!).point : l.axis;
     out = layPattern({ layout: { ...l, axis }, layable, ...opts });
   } else {
-    const frame = layingFrame(l.referenceDirection, l.angle);
     out = layStraight({ layout: l, region: layable.map((r) => ringToFrame(frame, r)), frame, ...opts });
   }
 
@@ -87,7 +95,11 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
     return l.rooms.find((r) => pointInPolygon(c, r.outline))?.id ?? l.rooms[0]!.id;
   };
   for (const p of out.pieces) p.room = roomOf(p.polygon);
-  const warnings = out.warnings.map((w) => (w.code === 'edge-row-narrow' ? { ...w, room: l.rooms[0]!.id } : w));
+  const split = fractioning(l, layable, frame);
+  const warnings = [
+    ...out.warnings.map((w) => (w.code === 'edge-row-narrow' ? { ...w, room: l.rooms[0]!.id } : w)),
+    ...split.warnings,
+  ];
 
   return {
     id: l.id,
@@ -95,7 +107,7 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
     pieces: out.pieces,
     boards: out.boards,
     offcuts: out.offcuts,
-    thresholds: [],
+    thresholds: [...appliedThresholds(l, base), ...split.thresholds],
     ...(options ? { axisOptions: options } : {}),
     warnings,
     errors: [],
@@ -103,8 +115,8 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
 }
 
 /**
- * Surface posable (SPEC §4.1) : chaque pièce réduite du jeu périphérique, moins ses obstacles agrandis du jeu,
- * puis réunion des pièces de la pose (les passages et les seuils arrivent en P3).
+ * Surface posable avant seuils (SPEC §4.1) : chaque pièce réduite du jeu périphérique, moins ses obstacles
+ * agrandis du jeu, réunie aux autres pièces de la pose par la bande de chaque passage.
  */
 export function layableSurface(l: LayoutSpec): Polygon[] {
   const gap = l.rules.expansionGap;
@@ -114,7 +126,22 @@ export function layableSurface(l: LayoutSpec): Polygon[] {
     const holes = r.obstacles.flatMap((o) => offset([oriented(o)], gap));
     all = union(all, holes.length ? difference(inner, holes) : inner);
   }
-  return all;
+  const outline = (id: string) => l.rooms.find((r) => r.id === id)?.outline;
+  const bands = l.passages.map((p) => passageBand(p, outline(p.a), gap));
+  return bands.length && all.length ? union(all, bands) : all;
+}
+
+/** Surface coupée le long des seuils posés (un jeu de chaque côté), puis limitée à la zone de la pose. */
+function cutSurface(l: LayoutSpec, base: Polygon[]): Polygon[] {
+  const gap = l.rules.expansionGap;
+  let s = l.breaks.length
+    ? difference(
+        base,
+        l.breaks.map((b) => breakBand(b, gap)),
+      )
+    : base;
+  for (const b of l.zone) s = intersection(s, [halfPlane(b, gap)]);
+  return s;
 }
 
 /** Contour dans le sens attendu (aire signée > 0). */

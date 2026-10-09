@@ -119,3 +119,76 @@ test('parquet : bâton rompu et point de Hongrie, axe du motif, lames A et B', a
   await expect(page.getByText(/\(lames B\) : \d+ paquets?/)).toBeVisible();
   await page.goto(`/#/p/${id}/m/parquet`);
 });
+
+test('parquet : deux pièces reliées par une porte, seuil conseillé, poses séparées', async ({ page }, info) => {
+  const id = await parquetProject(page);
+
+  // seconde pièce à droite, portes face à face, passage
+  await page.goto(`/#/p/${id}/plan`);
+  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  const pp = page.getByRole('complementary', { name: 'Réglages du plan' }).or(page.locator('.sheet'));
+  await page.getByRole('button', { name: 'Ajouter une pièce' }).first().click();
+  await setNumber(dialog, 'Nom', 'Bureau');
+  await setNumber(dialog, 'Longueur', '300');
+  await setNumber(dialog, 'Largeur', '300');
+  await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(pp.getByRole('heading', { name: 'Bureau' })).toBeVisible();
+  await pp
+    .getByRole('button', { name: /^Ouvertures et épaisseur/ })
+    .nth(3)
+    .click();
+  await pp.getByRole('button', { name: 'Ajouter une porte' }).click();
+  await pp.getByRole('button', { name: 'Retour à Bureau' }).click();
+  await pp.getByRole('button', { name: 'Toutes les pièces' }).click();
+  await pp.getByRole('button', { name: 'Séjour', exact: true }).click();
+  await pp
+    .getByRole('button', { name: /^Ouvertures et épaisseur/ })
+    .nth(1)
+    .click();
+  await pp.getByRole('button', { name: 'Ajouter une porte' }).click();
+  await pp.getByRole('button', { name: 'Relier à une autre porte' }).click();
+  await pp.getByRole('button', { name: 'Porte de Bureau, mur 4' }).click();
+  await expect(pp.getByRole('heading', { name: 'Passage' })).toBeVisible();
+
+  // parquet : les deux pièces dans la pose
+  await page.goto(`/#/p/${id}/m/parquet`);
+  const p = panel(page);
+  const summary = page.getByRole('link', { name: /lames · \d+ paquets/ }).first();
+  await expect(summary).toContainText('52 lames');
+  await p.getByRole('checkbox', { name: 'Bureau' }).check();
+  await expect(summary).not.toContainText('52 lames');
+  await expect(p.getByText(/^Passage de \d+ mm seulement/)).toBeVisible();
+  const advice = p.getByText('Seuil conseillé entre Séjour et Bureau : passage étroit');
+  await expect(advice).toBeVisible();
+  await expect(page.locator('line.threshold.proposed')).toHaveCount(1);
+  await check(page);
+  await shot(page, info, '97-parquet-deux-pieces');
+
+  // poser le seuil, puis annuler
+  await p.getByRole('button', { name: 'Poser ce seuil' }).click();
+  await expect(p.getByText('Seuil posé entre Séjour et Bureau')).toBeVisible();
+  await expect(page.locator('line.threshold:not(.proposed)')).toHaveCount(1);
+  await expect(p.getByText(/^Passage de \d+ mm seulement/)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await expect(advice).toBeVisible();
+
+  // séparer en deux poses : la nouvelle pose est affichée, son angle est libre
+  await p.getByRole('button', { name: 'Séparer en deux poses' }).click();
+  const which = p.getByRole('combobox', { name: 'Pose affichée' });
+  await expect(which).toHaveValue(/.+/);
+  await expect(which.locator('option:checked')).toHaveText('Pose 2');
+  await expect(p.getByText('Limite avec une autre pose.')).toHaveCount(0);
+  await setNumber(p, 'Angle des lames', '90');
+  await expect(page.locator('g.other polygon.piece').first()).toBeAttached();
+  await which.selectOption({ label: 'Pose 1' });
+  await expect(p.getByText('Limite avec une autre pose.')).toBeVisible();
+  await expect(p.getByText(/recouvre une autre pose/)).toHaveCount(0);
+  await check(page);
+  await shot(page, info, '98-parquet-poses-separees');
+
+  // supprimer la pose 2 : la pose 1 reprend toute la surface
+  await which.selectOption({ label: 'Pose 2' });
+  await p.getByRole('button', { name: 'Supprimer cette pose' }).click();
+  await expect(p.getByRole('combobox', { name: 'Pose affichée' })).toHaveCount(0);
+  await expect(advice).toBeVisible();
+});

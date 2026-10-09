@@ -6,12 +6,20 @@ import type { Point, Segment } from '../../../core/geometry/types';
 import type { Plan } from '../../../core/plan/types';
 import { BOARD_TEMPLATES } from '../core/board';
 import { DEFAULT_ACCESSORIES, DEFAULT_SETTINGS, METHOD_BY_KIND, RULES_BY_KIND } from '../core/defaults';
-import type { Accessories, AxisKind, LayingMethod, LayingRules, ParquetSettings, Pattern } from '../core/types';
+import type {
+  Accessories,
+  AxisKind,
+  LayingMethod,
+  LayingRules,
+  ParquetSettings,
+  Pattern,
+  ZoneBound,
+} from '../core/types';
 
 type Id = string;
 
 export const PARQUET_ID = 'parquet';
-export const PARQUET_SCHEMA = 1;
+export const PARQUET_SCHEMA = 2;
 
 export interface ParquetData {
   /** Une pose par groupe de pièces posées en continu. */
@@ -44,6 +52,8 @@ export interface Layout {
   rules: LayingRules;
   /** Seuils posés par l'utilisateur (fractionnement), segments dans le repère du plan. */
   breaks: Segment[];
+  /** Zone de la pose dans ses pièces (poses séparées, schéma 2) ; vide : pièces entières. */
+  zone: ZoneBound[];
   seed: number;
 }
 
@@ -65,6 +75,7 @@ export function createLayout(id: Id, rooms: Id[], o: Partial<Layout> = {}): Layo
     method: METHOD_BY_KIND[kind],
     rules: { ...RULES_BY_KIND[kind] },
     breaks: [],
+    zone: [],
     seed: 1,
     ...o,
   };
@@ -81,3 +92,12 @@ export function createParquetData(plan: Plan, newId: () => Id): ParquetData {
     worksite: null,
   };
 }
+
+/** Migrations des données : migrations[n] passe de la version n − 1 à n. */
+export const PARQUET_MIGRATIONS: Record<number, (doc: unknown) => unknown> = {
+  // 2 : zone des poses (poses séparées dans une même pièce)
+  2: (doc) => {
+    const d = doc as { layouts: object[] };
+    return { ...d, layouts: d.layouts.map((l) => ({ zone: [], ...l })) };
+  },
+};
