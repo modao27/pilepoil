@@ -1,7 +1,7 @@
 /** Fiche de coupe (docs/parquet/SPEC.md §5) : ordre de pose, regroupements, provenance des chutes. */
 import { describe, expect, it } from 'vitest';
 import { computeParquet } from '../../src/modules/parquet/core/compute';
-import { cuttingSheet, rives, type SheetItem } from '../../src/modules/parquet/core/sheet';
+import { boardShape, cutAngles, cuttingSheet, rives, type SheetItem } from '../../src/modules/parquet/core/sheet';
 import { rect, spec } from './parquetHelpers';
 
 const count = (items: SheetItem[]) => items.reduce((t, i) => t + (i.kind === 'full' ? i.count : 1), 0);
@@ -58,6 +58,31 @@ describe('fiche de coupe', () => {
     // chutes : provenance connue
     for (const i of s.flatMap((g) => g.items))
       if (i.kind === 'cut' && 'offcut' in i.source) expect(i.origin).not.toBeNull();
+  });
+
+  it('croquis d’une coupe en biais : pièce dans le repère de la lame, angles des coupes', () => {
+    const shape = boardShape([
+      [1000, 1000],
+      [1000 + 600 / Math.SQRT2, 1000 + 600 / Math.SQRT2],
+      [1000 + 600 / Math.SQRT2 - 90 / Math.SQRT2, 1000 + 600 / Math.SQRT2 + 90 / Math.SQRT2],
+      [1000 - 90 / Math.SQRT2, 1000 + 90 / Math.SQRT2],
+    ]);
+    // rectangle 600 × 90 tourné de 45° : revient à plat, origine au coin
+    expect(shape.map((p) => p.map((v) => Math.round(v)))).toEqual([
+      [0, 0],
+      [600, 0],
+      [600, 90],
+      [0, 90],
+    ]);
+    expect(cutAngles(shape)).toEqual([90, 90]);
+    expect(
+      cutAngles([
+        [0, 0],
+        [600, 0],
+        [510, 90],
+        [90, 90],
+      ]),
+    ).toEqual([45, 45]);
   });
 
   it('rives d’un parallélogramme à 45° : deux rives de même longueur', () => {

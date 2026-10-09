@@ -23,6 +23,10 @@ export type SheetItem =
       cutType: LaidPiece['cutType'];
       /** Coupe en biais : longueurs des deux rives (la plus longue d'abord). */
       edges: [number, number] | null;
+      /** Coupe en biais : la pièce dans le repère de sa lame (x le long des rives, origine au coin), croquis coté. */
+      shape: Polygon | null;
+      /** Coupe en biais : angle de chaque coupe avec la rive, degrés (90 = coupe droite). */
+      angles: number[];
       source: LaidPiece['source'];
       /** Chute utilisée : la pièce qui l'a produite (groupe de la fiche et numéro). */
       origin: { group: number; n: number } | null;
@@ -100,12 +104,45 @@ function itemsOf(pieces: LaidPiece[], boardLength: (index: number) => number): S
       width: p.ripped ? Math.round((Math.abs(signedArea(p.polygon)) / Math.max(p.length, 1e-6)) * 10) / 10 : null,
       cutType: p.cutType,
       edges: p.cutType === 'angled' ? rives(p.polygon) : null,
+      shape: p.cutType === 'angled' ? boardShape(p.polygon) : null,
+      angles: p.cutType === 'angled' ? cutAngles(boardShape(p.polygon)) : [],
       source: p.source,
       origin: null,
       rest: p.rest ?? [],
     });
   });
   return items;
+}
+
+/** Repère de la lame d'une pièce : x le long de sa plus longue arête (une rive), origine au coin. */
+export function boardShape(poly: Polygon): Polygon {
+  let best = 0,
+    u: Point = [1, 0];
+  poly.forEach((a, i) => {
+    const b = poly[(i + 1) % poly.length]!;
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (d > best) {
+      best = d;
+      u = [(b[0] - a[0]) / d, (b[1] - a[1]) / d];
+    }
+  });
+  const local = poly.map((p): Point => [p[0] * u[0] + p[1] * u[1], -p[0] * u[1] + p[1] * u[0]]);
+  const x0 = Math.min(...local.map((p) => p[0])),
+    y0 = Math.min(...local.map((p) => p[1]));
+  return local.map((p): Point => [Math.round((p[0] - x0) * 10) / 10, Math.round((p[1] - y0) * 10) / 10]);
+}
+
+/** Angle avec la rive de chaque arête qui n'est pas une rive, degrés entiers (90 = coupe droite). */
+export function cutAngles(shape: Polygon): number[] {
+  const out: number[] = [];
+  shape.forEach((a, i) => {
+    const b = shape[(i + 1) % shape.length]!;
+    const dx = Math.abs(b[0] - a[0]),
+      dy = Math.abs(b[1] - a[1]);
+    if (Math.hypot(dx, dy) < 1 || dy < 0.5) return; // rive (parallèle à x)
+    out.push(Math.round((Math.atan2(dy, dx) * 180) / Math.PI));
+  });
+  return out;
 }
 
 /**

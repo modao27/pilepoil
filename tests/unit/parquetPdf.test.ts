@@ -102,4 +102,23 @@ describe('export PDF du parquet', () => {
     expect(all).toMatch(/1 \/ \d+/);
     expect(all).not.toMatch(new RegExp(`[${String.fromCodePoint(0x202f, 0x2153, 0x2248)}]`));
   });
+
+  it('point de Hongrie : croquis cotés des coupes en biais dans la fiche', async () => {
+    const project = r7();
+    const data = project.modules.parquet!.data as ParquetData;
+    data.layouts[0]!.boardId = 'modele-hongrie-45';
+    data.layouts[0]!.pattern = { kind: 'chevron', endAngle: 45 };
+    data.layouts[0]!.breaks = [];
+    const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES });
+    if (!('spec' in s)) throw new Error('spec');
+    const result = computeParquet(s.spec);
+    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES });
+    const blob = buildParquetPdf({ project, data, result, lines, boards: BOARD_TEMPLATES, date: Date.UTC(2026, 9, 9) });
+    if (process.env.PARQUET_PDF_H) writeFileSync(process.env.PARQUET_PDF_H, Buffer.from(await blob.arrayBuffer()));
+    const all = (await pagesText(blob)).map((p) => p.text).join(' ');
+    expect(all).toMatch(/Séjour — ligne 1/);
+    expect(all).toMatch(/coupe en biais \(rives \d/);
+    // angles des coupes sous chaque croquis
+    expect(all).toMatch(/45°/);
+  });
 });

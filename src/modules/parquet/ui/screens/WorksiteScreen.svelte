@@ -13,6 +13,7 @@
   import type { ModuleScreenProps } from '../../../types';
   import type { Board } from '../../core/board';
   import { cuttingSheet, type SheetItem } from '../../core/sheet';
+  import CutSketch from '../components/CutSketch.svelte';
   import ParquetPlan from '../components/ParquetPlan.svelte';
   import { ParquetEditorState } from '../editorState.svelte';
   import { groupTitle, itemText } from '../lib/sheetText';
@@ -174,6 +175,7 @@
                 <input type="checkbox" checked={isDone(it)} onchange={(e) => mark(ids(it), e.currentTarget.checked)} />
                 <span>{itemText(it, sheet, roomName)}</span>
               </label>
+              {#if it.kind === 'cut' && it.shape}<CutSketch shape={it.shape} angles={it.angles} />{/if}
             </li>
           {/each}
         </ul>

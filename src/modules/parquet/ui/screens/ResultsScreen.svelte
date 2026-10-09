@@ -19,6 +19,7 @@
   import type { ParquetResult, ParquetSpec } from '../../core/types';
   import { PARQUET_ID } from '../../state/model';
   import { parquetData, shopping, toSpec } from '../../state/module';
+  import CutSketch from '../components/CutSketch.svelte';
   import Parquet3D from '../components/Parquet3D.svelte';
   import ParquetPlan from '../components/ParquetPlan.svelte';
   import { errorText, warningText } from '../lib/messages';
@@ -193,7 +194,10 @@
               <h3>{multi ? `${layoutName(g.layout)} · ` : ''}{groupTitle(g, roomName)}</h3>
               <ul class="sheet">
                 {#each g.items as it, i (i)}
-                  <li class:cut={it.kind === 'cut'}>{itemText(it, sheet, roomName)}</li>
+                  <li class:cut={it.kind === 'cut'}>
+                    {itemText(it, sheet, roomName)}
+                    {#if it.kind === 'cut' && it.shape}<CutSketch shape={it.shape} angles={it.angles} />{/if}
+                  </li>
                 {/each}
               </ul>
             {/each}

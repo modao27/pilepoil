@@ -36,6 +36,45 @@ const PATTERN: Record<string, string> = {
 };
 const METHOD = { floating: 'flottante', glued: 'collée', nailed: 'clouée' } as const;
 
+/** Croquis coté d'une coupe en biais (pièce dans le repère de sa lame) : rives cotées, angles des coupes. */
+function sketch(d: Doc, shape: Polygon, angles: number[]) {
+  const pdf = d.pdf;
+  const W = Math.max(...shape.map((p) => p[0]), 1),
+    H = Math.max(...shape.map((p) => p[1]), 1);
+  const k = Math.min(45 / W, 8 / H);
+  d.room(H * k + 9);
+  const x0 = M + 18,
+    y0 = d.y + 3.5;
+  pdf.setFillColor(...STATUS.cut);
+  pdf.setDrawColor(...INK);
+  pdf.setLineWidth(0.25);
+  poly(
+    pdf,
+    shape.map((p): [number, number] => [x0 + p[0] * k, y0 + p[1] * k]),
+    'FD',
+  );
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(6.5);
+  d.color(INK);
+  let a = 0;
+  shape.forEach((p, i) => {
+    const q = shape[(i + 1) % shape.length]!;
+    const mx = x0 + ((p[0] + q[0]) / 2) * k,
+      my = y0 + ((p[1] + q[1]) / 2) * k;
+    if (Math.abs(p[1] - q[1]) <= 0.5) {
+      const len = Math.abs(q[0] - p[0]);
+      if (len >= 1) pdf.text(fr(len), mx, p[1] > H / 2 ? my + 2.6 : my - 0.8, { align: 'center' });
+    } else if (Math.hypot(q[0] - p[0], q[1] - p[1]) >= 1 && angles[a] != null) {
+      d.color(THIN);
+      pdf.text(`${angles[a++]}°`, mx < x0 + (W * k) / 2 ? mx - 2 : mx + 2, my + 0.8, {
+        align: mx < x0 + (W * k) / 2 ? 'right' : 'left',
+      });
+      d.color(INK);
+    }
+  });
+  d.y = y0 + H * k + 4;
+}
+
 export function buildParquetPdf(input: ParquetPdfInput): Blob {
   const { project, data, result, lines, date } = input;
   const d = new Doc();
@@ -260,9 +299,11 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
       bold: true,
       gap: 0.8,
     });
-    for (const it of g.items)
+    for (const it of g.items) {
       // flèche absente des polices standard : tiret demi-cadratin
       d.text(itemText(it, sheet, roomName).replace(' → ', ' – '), 8.5, { x: M + 4, gap: 0.4, bold: it.kind === 'cut' });
+      if (it.kind === 'cut' && it.shape) sketch(d, it.shape, it.angles);
+    }
     d.y += 2;
   }
   if (result.skirting.bars) {
