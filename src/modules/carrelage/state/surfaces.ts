@@ -8,6 +8,7 @@ import type { Point, Polygon } from '../../../core/geometry/types';
 import type { Plan, PlanRoom, WallOpening } from '../../../core/plan/types';
 import { wallDirection, wallLength } from '../../../core/plan/walls';
 import type { RoomJointsSpec } from '../core';
+import type { RoomShape } from '../render/scene3d/placement';
 import type { Id } from '../../../state/model';
 import type {
   Edges,
@@ -183,4 +184,22 @@ export function planWarnings(plan: Plan, rooms: Readonly<Record<Id, RoomTiling>>
     }
   }
   return out;
+}
+
+/**
+ * Pièce du plan pour la vue 3D : contour, hauteur, indice de surface (liste résolue) de chaque mur et du sol.
+ * null si la pièce n'existe pas.
+ */
+export function roomShape(plan: Plan, surfaces: readonly Surface[], roomId: Id): RoomShape | null {
+  const room = plan.rooms.find((r) => r.id === roomId);
+  if (!room) return null;
+  const index = new Map(surfaces.map((s, i) => [s.id, i]));
+  const floor = index.get(surfaceId({ room: roomId, wall: null })) ?? null;
+  return {
+    outline: room.outline,
+    height: room.height,
+    walls: room.walls.map((w) => index.get(surfaceId({ room: roomId, wall: w.id })) ?? null),
+    floor,
+    floorOrigin: floor != null ? surfaces[floor]!.origin : [0, 0],
+  };
 }

@@ -149,7 +149,8 @@ describe('écrans des modules', () => {
   it('carrelage : éditeur, résultats, surface, comparaison', () => {
     const s = moduleById('carrelage')!.screens;
     for (const path of ['', 'results', 's/a', 'compare']) expect(matchScreen(s, path)).not.toBeNull();
-    expect(matchScreen(s, 's/a')!.load).toBe(s.editor);
+    expect(matchScreen(s, '')!.load).toBe(s.editor);
+    expect(matchScreen(s, 's/a')!.load).not.toBe(s.editor);
     expect(matchScreen(s, `s/${surfaceId({ room: 'r1', wall: 'w2' })}`)!.params).toEqual({ surfaceId: 'r1~w2' });
   });
 });
