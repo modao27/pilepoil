@@ -51,8 +51,8 @@
       id: m.id,
       doc: { schemaVersion: m.schemaVersion, data: m.create(p.plan) },
     });
-    await app.saveProject({ ...next, updatedAt: Date.now() });
-    go({ name: 'module', id: p.id, module: m.id, path: '' });
+    if (await app.trySaveProject({ ...next, updatedAt: Date.now() }))
+      go({ name: 'module', id: p.id, module: m.id, path: '' });
   }
 </script>
 

@@ -124,8 +124,9 @@
     if (!p) return;
     saving = true;
     const now = Date.now();
-    await app.saveProject({ ...p, createdAt: now, updatedAt: now });
-    go({ name: 'module', id: p.id, module: 'carrelage', path: '' }, true);
+    const saved = await app.trySaveProject({ ...p, createdAt: now, updatedAt: now });
+    saving = false;
+    if (saved) go({ name: 'module', id: p.id, module: 'carrelage', path: '' }, true);
   }
 </script>
 

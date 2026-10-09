@@ -15,6 +15,8 @@ import { createProjectStore, type ProjectStore } from '../../state/store';
 import { createSaver, type Saver } from '../../storage/autosave';
 import { app } from '../lib/app.svelte';
 import { toast } from '../lib/toasts.svelte';
+import { undoAction } from '../lib/undoToast';
+import { modules } from '../../modules/registry';
 
 const newId = (): Id => crypto.randomUUID();
 
@@ -143,12 +145,22 @@ export class PlanEditorState {
     this.sel = { kind: 'room', room: room.id };
   }
 
+  /** Ce que chaque outil perd si la pièce est supprimée (confirmation) ; vide si rien. */
+  roomUsage(id: Id): string[] {
+    const p = this.store.get().project;
+    return modules.flatMap((m) => {
+      const doc = Object.hasOwn(p.modules, m.id) ? p.modules[m.id] : undefined;
+      const u = doc && m.roomUsage?.(doc.data, p.plan, id);
+      return u ? [u] : [];
+    });
+  }
+
   removeRoom(id: Id): void {
     const r = this.room(id);
     if (!r) return;
     this.dispatch({ type: 'plan/room/remove', roomId: id });
     this.sel = null;
-    toast(`Pièce « ${r.name} » supprimée.`, { action: { label: 'Annuler', run: () => this.undo() } });
+    toast(`Pièce « ${r.name} » supprimée.`, { action: undoAction(this.store) });
   }
 
   /** Nom par défaut d'une nouvelle pièce : « Pièce 2 »… */

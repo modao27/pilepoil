@@ -4,7 +4,7 @@ import { module as parquet } from '../../src/modules/parquet';
 import { BOARD_TEMPLATES } from '../../src/modules/parquet/core/board';
 import { computeParquet } from '../../src/modules/parquet/core/compute';
 import type { ParquetResult } from '../../src/modules/parquet/core/types';
-import { createLayout, type ParquetData } from '../../src/modules/parquet/state/model';
+import { createLayout, createParquetData, type ParquetData } from '../../src/modules/parquet/state/model';
 import type { Project } from '../../src/state/model';
 import { reduceProject } from '../../src/state/project';
 
@@ -273,5 +273,22 @@ describe('chantier (P5)', () => {
     expect(data(keep).worksite).toEqual({ resultHash: 'h2', done: ['b'] });
     const reset = reduceProject(p1, { type: 'parquet/worksite/rebase', hash: 'h2', valid: [] } as never);
     expect(data(reset).worksite).toEqual({ resultHash: 'h2', done: [] });
+  });
+});
+
+describe('suppression d’une pièce : ce que le parquet perd', () => {
+  it('pose sur une seule pièce, pose sur plusieurs, pièce sans parquet', () => {
+    const d = (layouts: ParquetData['layouts']) => ({
+      ...createParquetData({ rooms: [], passages: [] }, () => 'x'),
+      layouts,
+    });
+    const plan = { rooms: [], passages: [] };
+    const one = createLayout('l1', ['a'], { name: 'Séjour' });
+    const two = createLayout('l2', ['a', 'b'], { name: 'Couloir' });
+    expect(parquet.roomUsage!(d([one]), plan, 'a')).toBe('Parquet : la pose « Séjour » n’a plus de pièce.');
+    expect(parquet.roomUsage!(d([one, two]), plan, 'a')).toBe(
+      'Parquet : la pose « Séjour » n’a plus de pièce ; la pose « Couloir » perd cette pièce.',
+    );
+    expect(parquet.roomUsage!(d([one]), plan, 'z')).toBeNull();
   });
 });

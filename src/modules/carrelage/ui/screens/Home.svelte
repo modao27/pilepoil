@@ -54,7 +54,7 @@
   async function dispatch(a: ProjectAction) {
     if (!doc) return;
     const next = reduceProject(doc, a);
-    if (next !== doc) await app.saveProject({ ...next, updatedAt: Date.now() });
+    if (next !== doc) await app.trySaveProject({ ...next, updatedAt: Date.now() });
   }
 
   /** Carreler ou non : une surface ajoutée reprend le carrelage de la dernière surface de la pièce, sinon du projet. */

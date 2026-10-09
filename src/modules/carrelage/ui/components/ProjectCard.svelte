@@ -35,7 +35,7 @@
   async function rename() {
     const name = newName.trim();
     if (!name) return;
-    await app.saveProject({ ...doc, name, updatedAt: Date.now() });
+    if (!(await app.trySaveProject({ ...doc, name, updatedAt: Date.now() }))) return;
     renaming = false;
     menu = false;
   }

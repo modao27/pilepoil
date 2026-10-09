@@ -3,6 +3,7 @@
   import type { Obstacle, PlanRoom, WallOpening } from '../../core/plan/types';
   import { wallIndex, wallLength } from '../../core/plan/walls';
   import Button from '../components/Button.svelte';
+  import Dialog from '../components/Dialog.svelte';
   import NumberField from '../components/NumberField.svelte';
   import Segmented from '../components/Segmented.svelte';
   import Select from '../components/Select.svelte';
@@ -12,6 +13,15 @@
   import type { OpeningKind, PlanEditorState } from './planState.svelte';
 
   let { st, onaddroom }: { st: PlanEditorState; onaddroom: () => void } = $props();
+
+  /** Pièce à supprimer en attente de confirmation (elle porte des revêtements). */
+  let removing = $state<{ room: PlanRoom; usage: string[] } | null>(null);
+
+  function askRemove(room: PlanRoom) {
+    const usage = st.roomUsage(room.id);
+    if (usage.length) removing = { room, usage };
+    else st.removeRoom(room.id);
+  }
 
   const KINDS: { value: OpeningKind; label: string }[] = [
     { value: 'door', label: 'Porte' },
@@ -302,7 +312,7 @@
     {@render items(room.openings, room.obstacles)}
     <div class="row">
       <Button icon="plus" onclick={() => st.addObstacle(room.id)}>Ajouter un obstacle</Button>
-      <Button variant="danger" icon="trash" onclick={() => st.removeRoom(room.id)}>Supprimer la pièce</Button>
+      <Button variant="danger" icon="trash" onclick={() => askRemove(room)}>Supprimer la pièce</Button>
     </div>
   {:else}
     <h2>Pièces</h2>
@@ -333,7 +343,33 @@
   {/if}
 </div>
 
+<Dialog open={removing != null} title="Supprimer la pièce ?" onclose={() => (removing = null)}>
+  {#if removing}
+    <p>« {removing.room.name} » a des revêtements qui seront perdus avec elle :</p>
+    <ul class="usage">
+      {#each removing.usage as u (u)}<li>{u}</li>{/each}
+    </ul>
+    <p class="muted">Vous pourrez encore annuler juste après, tant que rien d’autre n’a changé.</p>
+  {/if}
+  {#snippet actions()}
+    <Button onclick={() => (removing = null)}>Garder la pièce</Button>
+    <Button
+      variant="danger"
+      icon="trash"
+      onclick={() => {
+        const id = removing!.room.id;
+        removing = null;
+        st.removeRoom(id);
+      }}>Supprimer la pièce</Button
+    >
+  {/snippet}
+</Dialog>
+
 <style>
+  .usage {
+    margin: 0;
+    padding-left: var(--space-5);
+  }
   .panel {
     display: grid;
     gap: var(--space-3);
