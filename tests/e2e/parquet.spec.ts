@@ -78,7 +78,25 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   // résultats et liste d'achat du projet
   await summary.click();
   await expect(page.getByRole('heading', { name: /^Résultats — / })).toBeVisible();
-  await expect(page.getByText('Stratifié 1285 × 192 : 7 paquets')).toBeVisible();
+  // plan coté, fiche de coupe, achats
+  await expect(page.getByRole('img', { name: 'Plan coté' })).toBeVisible();
+  await expect(page.locator('text.dim').first()).toHaveText('400');
+  await check(page);
+  await shot(page, info, '99-parquet-resultats-plan');
+  await page.getByRole('tab', { name: 'Coupes' }).click();
+  await expect(page.getByRole('heading', { name: 'Séjour — rang 1', exact: true })).toBeVisible();
+  await expect(page.getByText(/^1\. lame neuve → couper à/).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Plinthes : \d+ barres/ })).toBeVisible();
+  await check(page);
+  await shot(page, info, '99-parquet-resultats-coupes');
+  await page.getByRole('tab', { name: 'Achats' }).click();
+  await expect(page.getByText(/Stratifié 1285 × 192 : 7 paquets/)).toBeVisible();
+  await expect(page.getByText(/Sous-couche : 1 rouleau/)).toBeVisible();
+  await expect(page.getByText(/Plinthes : 6 barres/)).toBeVisible();
+  // export PDF
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporter en PDF' }).click();
+  expect((await download).suggestedFilename()).toMatch(/parquet\.pdf$/);
   await check(page);
   await page.goto(`/#/p/${id}/achats`);
   await expect(page.getByText('Stratifié 1285 × 192', { exact: true }).first()).toBeVisible();
@@ -120,6 +138,7 @@ test('parquet : bâton rompu et point de Hongrie, axe du motif, lames A et B', a
 
   // achats : lames A et B
   await summary.click();
+  await page.getByRole('tab', { name: 'Achats' }).click();
   await expect(page.getByText(/Point de Hongrie 60° 500 × 90 \(lames A\/B\) \(lames A\) : \d+ paquets?/)).toBeVisible();
   await expect(page.getByText(/\(lames B\) : \d+ paquets?/)).toBeVisible();
   await page.goto(`/#/p/${id}/m/parquet`);

@@ -16,6 +16,8 @@ export type SheetItem =
       variant: 'A' | 'B' | null;
       /** Longueur à couper (repère lame). */
       length: number;
+      /** Lame neuve gardée sur toute sa longueur (recoupée en largeur seulement, ou contournement). */
+      wholeLength: boolean;
       /** Coupée en largeur : largeur posée. */
       width: number | null;
       cutType: LaidPiece['cutType'];
@@ -54,7 +56,13 @@ export function cuttingSheet(r: ParquetResult, roomOrder: Record<string, string[
       (a, b) => rank(a.room) - rank(b.room) || (a.room < b.room ? -1 : a.room > b.room ? 1 : 0) || a.index - b.index,
     );
     for (const g of sorted)
-      out.push({ layout: l.id, room: g.room, kind: g.kind, index: g.index, items: itemsOf(g.pieces) });
+      out.push({
+        layout: l.id,
+        room: g.room,
+        kind: g.kind,
+        index: g.index,
+        items: itemsOf(g.pieces, (i) => l.boards[i]?.length ?? Infinity),
+      });
   }
   // provenance des chutes : la pièce dont la coupe les a mises au stock
   const producer = new Map<string, { group: number; n: number }>();
@@ -69,7 +77,7 @@ export function cuttingSheet(r: ParquetResult, roomOrder: Record<string, string[
 }
 
 /** Numérotation dans l'ordre de pose (ordre des pièces du moteur) ; lames entières consécutives regroupées. */
-function itemsOf(pieces: LaidPiece[]): SheetItem[] {
+function itemsOf(pieces: LaidPiece[], boardLength: (index: number) => number): SheetItem[] {
   const items: SheetItem[] = [];
   pieces.forEach((p, i) => {
     const n = i + 1;
@@ -88,6 +96,7 @@ function itemsOf(pieces: LaidPiece[]): SheetItem[] {
       id: p.id,
       variant: p.variant,
       length: p.length,
+      wholeLength: 'board' in p.source && Math.abs(p.length - boardLength(p.source.board)) < 0.01,
       width: p.ripped ? Math.round((Math.abs(signedArea(p.polygon)) / Math.max(p.length, 1e-6)) * 10) / 10 : null,
       cutType: p.cutType,
       edges: p.cutType === 'angled' ? rives(p.polygon) : null,

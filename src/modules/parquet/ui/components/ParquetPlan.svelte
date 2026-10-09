@@ -14,6 +14,7 @@
     variants = false,
     others = [],
     thresholds = [],
+    dimensions = false,
     selected = $bindable(null),
     label,
   }: {
@@ -26,11 +27,22 @@
     others?: { pieces: LaidPiece[]; color: string }[];
     /** Seuils de la pose : proposés en pointillés, posés en trait plein. */
     thresholds?: Threshold[];
+    /** Cotes des murs (longueur intérieure, cm), à l'extérieur de chaque pièce. */
+    dimensions?: boolean;
     selected?: string | null;
     label: string;
   } = $props();
 
-  const pad = 250;
+  const extent = $derived.by(() => {
+    const pts = rooms.flat();
+    if (!pts.length) return 4000;
+    const xs = pts.map((p) => p[0]),
+      ys = pts.map((p) => p[1]);
+    return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+  });
+  /** Taille du texte des cotes, en mm du plan. */
+  const font = $derived(Math.max(60, extent / 45));
+  const pad = $derived(dimensions ? font * 3 : 250);
   const vb = $derived.by(() => {
     const pts = rooms.flat();
     if (!pts.length) return '0 0 4000 3000';
@@ -42,6 +54,31 @@
   });
   const dark = $derived(`color-mix(in srgb, ${color} 72%, black)`);
   const pts = (p: Polygon) => p.map((q) => q.join(',')).join(' ');
+  /** Cote de chaque mur : milieu décalé vers l'extérieur de la pièce, texte le long du mur. */
+  const dims = $derived(
+    dimensions
+      ? rooms.flatMap((r) => {
+          const ccw = r.reduce((t, p, i) => {
+            const q = r[(i + 1) % r.length]!;
+            return t + p[0] * q[1] - q[0] * p[1];
+          }, 0);
+          return r.flatMap((a, i) => {
+            const b = r[(i + 1) % r.length]!;
+            const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+            if (len < 1) return [];
+            const s = ccw > 0 ? 1 : -1;
+            const n = [((b[1] - a[1]) / len) * s, (-(b[0] - a[0]) / len) * s];
+            let angle = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+            // lisible de gauche à droite ou de bas en haut
+            if (angle >= 90) angle -= 180;
+            if (angle < -90) angle += 180;
+            const x = (a[0] + b[0]) / 2 + n[0]! * font * 1.3,
+              y = (a[1] + b[1]) / 2 + n[1]! * font * 1.3;
+            return [{ x, y, angle, text: `${(len / 10).toLocaleString('fr-FR', { maximumFractionDigits: 1 })}` }];
+          });
+        })
+      : [],
+  );
   const kind = (p: LaidPiece) => (p.cutType === 'full' ? 'full' : 'offcut' in p.source ? 'reuse' : 'cut');
 </script>
 
@@ -80,6 +117,17 @@
       y2={t.segment[1][1]}
     />
   {/each}
+  {#each dims as d, i (i)}
+    <text
+      class="dim"
+      x={d.x}
+      y={d.y}
+      font-size={font}
+      transform="rotate({d.angle} {d.x} {d.y})"
+      text-anchor="middle"
+      dominant-baseline="middle">{d.text}</text
+    >
+  {/each}
 </svg>
 
 <style>
@@ -106,6 +154,11 @@
   }
   .piece.reuse {
     fill: color-mix(in srgb, var(--reuse) 70%, var(--sheet));
+  }
+  .dim {
+    fill: var(--ink);
+    font-family: var(--font-num);
+    pointer-events: none;
   }
   .other {
     opacity: 0.45;
