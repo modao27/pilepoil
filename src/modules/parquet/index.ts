@@ -7,7 +7,7 @@ import { BOARD_SCHEMA, BOARD_TEMPLATES } from './core/board';
 import type { ParquetResult, ParquetSpec } from './core/types';
 import { reduce, type Action } from './state/actions';
 import { createParquetData, PARQUET_ID, PARQUET_MIGRATIONS, PARQUET_SCHEMA, type ParquetData } from './state/model';
-import { priceAction, shopping, summary, toSpec } from './state/module';
+import { priceAction, roomUsage, shopping, summary, toSpec } from './state/module';
 
 /** Bibliothèque de lames (#/library/boards). */
 export const library: LibraryDefinition = {
@@ -37,6 +37,7 @@ export const module: ToolModule<ParquetData, ParquetSpec, ParquetResult, Action>
   shopping,
   summary,
   priceAction,
+  roomUsage,
   migrations: PARQUET_MIGRATIONS,
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
