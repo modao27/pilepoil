@@ -142,7 +142,7 @@ export class PlanEditorState {
   /* ---------- pièces ---------- */
 
   addRoom(shape: Shape, name: string): void {
-    const opts = { name, origin: placeNewRoom(this.plan) };
+    const opts = { name, origin: placeNewRoom(this.plan), thickness: app.wallThickness };
     const room =
       shape.kind === 'rect'
         ? rectRoom(shape.length, shape.width, opts, newId)
@@ -151,6 +151,18 @@ export class PlanEditorState {
           : uRoom(shape.length, shape.width, shape.arm, shape.depth, opts, newId);
     this.dispatch({ type: 'plan/room/add', room });
     this.sel = { kind: 'room', room: room.id };
+  }
+
+  /** Même épaisseur pour tous les murs d'une pièce (une seule étape d'annulation). */
+  setRoomThickness(roomId: Id, thickness: number): void {
+    const room = this.room(roomId);
+    if (!room || !(thickness > 0)) return;
+    this.dispatch({
+      type: 'batch',
+      actions: room.walls
+        .filter((w) => w.thickness !== thickness)
+        .map((w): ProjectAction => ({ type: 'plan/wall/update', roomId, wallId: w.id, patch: { thickness } })),
+    });
   }
 
   /** Poses touchées si la pièce est supprimée (confirmation) : « Carrelage : « Pose 1 » est supprimée. » */
@@ -210,7 +222,7 @@ export class PlanEditorState {
     }
     const [ox, oy] = pts.reduce<Point>((m, p) => [Math.min(m[0], p[0]), Math.min(m[1], p[1])], [Infinity, Infinity]);
     const outline: Polygon = clockwise(pts.map(([x, y]) => [x - ox, y - oy]));
-    const room = roomFromOutline(outline, { name, origin: [ox, oy] }, newId);
+    const room = roomFromOutline(outline, { name, origin: [ox, oy], thickness: app.wallThickness }, newId);
     if (validateRoom(room).length) {
       toast('Les murs se croisent : déplacez un point ou recommencez.', { tone: 'error' });
       return null;

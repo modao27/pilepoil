@@ -50,7 +50,8 @@ export type Pref =
   | { key: 'lastProjectId'; value: Id }
   | { key: 'showCutNumbers'; value: boolean }
   /** Bibliothèques dont les modèles types ont été posés (une seule fois). */
-  | { key: 'librarySeeded'; value: string[] };
+  | { key: 'librarySeeded'; value: string[] }
+  | { key: 'wallThickness'; value: number };
 
 export type PrefKey = Pref['key'];
 export type PrefValue<K extends PrefKey> = Extract<Pref, { key: K }>['value'];

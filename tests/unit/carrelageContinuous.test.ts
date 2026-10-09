@@ -8,7 +8,7 @@ import { regionArea } from '../../src/core/geometry/boolean';
 import type { Plan, PlanRoom } from '../../src/core/plan/types';
 import { passageBand, wallDirection } from '../../src/core/plan/walls';
 import { computeProject, edgeLengths, type ProjectSpec } from '../../src/modules/carrelage/core';
-import { wallFrames } from '../../src/modules/carrelage/render/scene3d/placement';
+import { roomLayout, wallFrames } from '../../src/modules/carrelage/render/scene3d/placement';
 import { createPoseSettings, createTile } from '../../src/modules/carrelage/state/factories';
 import {
   continuablePoses,
@@ -121,6 +121,10 @@ describe('murs qui se suivent', () => {
     const d = wallDirection(r, 1);
     expect(frames[1]!.dir[0]).toBeCloseTo(d[0], 6);
     expect(frames[1]!.dir[1]).toBeCloseTo(d[1], 6);
+    // épaisseur des murs : dessus de chaque mur, 72 mm de large
+    const lay = roomLayout(spec(p), shape);
+    expect(lay.room!.caps).toHaveLength(4);
+    expect(Math.abs(regionArea([shape.caps![0]!]))).toBeCloseTo(72 * (3000 + 72), -1);
   });
 });
 

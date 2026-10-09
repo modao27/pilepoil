@@ -174,6 +174,17 @@ export function buildMeshes(input: MeshInput): MeshData[] {
     );
   }
 
+  /* dessus des murs : leur épaisseur, vue d'en haut */
+  for (const c of room?.caps ?? []) {
+    if (c.length < 3) continue;
+    B.convex(
+      B.mesh('plaster'),
+      c.map((p): Vec3 => [p[0], room!.height, p[1]]),
+      [0, 1, 0],
+      B.rgb(PLASTER),
+    );
+  }
+
   /* murs non carrelés de la pièce */
   for (const d of room?.bare ?? []) {
     const e = [d.base[0] + d.dir[0] * d.len, d.base[1] + d.dir[1] * d.len];

@@ -90,7 +90,7 @@ export interface BareWall {
 export interface SceneLayout {
   instances: Instance[];
   /** Pièce (m) si la vue montre toute la pièce : contour au sol, hauteur, murs nus. */
-  room: { outline: [number, number][]; height: number; bare: BareWall[] } | null;
+  room: { outline: [number, number][]; height: number; bare: BareWall[]; caps: [number, number][][] } | null;
   /** Boîte englobante au sol [xmin, xmax, zmin, zmax] et hauteur, pour cadrer la caméra. */
   bounds: { x: [number, number]; z: [number, number]; h: number };
 }
@@ -105,6 +105,8 @@ export interface RoomShape {
    * sur plusieurs murs, dessinée depuis son premier mur (repliée aux angles).
    */
   walls: ({ surface: number; x: number; y: number; draw?: boolean } | null)[];
+  /** Dessus de chaque mur avec son épaisseur (quadrilatères, mm, repère de la pièce) ; absent : murs sans épaisseur. */
+  caps?: Point[][];
   floor: number | null;
   /** Coin haut gauche de la surface du sol dans le repère de la pièce. */
   floorOrigin: Point;
@@ -159,7 +161,12 @@ export function roomLayout(spec: ProjectSpec, r: RoomShape): SceneLayout {
   const h = r.height / 1000;
   return {
     instances,
-    room: { outline: pts, height: h, bare },
+    room: {
+      outline: pts,
+      height: h,
+      bare,
+      caps: (r.caps ?? []).map((q) => q.map((p): [number, number] => [p[0] / 1000, p[1] / 1000])),
+    },
     bounds: { x: [Math.min(...xs), Math.max(...xs)], z: [Math.min(...zs), Math.max(...zs)], h },
   };
 }

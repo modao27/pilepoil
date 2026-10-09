@@ -290,6 +290,18 @@
       value={room.height}
       onchange={(height) => st.dispatch({ type: 'plan/room/update', roomId: room.id, patch: { height } })}
     />
+    {@const mixed = room.walls.some((w) => w.thickness !== room.walls[0]!.thickness)}
+    <NumberField
+      label="Épaisseur des murs"
+      unit="mm"
+      min={1}
+      max={1000}
+      value={room.walls[0]?.thickness ?? 0}
+      hint={mixed
+        ? 'Épaisseurs différentes selon les murs : une valeur ici les remplace toutes.'
+        : 'Tous les murs ; un mur à part se règle dans « Ouvertures et épaisseur ».'}
+      onchange={(v) => st.setRoomThickness(room.id, v)}
+    />
     <h3>Murs</h3>
     <ul class="walls">
       {#each room.walls as w, i (w.id)}

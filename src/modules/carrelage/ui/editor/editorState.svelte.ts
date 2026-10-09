@@ -255,10 +255,12 @@ export class EditorState {
     const poseId = this.surface.id;
     if (o.source === 'plan') {
       const { covered, revealDepth, reveals } = patch;
-      const finish = Object.fromEntries(
+      const changed = Object.fromEntries(
         Object.entries({ covered, revealDepth, reveals }).filter(([, v]) => v !== undefined),
       );
-      if (Object.keys(finish).length)
+      // première finition réglée : on part des valeurs affichées (tableaux à la profondeur du mur)
+      const finish = { covered: o.covered, revealDepth: o.revealDepth, reveals: o.reveals, ...changed };
+      if (Object.keys(changed).length)
         this.dispatch({ type: 'carrelage/opening/finish', poseId, openingId: o.id, patch: finish }, key);
       return;
     }
