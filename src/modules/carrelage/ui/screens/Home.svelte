@@ -9,7 +9,7 @@
   import { carrelageData, carrelageView, CARRELAGE_ID } from '../../state/data';
   import { newId } from '../../state/factories';
   import { newPoseSettings, tilePosesOn, tileSurfaceAction, untileSurfaceAction } from '../../state/poses';
-  import { coverageText } from '../lib/messages';
+  import { coverageText } from '../../../../ui/lib/coverageMessages';
   import { moduleById } from '../../../registry';
   import { wallLength } from '../../../../core/plan/walls';
   import { reduceProject, type ProjectAction } from '../../../../state/project';

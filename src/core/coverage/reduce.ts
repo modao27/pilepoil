@@ -36,12 +36,12 @@ function withoutEmptyPoses(cov: Coverage, zones: readonly Zone[]): Coverage {
 /** Ajoute ou remplace des zones si toutes respectent les règles ; sinon `cov` inchangé. */
 function place(plan: Plan, cov: Coverage, added: Zone[], poses: readonly Pose[], rulesOf: RulesOf): Coverage {
   const ids = new Set(added.map((z) => z.id));
-  let next: Coverage = { zones: cov.zones.filter((z) => !ids.has(z.id)), poses };
+  // toutes les zones en place, puis chacune vérifiée contre les autres (l'ordre d'ajout ne compte pas)
+  const next: Coverage = { zones: [...cov.zones.filter((z) => !ids.has(z.id)), ...added], poses };
   for (const z of added) {
     const pose = poses.find((p) => p.id === z.pose);
     const rules = pose && rulesOf(pose.module);
     if (!rules || checkZone(plan, next, z, rules)) return cov;
-    next = { zones: [...next.zones, z], poses };
   }
   // ordre stable : une zone modifiée reste à sa place
   const order = new Map(cov.zones.map((z, i) => [z.id, i]));

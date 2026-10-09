@@ -24,7 +24,7 @@ import { newId } from '../state/factories';
 import { toProjectSpec, usedTileIds } from '../state/selectors';
 import { carrelageView, type CarrelageProject } from '../state/data';
 import { restoreTiling } from '../state/poses';
-import { coverageText } from './lib/messages';
+import { coverageText } from '../../../ui/lib/coverageMessages';
 import { toast } from '../../../ui/lib/toasts.svelte';
 import { reduceProject } from '../../../state/project';
 import type { Action } from '../state/actions';

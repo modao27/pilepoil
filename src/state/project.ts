@@ -21,12 +21,6 @@ export type ProjectAction =
   | CoverageAction
   | ModuleAction;
 
-/** Action envoyée à chaque module quand une pièce du plan disparaît : il nettoie ses données liées. */
-export interface RoomRemoved {
-  type: 'plan/room/removed';
-  roomId: string;
-}
-
 type Find = (id: ModuleId) => ToolModule | undefined;
 
 export function reduceProject(p: Project, a: ProjectAction, find: Find = moduleById): Project {
@@ -59,10 +53,8 @@ export function reduceProject(p: Project, a: ProjectAction, find: Find = moduleB
     if (plan === p.plan) return p;
     let next: Project = { ...p, plan };
     if (a.type === 'plan/room/remove') {
-      const roomId = (a as { roomId: string }).roomId;
-      const removed: RoomRemoved = { type: 'plan/room/removed', roomId };
-      for (const id of Object.keys(p.modules)) next = toModule(next, id, removed, plan, find);
-      next = withCoverage(next, removeRoom(next, roomId), null, find);
+      // les zones de la pièce partent avec elle ; les poses restées sans zone aussi (et leurs réglages)
+      next = withCoverage(next, removeRoom(next, (a as { roomId: string }).roomId), null, find);
     }
     return next;
   }

@@ -1,7 +1,6 @@
 /** Textes des erreurs et alertes du moteur : ce qui ne va pas, puis comment corriger. */
 import type { ProductLabel, SurfaceError, SurfaceWarning } from '../../core';
 import type { Surface } from '../../state/model';
-import type { CoverageError } from '../../../../core/coverage';
 
 const n = (v: number, d = 1) => v.toLocaleString('fr-FR', { maximumFractionDigits: d });
 const OPENINGS = {
@@ -12,24 +11,6 @@ const OPENINGS = {
   tub: 'Baignoire',
   other: 'Réservation',
 };
-
-/** Refus d'une zone ou d'une pose (règles du projet, docs/NAVIGATION.md §4). */
-export function coverageText(e: CoverageError): string {
-  switch (e.code) {
-    case 'surface-missing':
-      return 'Cette surface n’existe plus dans le plan.';
-    case 'surface-unsupported':
-      return 'Ce revêtement ne se pose pas sur ce type de surface.';
-    case 'zone-empty':
-      return 'La zone est vide : vérifiez les cotes.';
-    case 'zone-overlap':
-      return 'Cette surface a déjà un autre revêtement. Retirez-le d’abord ; le partage en zones arrive avec l’écran Pièce.';
-    case 'pose-mixed':
-      return 'Une même pose ne couvre pas à la fois un sol et un mur.';
-    case 'pose-extent':
-      return 'Cette pose ne peut pas s’étendre à cette surface.';
-  }
-}
 
 export function errorText(e: SurfaceError): string {
   switch (e.code) {

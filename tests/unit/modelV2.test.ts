@@ -56,7 +56,7 @@ describe('réducteur du projet', () => {
     for (const a of [
       { type: 'project/rename', name: p.name },
       { type: 'carrelage/settings', patch: { margin: 10 } },
-      { type: 'parquet/layout/update' },
+      { type: 'parquet/pose/update' },
       { type: 'plan/room/update', roomId: 'inconnue', patch: { height: 1 } },
     ] as ProjectAction[])
       expect(reduceProject(p, a)).toBe(p);
@@ -77,21 +77,24 @@ describe('réducteur du projet', () => {
     expect(reduceProject(bare, { type: 'carrelage/settings', patch: { margin: 15 } } as ProjectAction)).toBe(bare);
   });
 
-  it('suppression d’une pièce : chaque module est prévenu', () => {
+  it('suppression d’une pièce : ses zones partent, le module de chaque pose vidée est prévenu', () => {
     const seen: unknown[] = [];
     const spy = {
       ...carrelage,
-      reduce: (d: unknown, a: { type: string }) => (
-        seen.push(a),
-        a.type === 'plan/room/removed' ? { cleaned: true } : d
-      ),
+      reduce: (d: unknown, a: { type: string }) => (seen.push(a), a.type === 'pose/removed' ? { cleaned: true } : d),
     } as unknown as ToolModule;
     const two = reduceProject(p, {
       type: 'plan/room/add',
       room: rectRoom(1000, 1000, { name: 'B' }, () => 'b' + seen.length),
     });
-    const after = reduceProject(two, { type: 'plan/room/remove', roomId: room.id }, () => spy);
-    expect(seen).toEqual([{ type: 'plan/room/removed', roomId: room.id }]);
+    const tiled: Project = {
+      ...two,
+      zones: [{ id: 'z', surface: { room: room.id, wall: null }, cuts: [], pose: 'P' }],
+      poses: [{ id: 'P', module: 'carrelage', name: 'Pose 1' }],
+    };
+    const after = reduceProject(tiled, { type: 'plan/room/remove', roomId: room.id }, () => spy);
+    expect(seen).toEqual([{ type: 'pose/removed', poseId: 'P' }]);
+    expect([after.zones, after.poses]).toEqual([[], []]);
     expect(after.modules.carrelage!.data).toEqual({ cleaned: true });
     expect(after.plan.rooms.map((r) => r.name)).toEqual(['B']);
   });

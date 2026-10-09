@@ -3,6 +3,15 @@ import { expect } from 'vitest';
 import { intersection, regionArea, union } from '../../src/core/geometry/boolean';
 import { signedArea } from '../../src/core/geometry/polygon';
 import type { Polygon } from '../../src/core/geometry/types';
+import type { Cut } from '../../src/core/coverage/types';
+import type { Plan } from '../../src/core/plan/types';
+import {
+  createParquetData,
+  createPoseSettings,
+  PARQUET_SCHEMA,
+  type ParquetPose,
+} from '../../src/modules/parquet/state/model';
+import type { Project } from '../../src/state/model';
 import { DEFAULT_ACCESSORIES, RULES_BY_KIND } from '../../src/modules/parquet/core/defaults';
 import type {
   BoardSpec,
@@ -35,7 +44,7 @@ export function spec(outline: Polygon, o: Partial<LayoutSpec> = {}, obstacles: P
     layouts: [
       {
         id: 'L1',
-        rooms: [{ id: 'R', outline, obstacles, openings: [] }],
+        rooms: [{ id: 'R', outline, obstacles, openings: [], bounds: [] }],
         passages: [],
         board: LAMINATE,
         pattern: { kind: 'random-stagger' },
@@ -46,7 +55,6 @@ export function spec(outline: Polygon, o: Partial<LayoutSpec> = {}, obstacles: P
         method: 'floating',
         rules: { ...RULES_BY_KIND.laminate },
         breaks: [],
-        zone: [],
         seed: 1,
         ...o,
       },
@@ -127,3 +135,36 @@ export function joints(ps: LayoutResult['pieces']): number[] {
 }
 
 export const totalBoards = (r: ParquetResult) => r.totals.boards;
+
+/** Pose de parquet d'un projet de test : pièces couvertes, lignes de découpe par pièce, réglages. */
+export interface TestPose {
+  id: string;
+  rooms: string[];
+  cuts?: Record<string, Cut[]>;
+  settings?: Partial<ParquetPose>;
+}
+
+/** Projet v3 avec le parquet : plan, une zone de sol par pièce de chaque pose, réglages des poses. */
+export function parquetProject(plan: Plan, poses: TestPose[], o: Partial<Project> = {}): Project {
+  const data = createParquetData();
+  for (const p of poses) data.poses[p.id] = createPoseSettings(p.settings);
+  return {
+    schemaVersion: 3,
+    id: 'p',
+    name: 'Maison',
+    createdAt: 0,
+    updatedAt: 0,
+    plan,
+    zones: poses.flatMap((p) =>
+      p.rooms.map((room) => ({
+        id: `${p.id}-${room}`,
+        surface: { room, wall: null },
+        cuts: p.cuts?.[room] ?? [],
+        pose: p.id,
+      })),
+    ),
+    poses: poses.map((p, i) => ({ id: p.id, module: 'parquet', name: `Pose ${i + 1}` })),
+    modules: { parquet: { schemaVersion: PARQUET_SCHEMA, data } },
+    ...o,
+  };
+}

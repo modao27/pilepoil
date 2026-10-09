@@ -15,9 +15,23 @@ import type { Board } from '../core/board';
 import { METHOD_BY_KIND, RULES_BY_KIND } from '../core/defaults';
 import type { OptimizeResult, OptimizeSpec } from '../core/optimize';
 import type { Accessories, ParquetResult, ParquetSpec } from '../core/types';
+import { coverageText } from '../../../ui/lib/coverageMessages';
 import type { Action } from '../state/actions';
-import { createLayout, PARQUET_ID, type Layout } from '../state/model';
-import { parquetData, toSpec } from '../state/module';
+import { PARQUET_ID, type Layout, type ParquetPose } from '../state/model';
+import { toSpec } from '../state/module';
+import {
+  addPoseAction,
+  layoutsOf,
+  newPoseSettings,
+  parquetData,
+  splitPoseAction,
+  toggleRoomAction,
+} from '../state/poses';
+
+const newId = () => crypto.randomUUID();
+
+/** Réglages seuls d'une pose vue par l'éditeur. */
+const settingsOf = ({ id: _, name: _n, rooms: _r, zones: _z, ...s }: Layout): ParquetPose => s;
 
 export class ParquetEditorState {
   doc = $state.raw<Project>(null as never);
@@ -37,7 +51,9 @@ export class ParquetEditorState {
   private saver: Saver<Project>;
 
   data = $derived(parquetData(this.doc)!);
-  layout = $derived<Layout | undefined>(this.data.layouts.find((l) => l.id === this.current) ?? this.data.layouts[0]);
+  /** Poses de parquet du projet (réglages, nom, pièces). */
+  layouts = $derived(layoutsOf(this.doc));
+  layout = $derived<Layout | undefined>(this.layouts.find((l) => l.id === this.current) ?? this.layouts[0]);
   boards = $derived((app.libraries.boards ?? []) as readonly Board[]);
   board = $derived(this.boards.find((b) => b.id === this.layout?.boardId));
 
@@ -61,7 +77,7 @@ export class ParquetEditorState {
     return this.saver.flush();
   }
 
-  dispatch(a: Action, key?: string): void {
+  dispatch(a: Action | ProjectAction, key?: string): void {
     this.store.dispatch(a, key);
   }
 
@@ -103,8 +119,8 @@ export class ParquetEditorState {
         return;
       }
       this.dispatch({
-        type: 'parquet/layout/update',
-        layoutId: res.layoutId,
+        type: 'parquet/pose/update',
+        poseId: res.layoutId,
         patch: { offset: res.offset, seed: res.seed },
       });
       toast(`Départ optimisé : ${res.before.boards} → ${res.after.boards} lames.`, {
@@ -123,8 +139,8 @@ export class ParquetEditorState {
     this.abort?.abort();
   }
 
-  updateLayout(patch: Partial<Omit<Layout, 'id'>>, key?: string): void {
-    if (this.layout) this.dispatch({ type: 'parquet/layout/update', layoutId: this.layout.id, patch }, key);
+  updateLayout(patch: Partial<ParquetPose>, key?: string): void {
+    if (this.layout) this.dispatch({ type: 'parquet/pose/update', poseId: this.layout.id, patch }, key);
   }
 
   /** Changer de lame remet les règles et le mode de pose de son type (docs/parquet/SPEC.md §2). */
@@ -142,39 +158,35 @@ export class ParquetEditorState {
     if (this.board) this.updateLayout({ rules: { ...RULES_BY_KIND[this.board.kind] } });
   }
 
+  /** Cocher ou décocher une pièce de la pose affichée ; refus expliqué (sol déjà couvert, pièce non reliée). */
   toggleRoom(roomId: string, on: boolean): void {
-    const rooms = this.layout?.rooms ?? [];
-    this.updateLayout({ rooms: on ? [...rooms, roomId] : rooms.filter((r) => r !== roomId) });
+    if (!this.layout) return;
+    const r = toggleRoomAction(this.doc, this.layout.id, roomId, on, newId);
+    if ('error' in r) toast(coverageText(r.error), { tone: 'error' });
+    else this.dispatch(r.action);
   }
 
-  /**
-   * Nouvelle pose : la première couvre la première pièce ; les suivantes partent sans pièce (à cocher) et
-   * reprennent la lame et les règles de la pose affichée.
-   */
+  /** Nouvelle pose sur une pièce (la première sans revêtement au sol), aux réglages de la pose affichée. */
   addLayout(): void {
-    const id = crypto.randomUUID();
-    const layouts = this.data.layouts;
-    const names = layouts.map((l) => l.name);
-    let n = layouts.length + 1;
-    while (names.includes(`Pose ${n}`)) n++;
-    const room = this.doc.plan.rooms[0];
-    const from = this.layout;
-    const layout = from
-      ? createLayout(id, [], {
-          name: `Pose ${n}`,
-          boardId: from.boardId,
-          method: from.method,
-          rules: { ...from.rules },
-        })
-      : createLayout(id, room ? [room.id] : []);
-    this.dispatch({ type: 'parquet/layout/add', layout });
-    this.current = id;
+    const floors = this.doc.zones.filter((z) => z.surface.wall == null);
+    const room = this.doc.plan.rooms.find((r) => !floors.some((z) => z.surface.room === r.id));
+    if (!room) {
+      toast('Tous les sols ont déjà un revêtement. Décochez une pièce d’une pose ou séparez une pose.', {
+        tone: 'error',
+      });
+      return;
+    }
+    const settings = newPoseSettings(this.data, this.boards, this.layout?.id);
+    const a = addPoseAction(this.doc, room.id, settings, newId);
+    this.dispatch(a);
+    this.current = a.pose.id;
   }
 
   removeLayout(): void {
     if (!this.layout) return;
-    this.dispatch({ type: 'parquet/layout/remove', layoutId: this.layout.id });
+    this.dispatch({ type: 'pose/remove', poseId: this.layout.id });
     this.current = null;
+    toast('Pose supprimée.', { action: undoAction(this.store) });
   }
 
   /** Accepter un seuil proposé : il passe dans les seuils posés de la pose. */
@@ -188,9 +200,15 @@ export class ParquetEditorState {
 
   /** Séparer la pose en deux le long d'une ligne ; la nouvelle pose devient la pose affichée. */
   split(line: Segment): void {
-    if (!this.layout) return;
-    const newId = crypto.randomUUID();
-    this.dispatch({ type: 'parquet/layout/split', layoutId: this.layout.id, line, newId });
-    this.current = newId;
+    const l = this.layout;
+    if (!l) return;
+    const r = splitPoseAction(this.doc, l.id, line, settingsOf(l), newId);
+    // tout ou rien : la nouvelle pose doit exister après l'action (pièces reliées, zones non vides)
+    if (!r || !reduceProject(this.doc, r.action).poses.some((p) => p.id === r.poseId)) {
+      toast('Cette ligne ne sépare pas la pose en deux parties posables.', { tone: 'error' });
+      return;
+    }
+    this.dispatch(r.action);
+    this.current = r.poseId;
   }
 }

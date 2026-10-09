@@ -9,6 +9,7 @@ import type { Plan } from '../../../core/plan/types';
 import type { Id, Project } from '../../../state/model';
 import type { ProjectAction } from '../../../state/project';
 import { checkZone, type CoverageError } from '../../../core/coverage/rules';
+import { nextPoseName } from '../../../core/coverage/names';
 import type { CoverageRules } from '../../../core/coverage/types';
 import { CARRELAGE_ID, carrelageData, withCarrelage, type CarrelageData } from './data';
 
@@ -16,14 +17,6 @@ import { CARRELAGE_ID, carrelageData, withCarrelage, type CarrelageData } from '
 export const TILE_RULES: CoverageRules = { surfaces: ['floor', 'wall'], extent: 'surface' };
 import { createPoseSettings } from './factories';
 import type { CarrelagePose, Tile } from './model';
-
-/** « Pose n » : premier numéro libre parmi les poses du projet. */
-export function nextPoseName(poses: readonly Pose[]): string {
-  const names = new Set(poses.map((p) => p.name));
-  let n = poses.length + 1;
-  while (names.has(`Pose ${n}`)) n++;
-  return `Pose ${n}`;
-}
 
 /**
  * Réglages d'une nouvelle pose : ceux de la pose `like` (bandes copiées avec de nouveaux identifiants), sinon une

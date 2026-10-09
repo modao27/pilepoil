@@ -115,9 +115,19 @@ export interface Threshold {
   breakIndex?: number;
 }
 
+/** Pièce d'une pose, repère du plan. */
+export interface RoomSpec {
+  id: Id;
+  outline: Polygon;
+  obstacles: Polygon[];
+  openings: WallOpeningSpec[];
+  /** Zone de la pose dans cette pièce : demi-plans qui la limitent (poses séparées). Vide : pièce entière. */
+  bounds: ZoneBound[];
+}
+
 export interface LayoutSpec {
   id: Id;
-  rooms: { id: Id; outline: Polygon; obstacles: Polygon[]; openings: WallOpeningSpec[] }[];
+  rooms: RoomSpec[];
   /** Passages entre deux pièces de la pose (P3). */
   passages: PassageSpec[];
   /** null : lame introuvable dans la bibliothèque (erreur `missing-board`). */
@@ -135,8 +145,6 @@ export interface LayoutSpec {
   rules: LayingRules;
   /** Seuils (fractionnement), segments du plan. */
   breaks: Segment[];
-  /** Zone de la pose : demi-plans qui la limitent dans ses pièces (poses séparées). Vide : pièces entières. */
-  zone: ZoneBound[];
   /** Graine des tirages (coupe perdue, longueurs mixtes). */
   seed: number;
 }

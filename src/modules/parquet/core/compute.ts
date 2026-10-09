@@ -13,7 +13,7 @@ import { axisOptions } from './axis';
 import { layPattern } from './patterned';
 import { computeSkirting } from './skirting';
 import { layStraight } from './straight';
-import type { LayoutResult, LayoutSpec, ParquetError, ParquetResult, ParquetSpec } from './types';
+import type { LayoutResult, LayoutSpec, ParquetError, ParquetResult, ParquetSpec, ZoneBound } from './types';
 
 /** Garde-fou : au-delà, le calcul est refusé (SPEC §6). */
 export const MAX_PIECES = 20000;
@@ -118,7 +118,8 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec, proposals: boolean): La
 
 /**
  * Surface posable avant seuils (SPEC §4.1) : chaque pièce réduite du jeu périphérique, moins ses obstacles
- * agrandis du jeu, réunie aux autres pièces de la pose par la bande de chaque passage.
+ * agrandis du jeu, limitée à la zone de la pose (un jeu en retrait de chaque limite), réunie aux autres pièces
+ * de la pose par la bande de chaque passage (limitée aux zones des deux pièces).
  */
 export function layableSurface(l: LayoutSpec): Polygon[] {
   const gap = l.rules.expansionGap;
@@ -126,24 +127,34 @@ export function layableSurface(l: LayoutSpec): Polygon[] {
   for (const r of l.rooms) {
     const inner = offset([oriented(r.outline)], -gap);
     const holes = r.obstacles.flatMap((o) => offset([oriented(o)], gap));
-    all = union(all, holes.length ? difference(inner, holes) : inner);
+    all = union(all, bounded(holes.length ? difference(inner, holes) : inner, r.bounds, gap));
   }
-  const outline = (id: string) => l.rooms.find((r) => r.id === id)?.outline;
-  const bands = l.passages.map((p) => passageBand(p, outline(p.a), gap));
+  const room = (id: string) => l.rooms.find((r) => r.id === id);
+  const bands = l.passages.flatMap((p) =>
+    bounded(
+      [passageBand(p, room(p.a)?.outline, gap)],
+      [...(room(p.a)?.bounds ?? []), ...(room(p.b)?.bounds ?? [])],
+      gap,
+    ),
+  );
   return bands.length && all.length ? union(all, bands) : all;
 }
 
-/** Surface coupée le long des seuils posés (un jeu de chaque côté), puis limitée à la zone de la pose. */
+/** Région limitée par des demi-plans, en retrait d'un jeu sur chaque ligne. */
+function bounded(s: Polygon[], bounds: readonly ZoneBound[], gap: number): Polygon[] {
+  for (const b of bounds) if (s.length) s = intersection(s, [halfPlane(b, gap)]);
+  return s;
+}
+
+/** Surface coupée le long des seuils posés (un jeu de chaque côté). */
 function cutSurface(l: LayoutSpec, base: Polygon[]): Polygon[] {
   const gap = l.rules.expansionGap;
-  let s = l.breaks.length
+  return l.breaks.length
     ? difference(
         base,
         l.breaks.map((b) => breakBand(extendBreak(b, base), gap)),
       )
     : base;
-  for (const b of l.zone) s = intersection(s, [halfPlane(b, gap)]);
-  return s;
 }
 
 /** Contour dans le sens attendu (aire signée > 0). */

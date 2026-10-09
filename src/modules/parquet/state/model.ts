@@ -1,29 +1,23 @@
 /**
  * Données du parquet dans un projet (`project.modules.parquet`, docs/parquet/SPEC.md §2) et valeurs
- * initiales. Unités : mm, degrés.
+ * initiales. Les pièces couvertes sont les zones des poses du projet (docs/NAVIGATION.md §4) ; le module garde
+ * les réglages de chaque pose. Unités : mm, degrés.
  */
 import type { Point, Segment } from '../../../core/geometry/types';
-import type { Plan } from '../../../core/plan/types';
-import { BOARD_TEMPLATES } from '../core/board';
+import type { Zone } from '../../../core/coverage/types';
+import { BOARD_TEMPLATES, type Board } from '../core/board';
 import { DEFAULT_ACCESSORIES, DEFAULT_SETTINGS, METHOD_BY_KIND, RULES_BY_KIND } from '../core/defaults';
-import type {
-  Accessories,
-  AxisKind,
-  LayingMethod,
-  LayingRules,
-  ParquetSettings,
-  Pattern,
-  ZoneBound,
-} from '../core/types';
+import type { Accessories, AxisKind, LayingMethod, LayingRules, ParquetSettings, Pattern } from '../core/types';
 
 type Id = string;
 
 export const PARQUET_ID = 'parquet';
-export const PARQUET_SCHEMA = 3;
+/** 4 : réglages par pose, pièces données par les zones du projet. */
+export const PARQUET_SCHEMA = 4;
 
 export interface ParquetData {
-  /** Une pose par groupe de pièces posées en continu. */
-  layouts: Layout[];
+  /** Réglages de chaque pose de parquet du projet, par identifiant de pose. */
+  poses: Record<Id, ParquetPose>;
   settings: ParquetSettings;
   accessories: Accessories;
   /** Prix unitaires par clé de ligne d'achat (`parquet:board:<id>`…). */
@@ -32,11 +26,8 @@ export interface ParquetData {
   worksite: { resultHash: string; done: string[] } | null;
 }
 
-export interface Layout {
-  id: Id;
-  name: string;
-  /** Pièces du plan couvertes par cette pose (continuité entre elles via les passages). */
-  rooms: Id[];
+/** Réglages d'une pose. */
+export interface ParquetPose {
   /** Lame de la bibliothèque. */
   boardId: Id;
   pattern: Pattern;
@@ -52,20 +43,24 @@ export interface Layout {
   rules: LayingRules;
   /** Seuils posés par l'utilisateur (fractionnement), segments dans le repère du plan. */
   breaks: Segment[];
-  /** Zone de la pose dans ses pièces (poses séparées, schéma 2) ; vide : pièces entières. */
-  zone: ZoneBound[];
   seed: number;
+}
+
+/** Pose vue par l'éditeur et les résultats : réglages, nom et zones de sol du projet, pièces dans l'ordre du plan. */
+export interface Layout extends ParquetPose {
+  id: Id;
+  name: string;
+  rooms: Id[];
+  zones: Zone[];
 }
 
 /** Lame proposée par défaut : le stratifié des modèles types (s'il a été supprimé, l'éditeur en demande une). */
 export const DEFAULT_BOARD_ID = BOARD_TEMPLATES[0]!.id;
 
-export function createLayout(id: Id, rooms: Id[], o: Partial<Layout> = {}): Layout {
-  const kind = BOARD_TEMPLATES[0]!.kind;
+/** Réglages d'une pose ; mode de pose et règles du type de la lame. */
+export function createPoseSettings(o: Partial<ParquetPose> = {}, board?: Pick<Board, 'kind'>): ParquetPose {
+  const kind = board?.kind ?? BOARD_TEMPLATES[0]!.kind;
   return {
-    id,
-    name: 'Pose 1',
-    rooms,
     boardId: DEFAULT_BOARD_ID,
     pattern: { kind: 'random-stagger' },
     angle: 0,
@@ -75,34 +70,18 @@ export function createLayout(id: Id, rooms: Id[], o: Partial<Layout> = {}): Layo
     method: METHOD_BY_KIND[kind],
     rules: { ...RULES_BY_KIND[kind] },
     breaks: [],
-    zone: [],
     seed: 1,
     ...o,
   };
 }
 
-/** Données initiales quand on active le parquet : une pose sur la première pièce du plan (s'il y en a une). */
-export function createParquetData(plan: Plan, newId: () => Id): ParquetData {
-  const first = plan.rooms[0];
+/** Données initiales quand on active le parquet : aucune pose (elles naissent des zones). */
+export function createParquetData(): ParquetData {
   return {
-    layouts: first ? [createLayout(newId(), [first.id])] : [],
+    poses: {},
     settings: { ...DEFAULT_SETTINGS },
     accessories: structuredClone(DEFAULT_ACCESSORIES),
     prices: {},
     worksite: null,
   };
 }
-
-/** Migrations des données : migrations[n] passe de la version n − 1 à n. */
-export const PARQUET_MIGRATIONS: Record<number, (doc: unknown) => unknown> = {
-  // 2 : zone des poses (poses séparées dans une même pièce)
-  2: (doc) => {
-    const d = doc as { layouts: object[] };
-    return { ...d, layouts: d.layouts.map((l) => ({ zone: [], ...l })) };
-  },
-  // 3 : plinthes autour des obstacles (option, décochée)
-  3: (doc) => {
-    const d = doc as { accessories: { skirting: object } };
-    return { ...d, accessories: { ...d.accessories, skirting: { aroundObstacles: false, ...d.accessories.skirting } } };
-  },
-};
