@@ -3,7 +3,7 @@
  * n'écrase jamais un changement fait depuis, enregistrement refusé signalé et réessayable.
  */
 import { expect, test, type Page } from '@playwright/test';
-import { newWall } from './helpers';
+import { newWall, tick } from './helpers';
 
 const panel = (page: Page) => page.getByRole('complementary', { name: 'Réglages du plan' }).or(page.locator('.sheet'));
 
@@ -66,7 +66,7 @@ test('enregistrement refusé : message, puis « Réessayer » enregistre', async
   const id = await newWall(page);
   await page.goto(`/#/p/${id}/m/carrelage`);
   await page.evaluate(() => ((window as unknown as { __failSave: boolean }).__failSave = true));
-  await page.getByRole('checkbox', { name: /^Mur 2 / }).check();
+  await tick(page, page.getByRole('checkbox', { name: /^Mur 2 / }), 'new');
   await expect(page.getByText(/^Enregistrement impossible/)).toBeVisible();
   // rien n'est faussement affiché comme enregistré
   await expect(page.getByRole('link', { name: 'Ouvrir Pièce, mur 2' })).toHaveCount(0);

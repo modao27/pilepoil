@@ -10,11 +10,18 @@ import { passageBand, wallDirection } from '../../src/core/plan/walls';
 import { computeProject, edgeLengths, type ProjectSpec } from '../../src/modules/carrelage/core';
 import { wallFrames } from '../../src/modules/carrelage/render/scene3d/placement';
 import { createPoseSettings, createTile } from '../../src/modules/carrelage/state/factories';
-import { wallHeightCuts } from '../../src/modules/carrelage/state/poses';
+import {
+  continuablePoses,
+  continuePoseAction,
+  untileSurfaceAction,
+  wallHeightCuts,
+} from '../../src/modules/carrelage/state/poses';
+import { reduceProject } from '../../src/state/project';
+import { carrelageData } from '../../src/modules/carrelage/state/data';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { roomShape } from '../../src/modules/carrelage/state/surfaces';
 import type { Project } from '../../src/state/model';
-import { planProject, rect, view, withOpening } from './planFixtures';
+import { ids, planProject, rect, view, withOpening } from './planFixtures';
 
 const tile = createTile({ length: 300, width: 300 });
 const spec = (p: Project): ProjectSpec => toProjectSpec(view(p), [tile]).spec;
@@ -178,5 +185,36 @@ describe('sols reliés par un passage', () => {
     expect(laid / 1e6).toBeLessThan(21.1);
     // 3D : le sol posé dans chaque pièce à sa place
     expect(roomShape(plan, view(p).surfaces, 'b')!.floorOrigin).toEqual([-4072, 0]);
+  });
+});
+
+describe('continuer une pose, retirer une surface', () => {
+  it('mur voisin : la pose peut continuer, en reprenant la hauteur carrelée du voisin', () => {
+    const plan = plan1();
+    const p = project(plan, { A: [{ ref: wall('r', 0), cuts: wallHeightCuts(plan, wall('r', 0), 1200) }] });
+    expect(continuablePoses(p, wall('r', 1)).map((x) => x.id)).toEqual(['A']);
+    expect(continuablePoses(p, wall('r', 2))).toEqual([]);
+    expect(continuablePoses(p, { room: 'r', wall: null })).toEqual([]);
+    const q = reduceProject(p, continuePoseAction(p, wall('r', 1), 'A', ids('n')));
+    const [s] = view(q).surfaces;
+    expect(s!.name).toBe('Pièce, murs 1 et 2');
+    expect([s!.width, s!.height]).toEqual([5000, 1200]);
+  });
+
+  it('retirer le mur du milieu : la pose est séparée, la suite garde les réglages', () => {
+    const p = project(plan1(), { U: [{ ref: wall('r', 0) }, { ref: wall('r', 1) }, { ref: wall('r', 2) }] });
+    const q = reduceProject(p, untileSurfaceAction(p, wall('r', 1), ids('n')));
+    expect(view(q).surfaces.map((x) => [x.name, x.parts.length])).toEqual([
+      ['Pièce, mur 1', 1],
+      ['Pièce, mur 3', 1],
+    ]);
+    expect(q.poses.map((x) => x.name)).toEqual(['U', 'Pose 2']);
+    const d = carrelageData(q)!;
+    const [a, b] = q.poses.map((x) => d.poses[x.id]!);
+    expect(b!.bands.map((x) => x.tileId)).toEqual(a!.bands.map((x) => x.tileId));
+    expect(b!.bands[0]!.id).not.toBe(a!.bands[0]!.id);
+    // retirer un mur au bout : la pose continue sans lui
+    const r = reduceProject(p, untileSurfaceAction(p, wall('r', 2), ids('m')));
+    expect(view(r).surfaces.map((x) => x.name)).toEqual(['Pièce, murs 1 et 2']);
   });
 });

@@ -64,6 +64,37 @@ export function wallChain(room: PlanRoom, walls: readonly Id[]): Id[] | null {
   return Array.from({ length: set.size }, (_, k) => room.walls[(starts[0]! + k) % n]!.id);
 }
 
+/** Suites de murs consécutifs d'une pièce (ordre du contour), pour séparer une chaîne coupée par un trou. */
+export function wallRuns(room: PlanRoom, walls: readonly Id[]): Id[][] {
+  const n = room.walls.length;
+  const set = new Set(walls.map((w) => room.walls.findIndex((x) => x.id === w)).filter((i) => i >= 0));
+  if (set.size === n) return [room.walls.map((w) => w.id)];
+  const starts = [...set].filter((i) => !set.has((i - 1 + n) % n)).sort((x, y) => x - y);
+  return starts.map((s) => {
+    const run: Id[] = [];
+    for (let i = s; set.has(i) && run.length < n; i = (i + 1) % n) run.push(room.walls[i]!.id);
+    return run;
+  });
+}
+
+/** Groupes de pièces reliées entre elles par les passages du plan (ordre du plan). */
+export function roomGroups(plan: Plan, rooms: readonly Id[]): Id[][] {
+  const left = plan.rooms.map((r) => r.id).filter((id) => rooms.includes(id));
+  const groups: Id[][] = [];
+  while (left.length) {
+    const group = [left.shift()!];
+    for (let k = 0; k < group.length; k++)
+      for (const p of plan.passages) {
+        const r = group[k]!;
+        const other = p.a.room === r ? p.b.room : p.b.room === r ? p.a.room : null;
+        const i = other ? left.indexOf(other) : -1;
+        if (i >= 0) group.push(...left.splice(i, 1));
+      }
+    groups.push(plan.rooms.map((r) => r.id).filter((id) => group.includes(id)));
+  }
+  return groups;
+}
+
 /** Zones d'une même pose qui se suivent : sols de pièces reliées, ou murs consécutifs d'une même pièce. */
 function continuous(plan: Plan, zones: readonly Zone[]): boolean {
   const rooms = [...new Set(zones.map((o) => o.surface.room))];

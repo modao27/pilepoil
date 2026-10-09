@@ -9,6 +9,7 @@ import {
   fillNumber,
   newWall,
   shot,
+  tick,
 } from './helpers';
 
 async function check(page: Page) {
@@ -154,7 +155,8 @@ test('pièce en L : sol et murs cochés sur l’écran Carrelage', async ({ page
   const id = await createProject(page, { project: 'Pièce 400 × 300', name: 'Pièce', size: [400, 300], shape: 'En L' });
   await addTool(page, id, 'carrelage');
   await page.getByRole('checkbox', { name: 'Sol', exact: true }).check();
-  for (const n of [1, 2, 6]) await page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }).check();
+  for (const n of [1, 2, 6])
+    await tick(page, page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }), n > 1 ? 'new' : undefined);
   await expect(page.getByRole('heading', { name: 'Carrelage — Pièce 400 × 300' })).toBeVisible();
   await check(page);
   await shot(page, info, '16-piece-L');

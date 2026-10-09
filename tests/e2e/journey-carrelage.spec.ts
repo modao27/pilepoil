@@ -3,7 +3,7 @@
  * et deux murs → poser du parquet dans une autre pièce du même projet → acheter. Téléphone et ordinateur.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot, tick } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -62,7 +62,7 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   // 3. deux murs de la salle de bain, avec le même carreau ; cotes reprises du plan
   await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
   await bath.getByRole('checkbox', { name: /^Mur 1 / }).check();
-  await bath.getByRole('checkbox', { name: /^Mur 6 / }).check();
+  await tick(page, bath.getByRole('checkbox', { name: /^Mur 6 / }), 'new');
   await expect(bath.getByRole('link', { name: /^Ouvrir Salle de bain, / })).toHaveCount(3);
   await expect(bath.getByRole('link', { name: 'Ouvrir Salle de bain, mur 1' })).toContainText(/\d+ pièces/);
   await expect(bath.getByRole('link', { name: 'Ouvrir Salle de bain, mur 6' })).toContainText(/\d+ pièces/);

@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { addTile, fillNumber, planRoom } from './helpers';
+import { addTile, fillNumber, planRoom, tick } from './helpers';
 
 /**
  * Pièce de 15 m² (4 × 3,75 m, 2,50 m sous plafond), sol et quatre murs carrelés, par le parcours normal ;
@@ -15,7 +15,8 @@ export async function newRoom(page: Page, tile?: [number, number]): Promise<stri
   await page.goto(`/#/p/${id}/m/carrelage`);
   await expect(page.getByRole('heading', { name: /^Carrelage — / })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Sol', exact: true }).check();
-  for (const n of [1, 2, 3, 4]) await page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }).check();
+  for (const n of [1, 2, 3, 4])
+    await tick(page, page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }), n > 1 ? 'new' : undefined);
   await expect(page.getByRole('link', { name: /^Ouvrir Pièce, / })).toHaveCount(5);
   return id;
 }

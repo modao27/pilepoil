@@ -38,6 +38,23 @@ export async function addTool(page: Page, id: string, tool: string, base = '/'):
   await expect(page).toHaveURL(new RegExp(`#/p/${id}/m/`));
 }
 
+/**
+ * Coche une surface sur l'écran Carrelage. À côté d'une pose qu'elle peut continuer, une fenêtre demande quoi
+ * faire : `choice` y répond (« Nouvelle pose », ou continuer la première pose proposée).
+ */
+export async function tick(page: Page, box: Locator, choice?: 'new' | 'continue'): Promise<void> {
+  await box.click();
+  if (!choice) return;
+  const dialog = page.getByRole('dialog', { name: /^Carreler / });
+  if (choice === 'new') await dialog.getByRole('button', { name: 'Nouvelle pose' }).click();
+  else
+    await dialog
+      .getByRole('button', { name: /^Continuer / })
+      .first()
+      .click();
+  await expect(dialog).toBeHidden();
+}
+
 /** Saisit un nombre (ou un texte) et le valide (Entrée). */
 export async function fillNumber(scope: Page | Locator, label: string, value: string): Promise<void> {
   const f = scope.getByLabel(label, { exact: true });

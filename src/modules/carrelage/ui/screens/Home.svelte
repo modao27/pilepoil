@@ -8,8 +8,17 @@
   import { checkZone, orphanZones, type SurfaceRef } from '../../../../core/coverage';
   import { carrelageData, carrelageView, CARRELAGE_ID } from '../../state/data';
   import { newId } from '../../state/factories';
-  import { newPoseSettings, tilePosesOn, tileSurfaceAction, untileSurfaceAction } from '../../state/poses';
-  import { covers, nameIn, tiledTop } from '../../state/surfaces';
+  import {
+    continuablePoses,
+    continuePoseAction,
+    newPoseSettings,
+    tilePosesOn,
+    tileSurfaceAction,
+    untileSurfaceAction,
+  } from '../../state/poses';
+  import { covers, nameIn, surfaceName, tiledTop } from '../../state/surfaces';
+  import type { Pose } from '../../../../core/coverage';
+  import Dialog from '../../../../ui/components/Dialog.svelte';
   import { coverageText } from '../../../../ui/lib/coverageMessages';
   import { moduleById } from '../../../registry';
   import { wallLength } from '../../../../core/plan/walls';
@@ -61,17 +70,39 @@
     if (next !== doc) await app.trySaveProject({ ...next, updatedAt: Date.now() });
   }
 
+  /** Surface à carreler qui peut continuer une pose voisine : choix « Continuer » ou « Nouvelle pose ». */
+  let choosing = $state.raw<{ ref: SurfaceRef; poses: Pose[] } | null>(null);
+  const poseLabel = (p: Pose) => project?.surfaces.find((s) => s.id === p.id)?.name ?? p.name;
+
   /**
-   * Carreler ou non toute une surface. Une nouvelle pose reprend les réglages de la dernière pose de la pièce,
-   * sinon du projet ; un refus (surface déjà couverte par un autre revêtement…) est expliqué.
+   * Carreler ou non toute une surface. À côté d'une pose de carrelage qu'elle peut continuer (mur voisin, pièce
+   * reliée), on demande s'il faut la continuer ; sinon nouvelle pose. Retirer une surface au milieu d'une pose la
+   * sépare en deux. Un refus (surface déjà couverte par un autre revêtement…) est expliqué.
    */
   function setTiled(ref: SurfaceRef, on: boolean) {
     if (!doc || !project) return;
     if (!on) {
-      void dispatch(untileSurfaceAction(doc, ref));
+      void dispatch(untileSurfaceAction(doc, ref, newId));
       toast('Surface retirée du carrelage.');
       return;
     }
+    const poses = continuablePoses(doc, ref);
+    if (poses.length) {
+      choosing = { ref, poses };
+      return;
+    }
+    newPose(ref);
+  }
+
+  function continuePose(ref: SurfaceRef, poseId: string) {
+    choosing = null;
+    if (doc) void dispatch(continuePoseAction(doc, ref, poseId, newId));
+  }
+
+  /** Nouvelle pose sur toute la surface. */
+  function newPose(ref: SurfaceRef) {
+    choosing = null;
+    if (!doc || !project) return;
     const inRoom = project.surfaces.filter((s) => s.ref.room === ref.room);
     const like = inRoom[inRoom.length - 1] ?? project.surfaces[project.surfaces.length - 1];
     const settings = newPoseSettings(carrelageData(doc), carrelage.tiles, newId, like?.id);
@@ -85,6 +116,28 @@
   /** Cases refusées : compteur pour les redessiner dans leur état réel. */
   let refused = $state(0);
 </script>
+
+{#if choosing && doc}
+  {@const c = choosing}
+  <Dialog
+    open
+    title="Carreler {surfaceName(doc.plan, c.ref)}"
+    onclose={() => {
+      if (choosing) refused++;
+      choosing = null;
+    }}
+  >
+    <p class="muted">
+      Continuer une pose voisine garde le même calepinage : joints alignés, carreaux coupés à l’angle ou au passage.
+    </p>
+    <div class="choices">
+      {#each c.poses as pose (pose.id)}
+        <Button variant="primary" onclick={() => continuePose(c.ref, pose.id)}>Continuer « {poseLabel(pose)} »</Button>
+      {/each}
+      <Button onclick={() => newPose(c.ref)}>Nouvelle pose</Button>
+    </div>
+  </Dialog>
+{/if}
 
 {#if !doc || !project}
   <Screen title="Projet introuvable" backHref="#/" backLabel="Accueil">
@@ -235,5 +288,10 @@
       grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
       align-items: start;
     }
+  }
+  .choices {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
   }
 </style>

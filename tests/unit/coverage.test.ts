@@ -10,6 +10,8 @@ import {
   roomsConnected,
   surfacePolygon,
   wallChain,
+  wallRuns,
+  roomGroups,
   zoneArea,
   zoneRegion,
   type Coverage,
@@ -202,6 +204,13 @@ describe('règles', () => {
     expect(wallChain(a, ['a-w0', 'a-w1', 'a-w2', 'a-w3'])).toEqual(['a-w0', 'a-w1', 'a-w2', 'a-w3']);
     expect(wallChain(a, ['a-w0', 'a-w2'])).toBeNull();
     expect(wallChain(a, ['x'])).toBeNull();
+  });
+
+  it('suites de murs et groupes de pièces reliées (séparer une pose qui ne se suit plus)', () => {
+    expect(wallRuns(a, ['a-w0', 'a-w2'])).toEqual([['a-w0'], ['a-w2']]);
+    expect(wallRuns(a, ['a-w3', 'a-w0', 'a-w2'])).toEqual([['a-w2', 'a-w3', 'a-w0']]);
+    expect(wallRuns(a, ['a-w0', 'a-w1', 'a-w2', 'a-w3'])).toEqual([['a-w0', 'a-w1', 'a-w2', 'a-w3']]);
+    expect(roomGroups(plan, ['c', 'b', 'a'])).toEqual([['a', 'b'], ['c']]);
   });
 
   it('propriété : un arc du contour est une chaîne, un arc privé d’un mur intérieur ne l’est pas', () => {
