@@ -6,7 +6,7 @@ import { intersection } from '../../../core/geometry/boolean';
 import { signedArea } from '../../../core/geometry/polygon';
 import type { Point, Polygon } from '../../../core/geometry/types';
 import { patternCells } from './patterned';
-import { insideRegion } from './rings';
+import { insideRegion } from '../../../core/geometry/rings';
 import type { AxisOption, LayoutSpec, PlacedLayout } from './types';
 
 /** Plus petite largeur de coupe en bord : aire / plus grande longueur, sur les pièces coupées. */

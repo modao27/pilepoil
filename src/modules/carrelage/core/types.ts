@@ -118,6 +118,13 @@ export interface SurfaceSpec {
   hiddenEdges: SideFlags;
   /** [jcov] */
   junctionsCovered: boolean;
+  /**
+   * Contour réel de la surface (région du plan : contours d'aire > 0, trous d'aire < 0, repère surface, y vers
+   * le bas), dans le rectangle width × height. Absent : la surface est ce rectangle (calcul historique).
+   */
+  outline?: Polygon[];
+  /** Coupes le long du contour cachées (plinthe, profilé) ; sinon apparentes. */
+  outlineHidden?: boolean;
 }
 
 export interface Settings {

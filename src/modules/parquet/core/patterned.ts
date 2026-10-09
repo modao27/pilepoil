@@ -9,7 +9,7 @@ import type { BBox, Point, Polygon, Segment } from '../../../core/geometry/types
 import { chevronCells } from '../../../core/patterns/chevron';
 import { herring } from '../../../core/patterns/herring';
 import type { Cell } from '../../../core/patterns/types';
-import { components, insideRegion, keyhole } from './rings';
+import { components, insideRegion, keyhole } from '../../../core/geometry/rings';
 import type { BoardUse, LaidPiece, Offcut, ParquetWarning, PlacedLayout } from './types';
 
 const EPS = 1e-6;

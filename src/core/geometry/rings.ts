@@ -1,9 +1,10 @@
 /**
  * Anneaux d'une région (règle non nulle, contours > 0, trous < 0) : regroupement en composantes, et fusion
- * d'un trou dans son contour par une fente (une pièce de lame percée reste un seul polygone). Pur.
+ * d'un trou dans son contour par une fente (une pièce percée reste un seul polygone), test « entièrement dans la
+ * région ». Partagé par le parquet et le carrelage. Pur.
  */
-import { pointInPolygon, signedArea } from '../../../core/geometry/polygon';
-import type { Point, Polygon } from '../../../core/geometry/types';
+import { pointInPolygon, signedArea } from './polygon';
+import type { Point, Polygon } from './types';
 
 export interface Component {
   outer: Polygon;
