@@ -1,243 +1,123 @@
 # Modèle de données et stockage
 
-> **Version 2 depuis S2** (plan commun, données par module) : voir « Modèle v2 » ci-dessous et
-> `docs/BOITE.md` §3–§5. Les sections suivantes décrivent la version 1, dont la forme est conservée à
-> l'identique dans les données carrelage (`project.modules.carrelage.data`).
+Unités : mm (géométrie, carreaux, ouvertures), ms depuis 1970 pour les dates, € pour les prix. Identifiants :
+chaînes uniques (`crypto.randomUUID()`). Architecture d'ensemble : `docs/BOITE.md` §3–§5.
 
-## Modèle v2 (S2)
+## Projet
 
 ```ts
 interface Project {            // state/model.ts
   schemaVersion: 2;
   id: Id; name: string; createdAt: number; updatedAt: number;
-  plan: Plan;                  // core/plan/types.ts (BOITE §3)
+  plan: Plan;                  // core/plan/types.ts : pièces, murs, ouvertures, obstacles, passages
   modules: Record<string, ModuleDoc>;   // clé = identifiant du module
 }
-interface ModuleDoc { schemaVersion: number; data: unknown }
-// carrelage : CarrelageData = { surfaces, room, settings, prices } (forme v1, schéma 1)
+interface ModuleDoc { schemaVersion: number; data: unknown }   // chaque module type ses données
 ```
-- **Migration v1 → v2** (`storage/migrations.ts`, `projectFromV1`) : déterministe ; données carrelage déplacées
-  telles quelles ; si `room` existe, une pièce rectangulaire `length × width` nommée comme le projet, murs de
-  72 mm, identifiants dérivés de celui du projet (`<id>:plan:<n>`). Scénarios : schéma 2, instantané migré
-  comme un projet. Puis les données de chaque module sont migrées par le module (`migrations`,
-  `schemaVersion`) ; un module inconnu est laissé tel quel, une version future est refusée.
-- **Lecture** : projets et scénarios migrés à la lecture, réécrits en tâche de fond.
-- **Import legacy** : la conversion produit des documents v1 (`ProjectV1`, `ScenarioV1`), migrés avant écriture.
-- **Code carrelage** : il travaille sur la vue `CarrelageProject` (champs communs + `CarrelageData`), lue et
-  réécrite à la frontière (`carrelageView`, `withCarrelage`).
-- **IndexedDB version 2** : magasin `boards` (bibliothèque de lames, index `name`, `updatedAt`).
+
 - **Réducteur racine** (`state/project.ts`) : `project/rename`, `project/module/add`, `batch`, `plan/*` vers
-  `core/plan/reduce.ts`, `<module>/*` vers `module.reduce` ; `plan/room/removed` envoyé aux modules. Historique
-  unique du projet (plan et modules).
-- **Workers** : la coquille ouvre les deux workers (aperçu en direct, file des vignettes et résumés) et tient
-  les bibliothèques chargées (`app.libraries`) pour `toSpec` de chaque module.
+  `core/plan/reduce.ts`, `<module>/*` vers `module.reduce(data, action, plan)` ; `plan/room/removed` est envoyé
+  aux modules quand une pièce disparaît. Historique unique du projet (plan et modules).
+- **Parquet** : `modules/parquet/state/model.ts` et `docs/parquet/SPEC.md` §2.
 
-Proposition. Unités : mm (surfaces, carreaux, ouvertures), ms depuis 1970 pour les dates, € pour les prix.
-Les identifiants sont des chaînes uniques (`crypto.randomUUID()`).
+## Carrelage (`project.modules.carrelage`, schéma 2)
 
-## Types persistés
+Le plan est la seule source de la géométrie : le carrelage ne garde que ses réglages, rangés par élément du plan.
 
 ```ts
-type Id = string;
-
-interface Project {
-  schemaVersion: 1;
-  id: Id;
-  name: string;
-  createdAt: number;
-  updatedAt: number;
-  /** Ordre = ordre d'affichage et de calcul (réemploi, numérotation des carreaux). */
-  surfaces: Surface[];
-  room: Room | null;
-  settings: ProjectSettings;
-  /** Prix unitaires par clé d'article de la liste d'achat (clés compatibles legacy). */
-  prices: Record<string, number>;
+interface CarrelageData {      // modules/carrelage/state/data.ts
+  rooms: Record<Id, RoomTiling>;        // clé = id de pièce du plan ; absente : rien de carrelé
+  settings: ProjectSettings;            // marge, réemploi, perte par coupe, chute minimale, nuance, objectif
+  prices: Record<string, number>;       // prix unitaires par clé d'article de la liste d'achat
 }
-
-interface ProjectSettings {
-  margin: number;            // %
-  reuseOffcuts: boolean;
-  kerf: number;              // perte par coupe
-  minOffcut: number;         // plus petite chute gardée
-  shadeVariation: number;    // variation de nuance du rendu (0–1)
-  optimizerGoal: 'thin' | 'tiles' | 'bal' | 'sym';
+interface RoomTiling {
+  floor: FloorTiling | null;
+  walls: Record<Id, WallTiling>;        // clé = id de mur du plan ; absent : non carrelé
+  outerCornersCovered: boolean;         // profilé sur les angles sortants entre murs carrelés
 }
-
-interface Room {
-  length: number;
-  width: number;
-  height: number;
-  tiledHeight: number;
-  walls: Partial<Record<'A' | 'B' | 'C' | 'D' | 'floor', Id>>;   // id de surface
+interface TilingBase { joint; split: 'h' | 'v'; zones: Zone[]; reservations: Reservation[]; junctionsCovered }
+interface FloorTiling extends TilingBase { plinth: Plinth | null; edgesHidden: boolean }
+interface WallTiling extends TilingBase {
+  tiledHeight: number | null;           // null : jusqu'au plafond
+  hiddenEdges: Edges;
+  openings: Record<Id, OpeningFinish>;  // finitions des portes et fenêtres du plan (profilé, tableaux)
 }
-
-interface Surface {
-  id: Id;
-  name: string;
-  kind: 'wall' | 'floor';
-  width: number;
-  height: number;
-  joint: number;
-  split: 'h' | 'v';
-  zones: Zone[];             // au moins une
-  openings: Opening[];
-  corners: Corner[];
-  plinth: Plinth | null;
-  hiddenEdges: { top: boolean; bottom: boolean; left: boolean; right: boolean };
-  junctionsCovered: boolean;
-}
-
-interface Zone {
-  id: Id;
-  size: number;              // rangées, ou mm si unit = 'length'
-  unit: 'rows' | 'length' | 'rest';
-  tileId: Id;
-  /** Carreau debout : long côté vertical à 0° (legacy : a < b). */
-  tileUpright: boolean;
-  pattern: PatternId;
-  angle: 0 | 30 | 45 | 60 | 90;
-  start: 'corner' | 'tile' | 'joint';
-  offsetX: number;
-  offsetY: number;
-  mix: 'solid' | 'alternate' | 'random';
-  colorB: string;            // seconde couleur du mélange
-  groutColor: string;
-  photoRandomFlip: boolean;  // rendu : retournements aléatoires de la photo
-}
-
-interface Opening {
-  id: Id;
-  type: 'window' | 'door' | 'socket' | 'trap' | 'tub' | 'other';
-  x: number;
-  sill: number;
-  width: number;
-  height: number;
-  covered: boolean;
-  revealDepth: number;       // mm (legacy : cm)
-  reveals: { left: boolean; right: boolean; top: boolean; bottom: boolean };
-  projection: number;        // avancée d'une baignoire
-}
-
-interface Corner { id: Id; x: number; type: 'in' | 'out'; angle: number; covered: boolean }
-
-interface Plinth { length: number; height: number; zoneId: Id }
-
-/** Bibliothèque globale, partagée entre projets. */
-interface Tile {
-  schemaVersion: 1;
-  id: Id;
-  name: string;
-  /** Forme du produit : rect (droit, décalés, bâtons rompus, vannerie), hex, octo, chevron (lames Hongrie). */
-  shape: 'rect' | 'hex' | 'octo' | 'chevron';
-  length: number;            // long côté ; hex/octo : largeur plat à plat
-  width: number;             // court côté ; hex/octo : = length
-  thickness: number;
-  color: string;
-  photoId: Id | null;
-  m2PerBox: number;          // 0 = vendu à la pièce
-  pricePerM2: number | null;
-  /** Rotations permises au réemploi des chutes (sens du veinage). */
-  orientation: 'free' | '180' | 'none';
-  createdAt: number;
-  updatedAt: number;
-}
-
-interface Photo { id: Id; blob: Blob; width: number; height: number; createdAt: number }
-
-/** Scénario A/B : copie figée du projet et des carreaux utilisés. */
-interface Scenario {
-  schemaVersion: 1;
-  id: Id;
-  projectId: Id;
-  slot: 'A' | 'B';
-  name: string;
-  snapshot: { project: Project; tiles: Tile[] };
-  metrics: Metrics;          // core/shopping/order.ts
-  thumbnailId: Id | null;    // photo
-  createdAt: number;
-}
-
-/** Préférences : palette, thème, dernier projet, import legacy fait. */
-type Pref =
-  | { key: 'palette'; value: { tiles: string[]; grouts: string[] } }
-  | { key: 'theme'; value: 'auto' | 'light' | 'dark' }
-  | { key: 'lastProjectId'; value: Id }
-  | { key: 'legacyImport'; value: { at: number; projectId: Id | null } };
 ```
 
-Écarts avec `carrelage/DOMAIN.md` : `Tile.shape` (un hexagone est un produit, pas un motif) ; `Zone.tileUpright` (legacy
-distingue 300 × 600 de 600 × 300 tourné à 90° : départs différents) ; sens du carreau sur `Tile` et non plus
-global ; côtés en toutes lettres (`left`…). État d'interface (surface active, sélection, vue) hors du projet.
+- **Zone** : taille (rangées, mm ou reste), carreau (`tileId`, debout ou couché), motif, angle, départ,
+  décalage, mélange de couleurs, joint, retournements de photo.
+- **Réservation** : prise, trappe, baignoire ou autre, dans le repère de la surface. Les portes et fenêtres
+  viennent du plan ; seules leurs finitions sont au carrelage.
+- **Surface résolue** (`state/surfaces.ts`, jamais enregistrée) : sol = boîte englobante du contour, contour et
+  obstacles en trous ; mur i = longueur du segment × hauteur carrelée (bornée par la hauteur de la pièce),
+  portes et fenêtres du plan (x depuis le point i) puis réservations. Identifiant `pièce~floor` ou
+  `pièce~mur`, ordre : pièces du plan, sol puis murs dans l'ordre du contour.
+- **Vue** `CarrelageProject` = champs communs + plan + `CarrelageData` + surfaces résolues (`carrelageView`).
+- **Avertissements du plan** : réglages dont la pièce ou le mur n'existe plus (`planWarnings`), retirés par
+  l'action `carrelage/prune` ; une pièce supprimée emporte ses réglages.
 
-## Passage au moteur
+### Passage au moteur
 
-`state/selectors.ts : toProjectSpec(project, tiles) → { spec: ProjectSpec, ids }` résout chaque zone :
-`a = tileUpright ? width : length`, `b = tileUpright ? length : width` (hex/octo : `a = b = length`),
-couleur, carton, épaisseur et sens viennent du carreau. `ids` relie indices du moteur et identifiants.
-Carreau introuvable → erreur de surface `missing-tile`. Le moteur passe le sens de réemploi par carreau
-(changement de `core` : `TileSpec.orientation`, `Settings.orientation` supprimé ; parité conservée car
-l'import legacy copie le réglage global sur chaque carreau).
+`toProjectSpec(view, tiles)` : une `SurfaceSpec` par surface résolue (contour pour un sol), carreaux résolus
+dans la bibliothèque (`a × b` selon debout ou couché, sens de réemploi par carreau), et `rooms` : joints entre
+les surfaces d'une pièce (silicone aux angles rentrants et au pied des murs, profilés aux angles sortants).
+`ProjectSpec.room` (pièce A–D) et `SurfaceSpec.corners` restent dans le moteur pour la parité avec legacy ;
+l'application ne les remplit pas.
 
-## IndexedDB (`idb`, base `calepinage`, version 1 ; version 2 : + `boards`)
+## Bibliothèques, photos, préférences
+
+```ts
+interface Tile {               // bibliothèque « tiles », partagée entre projets
+  schemaVersion: 1; id; name;
+  shape: 'rect' | 'hex' | 'octo' | 'chevron';
+  length; width;               // hex/octo : largeur plat à plat, width = length
+  thickness; color; photoId: Id | null;
+  m2PerBox;                    // 0 = vendu à la pièce
+  pricePerM2: number | null;
+  orientation: 'free' | '180' | 'none';   // rotations permises au réemploi des chutes
+  createdAt; updatedAt;
+}
+interface Photo { id; blob: Blob; width; height; createdAt }
+type Pref = palette | theme | lastProjectId | showCutNumbers | librarySeeded;
+```
+
+Lames du parquet : bibliothèque « boards » (`modules/parquet/core/board.ts`). Une photo est supprimée quand plus
+aucun carreau, lame ni scénario ne la référence.
+
+## Scénarios A/B du carrelage (schéma 3)
+
+Copie figée du projet entier et des carreaux utilisés ; au chargement, seules les données carrelage sont
+rétablies (plan et autres modules gardés). Un scénario d'un schéma antérieur est supprimé à la lecture.
+
+## IndexedDB (`idb`, base `pilepoil`, version 3)
 
 | Magasin | Clé | Index | Contenu |
 |---|---|---|---|
 | `projects` | `id` | `updatedAt` | `Project` |
 | `tiles` | `id` | `name`, `updatedAt` | `Tile` |
+| `boards` | `id` | `name`, `updatedAt` | lames du parquet |
 | `photos` | `id` | — | `Photo` (Blob) |
-| `scenarios` | `id` | `projectId` | `Scenario` |
+| `scenarios` | `id` | `projectId` | scénarios du carrelage |
 | `prefs` | `key` | — | `Pref` |
 
 Migrations à deux niveaux :
-- **schéma de base** : `upgrade(db, oldVersion)` applique les étapes `v0→v1`, `v1→v2`… dans l'ordre ;
-- **documents** : `schemaVersion` sur `Project`, `Tile`, `Scenario` ; `migrateProject(doc)` enchaîne les
-  migrations à la lecture, réécrit le document migré. Chaque migration a un test avec un document figé.
-
-Suppression d'une photo seulement si plus aucun carreau ni scénario ne la référence.
+- **schéma de base** (`storage/db.ts`) : étapes dans l'ordre, jamais modifiées une fois publiées. v2 : magasin
+  `boards` ; v3 : projets v1 (d'avant la boîte à outils) supprimés, sans conversion.
+- **documents** : `schemaVersion` sur le projet et sur les données de chaque module ; `migrateProject` migre à
+  la lecture (le document migré est réécrit en tâche de fond), puis chaque module migre ses données
+  (`migrations[n]` passe de n − 1 à n). Module inconnu : laissé tel quel ; version future : refusée. Carrelage
+  1 → 2 : données remises à vide (réglages et prix gardés). Chaque migration a son test.
 
 ## Store et historique
 
-- `state/actions.ts` : union d'actions (`zone/update`, `opening/add`, `surface/remove`…) et réducteur pur
-  `reduce(project, action) → Project` (copies immuables, partage structurel).
-- `state/history.ts` : passé / futur de 100 états ; les actions d'un même geste (`coalesceKey`, ex.
-  `zone:<id>:offset` pendant un glissement, saisie d'un champ) fusionnent si elles arrivent à moins de 800 ms.
-- `state/store.ts` : `createProjectStore(project)` expose `subscribe` (contrat des stores Svelte), `dispatch`,
-  `undo`, `redo`, `canUndo`, `canRedo` ; enregistrement différé (300 ms) dans IndexedDB.
-- Bibliothèque de carreaux : store séparé, hors historique du projet ; suppression refusée si un projet
-  utilise le carreau.
+- `state/store.ts` : `createProjectStore(project, reduce)` expose `subscribe`, `dispatch`, `undo`, `redo`,
+  `canUndo`, `canRedo` ; enregistrement différé (300 ms) dans IndexedDB.
+- `state/history.ts` : passé / futur de 100 états ; les actions d'un même geste (clé de fusion, ex. glissement
+  d'un motif, saisie d'un champ) fusionnent si elles arrivent à moins de 800 ms.
+- Bibliothèques : hors historique du projet ; un carreau utilisé par un projet ne se supprime pas.
 
 ## Worker de calcul
 
-`workers/compute.worker.ts` (logique dans `workers/handler.ts`, testable sans worker) :
-
-```
-→ { type: 'compute', id, spec }                          ← { type: 'result', id, result: ProjectResult }
-→ { type: 'optimize', id, surface, zones, goal, settings } ← { type: 'progress', id, zone, percent } … { type: 'optimized', id, result }
-→ { type: 'cancel', id }                                 ← { type: 'cancelled', id }
-```
-- Calculs obsolètes : si plusieurs `compute` attendent, seul le dernier est calculé ; le client ignore toute
-  réponse plus ancienne que sa dernière demande.
-- Optimisation : le générateur avance par tranches (rendu de main entre tranches) pour traiter `cancel`.
-- `workers/client.ts` : `compute(spec) → Promise`, `optimize(…, { onProgress, signal: AbortSignal })`.
-
-## Import legacy
-
-`storage/legacyImport.ts`, fonction pure `convertLegacy({ v3, v2, scenarios, palette })` puis écriture :
-- normalisation identique à `normSurface` (valeurs par défaut legacy), `calepinage-v3` sinon `calepinage-v2` ;
-- un carreau de bibliothèque par combinaison distincte (forme, dimensions, épaisseur, couleur, carton,
-  photo, sens), nommé « 60 × 30 cm » ; photos `dataURL` → `Blob` ;
-- `room.surf` (indices) → `room.walls` (ids) ; tailles de zone en cm et profondeur de tableau → mm ;
-- prix : `tile|…` reportés sur le carreau quand la clé correspond, le reste dans `project.prices` ;
-- scénarios A/B rattachés au projet importé, vignette en photo ; nuancier → préférence `palette` ;
-- marqueur `legacyImport` : l'import ne se fait qu'une fois, les clés legacy ne sont jamais effacées.
-- Critère : chaque configuration de `tests/parity` importée redonne les résultats extraits de legacy.
-
-Deux sources :
-- **même origine** (PWA servie à l'adresse où legacy était utilisé) : `autoImportLegacy` au premier lancement ;
-- **fichier** : bouton « Exporter mes données » ajouté à legacy (fichier `calepinage-export-AAAA-MM-JJ.json`,
-  `{ format: 'calepinage-legacy-export', version: 1, data: { <clé localStorage>: <texte> } }`), lu par
-  `parseLegacyExport` puis `importLegacy`. Le bouton d'import de la PWA vient avec l'interface (phase 3).
-
-Limites connues : un hexagone ou un octogone legacy saisi avec une hauteur b ≠ a devient un carreau a × a ;
-les comptes sont identiques, seule la taille de grille de l'optimiseur peut différer. Les résultats legacy
-d'une surface active autre que la première suivent l'ordre fixe des surfaces (voir `carrelage/DOMAIN.md`).
+`workers/compute.worker.ts` aiguille chaque demande vers le moteur du module (`modules/engines.ts`) :
+`compute(spec)`, `optimize(spec)` par tranches avec progression et annulation. Deux clients : aperçu en direct
+(seule la dernière demande compte) et file des vignettes et résumés.

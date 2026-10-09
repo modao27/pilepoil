@@ -58,7 +58,7 @@ export interface ToolModule<Data, Spec, Result> {
     card?: () => Promise<Component>;           // carte du projet sur l'accueil
     settings?: () => Promise<Component>;       // section des Réglages
   };
-  /** Démarrage, base ouverte, avant le chargement des projets (import de données…). Facultatif. */
+  /** Démarrage, base ouverte, avant le chargement des projets. Facultatif. */
   start?(db: Db): Promise<void>;
   /** Photos utilisées hors des bibliothèques (scénarios…), gardées au ramassage. Facultatif. */
   usedPhotos?(db: Db): Promise<Id[]>;
@@ -85,7 +85,7 @@ Précisions (décidées le 2026-10-08) :
   en écrivant `types.ts`.
 - Depuis S3, la coquille ne voit les modules que par `modules/registry.ts` (modules et bibliothèques),
   `modules/types.ts` et `modules/engines.ts` (worker). Une règle ESLint l'impose ; les tests peuvent importer
-  les internes. Le magasin `scenarios`, l'import legacy et les types du carrelage sont dans le module.
+  les internes. Le magasin `scenarios` et les types du carrelage sont dans le module.
 - Bibliothèques : déclarées par les modules (`LibraryDefinition`, avec `templates` facultatifs), tenues par la
   coquille (chargement, migration, modèles types posés une seule fois, routes `#/library/<id>`).
 
@@ -190,30 +190,21 @@ export interface ModuleDoc {
   data: unknown;
 }
 
-/** Données carrelage = l'ancien projet v1 sans les champs communs. */
+/** Données carrelage (C2) : réglages par pièce et par mur du plan ; la géométrie vient du plan. */
 export interface CarrelageData {
-  surfaces: Surface[];
-  room: Room | null;
+  rooms: Record<Id, RoomTiling>;   // sol (FloorTiling) et murs (WallTiling) de chaque pièce
   settings: ProjectSettings;
   prices: Record<string, number>;
 }
 ```
+Détail : `docs/MODEL.md`.
 
-Migration `v1 → v2` (testée sur des documents figés) :
-- `surfaces`, `room`, `settings`, `prices` passent dans `modules.carrelage.data` ;
-- `plan` vide ; si `room` existe, créer une pièce rectangulaire `length × width` nommée comme le projet,
-  murs de 72 mm d'épaisseur par défaut ;
-- aucune autre donnée ne change.
+Scénarios A/B : le magasin `scenarios` appartient au module carrelage (types, lecture, écriture). Un autre
+module pourra avoir ses propres scénarios plus tard.
 
-Scénarios A/B : le magasin `scenarios` appartient au module carrelage (types, lecture, écriture, migration).
-Son `snapshot` est migré comme un projet. Un autre module pourra avoir ses propres scénarios plus tard.
-
-IndexedDB : nouvelle version de base qui ajoute le magasin `boards` (bibliothèque de lames du parquet,
-index `name`, `updatedAt`). Les photos restent communes.
-
-Nom de l'application (S3) : la base devient `pilepoil`. Au premier lancement, les données de l'ancienne
-base `calepinage` sont copiées une fois (avec un test), puis l'ancienne base est conservée sans être
-modifiée, comme filet de sécurité, jusqu'à une version ultérieure qui la supprimera.
+IndexedDB : base `pilepoil`. Version 2 : magasin `boards` (bibliothèque de lames du parquet, index `name`,
+`updatedAt`) ; version 3 : projets v1 (d'avant la boîte à outils) retirés, sans conversion. Les photos restent
+communes.
 
 ## 5. Store et actions
 
@@ -292,7 +283,7 @@ redirigent vers `#/library/tiles…`.
 
 ## 10. Ce qui ne change pas
 
-Design system, composants, moteur et résultats du carrelage, import legacy, PWA, déploiement GitHub Pages.
+Design system, composants, moteur et résultats du carrelage, PWA, déploiement GitHub Pages.
 
 Le code commun est extrait quand un second module en a besoin, pas avant : en S1, le PDF, la scène 3D et
 les motifs bâton rompu / Hongrie partent avec le reste du carrelage dans `modules/carrelage/`. Les motifs
@@ -334,3 +325,4 @@ seul le parquet s'en sert au début.
 | 2026-10-09 | Carrelage bâti sur le plan commun : sols et murs du plan, un mur = une surface, pas de conversion des anciens projets, parité du moteur sur les rectangles | `PLAN.md` C1–C4 |
 | 2026-10-09 | `shopping` reçoit le plan du projet (le carrelage y retrouve ses surfaces) ; données carrelage par pièce et mur du plan (schéma 2), scénarios en schéma 3, anciens supprimés | §2, `PLAN.md` C2 |
 | 2026-10-09 | Carrelage : écran d'accueil par pièce du plan, assistant qui dessine la pièce (rectangle, L, U), vue de la pièce depuis le polygone | §8, `PLAN.md` C3 |
+| 2026-10-09 | Nettoyage : import de l'ancienne appli, copie de la base `calepinage`, migration des projets v1 et anciennes adresses retirés ; base v3 ; `legacy/` reste la référence de parité du moteur | §4, `PLAN.md` C4 |

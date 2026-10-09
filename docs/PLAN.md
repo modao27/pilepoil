@@ -95,6 +95,8 @@ Règles pour toutes les phases :
 
 ## Carrelage bâti sur le plan commun
 
+État : phases C1 à C4 terminées le 2026-10-09.
+
 Décidé le 2026-10-09 : **le plan est la seule source de la géométrie**. Le carrelage ne décrit plus ses
 propres surfaces ni sa pièce rectangulaire A–D : il carrèle des éléments du plan, le **sol d'une pièce**
 (polygone, obstacles) ou **un mur** (longueur du mur × hauteur de la pièce, portes et fenêtres du plan). Il

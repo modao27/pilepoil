@@ -45,7 +45,5 @@ redirige pas un site quand on renomme son dépôt, d'où cette marche à suivre 
 2. Créer un nouveau dépôt `calepinage-pwa` contenant le dossier `redirect/` de ce dépôt (à la racine) et activer
    Pages (branche `main`, racine). L'ancienne adresse redirige alors vers la nouvelle en gardant le chemin `#/…`,
    et son `sw.js` désinstalle proprement l'ancienne appli installée (il ne vide que ses propres caches).
-3. Rien à faire pour les données : les deux adresses sont sur la même origine (`modao27.github.io`). Au premier
-   lancement, Pilepoil copie une fois la base `calepinage` dans `pilepoil` (`copyOldDb`, `src/storage/db.ts`) et
-   propose de désinstaller l'ancienne appli. L'ancienne base n'est jamais modifiée ; elle sera supprimée par une
-   version ultérieure.
+3. Les données de l'ancienne base `calepinage` ne sont plus reprises (phase C4) : Pilepoil repart de sa propre
+   base `pilepoil`.
