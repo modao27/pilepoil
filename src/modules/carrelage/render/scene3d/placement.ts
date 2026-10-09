@@ -101,9 +101,10 @@ export interface RoomShape {
   height: number;
   /**
    * Surface du moteur posée sur chaque mur, dans l'ordre du contour, et position de son coin bas gauche dans le
-   * repère du mur (x depuis le début du mur, y depuis le sol, mm) ; null : mur nu.
+   * repère du mur (x depuis le début du mur, y depuis le sol, mm) ; null : mur nu. `draw: false` : surface posée
+   * sur plusieurs murs, dessinée depuis son premier mur (repliée aux angles).
    */
-  walls: ({ surface: number; x: number; y: number } | null)[];
+  walls: ({ surface: number; x: number; y: number; draw?: boolean } | null)[];
   floor: number | null;
   /** Coin haut gauche de la surface du sol dans le repère de la pièce. */
   floorOrigin: Point;
@@ -147,6 +148,7 @@ export function roomLayout(spec: ProjectSpec, r: RoomShape): SceneLayout {
     const dir: [number, number] = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
     const w = r.walls[i];
     const s = w ? spec.surfaces[w.surface] : undefined;
+    if (w && s && w.draw === false) return;
     if (w && s) {
       const start: [number, number] = [a[0] + (dir[0] * w.x) / 1000, a[1] + (dir[1] * w.x) / 1000];
       instances.push({ surface: w.surface, kind: 'wall', frames: wallFrames(s, start, dir, w.y / 1000) });

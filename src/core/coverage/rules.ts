@@ -69,7 +69,13 @@ function continuous(plan: Plan, zones: readonly Zone[]): boolean {
   const rooms = [...new Set(zones.map((o) => o.surface.room))];
   if (zones.every((o) => o.surface.wall == null)) return roomsConnected(plan, rooms);
   const room = rooms.length === 1 ? plan.rooms.find((r) => r.id === rooms[0]) : undefined;
-  return !!room && wallChain(room, zones.map((o) => o.surface.wall!)) != null;
+  return (
+    !!room &&
+    wallChain(
+      room,
+      zones.map((o) => o.surface.wall!),
+    ) != null
+  );
 }
 
 /**

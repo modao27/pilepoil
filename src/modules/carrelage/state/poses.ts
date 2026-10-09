@@ -14,7 +14,7 @@ import type { CoverageRules } from '../../../core/coverage/types';
 import { CARRELAGE_ID, carrelageData, withCarrelage, type CarrelageData } from './data';
 
 /** Règles des zones de carrelage (aussi déclarées dans le contrat du module). */
-export const TILE_RULES: CoverageRules = { surfaces: ['floor', 'wall'], extent: 'surface' };
+export const TILE_RULES: CoverageRules = { surfaces: ['floor', 'wall'], extent: 'continuous' };
 import { createPoseSettings } from './factories';
 import type { CarrelagePose, Tile } from './model';
 

@@ -5,7 +5,7 @@
 import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../core';
 import { createReservation, createBand } from '../../state/factories';
 import type { Id, Project } from '../../../../state/model';
-import type { Band, Opening, ReservationType, Surface } from '../../state/model';
+import type { Band, Opening, ReservationType, Surface, SurfaceRef } from '../../state/model';
 import { reservationOffset } from '../../state/surfaces';
 import { wallHeightCuts } from '../../state/poses';
 import { toProjectSpec } from '../../state/selectors';
@@ -134,9 +134,14 @@ export class EditorState {
     this.dispatch({ type: 'carrelage/pose/update', poseId: this.surface.id, patch }, key);
   }
 
-  /** Hauteur carrelée d'un mur (ligne haute de sa zone) ; null : jusqu'au plafond. */
-  setWallHeight(height: number | null): void {
-    const z = this.project.zones.find((x) => x.pose === this.surface.id);
+  /**
+   * Hauteur carrelée d'un mur de la pose (ligne haute de sa zone ; par défaut le premier) ; null : jusqu'au
+   * plafond. Chaque mur d'une pose sur plusieurs murs a la sienne.
+   */
+  setWallHeight(height: number | null, wall: SurfaceRef = this.surface.ref): void {
+    const z = this.project.zones.find(
+      (x) => x.pose === this.surface.id && x.surface.room === wall.room && x.surface.wall === wall.wall,
+    );
     if (!z || z.surface.wall == null) return;
     this.dispatch({ type: 'zone/update', zoneId: z.id, cuts: wallHeightCuts(this.project.plan, z.surface, height) });
   }

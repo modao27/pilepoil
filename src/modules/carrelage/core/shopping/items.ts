@@ -144,7 +144,8 @@ export function edgeLengths(project: ProjectSpec): { profile: number; silicone: 
     const n = r.walls.length;
     r.walls.forEach((i, k) => {
       const prev = r.walls[(k - 1 + n) % n];
-      if (i == null || prev == null || n < 2) return;
+      // même surface des deux côtés : angle de la surface, déjà compté avec ses angles
+      if (i == null || prev == null || n < 2 || i === prev) return;
       const h = Math.min(project.surfaces[i]!.height, project.surfaces[prev]!.height) / 1000;
       if (r.corners[k] === 'in') sil += h;
       else if (r.outerCovered) prof += h;

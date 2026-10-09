@@ -9,6 +9,7 @@
   import { carrelageData, carrelageView, CARRELAGE_ID } from '../../state/data';
   import { newId } from '../../state/factories';
   import { newPoseSettings, tilePosesOn, tileSurfaceAction, untileSurfaceAction } from '../../state/poses';
+  import { covers, nameIn, tiledTop } from '../../state/surfaces';
   import { coverageText } from '../../../../ui/lib/coverageMessages';
   import { moduleById } from '../../../registry';
   import { wallLength } from '../../../../core/plan/walls';
@@ -41,8 +42,7 @@
   const index = $derived(new Map(project?.surfaces.map((s, i) => [s.id, i]) ?? []));
   const warnings = $derived(project ? orphanZones(project.plan, project.zones).length : 0);
   /** Surface carrelée (première pose) d'un sol ou d'un mur. */
-  const surfaceOn = (ref: SurfaceRef) =>
-    project?.surfaces.find((s) => s.ref.room === ref.room && s.ref.wall === ref.wall);
+  const surfaceOn = (ref: SurfaceRef) => project?.surfaces.find((s) => covers(s, ref));
 
   /** Résumé d'une surface carrelée : pièces posées, coupes fines, ou erreur. */
   function status(sid: string): string {
@@ -120,7 +120,7 @@
         {/if}
         {#each project.plan.rooms as room (room.id)}
           {@const floor = !!doc && tilePosesOn(doc, { room: room.id, wall: null }).length > 0}
-          {@const surfaces = project.surfaces.filter((s) => s.ref.room === room.id)}
+          {@const surfaces = project.surfaces.filter((s) => s.parts.some((q) => q.ref.room === room.id))}
           <section class="room card" aria-labelledby="h-{room.id}">
             <h2 id="h-{room.id}">{room.name}</h2>
             <div class="thumb">
@@ -135,10 +135,11 @@
                 <legend>À carreler</legend>
                 <Checkbox label="Sol" checked={floor} onchange={(v) => setTiled({ room: room.id, wall: null }, v)} />
                 {#each room.walls as w, i (w.id)}
+                  {@const top = doc ? tiledTop(doc.plan, doc.zones, { room: room.id, wall: w.id }) : null}
                   {@const s = surfaceOn({ room: room.id, wall: w.id })}
                   <Checkbox
                     label="Mur {i + 1}"
-                    hint="{cm(wallLength(room, i))}{s ? `, carrelé sur ${cm(s.origin[1] + s.height)}` : ''}"
+                    hint="{cm(wallLength(room, i))}{s && top != null ? `, carrelé sur ${cm(top)}` : ''}"
                     checked={!!s}
                     onchange={(v) => setTiled({ room: room.id, wall: w.id }, v)}
                   />
@@ -149,7 +150,7 @@
                 {#each surfaces as s (s.id)}
                   <li>
                     <a href="#/p/{id}/m/carrelage/s/{s.id}" aria-label="Ouvrir {s.name}">
-                      <strong>{s.ref.wall ? s.name.slice(room.name.length + 2) : 'sol'}</strong>
+                      <strong>{nameIn(s, room)}</strong>
                       <span class="muted">{status(s.id)}</span>
                     </a>
                   </li>

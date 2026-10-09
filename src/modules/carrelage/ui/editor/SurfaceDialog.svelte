@@ -3,14 +3,27 @@
   import Dialog from '../../../../ui/components/Dialog.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
   import { cm } from '../../../../ui/lib/format';
+  import { wallIndex } from '../../../../core/plan/walls';
+  import { tiledTop } from '../../state/surfaces';
   import type { EditorState } from './editorState.svelte';
 
   let { ed, open = $bindable(false) }: { ed: EditorState; open: boolean } = $props();
 
   /** Pièce du plan de la surface courante. */
   const room = $derived(ed.project.plan.rooms.find((r) => r.id === ed.surface.ref.room));
-  /** Haut de la zone d'un mur, depuis le sol. */
-  const top = $derived(ed.surface.origin[1] + ed.surface.height);
+  /** Murs de la pose et haut de leurs zones depuis le sol : réglable mur par mur. */
+  const walls = $derived(
+    room && ed.surface.kind === 'wall'
+      ? ed.surface.parts.map((p) => ({
+          ref: p.ref,
+          label:
+            ed.surface.parts.length > 1
+              ? `Hauteur carrelée, mur ${wallIndex(room, p.ref.wall!) + 1}`
+              : 'Hauteur carrelée',
+          top: tiledTop(ed.project.plan, ed.project.zones, p.ref) ?? room.height,
+        }))
+      : [],
+  );
 </script>
 
 <Dialog bind:open title="Surfaces">
@@ -36,17 +49,17 @@
         {ed.surface.kind === 'floor' ? 'Sol' : 'Mur'} de {cm(ed.surface.width)} × {cm(ed.surface.height)}. Les cotes
         viennent du plan.
       </p>
-      {#if ed.surface.kind === 'wall'}
+      {#each walls as w (w.ref.wall)}
         <NumberField
-          label="Hauteur carrelée"
-          value={top}
+          label={w.label}
+          value={w.top}
           unit="cm"
           factor={10}
           min={1}
           max={(room?.height ?? 0) / 10}
-          onchange={(v) => ed.setWallHeight(room && v >= room.height ? null : v)}
+          onchange={(v) => ed.setWallHeight(room && v >= room.height ? null : v, w.ref)}
         />
-      {/if}
+      {/each}
     </section>
 
     <div class="row">
