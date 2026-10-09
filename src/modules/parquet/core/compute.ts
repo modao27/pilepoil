@@ -11,6 +11,7 @@ import { appliedThresholds, breakBand, fractioning, halfPlane, passageBand } fro
 import { layingFrame, ringFromFrame, ringToFrame } from './frame';
 import { axisOptions } from './axis';
 import { layPattern } from './patterned';
+import { computeSkirting } from './skirting';
 import { layStraight } from './straight';
 import type { LayoutResult, LayoutSpec, ParquetError, ParquetResult, ParquetSpec } from './types';
 
@@ -36,7 +37,7 @@ export function computeParquet(spec: ParquetSpec, o: { axisOptions?: boolean } =
   const pieceArea = pieces.reduce((t, p) => t + Math.abs(signedArea(p.polygon)), 0);
   return {
     layouts,
-    skirting: { bars: 0, cuts: [], offcuts: [] },
+    skirting: computeSkirting(spec),
     totals: {
       area: layouts.reduce((t, l) => t + regionArea(l.layable), 0) / 1e6,
       boards: boards.length,

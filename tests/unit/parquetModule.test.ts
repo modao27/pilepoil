@@ -190,6 +190,6 @@ describe('plusieurs pièces (P3)', () => {
     const v1 = { ...data(project()), layouts: data(project()).layouts.map(({ zone: _, ...l }) => l) };
     const v2 = parquet.migrations[2]!(v1) as ParquetData;
     expect(v2.layouts.every((l) => Array.isArray(l.zone) && l.zone.length === 0)).toBe(true);
-    expect(parquet.schemaVersion).toBe(2);
+    expect(parquet.schemaVersion).toBe(3);
   });
 });

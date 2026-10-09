@@ -3,6 +3,7 @@
  * Pur et sérialisable en JSON (passage par le worker). Coordonnées dans le repère du plan d'ensemble.
  */
 import type { Point, Polygon, Segment } from '../../../core/geometry/types';
+import type { Bar } from '../../../core/cutting/bars';
 import type { Board } from './board';
 
 type Id = string;
@@ -51,7 +52,8 @@ export interface Accessories {
   underlay: { enabled: boolean; m2PerRoll: number; overlap: number };
   /** upstand : remontée périphérique, mm. */
   vaporBarrier: { enabled: boolean; m2PerRoll: number; overlap: number; upstand: number };
-  skirting: { enabled: boolean; barLength: number; height: number; mitreAllowance: number };
+  /** aroundObstacles : plinthe autour des poteaux et îlots (schéma 3). */
+  skirting: { enabled: boolean; barLength: number; height: number; mitreAllowance: number; aroundObstacles: boolean };
   thresholds: { barLength: number };
   /** Pose collée : m² par seau ou cartouche. */
   glue: { m2PerUnit: number } | null;
@@ -218,8 +220,20 @@ export interface Offcut {
 /** Plinthes (P4) : barres et coupes par mur. */
 export interface SkirtingResult {
   bars: number;
-  cuts: { room: Id; wall: number; lengths: number[] }[];
+  /** Morceaux posés, mur par mur (wall = index du segment du contour ; −1 : tour d'obstacle). */
+  pieces: SkirtingPiece[];
+  /** Découpe de chaque barre. */
+  plan: Bar[];
   offcuts: number[];
+}
+
+export interface SkirtingPiece {
+  id: string;
+  room: Id;
+  wall: number;
+  length: number;
+  /** Bouts coupés d'onglet (angles). */
+  mitres: number;
 }
 
 export type ParquetWarning =
