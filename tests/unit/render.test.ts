@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { buildSurface, layoutZones } from '../../src/modules/carrelage/core';
 import { cornerAt, hitTest, openingAt, pieceAt, zoneAt } from '../../src/modules/carrelage/render/hitTest';
 import { fitView, panBy, toScreen, toWorld, zoomAt } from '../../src/render/view';
+import { planDrawing } from '../../src/modules/carrelage/render/planSvg';
+import type { Polygon } from '../../src/core/geometry/types';
 import { surface, zone } from './fixtures';
 
 describe('vue du plan', () => {
@@ -69,5 +71,31 @@ describe('sous le doigt', () => {
     const i = pieceAt(r.value.pieces, [5, 5]);
     expect(r.value.pieces[i]!.zone).toBe(0);
     expect(pieceAt(r.value.pieces, [1200, 1000])).toBe(-1);
+  });
+});
+
+describe('plan SVG', () => {
+  it('contour : rectangle par défaut, contour et trous d’un sol du plan', () => {
+    const rect = surface({ width: 3000, height: 2000 });
+    expect(planDrawing(rect, []).outline).toBe('M0 0H3000V2000H0Z');
+    const L: Polygon[] = [
+      [
+        [0, 0],
+        [3000, 0],
+        [3000, 1000],
+        [1500, 1000],
+        [1500, 2000],
+        [0, 2000],
+      ],
+      [
+        [500, 500],
+        [500, 700],
+        [700, 700],
+        [700, 500],
+      ],
+    ];
+    const d = planDrawing({ ...rect, kind: 'floor', outline: L }, []);
+    expect(d.outline).toBe('M0 0L3000 0L3000 1000L1500 1000L1500 2000L0 2000ZM500 500L500 700L700 700L700 500Z');
+    expect(d.viewBox).toBe('0 0 3000 2000');
   });
 });

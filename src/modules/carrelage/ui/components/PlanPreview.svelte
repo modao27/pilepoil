@@ -25,14 +25,14 @@
 </script>
 
 <svg class="plan" viewBox={drawing.viewBox} role="img" aria-label={label} preserveAspectRatio="xMidYMid meet">
-  <rect width={drawing.width} height={drawing.height} fill={mode === 'tiles' ? grout : 'var(--line)'} />
+  <path d={drawing.outline} fill-rule="evenodd" fill={mode === 'tiles' ? grout : 'var(--line)'} />
   {#each drawing.shapes as s, i (i)}
     <path d={s.d} fill={mode === 'tiles' ? s.fill : STATUS[s.status]} />
   {/each}
   {#each drawing.holes as h, i (i)}
     <path class="hole" d={h} />
   {/each}
-  <rect class="edge" width={drawing.width} height={drawing.height} />
+  <path class="edge" d={drawing.outline} />
 </svg>
 
 <style>

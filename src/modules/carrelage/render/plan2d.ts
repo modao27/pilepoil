@@ -88,14 +88,35 @@ export function drawPlan(ctx: CanvasRenderingContext2D, d: DrawInput): void {
     }
   };
 
+  /** Contour réel de la surface (sol d'une pièce du plan), sinon le rectangle W × H. */
+  const surfacePath = () => {
+    if (s.outline) pathParts(s.outline);
+    else {
+      ctx.beginPath();
+      ctx.rect(X(0), Y(0), W * sc, H * sc);
+    }
+  };
+  /** Dessine `f` sans déborder du contour (fonds de joint, hachures, reflets). */
+  const clipped = (f: () => void) => {
+    ctx.save();
+    if (s.outline) {
+      surfacePath();
+      ctx.clip('evenodd');
+    }
+    f();
+    ctx.restore();
+  };
+
   ctx.clearRect(0, 0, d.width, d.height);
   const lay = build.layout;
   const pieces = build.pieces;
 
   /* ---------- pièces ---------- */
   if (plan) {
-    ctx.fillStyle = C.line;
-    ctx.fillRect(X(0), Y(0), W * sc, H * sc);
+    clipped(() => {
+      ctx.fillStyle = C.line;
+      ctx.fillRect(X(0), Y(0), W * sc, H * sc);
+    });
     pieces.forEach((pc, i) => {
       if (!pc.parts || pc.reveal) return;
       pathParts(pc.parts);
@@ -107,16 +128,18 @@ export function drawPlan(ctx: CanvasRenderingContext2D, d: DrawInput): void {
       strokeOutline(pc);
     });
   } else {
-    lay.rects.forEach((r, i) => {
-      if (r.w <= 0 || r.h <= 0) return;
-      const hj = s.joint / 2,
-        x0 = Math.max(0, r.x - hj),
-        y0 = Math.max(0, r.y - hj),
-        x1 = Math.min(W, r.x + r.w + hj),
-        y1 = Math.min(H, r.y + r.h + hj);
-      ctx.fillStyle = s.zones[i]!.groutColor;
-      ctx.fillRect(X(x0), Y(y0), (x1 - x0) * sc, (y1 - y0) * sc);
-    });
+    clipped(() =>
+      lay.rects.forEach((r, i) => {
+        if (r.w <= 0 || r.h <= 0) return;
+        const hj = s.joint / 2,
+          x0 = Math.max(0, r.x - hj),
+          y0 = Math.max(0, r.y - hj),
+          x1 = Math.min(W, r.x + r.w + hj),
+          y1 = Math.min(H, r.y + r.h + hj);
+        ctx.fillStyle = s.zones[i]!.groutColor;
+        ctx.fillRect(X(x0), Y(y0), (x1 - x0) * sc, (y1 - y0) * sc);
+      }),
+    );
     const thinJoint = s.joint * sc < 1;
     pieces.forEach((pc, i) => {
       if (!pc.parts || pc.reveal) return;
@@ -298,34 +321,37 @@ export function drawPlan(ctx: CanvasRenderingContext2D, d: DrawInput): void {
   }
 
   /* ---------- reste non carrelé ---------- */
-  if (lay.left > 0.5) {
-    const s0 = Math.max(0, lay.used + s.joint / 2);
-    const r = lay.horiz ? [0, s0, W, H - s0] : [s0, 0, W - s0, H];
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(X(r[0]!), Y(r[1]!), r[2]! * sc, r[3]! * sc);
-    ctx.fillStyle = C.sheet;
-    ctx.fill();
-    ctx.clip();
-    ctx.strokeStyle = C.muted;
-    ctx.globalAlpha = 0.5;
-    ctx.lineWidth = 1;
-    for (let t = -d.height; t < d.width + d.height; t += 9) {
+  if (lay.left > 0.5)
+    clipped(() => {
+      const s0 = Math.max(0, lay.used + s.joint / 2);
+      const r = lay.horiz ? [0, s0, W, H - s0] : [s0, 0, W - s0, H];
+      ctx.save();
       ctx.beginPath();
-      ctx.moveTo(t, 0);
-      ctx.lineTo(t + d.height, d.height);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
+      ctx.rect(X(r[0]!), Y(r[1]!), r[2]! * sc, r[3]! * sc);
+      ctx.fillStyle = C.sheet;
+      ctx.fill();
+      ctx.clip();
+      ctx.strokeStyle = C.muted;
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 1;
+      for (let t = -d.height; t < d.width + d.height; t += 9) {
+        ctx.beginPath();
+        ctx.moveTo(t, 0);
+        ctx.lineTo(t + d.height, d.height);
+        ctx.stroke();
+      }
+      ctx.restore();
+    });
 
   if (!plan) {
     const g = ctx.createLinearGradient(X(0), Y(0), X(W), Y(H));
     g.addColorStop(0, 'rgba(255,255,255,.10)');
     g.addColorStop(0.55, 'rgba(255,255,255,0)');
     g.addColorStop(1, 'rgba(0,0,0,.12)');
-    ctx.fillStyle = g;
-    ctx.fillRect(X(0), Y(0), W * sc, H * sc);
+    clipped(() => {
+      ctx.fillStyle = g;
+      ctx.fillRect(X(0), Y(0), W * sc, H * sc);
+    });
   }
 
   /* ---------- zones ---------- */
@@ -357,7 +383,8 @@ export function drawPlan(ctx: CanvasRenderingContext2D, d: DrawInput): void {
 
   ctx.strokeStyle = C.ink;
   ctx.lineWidth = plan ? 2 : 1.5;
-  ctx.strokeRect(X(0), Y(0), W * sc, H * sc);
+  surfacePath();
+  ctx.stroke();
 
   if (plan) {
     /* cotes */
