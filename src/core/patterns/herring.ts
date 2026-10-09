@@ -1,12 +1,12 @@
-import { rectPoly } from '../../../../core/geometry/polygon';
-import type { Point } from '../types';
+import { rectPoly } from '../geometry/polygon';
+import type { Point } from '../geometry/types';
 import { collector, ICON_FRAME, type PatternModule } from './types';
 
 /**
  * Bâtons rompus : réseau v1 = (B, B), v2 = (A, −A) ; cellule horizontale à la base,
  * verticale à base + (A, B − A). A = long + j, B = court + j.
  */
-export const herring: PatternModule = {
+export const herring: PatternModule<'herring'> = {
   id: 'herring',
   label: 'Bâtons rompus',
   name: 'bâtons rompus',

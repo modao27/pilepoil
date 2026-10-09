@@ -1,11 +1,11 @@
-import { SQRT2 } from '../../../../core/constants';
+import { SQRT2 } from '../constants';
 import { collector, ICON_FRAME, type PatternModule } from './types';
 
 /**
  * Point de Hongrie : parallélogrammes en colonnes, w = (long + j)/√2, h = (court + j)·√2.
  * Colonnes gauche et droite en miroir : deux produits distincts (par 0 / 1).
  */
-export const chevron: PatternModule = {
+export const chevron: PatternModule<'chevron'> = {
   id: 'chevron',
   label: 'Hongrie',
   name: 'point de Hongrie',
