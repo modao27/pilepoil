@@ -8,6 +8,7 @@ import type { Tile } from '../../state/model';
 import type { CarrelageProject } from '../../state/data';
 import { glueRows, pieceCutText, projectDescription, shoppingLabel } from './labels';
 import { productName } from './messages';
+import { signedArea } from '../../../../core/geometry/polygon';
 import {
   ACCENT,
   cm,
@@ -129,11 +130,10 @@ export function buildPdf(input: PdfInput): Blob {
     offset += pieces.length;
     d.page(s.width >= s.height ? 'landscape' : 'portrait');
     d.text(`Plan coté — ${project.surfaces[si]?.name ?? ''}`, 15, { bold: true, gap: 1 });
-    d.text(
-      `${s.kind === 'floor' ? 'Sol' : 'Mur'} de ${cm(s.width)} × ${cm(s.height)} cm, joint ${fr(s.joint, 1)} mm`,
-      9,
-      { color: MUTED, gap: 2 },
-    );
+    const size = s.outline
+      ? `Sol de ${fr(s.outline.reduce((t, q) => t + signedArea(q), 0) / 1e6, 2)} m², ${cm(s.width)} × ${cm(s.height)} cm hors tout`
+      : `${s.kind === 'floor' ? 'Sol' : 'Mur'} de ${cm(s.width)} × ${cm(s.height)} cm`;
+    d.text(`${size}, joint ${fr(s.joint, 1)} mm`, 9, { color: MUTED, gap: 2 });
     if (!sr.ok) {
       d.text('Surface non calculée : vérifiez ses dimensions et son carreau.', 11, { color: THIN });
       return;
@@ -294,7 +294,26 @@ function drawPlan(
   /* contour et cotes */
   pdf.setDrawColor(...INK);
   pdf.setLineWidth(0.4);
-  pdf.rect(X(0), Y(0), s.width * k, s.height * k, 'S');
+  if (s.outline) {
+    // sol d'une pièce du plan : contour, obstacles, longueur de chaque mur
+    for (const ring of s.outline) poly(pdf, P(ring), 'S');
+    const ring = s.outline[0]!;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    d.color(INK);
+    ring.forEach((a, i) => {
+      const b = ring[(i + 1) % ring.length]!;
+      const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (l * k < 12) return;
+      // milieu du mur, décalé vers l'extérieur (contour en sens horaire, y vers le bas)
+      const nx = (b[1] - a[1]) / l,
+        ny = -(b[0] - a[0]) / l;
+      pdf.text(`${cm(l)}`, X((a[0] + b[0]) / 2) + nx * 3.5, Y((a[1] + b[1]) / 2) + ny * 3.5, {
+        align: 'center',
+        baseline: 'middle',
+      });
+    });
+  } else pdf.rect(X(0), Y(0), s.width * k, s.height * k, 'S');
   pdf.setLineWidth(0.15);
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(9);
