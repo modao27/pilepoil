@@ -5,9 +5,10 @@
 import type { ToolModule } from '../types';
 import type { ProjectResult, ProjectSpec } from './core';
 import { reduce, type Action } from './state/actions';
-import { CARRELAGE_ID, CARRELAGE_MIGRATIONS, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
+import { CARRELAGE_ID, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
 import { TILE_SCHEMA } from './state/model';
-import { create, priceAction, shopping, summary, toSpec } from './state/module';
+import { TILE_RULES } from './state/poses';
+import { create, createPose, priceAction, shopping, summary, toSpec } from './state/module';
 
 /** Éditeur d'une surface : #/p/:id/m/carrelage/s/:surfaceId. */
 const editor = () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default);
@@ -22,14 +23,14 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
   description: 'Murs et sols carrelés : calepinage, coupes, chutes, quantités.',
   schemaVersion: CARRELAGE_SCHEMA,
   create,
-  coverage: { surfaces: ['floor', 'wall'], extent: 'surface' },
-  createPose: () => ({}),
-  reduce: (data, action, plan) => (action.type.startsWith('pose/') ? data : reduce(data, action as Action, plan)),
+  coverage: TILE_RULES,
+  createPose,
+  reduce: (data, action) => reduce(data, action),
   toSpec,
   summary,
   shopping,
   priceAction,
-  migrations: CARRELAGE_MIGRATIONS,
+  migrations: {},
   start: async (db) => (await state()).start(db),
   usedPhotos: (db) => import('./storage/scenarios').then((m) => m.scenarioPhotos(db)),
   library: {
@@ -52,7 +53,6 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
       { path: 'room/:roomId', load: () => import('./ui/screens/Room.svelte').then((m) => m.default) },
       { path: 'compare', load: () => import('./ui/screens/Compare.svelte').then((m) => m.default) },
     ],
-    create: () => import('./ui/screens/Wizard.svelte').then((m) => m.default),
     card: () => import('./ui/components/ProjectCard.svelte').then((m) => m.default),
   },
 };

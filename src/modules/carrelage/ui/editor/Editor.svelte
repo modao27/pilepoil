@@ -28,7 +28,7 @@
   import PlanCanvas from './PlanCanvas.svelte';
   import SurfaceDialog from './SurfaceDialog.svelte';
   import TileTab from './TileTab.svelte';
-  import ZonesTab from './ZonesTab.svelte';
+  import BandsTab from './BandsTab.svelte';
 
   let { project, surfaceId }: { project: Project; surfaceId: string | null } = $props();
 
@@ -42,7 +42,7 @@
   const TABS: { id: Tab; label: string }[] = [
     { id: 'tile', label: 'Carreau' },
     { id: 'pattern', label: 'Motif' },
-    { id: 'zones', label: 'Zones' },
+    { id: 'bands', label: 'Bandes' },
     { id: 'openings', label: 'Ouvertures' },
     { id: 'finish', label: 'Finitions' },
   ];
@@ -126,7 +126,7 @@
       {#snippet panel(id)}
         {#if id === 'tile'}<TileTab {ed} />
         {:else if id === 'pattern'}<PatternTab {ed} />
-        {:else if id === 'zones'}<ZonesTab {ed} />
+        {:else if id === 'bands'}<BandsTab {ed} />
         {:else if id === 'openings'}<OpeningsTab {ed} />
         {:else}<FinishTab {ed} />{/if}
       {/snippet}
@@ -197,8 +197,8 @@
         <button
           type="button"
           class="optim"
-          aria-label="Optimiser le départ de toutes les zones"
-          onclick={() => ed.optimize(ed.surface.zones.map((_, i) => i))}
+          aria-label="Optimiser le départ de toutes les bandes"
+          onclick={() => ed.optimize(ed.surface.bands.map((_, i) => i))}
         >
           <Icon name="sparkle" size={20} /> Optimiser
         </button>

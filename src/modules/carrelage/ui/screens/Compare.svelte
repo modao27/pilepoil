@@ -142,7 +142,7 @@
                 <PlanPreview
                   surface={toProjectSpec(snap(s), s.snapshot.tiles).spec.surfaces[0]!}
                   pieces={first.value.pieces}
-                  grout={snap(s).surfaces[0]?.zones[0]?.groutColor}
+                  grout={snap(s).surfaces[0]?.bands[0]?.groutColor}
                   label="Aperçu du scénario {slot}"
                 />
               {/if}

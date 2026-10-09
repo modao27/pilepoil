@@ -6,7 +6,6 @@
   import type { PlanRoom } from '../../../../core/plan/types';
   import type { Point, ProjectResult, ProjectSpec } from '../../core';
   import type { CarrelageProject } from '../../state/data';
-  import { surfaceId } from '../../state/surfaces';
   import { planDrawing } from '../../render/planSvg';
   import { boxOf, unfoldWall } from '../../render/roomTop';
 
@@ -17,14 +16,18 @@
     room,
   }: { project: CarrelageProject; spec: ProjectSpec; result: ProjectResult; room: PlanRoom } = $props();
 
-  const index = $derived(new Map(project.surfaces.map((s, i) => [s.id, i])));
-  const floor = $derived(index.get(surfaceId({ room: room.id, wall: null })));
+  /** Première surface (pose) posée sur ce sol ou ce mur, ou undefined. */
+  const on = (wall: string | null) => {
+    const i = project.surfaces.findIndex((s) => s.ref.room === room.id && s.ref.wall === wall);
+    return i < 0 ? undefined : i;
+  };
+  const floor = $derived(on(null));
   const walls = $derived(
     room.walls.map((w, k) => {
-      const i = index.get(surfaceId({ room: room.id, wall: w.id }));
+      const i = on(w.id);
       if (i == null) return { k, i: null, a: room.outline[k]!, b: room.outline[(k + 1) % room.outline.length]! };
-      const s = spec.surfaces[i]!;
-      return { k, i, ...unfoldWall(room.outline, k, s.width, s.height) };
+      const s = project.surfaces[i]!;
+      return { k, i, ...unfoldWall(room.outline, k, s.width, s.height, s.origin) };
     }),
   );
   const size = $derived.by(() => {
@@ -42,7 +45,7 @@
     const r = result.surfaces[i];
     return planDrawing(spec.surfaces[i]!, r?.ok ? r.value.pieces : []);
   };
-  const grout = (i: number) => project.surfaces[i]?.zones[0]?.groutColor ?? '#8f8a83';
+  const grout = (i: number) => project.surfaces[i]?.bands[0]?.groutColor ?? '#8f8a83';
   /** Point d'étiquette : au centre de la surface dépliée. */
   const centre = (c: Point[]): Point => [(c[0]![0] + c[2]![0]) / 2, (c[0]![1] + c[2]![1]) / 2];
 </script>

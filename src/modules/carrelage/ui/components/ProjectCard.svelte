@@ -30,7 +30,7 @@
 
   const first = $derived(result?.surfaces[0]);
   const cost = $derived(result ? projectCost(project, carrelage.tiles, result) : null);
-  const firstGrout = $derived(project.surfaces[0]?.zones[0]?.groutColor);
+  const firstGrout = $derived(project.surfaces[0]?.bands[0]?.groutColor);
 
   async function rename() {
     const name = newName.trim();

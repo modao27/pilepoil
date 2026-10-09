@@ -20,14 +20,29 @@ export const apply = (m: Matrix, p: Point): Point => [
 ];
 
 /** Mur i (du point i au point i + 1) de largeur `width` et de hauteur `height`, déplié vers l'extérieur. */
-export function unfoldWall(outline: Polygon, i: number, width: number, height: number): Unfolded {
+export function unfoldWall(
+  outline: Polygon,
+  i: number,
+  width: number,
+  height: number,
+  /** Coin bas gauche de la surface dans le repère du mur (x depuis le début du mur, y depuis le sol). */
+  offset: Point = [0, 0],
+): Unfolded {
   const a = outline[i]!,
     b = outline[(i + 1) % outline.length]!;
   const l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
   const u: Point = [(b[0] - a[0]) / l, (b[1] - a[1]) / l];
   // normale vers l'extérieur (contour en sens horaire à l'écran, y vers le bas)
   const n: Point = [u[1], -u[0]];
-  const matrix: Matrix = [u[0], u[1], -n[0], -n[1], a[0] + n[0] * height, a[1] + n[1] * height];
+  const top = offset[1] + height;
+  const matrix: Matrix = [
+    u[0],
+    u[1],
+    -n[0],
+    -n[1],
+    a[0] + u[0] * offset[0] + n[0] * top,
+    a[1] + u[1] * offset[0] + n[1] * top,
+  ];
   const corners = (
     [
       [0, 0],

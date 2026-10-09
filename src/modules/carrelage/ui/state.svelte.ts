@@ -22,7 +22,10 @@ import type {
 import type { OptimizeSpec } from '../engine';
 import { newId } from '../state/factories';
 import { toProjectSpec, usedTileIds } from '../state/selectors';
-import { carrelageData, carrelageView, withCarrelage, type CarrelageProject } from '../state/data';
+import { carrelageView, type CarrelageProject } from '../state/data';
+import { restoreTiling } from '../state/poses';
+import { coverageText } from './lib/messages';
+import { toast } from '../../../ui/lib/toasts.svelte';
 import { reduceProject } from '../../../state/project';
 import type { Action } from '../state/actions';
 
@@ -170,17 +173,21 @@ export class CarrelageState {
   }
 
   /**
-   * Remet les données carrelage du projet dans l'état du scénario (surfaces, pièce, réglages, prix ; nom,
-   * identité, plan et autres modules conservés).
+   * Remet le carrelage du projet dans l'état du scénario (poses, zones, réglages, prix ; nom, identité, plan et
+   * autres revêtements conservés).
    * Les carreaux du scénario absents de la bibliothèque y sont remis. Renvoie l'état d'avant et d'après (pour
    * l'annulation), null si rien n'a été enregistré.
    */
   async loadScenario(s: Scenario): Promise<{ before: Project; after: Project } | null> {
     const p = app.project(s.projectId);
-    const data = carrelageData(s.snapshot.project);
-    if (!p || !data) return null;
+    if (!p) return null;
+    const restored = restoreTiling(p, s.snapshot.project);
+    if ('code' in restored) {
+      toast(`Scénario non chargé : ${coverageText(restored)}`, { tone: 'error' });
+      return null;
+    }
     for (const t of s.snapshot.tiles) if (!this.tile(t.id)) this.putTile(t);
-    const after = { ...withCarrelage(p, data), updatedAt: Date.now() };
+    const after = { ...restored, updatedAt: Date.now() };
     return (await app.trySaveProject(after)) ? { before: p, after } : null;
   }
 }

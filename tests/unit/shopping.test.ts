@@ -6,15 +6,15 @@ import { describe, expect, it } from 'vitest';
 import { module as carrelage } from '../../src/modules/carrelage';
 import { computeProject, type ProjectResult } from '../../src/modules/carrelage/core';
 import { carrelageData, withCarrelage, type CarrelageData } from '../../src/modules/carrelage/state/data';
-import { createTile } from '../../src/modules/carrelage/state/factories';
+import { createBand, createPoseSettings, createTile } from '../../src/modules/carrelage/state/factories';
 import { itemPrice, projectCost } from '../../src/modules/carrelage/state/pricing';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
-import { createWizardProject } from '../../src/modules/carrelage/state/templates';
+import { wallHeightCuts } from '../../src/modules/carrelage/state/poses';
 import { shoppingLabel } from '../../src/modules/carrelage/ui/lib/labels';
 import type { Tile } from '../../src/modules/carrelage/state/model';
 import type { Project } from '../../src/state/model';
 import { consolidate, parsePrice, toCsv } from '../../src/ui/lib/shopping';
-import { floorOnly, view, wallOnly, withOpening } from './planFixtures';
+import { floorOnly, rect, tiledProject, tilePose, view, wallOnly, withOpening } from './planFixtures';
 
 const priced = createTile({ name: 'Grès 60 × 30', pricePerM2: 32.5 });
 const unpriced = createTile({ name: 'Faïence 20 × 20', length: 200, width: 200, m2PerBox: 1, pricePerM2: null });
@@ -32,22 +32,24 @@ const layout = (t: Tile) => ({
 /** Projets variés : mur seul, pièce complète, prix saisis dans le projet, carreau sans prix, vente à la pièce. */
 function projects(): Project[] {
   const wall = wallOnly(layout(priced), 3000, 2400);
-  const room = createWizardProject(
-    {
-      ...layout(unpriced),
-      form: { kind: 'rect', length: 2400, width: 1800 },
-      height: 2500,
-      tiledHeight: 2000,
-      floor: true,
-      walls: [0, 1, 2],
-    },
-    0,
+  // pièce 240 × 180 : sol et murs 1 à 3 carrelés sur 2 m, porte du plan sur le mur 1
+  const r = withOpening(rect('r', 2400, 1800, { height: 2500 }), 0, {
+    kind: 'door',
+    sill: 0,
+    height: 2040,
+    width: 830,
+  });
+  const plan = { rooms: [r], passages: [] };
+  const set = () => createPoseSettings(unpriced.id, { bands: [createBand(unpriced.id, { pattern: 'half' })] });
+  const room = tiledProject(
+    [r],
+    [
+      tilePose('F', { room: 'r', wall: null }, set()),
+      ...['r-w0', 'r-w1', 'r-w2'].map((w) =>
+        tilePose(w, { room: 'r', wall: w }, set(), { cuts: wallHeightCuts(plan, { room: 'r', wall: w }, 2000) }),
+      ),
+    ],
   );
-  // porte du plan sur le mur A
-  room.plan = {
-    ...room.plan,
-    rooms: [withOpening(room.plan.rooms[0]!, 0, { kind: 'door', sill: 0, height: 2040, width: 830 })],
-  };
   const withPrices = (p: Project, prices: Record<string, number>) => withCarrelage(p, { ...data(p), prices });
   const pieces = floorOnly(layout(byPiece), 1200, 900);
   return [
@@ -65,7 +67,7 @@ describe('liste d’achat consolidée du carrelage', () => {
     it(`identique à l’écran Résultats : ${p.name}`, () => {
       const r = compute(p);
       const byId = new Map(tiles.map((t) => [t.id, t]));
-      const lines = carrelage.shopping(r, data(p), { tiles }, p.plan);
+      const lines = carrelage.shopping(r, data(p), { tiles }, p);
       expect(r.shopping.length).toBeGreaterThan(2);
       // mêmes articles, dans le même ordre
       expect(lines.map((l) => l.key)).toEqual(r.shopping.map((it) => it.key));
@@ -90,18 +92,18 @@ describe('liste d’achat consolidée du carrelage', () => {
     const p = projects()[0]!;
     const r = compute(p);
     const key = r.shopping.find((it) => it.kind === 'tile')!.key;
-    const before = carrelage.shopping(r, data(p), { tiles }, p.plan).find((l) => l.key === key)!;
+    const before = carrelage.shopping(r, data(p), { tiles }, p).find((l) => l.key === key)!;
     expect(before).toMatchObject({ unitPrice: 32.5, priceFromLibrary: true });
     const d = carrelage.reduce(data(p), carrelage.priceAction(key, 29.9), p.plan);
-    const after = carrelage.shopping(r, d, { tiles }, p.plan).find((l) => l.key === key)!;
+    const after = carrelage.shopping(r, d, { tiles }, p).find((l) => l.key === key)!;
     expect(after).toMatchObject({ unitPrice: 29.9, priceFromLibrary: false });
     const cleared = carrelage.reduce(d, carrelage.priceAction(key, null), p.plan);
-    expect(carrelage.shopping(r, cleared, { tiles }, p.plan).find((l) => l.key === key)!.unitPrice).toBe(32.5);
+    expect(carrelage.shopping(r, cleared, { tiles }, p).find((l) => l.key === key)!.unitPrice).toBe(32.5);
   });
 
   it('rayons : revêtements, consommables, outils, finitions', () => {
     const p = projects()[1]!;
-    const lines = carrelage.shopping(compute(p), data(p), { tiles }, p.plan);
+    const lines = carrelage.shopping(compute(p), data(p), { tiles }, p);
     const group = (k: string) => lines.find((l) => l.key === k || l.key.startsWith(k))?.group;
     expect(group('tile|')).toBe('covering');
     expect(group('colle')).toBe('consumable');

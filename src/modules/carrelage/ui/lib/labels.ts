@@ -127,7 +127,7 @@ export interface GlueRow {
   kg: string;
 }
 
-/** Une ligne par zone carrelée : carreau, spatule, simple ou double encollage, colle estimée. */
+/** Une ligne par bande carrelée : carreau, spatule, simple ou double encollage, colle estimée. */
 export function glueRows(project: CarrelageProject, result: ProjectResult): GlueRow[] {
   const multi = project.surfaces.length > 1;
   return result.glue.map((g: ZoneGlue) => {
@@ -135,7 +135,7 @@ export function glueRows(project: CarrelageProject, result: ProjectResult): Glue
     const kind = s?.kind ?? 'wall';
     const p = result.pieces.find((x) => x.surface === g.surface && x.zone === g.zone && x.kind === 'main');
     return {
-      where: `${multi ? (s?.name ?? '') + ', ' : ''}Zone ${g.zone + 1}`,
+      where: `${multi ? (s?.name ?? '') + ', ' : ''}Bande ${g.zone + 1}`,
       tile: p ? productName(p.label) : '',
       size: `${fr(g.advice.S)} cm²`,
       notch: NOTCH_LABEL[g.advice.notch],
@@ -199,7 +199,7 @@ export function compareValue(a: number, b: number, dir: number): { delta: number
 /** « 2 surfaces, décalé ½ 60 × 30 / bâtons rompus 60 × 30 » [metrics.desc]. */
 export function projectDescription(project: CarrelageProject, tiles: readonly Tile[]): string {
   const byId = new Map(tiles.map((t) => [t.id, t]));
-  const zones = project.surfaces.flatMap((s) => s.zones);
+  const zones = project.surfaces.flatMap((s) => s.bands);
   const parts = [
     ...new Set(
       zones.map((z) => {

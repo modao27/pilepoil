@@ -10,7 +10,7 @@
 
   let { ed }: { ed: EditorState } = $props();
 
-  const shape = $derived(carrelage.tile(ed.zone.tileId)?.shape ?? 'rect');
+  const shape = $derived(carrelage.tile(ed.band.tileId)?.shape ?? 'rect');
   const GOALS: { value: OptimizerGoal; label: string }[] = [
     { value: 'thin', label: 'Éviter les coupes fines et apparentes' },
     { value: 'tiles', label: 'Le moins de carreaux possible' },
@@ -21,8 +21,8 @@
 
 <div class="tab">
   <section aria-labelledby="p-pat">
-    <h3 id="p-pat">Motif{ed.surface.zones.length > 1 ? ` de la zone ${ed.zoneIndex + 1}` : ''}</h3>
-    <PatternPicker value={ed.zone.pattern} {shape} onchange={(p) => ed.updateZone({ pattern: p })} />
+    <h3 id="p-pat">Motif{ed.surface.bands.length > 1 ? ` de la bande ${ed.bandIndex + 1}` : ''}</h3>
+    <PatternPicker value={ed.band.pattern} {shape} onchange={(p) => ed.updateBand({ pattern: p })} />
   </section>
 
   <section aria-labelledby="p-pos">
@@ -31,8 +31,8 @@
       <span class="lbl">Orientation</span>
       <Segmented
         label="Orientation du motif"
-        value={ed.zone.angle}
-        onchange={(a) => ed.updateZone({ angle: a })}
+        value={ed.band.angle}
+        onchange={(a) => ed.updateBand({ angle: a })}
         options={[0, 30, 45, 60, 90].map((a) => ({ value: a, label: a + '°' }))}
       />
     </div>
@@ -40,8 +40,8 @@
       <span class="lbl">Départ</span>
       <Segmented
         label="Départ du motif"
-        value={ed.zone.start}
-        onchange={(s) => ed.updateZone({ start: s })}
+        value={ed.band.start}
+        onchange={(s) => ed.updateBand({ start: s })}
         options={[
           { value: 'corner', label: 'Angle' },
           { value: 'tile', label: 'Centré carreau' },
@@ -52,29 +52,29 @@
     <div class="two">
       <NumberField
         label="Décalage horizontal"
-        value={ed.zone.offsetX}
+        value={ed.band.offsetX}
         unit="mm"
         step={5}
-        onchange={(v) => ed.updateZone({ offsetX: v })}
+        onchange={(v) => ed.updateBand({ offsetX: v })}
       />
       <NumberField
         label="Décalage vertical"
-        value={ed.zone.offsetY}
+        value={ed.band.offsetY}
         unit="mm"
         step={5}
-        onchange={(v) => ed.updateZone({ offsetY: v })}
+        onchange={(v) => ed.updateBand({ offsetY: v })}
       />
     </div>
     <div class="row">
       <Button
         variant="ghost"
-        disabled={!ed.zone.offsetX && !ed.zone.offsetY}
-        onclick={() => ed.updateZone({ offsetX: 0, offsetY: 0 })}
+        disabled={!ed.band.offsetX && !ed.band.offsetY}
+        onclick={() => ed.updateBand({ offsetX: 0, offsetY: 0 })}
       >
         Remettre le décalage à zéro
       </Button>
     </div>
-    <p class="muted">Sur le plan, glissez dans la zone pour déplacer le motif : il s’aimante aux bords.</p>
+    <p class="muted">Sur le plan, glissez dans la bande pour déplacer le motif : il s’aimante aux bords.</p>
   </section>
 
   <section aria-labelledby="p-opt">
@@ -90,7 +90,7 @@
         <div
           class="bar"
           role="progressbar"
-          aria-label="Recherche du meilleur départ, zone {ed.optimizing.zone + 1}"
+          aria-label="Recherche du meilleur départ, bande {ed.optimizing.zone + 1}"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={ed.optimizing.percent}
@@ -101,11 +101,11 @@
       </div>
     {:else}
       <div class="row">
-        <Button variant="primary" onclick={() => ed.optimize([ed.zoneIndex])}>
-          {ed.surface.zones.length > 1 ? 'Optimiser cette zone' : 'Optimiser le départ'}
+        <Button variant="primary" onclick={() => ed.optimize([ed.bandIndex])}>
+          {ed.surface.bands.length > 1 ? 'Optimiser cette bande' : 'Optimiser le départ'}
         </Button>
-        {#if ed.surface.zones.length > 1}
-          <Button onclick={() => ed.optimize(ed.surface.zones.map((_, i) => i))}>Toutes les zones</Button>
+        {#if ed.surface.bands.length > 1}
+          <Button onclick={() => ed.optimize(ed.surface.bands.map((_, i) => i))}>Toutes les bandes</Button>
         {/if}
       </div>
     {/if}

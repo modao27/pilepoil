@@ -1,16 +1,11 @@
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { describe, expect, it } from 'vitest';
 import { computeProject } from '../../src/modules/carrelage/core';
-import {
-  createFloorTiling,
-  createRoomTiling,
-  createTile,
-  createWallTiling,
-  createZone,
-} from '../../src/modules/carrelage/state/factories';
+import { createBand, createPoseSettings, createTile } from '../../src/modules/carrelage/state/factories';
+import { wallHeightCuts } from '../../src/modules/carrelage/state/poses';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { buildPdf, pdfText } from '../../src/modules/carrelage/ui/lib/pdf';
-import { lShape, planProject, rect, view, withOpening } from './planFixtures';
+import { lShape, rect, tiledProject, tilePose, view, withOpening } from './planFixtures';
 
 /** Texte de chaque page, extrait comme le ferait un lecteur PDF. */
 async function pagesText(blob: Blob): Promise<{ text: string; width: number; height: number }[]> {
@@ -29,14 +24,25 @@ describe('export PDF', () => {
   const tile = createTile({ pricePerM2: 32.5 });
   // sol 2 m × 3 m ; mur 2 (3 m, à droite) carrelé sur 2,4 m avec une fenêtre du plan
   const room = withOpening(rect('r', 2000, 3000, { name: 'Salle de bain', height: 2400 }), 1, { offset: 1000 });
-  const wall = createWallTiling(tile.id, {
-    zones: [createZone(tile.id, { pattern: 'half', angle: 45 })],
+  const wall = createPoseSettings(tile.id, {
+    bands: [createBand(tile.id, { pattern: 'half', angle: 45 })],
     openings: {
       'r-o0': { covered: true, revealDepth: 150, reveals: { left: true, right: true, top: true, bottom: false } },
     },
   });
-  const rooms = { r: createRoomTiling({ floor: createFloorTiling(tile.id), walls: { 'r-w1': wall } }) };
-  const project = view(planProject([room], { rooms, prices: { colle: 21 } }, { name: 'Salle de bain ⅓' }));
+  const project = view(
+    tiledProject(
+      [room],
+      [
+        tilePose('F', { room: 'r', wall: null }, createPoseSettings(tile.id)),
+        tilePose('W', { room: 'r', wall: 'r-w1' }, wall, {
+          cuts: wallHeightCuts({ rooms: [room], passages: [] }, { room: 'r', wall: 'r-w1' }, 2400),
+        }),
+      ],
+      { prices: { colle: 21 } },
+      { name: 'Salle de bain ⅓' },
+    ),
+  );
   const spec = toProjectSpec(project, [tile]).spec;
   const result = computeProject(spec);
 
@@ -67,8 +73,7 @@ describe('export PDF', () => {
 
   it('sol d’une pièce en L : surface réelle, longueur de chaque mur', async () => {
     const room = lShape('r', 4000, 3000, 1500, 1000);
-    const rooms = { r: createRoomTiling({ floor: createFloorTiling(tile.id) }) };
-    const p = view(planProject([room], { rooms }));
+    const p = view(tiledProject([room], [tilePose('F', { room: 'r', wall: null }, createPoseSettings(tile.id))]));
     const sp = toProjectSpec(p, [tile]).spec;
     const pages = await pagesText(
       buildPdf({ project: p, spec: sp, result: computeProject(sp), tiles: [tile], date: 0 }),

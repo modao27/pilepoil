@@ -1,7 +1,7 @@
 <script lang="ts">
   /** Alertes de la surface : ce qui ne va pas, et le bouton qui le corrige. */
   import { warningText, errorText } from '../lib/messages';
-  import { planWarnings } from '../../state/surfaces';
+  import { orphanZones } from '../../../../core/coverage';
   import { carrelage } from '../state.svelte';
   import type { EditorState, Tab } from './editorState.svelte';
 
@@ -10,16 +10,16 @@
   type Alert = { text: string; action?: { label: string; run: () => void }; tone: 'error' | 'warn' };
 
   const goTab = (t: Tab) => () => (ed.tab = t);
-  const lastToRest = () => ed.updateZone({ unit: 'rest' }, undefined, ed.surface.zones.length - 1);
+  const lastToRest = () => ed.updateBand({ unit: 'rest' }, undefined, ed.surface.bands.length - 1);
 
-  /** Réglages carrelage dont le mur ou la pièce n'existe plus dans le plan. */
+  /** Zones de carrelage dont le mur ou la pièce n'existe plus dans le plan. */
   const planAlert = $derived.by<Alert | null>(() => {
-    const n = planWarnings(ed.project.plan, ed.project.rooms).length;
+    const n = orphanZones(ed.project.plan, ed.project.zones).length;
     if (!n) return null;
     return {
       tone: 'warn',
-      text: `${n} surface${n > 1 ? 's' : ''} carrelée${n > 1 ? 's' : ''} n’exist${n > 1 ? 'ent' : 'e'} plus dans le plan.`,
-      action: { label: 'Retirer', run: () => ed.dispatch({ type: 'carrelage/prune' }) },
+      text: `${n} zone${n > 1 ? 's' : ''} carrelée${n > 1 ? 's' : ''} n’exist${n > 1 ? 'ent' : 'e'} plus dans le plan.`,
+      action: { label: 'Retirer', run: () => ed.dispatch({ type: 'zone/prune' }) },
     };
   });
 
@@ -55,7 +55,7 @@
               label: 'Optimiser',
               run: () =>
                 ed.optimize(
-                  ed.surface.zones.map((_, i) => i),
+                  ed.surface.bands.map((_, i) => i),
                   'thin',
                 ),
             },
@@ -69,11 +69,11 @@
     for (const w of r.value.warnings) {
       const text = warningText(w, ed.surface);
       if (w.code === 'zones-gap' || w.code === 'zones-overflow')
-        out.push({ tone: 'warn', text, action: { label: 'Ajuster la dernière zone', run: lastToRest } });
+        out.push({ tone: 'warn', text, action: { label: 'Ajuster la dernière bande', run: lastToRest } });
       else if (w.code === 'reveal-pattern')
         out.push({ tone: 'warn', text, action: { label: 'Ouvertures', run: goTab('openings') } });
       else if (w.code === 'plinth-too-high') {
-        const t = carrelage.tile(ed.zone.tileId);
+        const t = carrelage.tile(ed.band.tileId);
         out.push({
           tone: 'warn',
           text,

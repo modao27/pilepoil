@@ -1,8 +1,9 @@
 /**
- * Modèle persisté du carrelage : réglages par élément du plan (sol, murs), carreaux, scénarios. La géométrie vient
- * toujours du plan commun (docs/PLAN.md C2). Unités : mm, dates en ms.
+ * Modèle persisté du carrelage : réglages de chaque pose (les zones qu'elle couvre sont dans le projet,
+ * docs/NAVIGATION.md §4), carreaux, scénarios. La géométrie vient toujours du plan. Unités : mm, dates en ms.
  */
 import type { Metrics, OptimizerGoal, Orientation, PatternId, Polygon } from '../core';
+import type { SurfaceRef } from '../../../core/coverage/types';
 import type { Id, Project } from '../../../state/model';
 
 export interface Edges {
@@ -21,9 +22,12 @@ export interface ProjectSettings {
   /** Variation de nuance du rendu, 0 à 1. */
   shadeVariation: number;
   optimizerGoal: OptimizerGoal;
+  /** Angles sortants entre deux murs carrelés : profilé (sinon coupe apparente). */
+  outerCornersCovered: boolean;
 }
 
-export interface Zone {
+/** Bande de motif dans une pose (l'ancienne « zone » du carrelage). */
+export interface Band {
   id: Id;
   /** Rangées, ou mm si unit = 'length'. */
   size: number;
@@ -60,43 +64,28 @@ export interface Opening {
 export interface Plinth {
   length: number;
   height: number;
-  zoneId: Id;
+  /** Bande dont on reprend le carreau. */
+  bandId: Id;
 }
 
-/* ---------- données carrelage (v2) ---------- */
+/* ---------- réglages d'une pose ---------- */
 
-/** Réglages du carrelage d'une pièce du plan. */
-export interface RoomTiling {
-  /** null : sol non carrelé. */
-  floor: FloorTiling | null;
-  /** Clé = identifiant de mur du plan. Mur absent : non carrelé. */
-  walls: Record<Id, WallTiling>;
-  /** Angles sortants entre deux murs carrelés : profilé (sinon coupe apparente). */
-  outerCornersCovered: boolean;
-}
-
-/** Réglages propres au carrelage, communs au sol et aux murs. */
-export interface TilingBase {
+/** Réglages d'une pose de carrelage (N1 : une pose couvre des zones d'une seule surface). */
+export interface CarrelagePose {
   joint: number;
   split: 'h' | 'v';
-  zones: Zone[];
-  /** Réservations propres au carrelage (prises, trappe, baignoire, autre), repère de la surface. */
+  bands: Band[];
+  /** Réservations propres au carrelage (prises, trappe, baignoire, autre), chacune sur une surface. */
   reservations: Reservation[];
-  junctionsCovered: boolean;
-}
-
-export interface FloorTiling extends TilingBase {
-  plinth: Plinth | null;
-  /** Coupes le long des murs cachées (plinthe) ; sinon apparentes. */
-  edgesHidden: boolean;
-}
-
-export interface WallTiling extends TilingBase {
-  /** Hauteur carrelée depuis le sol ; null : jusqu'au plafond (hauteur de la pièce). */
-  tiledHeight: number | null;
-  hiddenEdges: Edges;
-  /** Finitions des portes et fenêtres du plan sur ce mur ; clé = id d'ouverture du plan. Absente : défauts. */
+  /** Finitions des portes et fenêtres du plan ; clé = id d'ouverture du plan. Absente : défauts. */
   openings: Record<Id, OpeningFinish>;
+  /** Plinthe en carrelage (sols). */
+  plinth: Plinth | null;
+  /** Sol : coupes le long des murs cachées (plinthe) ; sinon apparentes. */
+  edgesHidden: boolean;
+  /** Mur : bords cachés de la zone (haut, bas, gauche, droite). */
+  hiddenEdges: Edges;
+  junctionsCovered: boolean;
 }
 
 /** Finition carrelage d'une porte ou fenêtre du plan. */
@@ -108,37 +97,42 @@ export interface OpeningFinish {
 
 export type ReservationType = 'socket' | 'trap' | 'tub' | 'other';
 
+/**
+ * Réservation : position sur sa surface — mur : x depuis le début du mur, sill depuis le sol ; sol : x et sill
+ * depuis le bord gauche et le bord bas de la boîte englobante de la pièce.
+ */
 export interface Reservation extends Omit<Opening, 'type'> {
   type: ReservationType;
+  surface: SurfaceRef;
 }
 
-/** Sol ou mur d'une pièce du plan ; wall null : le sol. */
-export interface SurfaceRef {
-  room: Id;
-  wall: Id | null;
-}
+export type { SurfaceRef };
 
 /**
- * Surface résolue : géométrie du plan + réglages carrelage. Calculée par la vue (`carrelageView`), jamais
- * enregistrée. Ouvertures : portes et fenêtres du plan (source 'plan', cotes du plan), puis réservations.
+ * Surface d'une pose, résolue depuis ses zones : géométrie du plan + réglages de la pose. Calculée par la vue
+ * (`carrelageView`), jamais enregistrée. Repère : boîte englobante des zones (y vers le bas). Ouvertures : portes
+ * et fenêtres du plan (source 'plan', cotes du plan), puis réservations.
  */
 export interface Surface {
-  /** `${roomId}~floor` ou `${roomId}~${wallId}` (`surfaceId`) : stable, sert aux adresses. */
-  id: string;
+  /** Identifiant de la pose : sert aux adresses et aux actions. */
+  id: Id;
   ref: SurfaceRef;
-  /** « Cuisine, sol », « Cuisine, mur 2 ». */
+  /** « Cuisine, sol » ; « Cuisine, sol · Pose 2 » si la surface a plusieurs poses de carrelage. */
   name: string;
   kind: 'wall' | 'floor';
-  /** Mur : longueur × hauteur carrelée ; sol : boîte englobante du contour. */
+  /** Boîte englobante des zones de la pose. */
   width: number;
   height: number;
-  /** Sol : contour et obstacles (trous), repère de la surface ; mur : null (rectangle). */
+  /** Contour des zones (contours et trous), repère de la surface ; null : le rectangle width × height. */
   outline: Polygon[] | null;
-  /** Position du coin haut gauche de la surface dans le repère de la pièce (sol). */
+  /**
+   * Coin de la boîte : sol, coin haut gauche dans le repère de la pièce ; mur, coin bas gauche dans le repère du
+   * mur (x depuis le début du mur, y depuis le sol).
+   */
   origin: [number, number];
   joint: number;
   split: 'h' | 'v';
-  zones: Zone[];
+  bands: Band[];
   openings: SurfaceOpening[];
   plinth: Plinth | null;
   hiddenEdges: Edges;
@@ -173,7 +167,7 @@ export interface Tile {
   updatedAt: number;
 }
 
-export const SCENARIO_SCHEMA = 3;
+export const SCENARIO_SCHEMA = 4;
 
 export interface Scenario {
   schemaVersion: typeof SCENARIO_SCHEMA;
@@ -181,7 +175,7 @@ export interface Scenario {
   projectId: Id;
   slot: 'A' | 'B';
   name: string;
-  /** Projet entier figé (v2) ; seules les données carrelage sont rétablies au chargement. */
+  /** Projet entier figé ; au chargement, seuls les poses de carrelage, leurs zones et leurs réglages reviennent. */
   snapshot: { project: Project; tiles: Tile[] };
   metrics: Metrics | null;
   thumbnailId: Id | null;

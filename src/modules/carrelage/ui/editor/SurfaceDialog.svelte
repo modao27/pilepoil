@@ -9,9 +9,8 @@
 
   /** Pièce du plan de la surface courante. */
   const room = $derived(ed.project.plan.rooms.find((r) => r.id === ed.surface.ref.room));
-  const wallTiling = $derived(
-    ed.surface.ref.wall ? ed.project.rooms[ed.surface.ref.room]?.walls[ed.surface.ref.wall] : undefined,
-  );
+  /** Haut de la zone d'un mur, depuis le sol. */
+  const top = $derived(ed.surface.origin[1] + ed.surface.height);
 </script>
 
 <Dialog bind:open title="Surfaces">
@@ -37,15 +36,15 @@
         {ed.surface.kind === 'floor' ? 'Sol' : 'Mur'} de {cm(ed.surface.width)} × {cm(ed.surface.height)}. Les cotes
         viennent du plan.
       </p>
-      {#if wallTiling}
+      {#if ed.surface.kind === 'wall'}
         <NumberField
           label="Hauteur carrelée"
-          value={ed.surface.height}
+          value={top}
           unit="cm"
           factor={10}
           min={1}
           max={(room?.height ?? 0) / 10}
-          onchange={(v) => ed.updateSurface({ tiledHeight: room && v >= room.height ? null : v })}
+          onchange={(v) => ed.setWallHeight(room && v >= room.height ? null : v)}
         />
       {/if}
     </section>

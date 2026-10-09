@@ -21,24 +21,10 @@ describe('migrations du projet', () => {
     );
   });
 
-  it('données carrelage du schéma 1 : remises à vide, réglages et prix gardés', () => {
-    const p = bathroom();
-    const old = {
-      ...p,
-      modules: {
-        carrelage: {
-          schemaVersion: 1,
-          data: { surfaces: [{}], room: null, settings: { margin: 12 }, prices: { colle: 3 } },
-        },
-      },
-    };
-    const { doc, changed } = migrateProject(old);
-    expect(changed).toBe(true);
-    expect(doc.modules.carrelage).toMatchObject({
-      schemaVersion: 2,
-      data: { rooms: {}, settings: { margin: 12, reuseOffcuts: true }, prices: { colle: 3 } },
-    });
-    expect(validatePlan(doc.plan)).toEqual([]);
+  it('anciennes données du carrelage (avant les zones et poses) : refusées, sans conversion', () => {
+    const old = { ...bathroom(), modules: { carrelage: { schemaVersion: 2, data: { rooms: {} } } } };
+    expect(() => migrateProject(old)).toThrow(/Migration manquante/);
+    expect(validatePlan(bathroom().plan)).toEqual([]);
   });
 
   it('données d’un module : version future refusée, module inconnu conservé', () => {
@@ -66,7 +52,7 @@ describe('réducteur du projet', () => {
     expect(next.name).toBe('SdB');
     expect(next.plan.rooms[0]!.height).toBe(2600);
     expect(carrelageView(next)!.settings.margin).toBe(15);
-    expect(carrelageView(next)!.rooms).toBe(carrelageView(p)!.rooms);
+    expect(carrelageView(next)!.poses).toBe(carrelageView(p)!.poses);
     for (const a of [
       { type: 'project/rename', name: p.name },
       { type: 'carrelage/settings', patch: { margin: 10 } },
@@ -112,13 +98,13 @@ describe('réducteur du projet', () => {
 });
 
 describe('contrat du module carrelage', () => {
-  it('create : le sol de la première pièce du plan, sinon rien', () => {
+  it('create : aucune pose (elles naissent des zones) ; createPose : réglages d’une nouvelle pose', () => {
     const p = bathroom();
     const data = carrelage.create(p.plan);
-    expect(carrelageView(withCarrelage(p, data))!.surfaces).toMatchObject([
-      { kind: 'floor', width: 2400, height: 1800, name: 'Salle de bain, sol' },
-    ]);
-    expect(carrelage.create({ rooms: [], passages: [] }).rooms).toEqual({});
+    expect(data.poses).toEqual({});
+    expect(carrelageView(withCarrelage(p, data))!.surfaces).toEqual([]);
+    const tile = createTile({ id: 't9' });
+    expect(carrelage.createPose(p, { tiles: [tile] })).toMatchObject({ joint: 3, bands: [{ tileId: 't9' }] });
   });
 
   it('toSpec, summary ; projet sans carrelage : erreur', () => {

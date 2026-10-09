@@ -1,27 +1,26 @@
 /**
- * Carrelage bâti sur le plan (PLAN C2) : un sol et un mur du plan se calculent sans ressaisie de cotes,
- * modifier le plan met le carrelage à jour, joints entre surfaces, avertissements du plan.
+ * Carrelage bâti sur le plan et ses zones (PLAN C2, N1) : un sol et un mur du plan se calculent sans ressaisie de
+ * cotes, une zone coupée (crédence, sol partagé) aussi ; modifier le plan met le carrelage à jour ; joints entre
+ * surfaces ; zones orphelines.
  */
 import { describe, expect, it } from 'vitest';
+import { orphanZones } from '../../src/core/coverage';
 import { area, pointInPolygon, rectPoly, signedArea } from '../../src/core/geometry/polygon';
 import type { PlanAction } from '../../src/core/plan/reduce';
 import { module as carrelage } from '../../src/modules/carrelage';
 import { computeProject, type ProjectSpec } from '../../src/modules/carrelage/core';
-import {
-  createFloorTiling,
-  createReservation,
-  createRoomTiling,
-  createTile,
-  createWallTiling,
-} from '../../src/modules/carrelage/state/factories';
+import { createPoseSettings, createReservation, createTile } from '../../src/modules/carrelage/state/factories';
+import { restoreTiling, wallHeightCuts } from '../../src/modules/carrelage/state/poses';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
-import { parseSurfaceId, planWarnings, roomCorners, surfaceId } from '../../src/modules/carrelage/state/surfaces';
+import { roomCorners } from '../../src/modules/carrelage/state/surfaces';
 import type { Project } from '../../src/state/model';
 import { reduceProject } from '../../src/state/project';
-import { lShape, planProject, rect, view, withOpening } from './planFixtures';
+import { lShape, rect, tiledProject, tilePose, view, withOpening } from './planFixtures';
 
 const tile = createTile({ length: 300, width: 300 });
 const spec = (p: Project): ProjectSpec => toProjectSpec(view(p), [tile]).spec;
+const floorOf = (room: string) => ({ room, wall: null });
+const wallOf = (room: string, wall: string) => ({ room, wall });
 
 /** Sol en L 4 m × 3 m (coin de 1,5 m × 1 m retiré) avec un poteau de 20 cm. */
 function lFloor(): Project {
@@ -29,43 +28,33 @@ function lFloor(): Project {
     ...lShape('r', 4000, 3000, 1500, 1000),
     obstacles: [{ id: 'post', kind: 'post' as const, outline: rectPoly(1000, 1000, 200, 200) }],
   };
-  return planProject([room], { rooms: { r: createRoomTiling({ floor: createFloorTiling(tile.id) }) } });
+  return tiledProject([room], [tilePose('F', floorOf('r'), createPoseSettings(tile.id))]);
 }
 
-/** Mur 1 (4 m) d'une pièce de 2,5 m de haut, avec une porte et une fenêtre du plan et une prise. */
-function doorWall(o: { tiledHeight?: number | null } = {}): Project {
+/** Mur 1 (4 m) d'une pièce de 2,5 m de haut, porte et fenêtre du plan, une prise ; zone coupée par `cuts`. */
+function doorWall(o: { height?: number | null; cuts?: Parameters<typeof tilePose>[3] } = {}): Project {
   let room = rect('r', 4000, 3000, { height: 2500 });
   room = withOpening(room, 0, { kind: 'door', offset: 300, width: 830, sill: 0, height: 2040 });
   room = withOpening(room, 0, { kind: 'window', offset: 2000, width: 1000, sill: 1000, height: 1000 });
-  const wall = createWallTiling(tile.id, {
-    tiledHeight: o.tiledHeight ?? null,
-    reservations: [createReservation('socket', { x: 3500, sill: 300 })],
+  const settings = createPoseSettings(tile.id, {
+    reservations: [createReservation('socket', wallOf('r', 'r-w0'), { x: 3500, sill: 300 })],
     openings: {
       'r-o1': { covered: false, revealDepth: 120, reveals: { left: true, right: true, top: true, bottom: true } },
     },
   });
-  return planProject([room], { rooms: { r: createRoomTiling({ walls: { 'r-w0': wall } }) } });
+  const plan = { rooms: [room], passages: [] };
+  const cuts = o.height !== undefined ? wallHeightCuts(plan, wallOf('r', 'r-w0'), o.height) : undefined;
+  return tiledProject([room], [tilePose('W', wallOf('r', 'r-w0'), settings, { cuts, ...o.cuts })]);
 }
-
-describe('identifiants de surface', () => {
-  it('aller-retour, y compris avec des identifiants du plan qui contiennent « : »', () => {
-    for (const ref of [
-      { room: 'r', wall: null },
-      { room: 'p:plan:0', wall: 'p:plan:3' },
-    ])
-      expect(parseSurfaceId(surfaceId(ref))).toEqual(ref);
-    expect(parseSurfaceId('sans-séparateur')).toBeNull();
-  });
-});
 
 describe('sol d’une pièce du plan', () => {
   it('contour et poteau repris du plan : boîte englobante, trou d’aire négative', () => {
     const s = view(lFloor()).surfaces[0]!;
-    expect(s).toMatchObject({ id: 'r~floor', kind: 'floor', width: 4000, height: 3000, name: 'Pièce, sol' });
+    expect(s).toMatchObject({ id: 'F', kind: 'floor', width: 4000, height: 3000, name: 'Pièce, sol' });
     expect(s.outline).toHaveLength(2);
     expect(signedArea(s.outline![0]!)).toBeGreaterThan(0);
     expect(signedArea(s.outline![1]!)).toBeLessThan(0);
-    expect(area(s.outline![0]!) - area(s.outline![1]!)).toBeCloseTo(4000 * 3000 - 1500 * 1000 - 200 * 200, 6);
+    expect(area(s.outline![0]!) - area(s.outline![1]!)).toBeCloseTo(4000 * 3000 - 1500 * 1000 - 200 * 200, 0);
   });
 
   it('se calcule sans ressaisie : rien dans le coin retiré ni dans le poteau', () => {
@@ -90,6 +79,31 @@ describe('sol d’une pièce du plan', () => {
     expect(view(q).surfaces[0]!.width).toBe(5000);
     expect(computeProject(spec(q)).metrics.order).toBeGreaterThan(before);
   });
+
+  it('sol partagé par une ligne : deux poses, chacune sur sa partie, noms distincts', () => {
+    const room = rect('r', 4000, 3000);
+    const line: [[number, number], [number, number]] = [
+      [2000, 0],
+      [2000, 3000],
+    ];
+    const p = tiledProject(
+      [room],
+      [
+        tilePose('A', floorOf('r'), createPoseSettings(tile.id), { cuts: [{ line, side: -1 }], name: 'Pose 1' }),
+        tilePose('B', floorOf('r'), createPoseSettings(tile.id), { cuts: [{ line, side: 1 }], name: 'Pose 2' }),
+      ],
+    );
+    const [a, b] = view(p).surfaces;
+    expect([a!.name, a!.width, a!.origin[0], b!.name, b!.width, b!.origin[0]]).toEqual([
+      'Pièce, sol · Pose 1',
+      2000,
+      2000,
+      'Pièce, sol · Pose 2',
+      2000,
+      0,
+    ]);
+    expect(computeProject(spec(p)).surfaces.every((s) => s.ok)).toBe(true);
+  });
 });
 
 describe('mur d’une pièce du plan', () => {
@@ -108,9 +122,35 @@ describe('mur d’une pièce du plan', () => {
     expect(computeProject(spec(doorWall())).surfaces[0]!.ok).toBe(true);
   });
 
-  it('hauteur carrelée bornée par la hauteur de la pièce', () => {
-    expect(spec(doorWall({ tiledHeight: 1200 })).surfaces[0]!.height).toBe(1200);
-    expect(spec(doorWall({ tiledHeight: 9000 })).surfaces[0]!.height).toBe(2500);
+  it('hauteur carrelée : ligne haute de la zone, bornée par la hauteur de la pièce', () => {
+    expect(spec(doorWall({ height: 1200 })).surfaces[0]!.height).toBe(1200);
+    expect(spec(doorWall({ height: 9000 })).surfaces[0]!.height).toBe(2500);
+  });
+
+  it('crédence de 90 à 150 cm : surface de 60 cm, ouvertures et réservations recalées sur la zone', () => {
+    const cuts = [
+      {
+        line: [
+          [0, 900],
+          [4000, 900],
+        ] as [[number, number], [number, number]],
+        side: 1 as const,
+      },
+      {
+        line: [
+          [0, 1500],
+          [4000, 1500],
+        ] as [[number, number], [number, number]],
+        side: -1 as const,
+      },
+    ];
+    const v = view(doorWall({ cuts: { cuts } }));
+    const s = v.surfaces[0]!;
+    expect([s.width, s.height, s.origin]).toEqual([4000, 600, [0, 900]]);
+    // fenêtre du plan : allège 100 cm depuis le sol → 10 cm au-dessus du bas de la crédence
+    expect(s.openings.find((o) => o.type === 'window')).toMatchObject({ x: 2000, sill: 100 });
+    expect(s.openings.find((o) => o.type === 'socket')).toMatchObject({ x: 3500, sill: -600 });
+    expect(computeProject(spec(doorWall({ cuts: { cuts } }))).surfaces[0]!.ok).toBe(true);
   });
 
   it('modifier le plan met le mur à jour : hauteur, position d’une fenêtre', () => {
@@ -131,8 +171,17 @@ describe('joints entre surfaces d’une pièce', () => {
 
   it('pièce : surface de chaque mur carrelé, sol, pourtour des murs carrelés', () => {
     const room = rect('r', 4000, 3000, { height: 2500 });
-    const walls = { 'r-w0': createWallTiling(tile.id), 'r-w1': createWallTiling(tile.id, { tiledHeight: 1200 }) };
-    const p = planProject([room], { rooms: { r: createRoomTiling({ floor: createFloorTiling(tile.id), walls }) } });
+    const plan = { rooms: [room], passages: [] };
+    const p = tiledProject(
+      [room],
+      [
+        tilePose('F', floorOf('r'), createPoseSettings(tile.id)),
+        tilePose('W0', wallOf('r', 'r-w0'), createPoseSettings(tile.id)),
+        tilePose('W1', wallOf('r', 'r-w1'), createPoseSettings(tile.id), {
+          cuts: wallHeightCuts(plan, wallOf('r', 'r-w1'), 1200),
+        }),
+      ],
+    );
     const sp = spec(p);
     expect(sp.rooms).toEqual([
       { walls: [1, 2, null, null], corners: ['in', 'in', 'in', 'in'], outerCovered: true, floor: 0, perimeter: 7000 },
@@ -143,21 +192,40 @@ describe('joints entre surfaces d’une pièce', () => {
   });
 });
 
-describe('avertissements du plan', () => {
-  it('mur disparu du plan : signalé, retiré par « prune », plus calculé', () => {
+describe('plan modifié, scénarios', () => {
+  it('mur disparu du plan : zone signalée, plus calculée, retirée par « zone/prune » avec sa pose', () => {
     const p = doorWall();
     const q = reduceProject(p, { type: 'plan/point/remove', roomId: 'r', index: 0 });
     // le point 0 retiré : le mur 4 (r-w3) absorbe le mur 1 (r-w0), qui disparaît
-    expect(planWarnings(q.plan, view(q).rooms)).toEqual([{ code: 'wall-missing', room: 'r', wall: 'r-w0' }]);
+    expect(orphanZones(q.plan, q.zones).map((z) => z.id)).toEqual(['W-z']);
     expect(view(q).surfaces).toEqual([]);
     expect(carrelage.toSpec(q, { tiles: [tile] })).toEqual({ errors: [{ code: 'carrelage/empty' }] });
-    const pruned = reduceProject(q, { type: 'carrelage/prune' } as never);
-    expect(view(pruned).rooms).toEqual({});
+    const pruned = reduceProject(q, { type: 'zone/prune' });
+    expect([pruned.zones, pruned.poses, view(pruned).poses]).toEqual([[], [], {}]);
   });
 
-  it('pièce supprimée du plan : ses réglages carrelage partent avec elle', () => {
-    const p = lFloor();
-    const q = reduceProject(p, { type: 'plan/room/remove', roomId: 'r' });
-    expect(view(q).rooms).toEqual({});
+  it('pièce supprimée du plan : ses poses et leurs réglages partent avec elle', () => {
+    const q = reduceProject(lFloor(), { type: 'plan/room/remove', roomId: 'r' });
+    expect([q.zones, q.poses, view(q).poses]).toEqual([[], [], {}]);
+  });
+
+  it('scénario : le carrelage figé revient, les autres revêtements restent ; recouvrement refusé', () => {
+    const snap = lFloor();
+    const now = {
+      ...lFloor(),
+      zones: [],
+      poses: [],
+      modules: { carrelage: { schemaVersion: 3, data: { ...view(snap), poses: {} } } },
+    };
+    const back = restoreTiling(now as Project, snap);
+    expect('code' in back).toBe(false);
+    expect((back as Project).poses.map((p) => p.id)).toEqual(['F']);
+    // un parquet a été posé depuis sur ce sol : le scénario ne peut plus revenir
+    const wood = {
+      ...now,
+      zones: [{ id: 'w', surface: floorOf('r'), cuts: [], pose: 'P' }],
+      poses: [{ id: 'P', module: 'parquet', name: 'Parquet' }],
+    };
+    expect(restoreTiling(wood as Project, snap)).toEqual({ code: 'zone-overlap', zone: 'w' });
   });
 });

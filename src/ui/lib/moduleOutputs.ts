@@ -22,7 +22,7 @@ export async function moduleOutput(p: Project, m: ToolModule): Promise<ModuleOut
   return {
     module: m,
     summary: m.summary(result),
-    lines: m.shopping(result, p.modules[m.id]!.data, app.libraries, p.plan),
+    lines: m.shopping(result, p.modules[m.id]!.data, app.libraries, p),
   };
 }
 

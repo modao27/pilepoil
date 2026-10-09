@@ -1,7 +1,7 @@
 /** Fonctions du contrat de module (docs/BOITE.md §2) propres au carrelage, hors écrans. */
 import type { Plan } from '../../../core/plan/types';
 import type { Project } from '../../../state/model';
-import type { Tile } from './model';
+import type { CarrelagePose, Tile } from './model';
 import type { ShoppingGroup, ShoppingLine } from '../../../core/shopping/types';
 import type { Libraries, ModuleError, ModuleSummary } from '../../types';
 import { count, m2 } from '../../../ui/lib/format';
@@ -9,18 +9,19 @@ import type { ProjectResult, ProjectSpec, ShoppingItem } from '../core';
 import { shoppingLabel } from '../ui/lib/labels';
 import type { Action } from './actions';
 import { itemPrice } from './pricing';
-import { carrelageView, type CarrelageData } from './data';
-import { createData, createFloorTiling, createRoomTiling } from './factories';
-import { resolveSurfaces } from './surfaces';
+import { carrelageData, carrelageView, type CarrelageData } from './data';
+import { createData, newId } from './factories';
+import { newPoseSettings } from './poses';
 import { toProjectSpec } from './selectors';
 
-/**
- * Données initiales quand on active le carrelage sur un projet : le sol de la première pièce du plan (s'il y en
- * a une), sans carreau choisi (l'éditeur demande d'en choisir un).
- */
-export function create(plan: Plan): CarrelageData {
-  const room = plan.rooms[0];
-  return createData(room ? { rooms: { [room.id]: createRoomTiling({ floor: createFloorTiling('') }) } } : {});
+/** Données initiales quand on active le carrelage : aucune pose (elles naissent des zones). */
+export function create(_plan: Plan): CarrelageData {
+  return createData();
+}
+
+/** Réglages d'une nouvelle pose : ceux de `like`, sinon une bande du premier carreau de la bibliothèque. */
+export function createPose(project: Project, libraries: Libraries, like?: string): CarrelagePose {
+  return newPoseSettings(carrelageData(project), (libraries.tiles ?? []) as readonly Tile[], newId, like);
 }
 
 /** Projet → entrée du moteur ; bibliothèque de carreaux sous `libraries.tiles`. */
@@ -56,9 +57,14 @@ const GROUPS: Record<ShoppingItem['kind'], ShoppingGroup> = {
  * Liste d'achat de l'écran Résultats en lignes consolidables, à l'identique : la quantité est celle sur
  * laquelle porte le prix (m² achetés pour un carreau vendu au carton), le détail celui de l'écran.
  */
-export function shopping(result: ProjectResult, data: CarrelageData, libraries: Libraries, plan: Plan): ShoppingLine[] {
+export function shopping(
+  result: ProjectResult,
+  data: CarrelageData,
+  libraries: Libraries,
+  project: Project,
+): ShoppingLine[] {
   const tiles = new Map(((libraries.tiles ?? []) as readonly Tile[]).map((t) => [t.id, t]));
-  const priced = { prices: data.prices, surfaces: resolveSurfaces(plan, data.rooms) };
+  const priced = { prices: data.prices, surfaces: carrelageView(project)?.surfaces ?? [] };
   return result.shopping.map((it) => {
     const text = shoppingLabel(it, result.plan.groups);
     const own = data.prices[it.key];

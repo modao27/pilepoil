@@ -63,7 +63,7 @@ describe('export PDF du parquet', () => {
     const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES });
     if (!('spec' in s)) throw new Error('spec');
     const result = computeParquet(s.spec);
-    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project.plan);
+    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project);
     const blob = buildParquetPdf({ project, data, result, lines, boards: BOARD_TEMPLATES, date: Date.UTC(2026, 9, 9) });
     if (process.env.PARQUET_PDF) writeFileSync(process.env.PARQUET_PDF, Buffer.from(await blob.arrayBuffer()));
     const pages = await pagesText(blob);
@@ -114,7 +114,7 @@ describe('export PDF du parquet', () => {
     const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES });
     if (!('spec' in s)) throw new Error('spec');
     const result = computeParquet(s.spec);
-    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project.plan);
+    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project);
     const blob = buildParquetPdf({ project, data, result, lines, boards: BOARD_TEMPLATES, date: Date.UTC(2026, 9, 9) });
     if (process.env.PARQUET_PDF_H) writeFileSync(process.env.PARQUET_PDF_H, Buffer.from(await blob.arrayBuffer()));
     const all = (await pagesText(blob)).map((p) => p.text).join(' ');

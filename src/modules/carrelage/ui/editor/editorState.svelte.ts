@@ -3,13 +3,15 @@
  * calcul (worker), optimisation. Toutes les modifications passent par des actions du store.
  */
 import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../core';
-import { createReservation, createZone } from '../../state/factories';
+import { createReservation, createBand } from '../../state/factories';
 import type { Id, Project } from '../../../../state/model';
-import type { Opening, ReservationType, Surface, Zone } from '../../state/model';
+import type { Band, Opening, ReservationType, Surface } from '../../state/model';
+import { reservationOffset } from '../../state/surfaces';
+import { wallHeightCuts } from '../../state/poses';
 import { toProjectSpec } from '../../state/selectors';
 import { createProjectStore, type ProjectStore } from '../../../../state/store';
 import { carrelage } from '../state.svelte';
-import type { Action, SurfacePatch } from '../../state/actions';
+import type { Action, PosePatch } from '../../state/actions';
 import { carrelageView, type CarrelageProject } from '../../state/data';
 import { reduceProject, type ProjectAction } from '../../../../state/project';
 import { createSaver, type Saver } from '../../../../storage/autosave';
@@ -17,30 +19,32 @@ import { app } from '../../../../ui/lib/app.svelte';
 import { toast } from '../../../../ui/lib/toasts.svelte';
 import { undoAction } from '../../../../ui/lib/undoToast';
 
-export type Tab = 'tile' | 'pattern' | 'zones' | 'openings' | 'finish';
+export type Tab = 'tile' | 'pattern' | 'bands' | 'openings' | 'finish';
 
 export interface Selection {
-  zone: number;
+  /** Bande sélectionnée (indice). */
+  band: number;
   opening: number;
   piece: number;
 }
 
 export interface ColorClip {
   tileId: Id;
-  mix: Zone['mix'];
+  mix: Band['mix'];
   colorB: string;
   groutColor: string;
 }
 
 export class EditorState {
-  /** Projet entier (v2) : plan commun et données de tous les modules, historique unique. */
+  /** Projet entier : plan commun, zones, poses et données de tous les modules, historique unique. */
   doc = $state.raw<Project>(null as never);
   /** Vue carrelage du projet, lue par l'éditeur. */
   project = $state.raw<CarrelageProject>(null as never);
   canUndo = $state(false);
   canRedo = $state(false);
+  /** Pose affichée (une surface par pose). */
   surfaceId = $state<Id>('');
-  sel = $state<Selection>({ zone: 0, opening: -1, piece: -1 });
+  sel = $state<Selection>({ band: 0, opening: -1, piece: -1 });
   tab = $state<Tab>('tile');
   mode = $state<'plan' | 'render' | '3d'>('plan');
   /** Vue 3D : surface seule ou toute la pièce du plan. */
@@ -62,8 +66,8 @@ export class EditorState {
     ),
   );
   surface = $derived<Surface>(this.project.surfaces[this.surfaceIndex]!);
-  zoneIndex = $derived(Math.min(Math.max(0, this.sel.zone), this.surface.zones.length - 1));
-  zone = $derived<Zone>(this.surface.zones[this.zoneIndex]!);
+  bandIndex = $derived(Math.min(Math.max(0, this.sel.band), this.surface.bands.length - 1));
+  band = $derived<Band>(this.surface.bands[this.bandIndex]!);
   surfaceResult = $derived(this.result?.surfaces[this.surfaceIndex] ?? null);
   build = $derived<SurfaceBuild | null>(this.surfaceResult?.ok ? this.surfaceResult.value : null);
   /** Indice de la première pièce de la surface dans le plan de découpe du projet. */
@@ -114,33 +118,40 @@ export class EditorState {
   /* ---------- sélection ---------- */
 
   select(s: Partial<Selection>): void {
-    this.sel = { zone: this.sel.zone, opening: -1, piece: -1, ...s };
+    this.sel = { band: this.sel.band, opening: -1, piece: -1, ...s };
   }
 
   setSurface(id: Id): void {
     if (id === this.surfaceId) return;
     this.surfaceId = id;
-    this.sel = { zone: 0, opening: -1, piece: -1 };
+    this.sel = { band: 0, opening: -1, piece: -1 };
     history.replaceState(null, '', `#/p/${this.project.id}/m/carrelage/s/${id}`);
   }
 
-  /* ---------- surface ---------- */
+  /* ---------- pose ---------- */
 
-  updateSurface(patch: SurfacePatch, key?: string): void {
-    this.dispatch({ type: 'carrelage/surface/update', surfaceId: this.surface.id, patch }, key);
+  updateSurface(patch: PosePatch, key?: string): void {
+    this.dispatch({ type: 'carrelage/pose/update', poseId: this.surface.id, patch }, key);
   }
 
-  /* ---------- zones ---------- */
-
-  updateZone(patch: Partial<Omit<Zone, 'id'>>, key?: string, index = this.zoneIndex): void {
-    const z = this.surface.zones[index];
-    if (z) this.dispatch({ type: 'carrelage/zone/update', surfaceId: this.surface.id, zoneId: z.id, patch }, key);
+  /** Hauteur carrelée d'un mur (ligne haute de sa zone) ; null : jusqu'au plafond. */
+  setWallHeight(height: number | null): void {
+    const z = this.project.zones.find((x) => x.pose === this.surface.id);
+    if (!z || z.surface.wall == null) return;
+    this.dispatch({ type: 'zone/update', zoneId: z.id, cuts: wallHeightCuts(this.project.plan, z.surface, height) });
   }
 
-  addZone(): void {
-    const z = this.zone,
-      hasRest = this.surface.zones.some((q) => q.unit === 'rest');
-    const nz = createZone(z.tileId, {
+  /* ---------- bandes ---------- */
+
+  updateBand(patch: Partial<Omit<Band, 'id'>>, key?: string, index = this.bandIndex): void {
+    const z = this.surface.bands[index];
+    if (z) this.dispatch({ type: 'carrelage/band/update', poseId: this.surface.id, bandId: z.id, patch }, key);
+  }
+
+  addBand(): void {
+    const z = this.band,
+      hasRest = this.surface.bands.some((q) => q.unit === 'rest');
+    const nz = createBand(z.tileId, {
       tileUpright: z.tileUpright,
       colorB: z.colorB,
       groutColor: z.groutColor,
@@ -149,49 +160,49 @@ export class EditorState {
       unit: hasRest ? 'rows' : 'rest',
       size: 3,
     });
-    this.dispatch({ type: 'carrelage/zone/add', surfaceId: this.surface.id, zone: nz, index: this.zoneIndex + 1 });
-    this.select({ zone: this.zoneIndex + 1 });
+    this.dispatch({ type: 'carrelage/band/add', poseId: this.surface.id, band: nz, index: this.bandIndex + 1 });
+    this.select({ band: this.bandIndex + 1 });
   }
 
-  removeZone(): void {
-    if (this.surface.zones.length < 2) return;
-    this.dispatch({ type: 'carrelage/zone/remove', surfaceId: this.surface.id, zoneId: this.zone.id });
-    this.select({ zone: Math.max(0, this.zoneIndex - 1) });
-    toast('Zone supprimée.', { action: undoAction(this.store) });
+  removeBand(): void {
+    if (this.surface.bands.length < 2) return;
+    this.dispatch({ type: 'carrelage/band/remove', poseId: this.surface.id, bandId: this.band.id });
+    this.select({ band: Math.max(0, this.bandIndex - 1) });
+    toast('Bande supprimée.', { action: undoAction(this.store) });
   }
 
-  moveZone(from: number, to: number): void {
-    const z = this.surface.zones[from];
+  moveBand(from: number, to: number): void {
+    const z = this.surface.bands[from];
     if (!z) return;
-    this.dispatch({ type: 'carrelage/zone/move', surfaceId: this.surface.id, zoneId: z.id, to });
-    if (this.zoneIndex === from) this.select({ zone: to });
+    this.dispatch({ type: 'carrelage/band/move', poseId: this.surface.id, bandId: z.id, to });
+    if (this.bandIndex === from) this.select({ band: to });
   }
 
   /** Modèle legacy : 3 rangées décalées, bâtons rompus au centre, 3 rangées décalées. */
   applyFriezeTemplate(): void {
-    const z = this.zone;
+    const z = this.band;
     const base = { tileUpright: z.tileUpright, colorB: z.colorB, groutColor: z.groutColor, mix: z.mix };
     const zones = [
-      createZone(z.tileId, { ...base, unit: 'rows', size: 3, pattern: 'half' }),
-      createZone(z.tileId, { ...base, unit: 'rest', pattern: 'herring' }),
-      createZone(z.tileId, { ...base, unit: 'rows', size: 3, pattern: 'half' }),
+      createBand(z.tileId, { ...base, unit: 'rows', size: 3, pattern: 'half' }),
+      createBand(z.tileId, { ...base, unit: 'rest', pattern: 'herring' }),
+      createBand(z.tileId, { ...base, unit: 'rows', size: 3, pattern: 'half' }),
     ];
-    this.dispatch({ type: 'carrelage/zone/replaceAll', surfaceId: this.surface.id, zones, split: 'h' });
-    this.select({ zone: 1 });
+    this.dispatch({ type: 'carrelage/band/replaceAll', poseId: this.surface.id, bands: zones, split: 'h' });
+    this.select({ band: 1 });
   }
 
   copyColors(): void {
-    const z = this.zone;
+    const z = this.band;
     this.colorClip = { tileId: z.tileId, mix: z.mix, colorB: z.colorB, groutColor: z.groutColor };
     toast('Carreau et couleurs copiés.');
   }
 
   pasteColors(): void {
-    if (this.colorClip) this.updateZone({ ...this.colorClip });
+    if (this.colorClip) this.updateBand({ ...this.colorClip });
   }
 
-  applyColorsToAllZones(): void {
-    const z = this.zone;
+  applyColorsToAllBands(): void {
+    const z = this.band;
     const patch = {
       tileId: z.tileId,
       tileUpright: z.tileUpright,
@@ -201,10 +212,10 @@ export class EditorState {
     };
     this.dispatch({
       type: 'batch',
-      actions: this.surface.zones.map((q) => ({
-        type: 'carrelage/zone/update' as const,
-        surfaceId: this.surface.id,
-        zoneId: q.id,
+      actions: this.surface.bands.map((q) => ({
+        type: 'carrelage/band/update' as const,
+        poseId: this.surface.id,
+        bandId: q.id,
         patch,
       })),
     });
@@ -215,15 +226,17 @@ export class EditorState {
   /** Réservation propre au carrelage (prise, trappe, baignoire, autre), centrée sur la surface. */
   addOpening(type: ReservationType): void {
     const s = this.surface,
-      d = createReservation(type);
+      d = createReservation(type, s.ref);
     const width = Math.min(d.width, s.width * 0.8),
       height = Math.min(d.height, s.height * 0.9);
     const sill =
       s.kind === 'floor'
         ? Math.round((s.height - height) / 2)
         : Math.round(Math.max(0, Math.min(d.sill, s.height - height)));
-    const r = { ...d, width, height, sill, x: Math.round((s.width - width) / 2) };
-    this.dispatch({ type: 'carrelage/reservation/add', surfaceId: s.id, reservation: r });
+    // position rangée dans le repère de la surface du plan (mur, ou boîte de la pièce)
+    const [dx, dy] = reservationOffset(this.project.plan, s);
+    const r = { ...d, width, height, sill: sill + dy, x: Math.round((s.width - width) / 2) + dx };
+    this.dispatch({ type: 'carrelage/reservation/add', poseId: s.id, reservation: r });
     this.select({ opening: s.openings.length });
   }
 
@@ -234,25 +247,28 @@ export class EditorState {
   updateOpening(patch: Partial<Omit<Opening, 'id'>>, key?: string, index = this.sel.opening): void {
     const o = this.surface.openings[index];
     if (!o) return;
-    const surfaceId = this.surface.id;
+    const poseId = this.surface.id;
     if (o.source === 'plan') {
       const { covered, revealDepth, reveals } = patch;
       const finish = Object.fromEntries(
         Object.entries({ covered, revealDepth, reveals }).filter(([, v]) => v !== undefined),
       );
       if (Object.keys(finish).length)
-        this.dispatch({ type: 'carrelage/opening/finish', surfaceId, openingId: o.id, patch: finish }, key);
+        this.dispatch({ type: 'carrelage/opening/finish', poseId, openingId: o.id, patch: finish }, key);
       return;
     }
     const { type: _, ...rest } = patch;
-    this.dispatch({ type: 'carrelage/reservation/update', surfaceId, reservationId: o.id, patch: rest }, key);
+    const [dx, dy] = reservationOffset(this.project.plan, this.surface);
+    if (rest.x != null) rest.x += dx;
+    if (rest.sill != null) rest.sill += dy;
+    this.dispatch({ type: 'carrelage/reservation/update', poseId, reservationId: o.id, patch: rest }, key);
   }
 
   /** Retire une réservation (les portes et fenêtres se retirent dans le plan). */
   removeOpening(): void {
     const o = this.surface.openings[this.sel.opening];
     if (!o || o.source === 'plan') return;
-    this.dispatch({ type: 'carrelage/reservation/remove', surfaceId: this.surface.id, reservationId: o.id });
+    this.dispatch({ type: 'carrelage/reservation/remove', poseId: this.surface.id, reservationId: o.id });
     this.select({ opening: -1 });
     toast('Ouverture supprimée.', { action: undoAction(this.store) });
   }
@@ -272,13 +288,13 @@ export class EditorState {
       });
       const s = this.surface;
       const actions: Action[] = res.zones.flatMap((r) => {
-        const z = s.zones[r.zone];
+        const z = s.bands[r.zone];
         return z
           ? [
               {
-                type: 'carrelage/zone/update' as const,
-                surfaceId: s.id,
-                zoneId: z.id,
+                type: 'carrelage/band/update' as const,
+                poseId: s.id,
+                bandId: z.id,
                 patch: { offsetX: r.offsetX, offsetY: r.offsetY, start: r.start },
               },
             ]

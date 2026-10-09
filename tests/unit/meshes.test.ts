@@ -128,7 +128,13 @@ describe('maillages 3D', () => {
       [4000, 3750],
       [0, 3750],
     ];
-    const shape = { outline, height: 2500, walls: [0, 1, 2, 3], floor: 4, floorOrigin: [0, 0] as [number, number] };
+    const shape = {
+      outline,
+      height: 2500,
+      walls: [0, 1, 2, 3].map((surface) => ({ surface, x: 0, y: 0 })),
+      floor: 4,
+      floorOrigin: [0, 0] as [number, number],
+    };
     const meshes = buildMeshes({ spec, result, layout: roomLayout(spec, shape), shade: 0.06, photo: () => null });
     expect(meshes.length).toBeLessThan(20);
     const boxes = meshes.find((m) => m.key === 'fixture-box')!;
