@@ -9,12 +9,12 @@ import { carrelageData, withCarrelage, type CarrelageData } from '../../src/modu
 import { createTile } from '../../src/modules/carrelage/state/factories';
 import { itemPrice, projectCost } from '../../src/modules/carrelage/state/pricing';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
-import { createRoomProject, createSingleSurfaceProject } from '../../src/modules/carrelage/state/templates';
+import { createWizardProject } from '../../src/modules/carrelage/state/templates';
 import { shoppingLabel } from '../../src/modules/carrelage/ui/lib/labels';
 import type { Tile } from '../../src/modules/carrelage/state/model';
 import type { Project } from '../../src/state/model';
 import { consolidate, parsePrice, toCsv } from '../../src/ui/lib/shopping';
-import { view, withOpening } from './planFixtures';
+import { floorOnly, view, wallOnly, withOpening } from './planFixtures';
 
 const priced = createTile({ name: 'Grès 60 × 30', pricePerM2: 32.5 });
 const unpriced = createTile({ name: 'Faïence 20 × 20', length: 200, width: 200, m2PerBox: 1, pricePerM2: null });
@@ -31,15 +31,15 @@ const layout = (t: Tile) => ({
 
 /** Projets variés : mur seul, pièce complète, prix saisis dans le projet, carreau sans prix, vente à la pièce. */
 function projects(): Project[] {
-  const wall = createSingleSurfaceProject({ ...layout(priced), kind: 'wall', width: 3000, height: 2400 }, 0);
-  const room = createRoomProject(
+  const wall = wallOnly(layout(priced), 3000, 2400);
+  const room = createWizardProject(
     {
       ...layout(unpriced),
-      length: 2400,
-      width: 1800,
+      form: { kind: 'rect', length: 2400, width: 1800 },
       height: 2500,
       tiledHeight: 2000,
-      walls: { A: true, B: true, C: true, D: false, floor: true },
+      floor: true,
+      walls: [0, 1, 2],
     },
     0,
   );
@@ -49,7 +49,7 @@ function projects(): Project[] {
     rooms: [withOpening(room.plan.rooms[0]!, 0, { kind: 'door', sill: 0, height: 2040, width: 830 })],
   };
   const withPrices = (p: Project, prices: Record<string, number>) => withCarrelage(p, { ...data(p), prices });
-  const pieces = createSingleSurfaceProject({ ...layout(byPiece), kind: 'floor', width: 1200, height: 900 }, 0);
+  const pieces = floorOnly(layout(byPiece), 1200, 900);
   return [
     wall,
     withPrices(room, { colle: 18.9, 'tile|x': 1, crois: 3.2 }),

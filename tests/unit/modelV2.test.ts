@@ -9,7 +9,7 @@ import type { ToolModule } from '../../src/modules/types';
 import type { Project } from '../../src/state/model';
 import { reduceProject, type ProjectAction } from '../../src/state/project';
 import { FutureVersionError, migrateProject } from '../../src/storage/migrations';
-import { createSingleSurfaceProject } from '../../src/modules/carrelage/state/templates';
+import { wallOnly } from './planFixtures';
 import { V1_ROOM, V1_WALL } from './fixtures/v1';
 
 describe('migration v1 → v2 (documents figés)', () => {
@@ -148,7 +148,7 @@ describe('contrat du module carrelage', () => {
   it('toSpec, summary ; projet sans carrelage : erreur', () => {
     const tile = createTile({ id: 't1' });
     const layout = { tileId: tile.id, tileUpright: false, pattern: 'half' as const, angle: 0, joint: 3 };
-    const p = createSingleSurfaceProject({ ...layout, kind: 'wall', width: 3000, height: 2400 });
+    const p = wallOnly(layout, 3000, 2400);
     const r = carrelage.toSpec(p, { tiles: [tile] });
     if (!('spec' in r)) throw new Error('spec attendue');
     const s = carrelage.summary(computeProject(r.spec));
