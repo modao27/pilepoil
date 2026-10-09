@@ -57,6 +57,7 @@ function sketch(d: Doc, shape: Polygon, angles: number[]) {
   pdf.setFontSize(6.5);
   d.color(INK);
   let a = 0;
+  const used: [number, number][] = [];
   shape.forEach((p, i) => {
     const q = shape[(i + 1) % shape.length]!;
     const mx = x0 + ((p[0] + q[0]) / 2) * k,
@@ -66,7 +67,12 @@ function sketch(d: Doc, shape: Polygon, angles: number[]) {
       if (len >= 1) pdf.text(fr(len), mx, p[1] > H / 2 ? my + 2.6 : my - 0.8, { align: 'center' });
     } else if (Math.hypot(q[0] - p[0], q[1] - p[1]) >= 1 && angles[a] != null) {
       d.color(THIN);
-      pdf.text(`${angles[a++]}°`, mx < x0 + (W * k) / 2 ? mx - 2 : mx + 2, my + 0.8, {
+      const tx = mx < x0 + (W * k) / 2 ? mx - 2 : mx + 2;
+      let ty = my + 0.8;
+      // deux coupes proches du même côté : étiquettes l'une sous l'autre
+      while (used.some((u) => Math.abs(u[0] - tx) < 4 && Math.abs(u[1] - ty) < 2.4)) ty += 2.4;
+      used.push([tx, ty]);
+      pdf.text(`${angles[a++]}°`, tx, ty, {
         align: mx < x0 + (W * k) / 2 ? 'right' : 'left',
       });
       d.color(INK);

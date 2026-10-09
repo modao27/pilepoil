@@ -39,7 +39,11 @@
         my = (a[1] + b[1]) / 2;
       const angle = angles[k++];
       if (angle == null) return;
-      out.push({ x: mx + (mx < cx ? -font * 1.6 : font * 1.6), y: my + font * 0.35, text: `${angle}°` });
+      const x = mx + (mx < cx ? -font * 1.6 : font * 1.6);
+      let y = my + font * 0.35;
+      // deux coupes proches du même côté (lame très fine) : étiquettes l'une sous l'autre
+      while (out.some((o) => Math.abs(o.x - x) < font * 2 && Math.abs(o.y - y) < font)) y += font;
+      out.push({ x, y, text: `${angle}°` });
     });
     return out;
   });
