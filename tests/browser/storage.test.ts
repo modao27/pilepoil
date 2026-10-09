@@ -1,18 +1,9 @@
 import { deleteDB, openDB } from 'idb';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  createProject as createView,
-  createSurface,
-  createTile,
-  newId,
-} from '../../src/modules/carrelage/state/factories';
-import { migrateProject, projectFromV1 } from '../../src/storage/migrations';
-import {
-  listScenarios,
-  migrateScenario,
-  saveScenario,
-  scenarioPhotos,
-} from '../../src/modules/carrelage/storage/scenarios';
+import { createTile, newId } from '../../src/modules/carrelage/state/factories';
+import { createSingleSurfaceProject } from '../../src/modules/carrelage/state/templates';
+import { migrateProject } from '../../src/storage/migrations';
+import { listScenarios, saveScenario, scenarioPhotos } from '../../src/modules/carrelage/storage/scenarios';
 import { V1_ROOM, V1_SCENARIO } from '../unit/fixtures/v1';
 import type { Photo, Project } from '../../src/state/model';
 import type { Scenario, Tile } from '../../src/modules/carrelage/state/model';
@@ -34,8 +25,14 @@ import {
   setPref,
 } from '../../src/storage/repo';
 
-/** Projet v2 avec le carrelage. */
-const createProject = (...a: Parameters<typeof createView>): Project => projectFromV1(createView(...a));
+/** Projet v2 avec le carrelage : un mur de 3 m × 2,4 m. */
+const createProject = (tileId: string, o: Partial<Project> = {}, now = 0): Project => ({
+  ...createSingleSurfaceProject(
+    { tileId, tileUpright: false, pattern: 'half', angle: 0, joint: 3, kind: 'wall', width: 3000, height: 2400 },
+    now,
+  ),
+  ...o,
+});
 
 const opened: { db: Db; name: string }[] = [];
 async function fresh(): Promise<Db> {
@@ -59,7 +56,7 @@ const photo = (id = newId()): Photo => ({
   createdAt: 0,
 });
 const scenario = (p: Project, slot: 'A' | 'B', o: Partial<Scenario> = {}): Scenario => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   id: newId(),
   projectId: p.id,
   slot,
@@ -81,8 +78,8 @@ describe('base IndexedDB', () => {
   it('projets : enregistrement, liste du plus récent au plus ancien, suppression avec scénarios', async () => {
     const db = await fresh();
     const t = createTile();
-    const a = createProject([createSurface(t.id)], { name: 'A' }, 1000),
-      b = createProject([createSurface(t.id)], { name: 'B' }, 2000);
+    const a = createProject(t.id, { name: 'A' }, 1000),
+      b = createProject(t.id, { name: 'B' }, 2000);
     await saveProject(db, a);
     await saveProject(db, b);
     expect((await listProjects(db)).map((p) => p.name)).toEqual(['B', 'A']);
@@ -115,7 +112,7 @@ describe('base IndexedDB', () => {
     for (const p of [kept, thumb, orphan]) await savePhoto(db, p);
     const t = createTile({ photoId: kept.id });
     await putItem(db, 'tiles', t);
-    const p = createProject([createSurface(t.id)]);
+    const p = createProject(t.id);
     await saveScenario(db, scenario(p, 'A', { thumbnailId: thumb.id }));
     expect(await collectPhotos(db, await scenarioPhotos(db))).toBe(1);
     const back = await getPhoto(db, kept.id);
@@ -126,7 +123,7 @@ describe('base IndexedDB', () => {
 
   it('scénarios : un seul par emplacement', async () => {
     const db = await fresh();
-    const p = createProject([createSurface(newId())]);
+    const p = createProject(newId());
     await saveScenario(db, scenario(p, 'B'));
     await saveScenario(db, scenario(p, 'A', { name: 'premier' }));
     await saveScenario(db, scenario(p, 'A', { name: 'second' }));
@@ -136,7 +133,7 @@ describe('base IndexedDB', () => {
     ]);
   });
 
-  it('base v1 réelle : passe en v2 (magasin boards), documents migrés à la lecture puis réécrits', async () => {
+  it('base v1 réelle : passe en v2 (magasin boards), projets migrés à la lecture, anciens scénarios supprimés', async () => {
     const name = 'test-' + newId();
     // schéma de la version 1 publiée (UPGRADES[0]), avec un projet et un scénario v1
     const old = await openDB(name, 1, {
@@ -159,10 +156,10 @@ describe('base IndexedDB', () => {
     expect(db.version).toBe(2);
     expect(db.objectStoreNames.contains('boards')).toBe(true);
     expect(await listProjects(db)).toEqual([migrateProject(V1_ROOM).doc]);
-    expect(await listScenarios(db, 'p-mur')).toEqual([migrateScenario(V1_SCENARIO).doc]);
+    expect(await listScenarios(db, 'p-mur')).toEqual([]);
     await new Promise((r) => setTimeout(r, 50));
     expect(await db.get('projects', 'p-sdb')).toEqual(migrateProject(V1_ROOM).doc);
-    expect(((await db.get('scenarios', 'sc1')) as Scenario).schemaVersion).toBe(2);
+    expect(await db.get('scenarios', 'sc1')).toBeUndefined();
   });
 
   it('nom de la base : pilepoil ; ancienne base : calepinage', () => {
@@ -173,7 +170,7 @@ describe('base IndexedDB', () => {
     const oldName = 'old-' + newId();
     const old = await openDb(oldName);
     const t = createTile({ name: 'Zellige' });
-    const p = createProject([createSurface(t.id)], { name: 'Salle de bain' }, 1000);
+    const p = createProject(t.id, { name: 'Salle de bain' }, 1000);
     await saveProject(old, p);
     await putItem(old, 'tiles', t);
     await setPref(old, 'palette', { tiles: ['#123456'], grouts: [] });
@@ -233,7 +230,7 @@ describe('base IndexedDB', () => {
     const name = 'test-' + newId();
     const db = await openDb(name);
     opened.push({ db, name });
-    const p = { ...createProject([]), schemaVersion: 99 };
+    const p = { ...createProject(''), schemaVersion: 99 };
     // écriture brute, sans le typage du dépôt
     const raw = await openDB(name);
     await raw.put('projects', p);

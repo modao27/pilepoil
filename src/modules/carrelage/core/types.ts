@@ -149,10 +149,27 @@ export interface RoomSpec {
   walls: Partial<Record<RoomWall | 'floor', number>>;
 }
 
+/** Joints d'une pièce du plan entre ses surfaces carrelées (silicone, profilés d'angle). */
+export interface RoomJointsSpec {
+  /** Indice de surface de chaque mur, dans l'ordre du contour ; null : mur non carrelé. */
+  walls: (number | null)[];
+  /** Angle au début de chaque mur (point i du contour) : rentrant ou sortant. */
+  corners: ('in' | 'out')[];
+  /** Profilé sur les angles sortants entre deux murs carrelés. */
+  outerCovered: boolean;
+  /** Indice de la surface du sol ; null : sol non carrelé. */
+  floor: number | null;
+  /** Longueur du joint sol/murs carrelés, mm. */
+  perimeter: number;
+}
+
 export interface ProjectSpec {
   surfaces: SurfaceSpec[];
   settings: Settings;
+  /** Pièce rectangulaire A–D de legacy (parité). */
   room: RoomSpec | null;
+  /** Pièces du plan : joints entre leurs surfaces. */
+  rooms?: RoomJointsSpec[];
 }
 
 /* ---------- sorties ---------- */

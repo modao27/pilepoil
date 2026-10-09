@@ -43,7 +43,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await shot(page, info, '12-assistant-nouveau-carreau');
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await expect(page.getByRole('radio', { name: /60 × 20 cm/ })).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByRole('img', { name: 'Aperçu de Mur' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Aperçu de Pièce, mur 1' })).toBeVisible();
   await check(page);
   await shot(page, info, '13-assistant-carreau');
   await next(page);
@@ -56,7 +56,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await page.getByRole('button', { name: 'Créer le projet' }).click();
 
   // éditeur puis résultats
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await expect(page.getByText('Mur 288 × 240')).toBeVisible();
   await page.getByRole('link', { name: /\d+ carreaux/ }).click();
   await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
@@ -73,7 +73,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await expect(page.getByRole('heading', { name: 'Outils' })).toBeVisible();
   await page.getByRole('link', { name: 'Mes projets' }).click();
   await expect(page.getByRole('link', { name: 'Mur 288 × 240' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Aperçu de Mur' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Aperçu de Pièce, mur 1' })).toBeVisible();
   await check(page);
   await shot(page, info, '30-accueil');
 
@@ -128,7 +128,7 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
   await next(page);
   await next(page);
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await page.goto('/#/library');
   await page.getByRole('link', { name: /Hexagone terracotta/ }).click();
   await page.getByRole('button', { name: 'Supprimer le carreau' }).click();
@@ -149,11 +149,20 @@ test('pièce complète : murs et sol', async ({ page }, info) => {
   await page.getByRole('button', { name: 'Créer le projet' }).click();
   await expect(page.getByText('Pièce 240 × 180')).toBeVisible();
   await page.getByRole('button', { name: /Pièce 240 × 180/ }).click();
-  const dlg = page.getByRole('dialog', { name: 'Surfaces et pièce' });
-  await expect(dlg.getByRole('button', { name: /^(Mur|Sol)/ })).toHaveText([/^Mur A/, /^Mur B/, /^Mur D/, /^Sol/]);
-  await dlg.getByRole('button', { name: /^Sol/ }).click();
+  const dlg = page.getByRole('dialog', { name: 'Surfaces' });
+  await expect(dlg.getByRole('button', { name: /^Pièce, / })).toHaveText([
+    /^Pièce, sol/,
+    /^Pièce, mur 1/,
+    /^Pièce, mur 2/,
+    /^Pièce, mur 4/,
+  ]);
+  await dlg.getByRole('button', { name: /^Pièce, mur 2/ }).click();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('application', { name: /^Plan de Sol/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 2/ })).toBeVisible();
+  await page.getByRole('button', { name: /Pièce 240 × 180/ }).click();
+  await dlg.getByRole('button', { name: /^Pièce, sol/ }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, sol/ })).toBeVisible();
   await check(page);
   await shot(page, info, '22-projet-piece-sol');
 });
@@ -184,7 +193,9 @@ test('réglages : thème sombre, import du fichier de l’ancienne version', asy
   await expect(
     page
       .getByRole('status')
-      .filter({ hasText: 'Projet de l’ancienne version importé : 1 surface, 1 carreau.' })
+      .filter({
+        hasText: 'Données de l’ancienne version importées : 1 carreau. Le carrelage est à refaire sur le plan.',
+      })
       .first(),
   ).toBeVisible();
 

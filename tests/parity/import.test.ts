@@ -5,12 +5,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { computeProject, type ProjectResult } from '../../src/modules/carrelage/core';
-import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { convertLegacy, EMPTY_STORAGE, readLegacyProject } from '../../src/modules/carrelage/storage/legacy/convert';
 import { expectSame } from './compare';
 import configs from './configs';
 import fixtureRaw from './fixtures/legacy-results.json?raw';
 import { fromLegacy } from './fromLegacy';
+import { v1Spec } from './v1Spec';
 
 const summary = (R: ProjectResult) => ({
   surfaces: R.surfaces.map((s) => (s.ok ? { ok: true, warnings: s.value.warnings } : { ok: false, error: s.error })),
@@ -33,8 +33,8 @@ describe.each(configs.map((c) => [c.name, c] as const))('import legacy : %s', (n
     const store = { ...EMPTY_STORAGE, 'calepinage-v3': JSON.stringify(cfg.project) };
     const imported = convertLegacy(store, 0);
     expect(imported.project).not.toBeNull();
-    const { spec, missingTiles } = toProjectSpec(imported.project!, imported.tiles);
-    expect(missingTiles).toEqual([]);
+    const { spec, missing } = v1Spec(imported.project!, imported.tiles);
+    expect(missing).toEqual([]);
     const direct = computeProject(fromLegacy(readLegacyProject(store)!));
     expectSame(summary(computeProject(spec)), summary(direct), 'résultat');
   });

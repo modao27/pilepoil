@@ -5,7 +5,7 @@
 import type { ToolModule } from '../types';
 import type { ProjectResult, ProjectSpec } from './core';
 import { reduce, type Action } from './state/actions';
-import { CARRELAGE_ID, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
+import { CARRELAGE_ID, CARRELAGE_MIGRATIONS, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
 import { TILE_SCHEMA } from './state/model';
 import { create, priceAction, shopping, summary, toSpec } from './state/module';
 
@@ -22,12 +22,12 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
   description: 'Murs et sols carrelés : calepinage, coupes, chutes, quantités.',
   schemaVersion: CARRELAGE_SCHEMA,
   create,
-  reduce: (data, action) => reduce(data, action),
+  reduce: (data, action, plan) => reduce(data, action, plan),
   toSpec,
   summary,
   shopping,
   priceAction,
-  migrations: {},
+  migrations: CARRELAGE_MIGRATIONS,
   start: async (db) => (await state()).start(db),
   usedPhotos: (db) => import('./storage/scenarios').then((m) => m.scenarioPhotos(db)),
   library: {
@@ -47,7 +47,6 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
     results: () => import('./ui/screens/Results.svelte').then((m) => m.default),
     routes: [
       { path: 's/:surfaceId', load: editor },
-      { path: 'room', load: () => import('./ui/screens/Room.svelte').then((m) => m.default) },
       { path: 'compare', load: () => import('./ui/screens/Compare.svelte').then((m) => m.default) },
     ],
     create: () => import('./ui/screens/Wizard.svelte').then((m) => m.default),

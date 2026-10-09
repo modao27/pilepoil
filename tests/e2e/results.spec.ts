@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { addPlanWindow, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -20,15 +20,16 @@ async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
+  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  await addPlanWindow(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Ouvertures' }).click();
-  await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   const depth = page.getByLabel('Profondeur du tableau', { exact: true });
   await depth.fill('15');
   await depth.press('Enter');
   await page.waitForTimeout(400);
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
   await page.goto(`/#/p/${id}/m/carrelage/results`);
   await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
   return id;

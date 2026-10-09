@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { emptyProject, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -16,18 +16,9 @@ async function setNumber(scope: Locator, label: string, value: string) {
 const panel = (page: Page) =>
   page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
 
-/** Projet carrelage, une pièce de 4 × 3 m dans le plan, puis le parquet ajouté : renvoie l'identifiant. */
+/** Projet parquet, une pièce de 4 × 3 m dans le plan, une pose : renvoie l'identifiant. */
 async function parquetProject(page: Page): Promise<string> {
-  await page.goto('/#/new/carrelage');
-  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-  await next();
-  await next();
-  await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-  await next();
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
-  await page.goto(`/#/p/${id}/plan`);
+  const id = await emptyProject(page);
   const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
   await setNumber(dialog, 'Nom', 'Séjour');
   await setNumber(dialog, 'Longueur', '400');
@@ -35,10 +26,9 @@ async function parquetProject(page: Page): Promise<string> {
   await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
 
-  // écran Projet : ajouter le parquet
-  await page.getByRole('link', { name: 'Projet' }).click();
-  await page.getByRole('button', { name: 'Ajouter parquet' }).click();
-  await expect(page).toHaveURL(new RegExp(`#/p/${id}/m/parquet$`));
+  // parquet : première pose sur la pièce
+  await page.goto(`/#/p/${id}/m/parquet`);
+  await page.getByRole('button', { name: 'Créer une pose' }).click();
   return id;
 }
 

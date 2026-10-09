@@ -103,7 +103,7 @@
       height: size.h,
       mode: ed.mode === 'render' ? 'render' : 'plan',
       colors,
-      selection: { ...ed.sel, zone: ed.zoneIndex },
+      selection: { ...ed.sel, corner: -1, zone: ed.zoneIndex },
       showNumbers: app.showCutNumbers,
       shade: ed.project.settings.shadeVariation,
       photo: photoFor,
@@ -134,7 +134,6 @@
   /* ---------- pointeurs ---------- */
   type Drag =
     | { kind: 'opening'; index: number; sx: number; sy: number }
-    | { kind: 'corner'; index: number; sx: number }
     | { kind: 'zone'; index: number; sx: number; sy: number }
     | { kind: 'pan'; v: View };
   // eslint-disable-next-line svelte/prefer-svelte-reactivity -- suivi des doigts, sans rendu
@@ -178,8 +177,7 @@
       if (h.kind === 'opening') {
         const o = ed.surface.openings[h.index]!;
         drag = { kind: 'opening', index: h.index, sx: o.x, sy: o.sill };
-      } else if (h.kind === 'corner') drag = { kind: 'corner', index: h.index, sx: ed.surface.corners[h.index]!.x };
-      else if (h.kind === 'zone') {
+      } else if (h.kind === 'zone') {
         const z = ed.surface.zones[h.index]!;
         drag = { kind: 'zone', index: h.index, sx: z.offsetX, sy: z.offsetY };
       } else drag = { kind: 'pan', v: view };
@@ -214,14 +212,11 @@
     } else if (g.kind === 'opening') {
       const o = s.openings[g.index]!;
       if (ed.sel.opening !== g.index) ed.select({ opening: g.index });
+      // porte ou fenêtre du plan : ses cotes se changent dans le plan
+      if (o.source === 'plan') return;
       const x = Math.max(0, Math.min(s.width - o.width, r5(g.sx + dX / sc))),
         sill = Math.max(0, Math.min(s.height - o.height, r5(g.sy - dY / sc)));
       schedule(() => ed.updateOpening({ x, sill }, 'drag-opening-' + o.id, g.index));
-    } else if (g.kind === 'corner') {
-      const c = s.corners[g.index]!;
-      if (ed.sel.corner !== g.index) ed.select({ corner: g.index });
-      const x = Math.max(10, Math.min(s.width - 10, r5(g.sx + dX / sc)));
-      schedule(() => ed.updateCorner({ x }, 'drag-corner-' + c.id, g.index));
     } else {
       const z = s.zones[g.index]!;
       if (ed.zoneIndex !== g.index) ed.select({ zone: g.index });
@@ -246,9 +241,6 @@
     if (g?.kind === 'opening') {
       ed.select({ opening: g.index });
       ed.tab = 'openings';
-    } else if (g?.kind === 'corner') {
-      ed.select({ corner: g.index });
-      ed.tab = 'finish';
     } else {
       const i = pieceAt(ed.build.pieces, st.pt);
       if (i >= 0) ed.select({ zone: ed.build.pieces[i]!.zone, piece: i === ed.sel.piece ? -1 : i });
@@ -266,14 +258,12 @@
     else if (e.key === 'Escape') ed.select({});
     else if (d) {
       const s = ed.surface;
-      const o = s.openings[ed.sel.opening],
-        c = s.corners[ed.sel.corner];
+      const o = s.openings[ed.sel.opening];
       if (o)
         ed.updateOpening(
           { x: Math.max(0, o.x + d[0]! * step), sill: Math.max(0, o.sill - d[1]! * step) },
           'key-opening',
         );
-      else if (c) ed.updateCorner({ x: Math.max(10, c.x + d[0]! * step) }, 'key-corner');
       else
         ed.updateZone({ offsetX: ed.zone.offsetX + d[0]! * step, offsetY: ed.zone.offsetY + d[1]! * step }, 'key-zone');
     } else return;

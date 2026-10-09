@@ -3,15 +3,15 @@
  * calcul (worker), optimisation. Toutes les modifications passent par des actions du store.
  */
 import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../core';
-import { createCorner, createOpening, createZone, newId } from '../../state/factories';
+import { createFloorTiling, createReservation, createWallTiling, createZone, newId } from '../../state/factories';
 import type { Id, Project } from '../../../../state/model';
-import type { Corner, Opening, OpeningType, Surface, Zone } from '../../state/model';
+import type { Opening, ReservationType, Surface, SurfaceRef, Zone } from '../../state/model';
+import { surfaceId } from '../../state/surfaces';
 import { toProjectSpec } from '../../state/selectors';
 import { createProjectStore, type ProjectStore } from '../../../../state/store';
-import { applyRoom, type RoomUpdate } from '../../state/templates';
 import { carrelage } from '../state.svelte';
-import type { Action } from '../../state/actions';
-import { carrelageView, dataOf, type CarrelageProject } from '../../state/data';
+import type { Action, SurfacePatch } from '../../state/actions';
+import { carrelageView, type CarrelageProject } from '../../state/data';
 import { reduceProject, type ProjectAction } from '../../../../state/project';
 import { createSaver, type Saver } from '../../../../storage/autosave';
 import { app } from '../../../../ui/lib/app.svelte';
@@ -22,7 +22,6 @@ export type Tab = 'tile' | 'pattern' | 'zones' | 'openings' | 'finish';
 export interface Selection {
   zone: number;
   opening: number;
-  corner: number;
   piece: number;
 }
 
@@ -41,11 +40,9 @@ export class EditorState {
   canUndo = $state(false);
   canRedo = $state(false);
   surfaceId = $state<Id>('');
-  sel = $state<Selection>({ zone: 0, opening: -1, corner: -1, piece: -1 });
+  sel = $state<Selection>({ zone: 0, opening: -1, piece: -1 });
   tab = $state<Tab>('tile');
   mode = $state<'plan' | 'render' | '3d'>('plan');
-  /** Vue 3D : surface seule ou toute la pièce (legacy « Surface / Pièce »). */
-  scope3d = $state<'surface' | 'room'>('surface');
   result = $state.raw<ProjectResult | null>(null);
   spec = $state.raw<ProjectSpec | null>(null);
   guides = $state.raw<{ zone: number; x: number | null; y: number | null } | null>(null);
@@ -115,52 +112,54 @@ export class EditorState {
   /* ---------- sélection ---------- */
 
   select(s: Partial<Selection>): void {
-    this.sel = { zone: this.sel.zone, opening: -1, corner: -1, piece: -1, ...s };
+    this.sel = { zone: this.sel.zone, opening: -1, piece: -1, ...s };
   }
 
   setSurface(id: Id): void {
     if (id === this.surfaceId) return;
     this.surfaceId = id;
-    this.sel = { zone: 0, opening: -1, corner: -1, piece: -1 };
+    this.sel = { zone: 0, opening: -1, piece: -1 };
     history.replaceState(null, '', `#/p/${this.project.id}/m/carrelage/s/${id}`);
   }
 
   /* ---------- surface ---------- */
 
-  updateSurface(patch: Partial<Omit<Surface, 'id' | 'zones' | 'openings' | 'corners'>>, key?: string): void {
+  updateSurface(patch: SurfacePatch, key?: string): void {
     this.dispatch({ type: 'carrelage/surface/update', surfaceId: this.surface.id, patch }, key);
   }
 
-  addSurface(): void {
-    const copy = structuredClone(this.surface);
-    const s: Surface = {
-      ...copy,
-      id: newId(),
-      name: 'Surface ' + (this.project.surfaces.length + 1),
-      zones: copy.zones.map((z) => ({ ...z, id: newId() })),
-      openings: copy.openings.map((o) => ({ ...o, id: newId() })),
-      corners: copy.corners.map((c) => ({ ...c, id: newId() })),
-    };
-    if (s.plinth)
-      s.plinth = {
-        ...s.plinth,
-        zoneId: s.zones[copy.zones.findIndex((z) => z.id === copy.plinth!.zoneId)]?.id ?? s.zones[0]!.id,
-      };
-    this.dispatch({ type: 'carrelage/surface/add', surface: s });
-    this.setSurface(s.id);
-  }
-
-  removeSurface(): void {
-    if (this.project.surfaces.length < 2) return;
-    const i = this.surfaceIndex,
-      name = this.surface.name;
-    this.dispatch({ type: 'carrelage/surface/remove', surfaceId: this.surface.id });
-    this.setSurface(this.project.surfaces[Math.max(0, i - 1)]!.id);
-    toast(`Surface « ${name} » supprimée.`, { action: { label: 'Annuler', run: () => this.store.undo() } });
-  }
-
-  applyRoom(i: RoomUpdate): void {
-    this.dispatch({ type: 'carrelage/replace', data: dataOf(applyRoom(this.project, this.surface, i)) });
+  /**
+   * Carrèle ou non le sol ou un mur d'une pièce du plan. Une surface ajoutée reprend le carrelage de la surface
+   * courante (zones copiées, joint) ; la dernière surface ne peut pas être retirée.
+   */
+  setTiled(ref: SurfaceRef, on: boolean): void {
+    const id = surfaceId(ref);
+    if (!on) {
+      if (this.project.surfaces.length < 2) {
+        toast('Gardez au moins une surface à carreler.');
+        return;
+      }
+      const i = this.project.surfaces.findIndex((s) => s.id === id);
+      this.dispatch(
+        ref.wall
+          ? { type: 'carrelage/wall/disable', roomId: ref.room, wallId: ref.wall }
+          : { type: 'carrelage/floor/disable', roomId: ref.room },
+      );
+      if (id === this.surfaceId) this.setSurface(this.project.surfaces[Math.max(0, i - 1)]!.id);
+      return;
+    }
+    const s = this.surface;
+    const copy = { joint: s.joint, split: s.split, zones: s.zones.map((z) => ({ ...z, id: newId() })) };
+    const tile = s.zones[0]!.tileId;
+    this.dispatch(
+      ref.wall
+        ? { type: 'carrelage/wall/enable', roomId: ref.room, wallId: ref.wall, tiling: createWallTiling(tile, copy) }
+        : {
+            type: 'carrelage/floor/enable',
+            roomId: ref.room,
+            tiling: createFloorTiling(tile, { ...copy, zones: [{ ...copy.zones[0]!, unit: 'rest' }] }),
+          },
+    );
   }
 
   /* ---------- zones ---------- */
@@ -245,56 +244,49 @@ export class EditorState {
 
   /* ---------- ouvertures ---------- */
 
-  addOpening(type: OpeningType): void {
+  /** Réservation propre au carrelage (prise, trappe, baignoire, autre), centrée sur la surface. */
+  addOpening(type: ReservationType): void {
     const s = this.surface,
-      d = createOpening(type);
+      d = createReservation(type);
     const width = Math.min(d.width, s.width * 0.8),
       height = Math.min(d.height, s.height * 0.9);
     const sill =
       s.kind === 'floor'
         ? Math.round((s.height - height) / 2)
         : Math.round(Math.max(0, Math.min(d.sill, s.height - height)));
-    const o: Opening = { ...d, width, height, sill, x: Math.round((s.width - width) / 2) };
-    this.dispatch({ type: 'carrelage/opening/add', surfaceId: s.id, opening: o });
+    const r = { ...d, width, height, sill, x: Math.round((s.width - width) / 2) };
+    this.dispatch({ type: 'carrelage/reservation/add', surfaceId: s.id, reservation: r });
     this.select({ opening: s.openings.length });
   }
 
+  /**
+   * Porte ou fenêtre du plan : seules ses finitions changent (profilé, tableaux), ses cotes viennent du plan.
+   * Réservation : tout change sauf le type.
+   */
   updateOpening(patch: Partial<Omit<Opening, 'id'>>, key?: string, index = this.sel.opening): void {
     const o = this.surface.openings[index];
-    if (o) this.dispatch({ type: 'carrelage/opening/update', surfaceId: this.surface.id, openingId: o.id, patch }, key);
+    if (!o) return;
+    const surfaceId = this.surface.id;
+    if (o.source === 'plan') {
+      const { covered, revealDepth, reveals } = patch;
+      const finish = Object.fromEntries(
+        Object.entries({ covered, revealDepth, reveals }).filter(([, v]) => v !== undefined),
+      );
+      if (Object.keys(finish).length)
+        this.dispatch({ type: 'carrelage/opening/finish', surfaceId, openingId: o.id, patch: finish }, key);
+      return;
+    }
+    const { type: _, ...rest } = patch;
+    this.dispatch({ type: 'carrelage/reservation/update', surfaceId, reservationId: o.id, patch: rest }, key);
   }
 
+  /** Retire une réservation (les portes et fenêtres se retirent dans le plan). */
   removeOpening(): void {
     const o = this.surface.openings[this.sel.opening];
-    if (!o) return;
-    this.dispatch({ type: 'carrelage/opening/remove', surfaceId: this.surface.id, openingId: o.id });
+    if (!o || o.source === 'plan') return;
+    this.dispatch({ type: 'carrelage/reservation/remove', surfaceId: this.surface.id, reservationId: o.id });
     this.select({ opening: -1 });
     toast('Ouverture supprimée.', { action: { label: 'Annuler', run: () => this.store.undo() } });
-  }
-
-  /* ---------- angles ---------- */
-
-  addCorner(): void {
-    const s = this.surface;
-    const xs = s.corners.map((c) => c.x).sort((a, b) => a - b);
-    const bs = [0, ...xs, s.width];
-    let gi = 0;
-    for (let i = 0; i < bs.length - 1; i++) if (bs[i + 1]! - bs[i]! > bs[gi + 1]! - bs[gi]!) gi = i;
-    const c: Corner = createCorner({ x: Math.round((bs[gi]! + bs[gi + 1]!) / 2) });
-    this.dispatch({ type: 'carrelage/corner/add', surfaceId: s.id, corner: c });
-    this.select({ corner: s.corners.length });
-  }
-
-  updateCorner(patch: Partial<Omit<Corner, 'id'>>, key?: string, index = this.sel.corner): void {
-    const c = this.surface.corners[index];
-    if (c) this.dispatch({ type: 'carrelage/corner/update', surfaceId: this.surface.id, cornerId: c.id, patch }, key);
-  }
-
-  removeCorner(): void {
-    const c = this.surface.corners[this.sel.corner];
-    if (!c) return;
-    this.dispatch({ type: 'carrelage/corner/remove', surfaceId: this.surface.id, cornerId: c.id });
-    this.select({ corner: -1 });
   }
 
   /* ---------- optimisation ---------- */

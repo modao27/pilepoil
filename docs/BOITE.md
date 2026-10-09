@@ -41,7 +41,7 @@ export interface ToolModule<Data, Spec, Result> {
   /** État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. */
   toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
   /** Lignes d'achat consolidables. */
-  shopping(result: Result, data: Data, libraries: Libraries): ShoppingLine[];
+  shopping(result: Result, data: Data, libraries: Libraries, plan: Plan): ShoppingLine[];
   /** Action qui fixe le prix d'une ligne (null : revenir au prix de la bibliothèque). */
   priceAction(key: string, value: number | null): ModuleAction;
   /** Résumé court pour la carte du module (« 46 carreaux, 312 € »). */
@@ -331,3 +331,4 @@ seul le parquet s'en sert au début.
 | 2026-10-09 | Base 3D commune `src/render/scene3d` et vue `ui/components/Scene3DView`, extraites du carrelage (rendu inchangé) | P5 |
 | 2026-10-09 | Base PDF commune `src/ui/lib/pdf/doc.ts` et découpe de barres `src/core/cutting/bars.ts` | P4 |
 | 2026-10-09 | Carrelage bâti sur le plan commun : sols et murs du plan, un mur = une surface, pas de conversion des anciens projets, parité du moteur sur les rectangles | `PLAN.md` C1–C4 |
+| 2026-10-09 | `shopping` reçoit le plan du projet (le carrelage y retrouve ses surfaces) ; données carrelage par pièce et mur du plan (schéma 2), scénarios en schéma 3, anciens supprimés | §2, `PLAN.md` C2 |

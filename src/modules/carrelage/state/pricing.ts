@@ -1,6 +1,7 @@
 import type { ProjectResult, ShoppingItem } from '../core';
 import type { Tile } from './model';
-import type { CarrelageData, CarrelageProject } from './data';
+import { signedArea } from '../../../core/geometry/polygon';
+import type { CarrelageProject } from './data';
 
 /**
  * Prix unitaire d'un article : prix saisi dans le projet, sinon prix au m² du carreau de la bibliothèque
@@ -8,7 +9,7 @@ import type { CarrelageData, CarrelageProject } from './data';
  */
 export function itemPrice(
   item: ShoppingItem,
-  project: Pick<CarrelageData, 'prices' | 'surfaces'>,
+  project: Pick<CarrelageProject, 'prices' | 'surfaces'>,
   tiles: ReadonlyMap<string, Tile>,
   result: ProjectResult,
 ): number | undefined {
@@ -38,7 +39,10 @@ export function projectCost(
   return { total, unpriced };
 }
 
-/** Surface carrelée totale en m² (dimensions des surfaces). */
-export function projectArea(project: CarrelageProject): number {
-  return project.surfaces.reduce((t, s) => t + (s.width * s.height) / 1e6, 0);
+/** Surface carrelée totale en m² : contour du sol (obstacles déduits), largeur × hauteur des murs. */
+export function projectArea(project: Pick<CarrelageProject, 'surfaces'>): number {
+  return project.surfaces.reduce((t, s) => {
+    const a = s.outline ? s.outline.reduce((u, r) => u + signedArea(r), 0) : s.width * s.height;
+    return t + a / 1e6;
+  }, 0);
 }

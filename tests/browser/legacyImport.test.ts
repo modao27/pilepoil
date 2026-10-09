@@ -35,7 +35,7 @@ afterEach(async () => {
 });
 
 describe('import legacy en base', () => {
-  it('écrit projet, carreaux, photos (Blob), scénarios, nuancier et marqueur', async () => {
+  it('écrit projet (carrelage vide, sans conversion), carreaux, photos (Blob), nuancier et marqueur', async () => {
     const db = await fresh();
     const img = await png();
     const store = {
@@ -45,15 +45,15 @@ describe('import legacy en base', () => {
       'calepinage-nuancier': JSON.stringify({ tiles: ['#fff'], grouts: ['#000'] }),
     };
     const sum = await importLegacy(db, store, 1234);
-    expect(sum).toMatchObject({ surfaces: 1, tiles: 1, photos: 2, scenarios: 1, palette: true });
+    expect(sum).toMatchObject({ surfaces: 1, tiles: 1, photos: 2, scenarios: 0, palette: true });
     const p = (await getProject(db, sum!.projectId!))!;
     const [tile] = await listTiles(db);
     expect(p.schemaVersion).toBe(2);
-    expect(carrelageView(p)!.surfaces[0]!.zones[0]!.tileId).toBe(tile!.id);
+    expect(carrelageView(p)!.surfaces).toEqual([]);
     const photo = (await getPhoto(db, tile!.photoId!))!;
     expect(photo.blob.type).toBe('image/png');
     expect([photo.width, photo.height]).toEqual([2, 1]);
-    expect(await listScenarios(db, p.id)).toHaveLength(1);
+    expect(await listScenarios(db, p.id)).toEqual([]);
     expect(await getPref(db, 'palette')).toEqual({ tiles: ['#fff'], grouts: ['#000'] });
     expect(await getPref(db, 'legacyImport')).toEqual({ at: 1234, projectId: p.id });
     expect(await getPref(db, 'lastProjectId')).toBe(p.id);

@@ -162,3 +162,44 @@ describe('projet', () => {
     expect(E.silicone).toBeCloseTo(2 + 3 + 10, 9);
   });
 });
+
+describe('joints des pièces du plan', () => {
+  const proj = (surfaces: SurfaceSpec[], o: Partial<ProjectSpec> = {}): ProjectSpec => ({
+    surfaces,
+    settings: { margin: 10, reuseOffcuts: true, kerf: 2, minOffcut: 20 },
+    room: null,
+    ...o,
+  });
+  // pièce en L : 6 murs, angle sortant au début du mur 4 ; murs 3, 4, 5 carrelés (hauteurs 2000, 1200, 2000)
+  const wall = (height: number) => surface({ width: 1000, height });
+  const floor = surface({ kind: 'floor', width: 3000, height: 3000 });
+  const spec = (outerCovered: boolean, withFloor: boolean) =>
+    proj([wall(2000), wall(1200), wall(2000), floor], {
+      rooms: [
+        {
+          walls: [null, null, null, 0, 1, 2],
+          corners: ['in', 'in', 'in', 'in', 'out', 'in'],
+          outerCovered,
+          floor: withFloor ? 3 : null,
+          perimeter: 4500,
+        },
+      ],
+    });
+
+  it('angle rentrant entre deux murs carrelés : silicone sur la plus petite hauteur', () => {
+    const E = edgeLengths(spec(false, false));
+    // mur 5 ↔ mur 4 (rentrant au début du mur 5) : 1,2 m ; mur 4 ↔ mur 3 sortant, sans profilé
+    expect(E.silicone).toBeCloseTo(1.2, 9);
+    expect(E.profile).toBe(0);
+  });
+
+  it('angle sortant avec profilé, joint sol/murs', () => {
+    const E = edgeLengths(spec(true, true));
+    expect(E.profile).toBeCloseTo(1.2, 9);
+    expect(E.silicone).toBeCloseTo(1.2 + 4.5, 9);
+  });
+
+  it('sans pièce du plan, rien ne change', () => {
+    expect(edgeLengths(proj([wall(2000)], { rooms: [] }))).toEqual(edgeLengths(proj([wall(2000)])));
+  });
+});

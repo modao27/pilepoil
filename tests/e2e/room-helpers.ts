@@ -27,7 +27,7 @@ export async function newRoom(page: Page, tile?: [number, number]): Promise<void
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await page.getByRole('button', { name: 'Suivant' }).click();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur A/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, sol/ })).toBeVisible();
 }
 
 /** Attend une image rendue et renvoie les mesures de la scène 3D. */

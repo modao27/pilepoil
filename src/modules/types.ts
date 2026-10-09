@@ -164,8 +164,8 @@ export interface ToolModule<
   reduce(data: Data, action: Action, plan: Plan): Data;
   /** État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. */
   toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
-  /** Lignes d'achat consolidables. */
-  shopping(result: Result, data: Data, libraries: Libraries): ShoppingLine[];
+  /** Lignes d'achat consolidables ; `plan` : plan du projet (surfaces construites depuis le plan). */
+  shopping(result: Result, data: Data, libraries: Libraries, plan: Plan): ShoppingLine[];
   /** Action qui fixe le prix unitaire d'une ligne (`key`) ; null : revenir au prix de la bibliothèque. */
   priceAction(key: string, value: number | null): Action;
   /** Résumé court pour la carte du module (« 46 carreaux, 312 € »). */

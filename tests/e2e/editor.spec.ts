@@ -1,8 +1,8 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { addPlanWindow, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
 
-/** Crée un mur 300 × 240 en décalé ½, carreau 60 × 30, et ouvre l'éditeur. */
-async function newWall(page: Page): Promise<void> {
+/** Crée un mur 300 × 240 en décalé ½, carreau 60 × 30, et ouvre l'éditeur ; renvoie l'identifiant du projet. */
+async function newWall(page: Page): Promise<string> {
   await page.goto('/#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
@@ -10,8 +10,9 @@ async function newWall(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /\d+ carreaux/ })).toBeVisible();
+  return /#\/p\/([^/]+)/.exec(page.url())![1]!;
 }
 
 const isMobile = (info: TestInfo) => info.project.name === 'mobile';
@@ -145,15 +146,23 @@ test('zones : ajouter, taille, modèle frise, supprimer et annuler', async ({ pa
   await expect(list.getByRole('listitem')).toHaveCount(3);
 });
 
-test('ouvertures : fenêtre avec tableaux, déplacement au clavier, prise', async ({ page }, info) => {
-  await newWall(page);
+test('ouvertures : fenêtre du plan avec tableaux, prise déplacée au clavier', async ({ page }, info) => {
+  const id = await newWall(page);
+  await addPlanWindow(page, id);
   await tab(page, info, 'Ouvertures');
-  await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   await expect(page.getByRole('heading', { name: 'Fenêtre 1' })).toBeVisible();
+  await expect(page.getByText(/Les cotes viennent du plan\./)).toBeVisible();
   const depth = page.getByLabel('Profondeur du tableau', { exact: true });
   await depth.fill('15');
   await depth.press('Enter');
   await expect(page.getByText(/Tableaux : \d+ pièces/)).toBeVisible();
+  await check(page);
+  await shot(page, info, '65-ouverture');
+
+  await page.getByLabel('Type à ajouter').selectOption({ label: 'Prise, interrupteur' });
+  await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Prise 2' })).toBeVisible();
   const x = page.getByLabel('Depuis le bord gauche', { exact: true });
   const before = await x.inputValue();
   await page.getByRole('application').focus();
@@ -162,24 +171,26 @@ test('ouvertures : fenêtre avec tableaux, déplacement au clavier, prise', asyn
   await expect(x).not.toHaveValue(before);
   await page.getByRole('button', { name: 'Centrer horizontalement' }).click();
   await expect(x).toHaveValue(before);
-  await check(page);
-  await shot(page, info, '65-ouverture');
-
-  await page.getByLabel('Type à ajouter').selectOption({ label: 'Prise, interrupteur' });
-  await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Prise 2' })).toBeVisible();
   await page.getByRole('radio', { name: 'Rendu' }).click();
   await shot(page, info, '66-ouvertures-rendu');
 });
 
-test('finitions : angle, bords visibles, plinthes, alerte actionnable', async ({ page }, info) => {
+test('finitions : bords visibles, plinthes du sol, alerte actionnable', async ({ page }, info) => {
   await newWall(page);
+  // sol de la pièce : plinthes sur le pourtour
+  await page.getByRole('button', { name: /Mur 300 × 240/ }).click();
+  const dlg = page.getByRole('dialog', { name: 'Surfaces' });
+  await dlg.getByLabel('Sol', { exact: true }).check();
+  await dlg.getByRole('button', { name: /^Pièce, sol/ }).click();
+  await page.keyboard.press('Escape');
   await tab(page, info, 'Finitions');
-  await page.getByRole('button', { name: 'Ajouter un angle' }).click();
-  await page.getByRole('radio', { name: 'Sortant (arête)' }).click();
-  await expect(page.getByLabel('Arête protégée par un profilé')).toBeVisible();
   await page.getByRole('button', { name: 'Périmètre' }).click();
   await expect(page.getByText(/\d+ pièces de 8 cm/)).toBeVisible();
+  // mur : un bord visible
+  await page.getByRole('button', { name: /Mur 300 × 240/ }).click();
+  await dlg.getByRole('button', { name: /^Pièce, mur 1/ }).click();
+  await page.keyboard.press('Escape');
+  await tab(page, info, 'Finitions');
   await page.getByLabel('Droite', { exact: true }).uncheck();
   await expect(page.getByText(/coupes? apparentes? sur un bord visible/)).toBeVisible();
   await check(page);
@@ -199,18 +210,18 @@ test('optimisation : progression, résultat, annulation', async ({ page }, info)
   await expect(page.getByRole('button', { name: 'Optimiser le départ', exact: true })).toBeVisible();
 });
 
-test('surfaces et pièce complète, puis résultats et plan de découpe', async ({ page }, info) => {
+test('surfaces : sol et murs de la pièce à cocher, puis résultats et plan de découpe', async ({ page }, info) => {
   await newWall(page);
   await page.getByRole('button', { name: /Mur 300 × 240/ }).click();
-  const dlg = page.getByRole('dialog', { name: 'Surfaces et pièce' });
-  await dlg.getByRole('button', { name: 'Créer la pièce' }).click();
-  await expect(dlg.getByRole('button', { name: /^Sol/ })).toBeVisible();
-  await expect(dlg.getByRole('button', { name: /^Mur [A-D]/ })).toHaveCount(4);
+  const dlg = page.getByRole('dialog', { name: 'Surfaces' });
+  for (const name of ['Sol', 'Mur 2', 'Mur 3', 'Mur 4']) await dlg.getByLabel(name, { exact: true }).check();
+  await expect(dlg.getByRole('button', { name: /^Pièce, sol/ })).toBeVisible();
+  await expect(dlg.getByRole('button', { name: /^Pièce, mur [1-4]/ })).toHaveCount(4);
   await expectAccessible(page);
   await shot(page, info, '69-surfaces-piece');
-  await dlg.getByRole('button', { name: /^Sol/ }).click();
+  await dlg.getByRole('button', { name: /^Pièce, sol/ }).click();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('application', { name: /^Plan de Sol/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, sol/ })).toBeVisible();
 
   await page
     .getByRole('link', { name: /\d+ carreaux/ })

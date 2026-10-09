@@ -5,14 +5,16 @@
 import { describe, expect, it } from 'vitest';
 import { module as carrelage } from '../../src/modules/carrelage';
 import { computeProject, type ProjectResult } from '../../src/modules/carrelage/core';
-import { dataOf, type CarrelageProject } from '../../src/modules/carrelage/state/data';
-import { createOpening, createTile } from '../../src/modules/carrelage/state/factories';
+import { carrelageData, withCarrelage, type CarrelageData } from '../../src/modules/carrelage/state/data';
+import { createTile } from '../../src/modules/carrelage/state/factories';
 import { itemPrice, projectCost } from '../../src/modules/carrelage/state/pricing';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { createRoomProject, createSingleSurfaceProject } from '../../src/modules/carrelage/state/templates';
 import { shoppingLabel } from '../../src/modules/carrelage/ui/lib/labels';
 import type { Tile } from '../../src/modules/carrelage/state/model';
+import type { Project } from '../../src/state/model';
 import { consolidate, parsePrice, toCsv } from '../../src/ui/lib/shopping';
+import { view, withOpening } from './planFixtures';
 
 const priced = createTile({ name: 'Grès 60 × 30', pricePerM2: 32.5 });
 const unpriced = createTile({ name: 'Faïence 20 × 20', length: 200, width: 200, m2PerBox: 1, pricePerM2: null });
@@ -28,7 +30,7 @@ const layout = (t: Tile) => ({
 });
 
 /** Projets variés : mur seul, pièce complète, prix saisis dans le projet, carreau sans prix, vente à la pièce. */
-function projects(): CarrelageProject[] {
+function projects(): Project[] {
   const wall = createSingleSurfaceProject({ ...layout(priced), kind: 'wall', width: 3000, height: 2400 }, 0);
   const room = createRoomProject(
     {
@@ -41,28 +43,36 @@ function projects(): CarrelageProject[] {
     },
     0,
   );
-  room.surfaces[0]!.openings.push(createOpening('door'));
-  room.prices = { colle: 18.9, 'tile|x': 1, crois: 3.2 };
+  // porte du plan sur le mur A
+  room.plan = {
+    ...room.plan,
+    rooms: [withOpening(room.plan.rooms[0]!, 0, { kind: 'door', sill: 0, height: 2040, width: 830 })],
+  };
+  const withPrices = (p: Project, prices: Record<string, number>) => withCarrelage(p, { ...data(p), prices });
   const pieces = createSingleSurfaceProject({ ...layout(byPiece), kind: 'floor', width: 1200, height: 900 }, 0);
-  pieces.prices = { ['tile|' + 'inconnu']: 5 };
-  return [wall, room, pieces];
+  return [
+    wall,
+    withPrices(room, { colle: 18.9, 'tile|x': 1, crois: 3.2 }),
+    withPrices(pieces, { ['tile|' + 'inconnu']: 5 }),
+  ];
 }
 
-const compute = (p: CarrelageProject): ProjectResult => computeProject(toProjectSpec(p, tiles).spec);
+const data = (p: Project): CarrelageData => carrelageData(p)!;
+const compute = (p: Project): ProjectResult => computeProject(toProjectSpec(view(p), tiles).spec);
 
 describe('liste d’achat consolidée du carrelage', () => {
   for (const p of projects())
     it(`identique à l’écran Résultats : ${p.name}`, () => {
       const r = compute(p);
       const byId = new Map(tiles.map((t) => [t.id, t]));
-      const lines = carrelage.shopping(r, dataOf(p), { tiles });
+      const lines = carrelage.shopping(r, data(p), { tiles }, p.plan);
       expect(r.shopping.length).toBeGreaterThan(2);
       // mêmes articles, dans le même ordre
       expect(lines.map((l) => l.key)).toEqual(r.shopping.map((it) => it.key));
       r.shopping.forEach((it, i) => {
         const l = lines[i]!;
         const text = shoppingLabel(it, r.plan.groups);
-        const price = itemPrice(it, p, byId, r);
+        const price = itemPrice(it, view(p), byId, r);
         expect(l).toMatchObject({ module: 'carrelage', label: text.label, detail: text.qty, quantity: it.mult });
         expect(l.unitPrice).toBe(price ?? null);
         // coût de la ligne : même calcul (prix × quantité de prix)
@@ -70,7 +80,7 @@ describe('liste d’achat consolidée du carrelage', () => {
       });
       // total et articles sans prix : identiques à l'écran Résultats
       const c = consolidate(lines);
-      const cost = projectCost(p, tiles, r);
+      const cost = projectCost(view(p), tiles, r);
       expect(c.total).toBeCloseTo(cost.total, 9);
       expect(c.unpriced).toBe(cost.unpriced);
       expect(c.byModule).toEqual([{ module: 'carrelage', total: c.total, unpriced: cost.unpriced }]);
@@ -80,18 +90,18 @@ describe('liste d’achat consolidée du carrelage', () => {
     const p = projects()[0]!;
     const r = compute(p);
     const key = r.shopping.find((it) => it.kind === 'tile')!.key;
-    const before = carrelage.shopping(r, dataOf(p), { tiles }).find((l) => l.key === key)!;
+    const before = carrelage.shopping(r, data(p), { tiles }, p.plan).find((l) => l.key === key)!;
     expect(before).toMatchObject({ unitPrice: 32.5, priceFromLibrary: true });
-    const data = carrelage.reduce(dataOf(p), carrelage.priceAction(key, 29.9), { rooms: [], passages: [] });
-    const after = carrelage.shopping(r, data, { tiles }).find((l) => l.key === key)!;
+    const d = carrelage.reduce(data(p), carrelage.priceAction(key, 29.9), p.plan);
+    const after = carrelage.shopping(r, d, { tiles }, p.plan).find((l) => l.key === key)!;
     expect(after).toMatchObject({ unitPrice: 29.9, priceFromLibrary: false });
-    const cleared = carrelage.reduce(data, carrelage.priceAction(key, null), { rooms: [], passages: [] });
-    expect(carrelage.shopping(r, cleared, { tiles }).find((l) => l.key === key)!.unitPrice).toBe(32.5);
+    const cleared = carrelage.reduce(d, carrelage.priceAction(key, null), p.plan);
+    expect(carrelage.shopping(r, cleared, { tiles }, p.plan).find((l) => l.key === key)!.unitPrice).toBe(32.5);
   });
 
   it('rayons : revêtements, consommables, outils, finitions', () => {
     const p = projects()[1]!;
-    const lines = carrelage.shopping(compute(p), dataOf(p), { tiles });
+    const lines = carrelage.shopping(compute(p), data(p), { tiles }, p.plan);
     const group = (k: string) => lines.find((l) => l.key === k || l.key.startsWith(k))?.group;
     expect(group('tile|')).toBe('covering');
     expect(group('colle')).toBe('consumable');
