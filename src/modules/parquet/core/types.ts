@@ -128,6 +128,15 @@ export interface LayoutResult {
   thresholds: Segment[];
   warnings: ParquetWarning[];
   errors: ParquetError[];
+  /** Motifs : trois placements d'axe proposés, avec la plus petite coupe en bord de chacun. */
+  axisOptions?: AxisOption[];
+}
+
+export interface AxisOption {
+  kind: 'room-center' | 'main-door' | 'reference-wall';
+  point: Point;
+  /** Plus petite largeur de coupe en bord, mm. */
+  minCutWidth: number;
 }
 
 export interface LaidPiece {

@@ -83,20 +83,24 @@ export function expectInvariants(l: LayoutResult, s: LayoutSpec, kerf: number): 
     const pieces = b.pieces.map((id) => byId.get(id)!);
     expect(pieces.every(Boolean)).toBe(true);
     const used = pieces.reduce((t, p) => t + area(p.polygon), 0);
-    expect(used, `lame ${b.index}`).toBeLessThanOrEqual(b.length * width * (1 + 1e-6));
-    // en longueur : morceaux distincts (une même abscisse de départ = même morceau) et traits de scie
+    // arrondi des booléens au 1/100 mm sur des pièces tournées : 1e-4
+    expect(used, `lame ${b.index}`).toBeLessThanOrEqual(b.length * width * (1 + 1e-4));
+    // en longueur (pose droite) : morceaux distincts et traits de scie ; en 2D (motifs), l'aire suffit
+    if (pieces.some((p) => p.row == null)) continue;
     const runs = new Map(pieces.map((p) => [p.id.replace(/-\d+$/, ''), p.length]));
     const len = [...runs.values()].reduce((t, x) => t + x, 0) + kerf * Math.max(0, runs.size - 1);
     expect(len, `lame ${b.index} (longueur)`).toBeLessThanOrEqual(b.length + 1e-6);
   }
   for (const p of l.pieces) {
     expect(p.length).toBeGreaterThan(0);
-    if ('board' in p.source) expect(p.length).toBeLessThanOrEqual(l.boards[p.source.board]!.length + 1e-6);
+    if ('board' in p.source) expect(p.length).toBeLessThanOrEqual(l.boards[p.source.board]!.length + 0.02);
   }
   // règles : coupe mini respectée, sinon alerte cut-too-short pour la pièce
   const short = new Set(l.warnings.flatMap((w) => (w.code === 'cut-too-short' ? [w.piece] : [])));
+  // (coupe mini : règle de la pose droite ; les motifs signalent les toutes petites pièces, tiny-piece)
   for (const p of l.pieces)
-    if (p.length < s.rules.minCutLength - 1e-6) expect(short.has(p.id), `${p.id} ${p.length}`).toBe(true);
+    if (p.row != null && p.length < s.rules.minCutLength - 1e-6)
+      expect(short.has(p.id), `${p.id} ${p.length}`).toBe(true);
   // au moins une lame dès qu'il y a une surface
   expect(l.boards.length).toBeGreaterThanOrEqual(1);
 }
