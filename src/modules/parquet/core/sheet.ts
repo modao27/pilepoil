@@ -27,8 +27,8 @@ export type SheetItem =
       shape: Polygon | null;
       /** Coupe en biais : angle de chaque coupe avec la rive, degrés (90 = coupe droite). */
       angles: number[];
-      /** Coupe identique (forme au millimètre, angles) à une pièce plus haut dans le groupe : son numéro. */
-      sameAs: number | null;
+      /** Coupe identique (forme au millimètre, angles) à une pièce plus haut dans la fiche : où est son croquis. */
+      sameAs: { group: number; n: number } | null;
       source: LaidPiece['source'];
       /** Chute utilisée : la pièce qui l'a produite (groupe de la fiche et numéro). */
       origin: { group: number; n: number } | null;
@@ -70,6 +70,16 @@ export function cuttingSheet(r: ParquetResult, roomOrder: Record<string, string[
         items: itemsOf(g.pieces, (i) => l.boards[i]?.length ?? Infinity),
       });
   }
+  // un seul croquis par forme de coupe dans toute la fiche : les suivantes renvoient à la première
+  const drawn: { shape: Polygon; angles: number[]; at: { group: number; n: number } }[] = [];
+  out.forEach((g, gi) => {
+    for (const it of g.items) {
+      if (it.kind !== 'cut' || !it.shape) continue;
+      const ref = drawn.find((d) => d.angles.join() === it.angles.join() && sameShape(d.shape, it.shape!));
+      if (ref) it.sameAs = ref.at;
+      else drawn.push({ shape: it.shape, angles: it.angles, at: { group: gi, n: it.n } });
+    }
+  });
   // provenance des chutes : la pièce dont la coupe les a mises au stock
   const producer = new Map<string, { group: number; n: number }>();
   out.forEach((g, gi) => {
@@ -114,16 +124,15 @@ function itemsOf(pieces: LaidPiece[], boardLength: (index: number) => number): S
       rest: p.rest ?? [],
     });
   });
-  // un seul croquis par coupe : les suivantes renvoient à la première de même forme
-  const first = new Map<string, number>();
-  for (const it of items) {
-    if (it.kind !== 'cut' || !it.shape) continue;
-    const key = it.shape.map((p) => `${Math.round(p[0])},${Math.round(p[1])}`).join(' ') + '|' + it.angles.join(',');
-    const n = first.get(key);
-    if (n != null) it.sameAs = n;
-    else first.set(key, it.n);
-  }
   return items;
+}
+
+/** Même forme à 1 mm près : mêmes sommets, dans le même ordre à un décalage près. */
+function sameShape(a: Polygon, b: Polygon): boolean {
+  if (a.length !== b.length) return false;
+  const near = (p: Point, q: Point) => Math.abs(p[0] - q[0]) <= 1 && Math.abs(p[1] - q[1]) <= 1;
+  for (let k = 0; k < b.length; k++) if (a.every((p, i) => near(p, b[(i + k) % b.length]!))) return true;
+  return false;
 }
 
 /** Repère de la lame d'une pièce : x le long de sa plus longue arête (une rive), origine au coin. */

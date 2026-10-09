@@ -31,7 +31,14 @@ export function itemText(it: SheetItem, groups: SheetGroup[], roomName: (id: str
   if (it.width != null) detail += `, recoupée à ${mm(it.width)} de large`;
   if (it.cutType === 'angled')
     detail += it.edges ? `, coupe en biais (rives ${fr(it.edges[0])} et ${mm(it.edges[1])})` : ', coupe en biais';
-  if (it.sameAs != null) detail += `, même croquis que le n° ${it.sameAs}`;
+  if (it.sameAs) {
+    const g = groups[it.sameAs.group];
+    const here = g && groups.indexOf(g) === groups.findIndex((x) => x.items.includes(it));
+    detail +=
+      here || !g
+        ? `, même croquis que le n° ${it.sameAs.n}`
+        : `, même croquis que ${groupTitle(g, roomName)}, n° ${it.sameAs.n}`;
+  }
   if (it.cutType === 'complex') detail += ', découpe à tracer sur place';
   const rest = it.rest.map((r) => ` · la chute ${shortOffcut(r.id)} (${mm(r.length)}) va au stock`).join('');
   if (it.wholeLength)

@@ -118,7 +118,8 @@ describe('export PDF du parquet', () => {
     const all = (await pagesText(blob)).map((p) => p.text).join(' ');
     expect(all).toMatch(/Séjour — ligne 1/);
     expect(all).toMatch(/coupe en biais \(rives \d/);
-    expect(all).toMatch(/même croquis que le n° \d/);
+    expect(all).toMatch(/même croquis que (le n° \d|Séjour — ligne \d+, n° \d)/);
+    expect(all).toMatch(/même croquis que (Séjour|Bureau) — ligne \d+, n° \d/);
     // angles des coupes sous chaque croquis
     expect(all).toMatch(/45°/);
   });

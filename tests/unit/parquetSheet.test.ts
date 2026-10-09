@@ -55,17 +55,32 @@ describe('fiche de coupe', () => {
     const angled = s.flatMap((g) => g.items).filter((i) => i.kind === 'cut' && i.cutType === 'angled');
     expect(angled.length).toBeGreaterThan(0);
     for (const i of angled) if (i.kind === 'cut' && i.edges) expect(i.edges[0]).toBeGreaterThanOrEqual(i.edges[1]);
-    // un seul croquis par coupe : les coupes identiques renvoient à la première du groupe
-    for (const g of s) {
-      const cuts = g.items.filter((i) => i.kind === 'cut' && i.shape);
-      for (const i of cuts)
-        if (i.kind === 'cut' && i.sameAs != null) {
-          const ref = cuts.find((x) => x.kind === 'cut' && x.n === i.sameAs);
+    // un seul croquis par forme de coupe dans toute la fiche : les suivantes renvoient à la première
+    const pos = (g: number, n: number) => g * 10000 + n;
+    let shared = 0;
+    s.forEach((g, gi) => {
+      for (const i of g.items)
+        if (i.kind === 'cut' && i.sameAs) {
+          shared++;
+          const ref = s[i.sameAs.group]!.items.find((x) => x.kind === 'cut' && x.n === i.sameAs!.n);
           expect(ref && ref.kind === 'cut' && ref.sameAs).toBeNull();
-          expect(ref && ref.kind === 'cut' && ref.n).toBeLessThan(i.n);
+          expect(pos(i.sameAs.group, i.sameAs.n)).toBeLessThan(pos(gi, i.n));
         }
-    }
-    expect(s.some((g) => g.items.some((i) => i.kind === 'cut' && i.sameAs != null))).toBe(true);
+    });
+    expect(shared).toBeGreaterThan(0);
+    // croquis dessinés : deux à deux différents (au-delà de 1 mm ou par les angles)
+    const drawn = s.flatMap((g) => g.items).flatMap((i) => (i.kind === 'cut' && i.shape && !i.sameAs ? [i] : []));
+    const near = (p: number[], q: number[]) => Math.abs(p[0]! - q[0]!) <= 1 && Math.abs(p[1]! - q[1]!) <= 1;
+    for (let a = 0; a < drawn.length; a++)
+      for (let b = a + 1; b < drawn.length; b++) {
+        const x = drawn[a]!,
+          y = drawn[b]!;
+        const same =
+          x.angles.join() === y.angles.join() &&
+          x.shape!.length === y.shape!.length &&
+          x.shape!.some((_, k) => x.shape!.every((p, i) => near(p, y.shape![(i + k) % y.shape!.length]!)));
+        expect(same).toBe(false);
+      }
     // chutes : provenance connue
     for (const i of s.flatMap((g) => g.items))
       if (i.kind === 'cut' && 'offcut' in i.source) expect(i.origin).not.toBeNull();
