@@ -1,6 +1,35 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, type TestInfo } from '@playwright/test';
 
+/**
+ * Projet vide (plan sans pièce) avec un outil sans assistant (parquet), créé depuis « Nouveau projet » : l'éditeur
+ * de plan s'ouvre. Renvoie l'identifiant du projet.
+ */
+export async function emptyProject(page: Page, tool = 'parquet'): Promise<string> {
+  await page.goto('/#/new');
+  await page.getByRole('button', { name: `Commencer : ${tool}` }).click();
+  await expect(page).toHaveURL(/#\/p\/[^/]+\/plan$/);
+  return /#\/p\/([^/]+)/.exec(page.url())![1]!;
+}
+
+/**
+ * Ajoute une fenêtre (valeurs par défaut) sur le premier mur de la pièce `room` dans l'éditeur de plan, puis
+ * revient à l'éditeur du carrelage.
+ */
+export async function addPlanWindow(page: Page, id: string, room = 'Pièce'): Promise<void> {
+  await page.goto(`/#/p/${id}/plan`);
+  const p = page.getByRole('complementary', { name: 'Réglages du plan' }).or(page.locator('.sheet'));
+  await p.getByRole('button', { name: room, exact: true }).click();
+  await p
+    .getByRole('button', { name: /^Ouvertures et épaisseur/ })
+    .first()
+    .click();
+  await p.getByRole('button', { name: 'Ajouter une fenêtre' }).click();
+  await expect(p.getByRole('heading', { name: `Fenêtre — ${room}` })).toBeVisible();
+  await page.goto(`/#/p/${id}/m/carrelage`);
+  await expect(page.getByRole('application', { name: /^Plan de / })).toBeVisible();
+}
+
 /** Capture pleine page dans screenshots/<profil>/<nom>.png (non versionné). */
 export async function shot(page: Page, info: TestInfo, name: string): Promise<void> {
   await page.evaluate(() => document.fonts.ready);

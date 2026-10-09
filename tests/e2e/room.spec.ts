@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { newRoom, sceneStats } from './room-helpers';
 import { expectAccessible, expectNoHorizontalScroll, shot } from './helpers';
 
-test('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => {
+// Vue Pièce et 3D de toute la pièce retirées en C2, refaites depuis le polygone du plan en C3.
+test.fixme('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => {
   await newRoom(page);
   await page.getByRole('link', { name: 'Pièce', exact: true }).click();
   await expect(page.getByRole('group', { name: /Pièce vue de dessus/ })).toBeVisible();
@@ -24,7 +25,7 @@ test('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => 
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 2/ })).toBeVisible();
 });
 
-test('éditeur : vue 3D d’un mur avec fenêtre, puis de toute la pièce', async ({ page }, info) => {
+test.fixme('éditeur : vue 3D d’un mur avec fenêtre, puis de toute la pièce', async ({ page }, info) => {
   await newRoom(page);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Ouvertures' }).click();

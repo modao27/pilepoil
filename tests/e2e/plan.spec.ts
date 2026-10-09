@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { emptyProject, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -7,17 +7,11 @@ async function check(page: Page) {
   await expectNoHorizontalScroll(page);
 }
 
-/** Projet carrelage (mur) créé par l'assistant ; renvoie son identifiant. */
+/** Projet au plan vide (parquet), ouvert sur l'écran Projet ; renvoie son identifiant. */
 async function newProject(page: Page): Promise<string> {
-  await page.goto('/#/new/carrelage');
-  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-  await next();
-  await next();
-  await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-  await next();
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
-  return /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  const id = await emptyProject(page);
+  await page.goto(`/#/p/${id}`);
+  return id;
 }
 
 async function setNumber(scope: Locator, label: string, value: string) {
@@ -33,11 +27,10 @@ test('plan : pièce en L avec poteau et porte, seconde pièce reliée par un pas
 }, info) => {
   const id = await newProject(page);
 
-  // écran Projet : depuis l'éditeur carrelage
-  await page.getByRole('link', { name: 'Projet' }).click();
+  // écran Projet
   await expect(page).toHaveURL(new RegExp(`#/p/${id}$`));
   await expect(page.getByRole('heading', { name: 'Outils' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Carrelage/ })).toContainText(/\d+ carreaux|Calcul/);
+  await expect(page.getByRole('link', { name: /Parquet/ })).toBeVisible();
   await check(page);
   await shot(page, info, '60-projet');
 
@@ -130,7 +123,6 @@ test('plan : pièce en L avec poteau et porte, seconde pièce reliée par un pas
 
 test('plan : dessin libre point par point, aimanté', async ({ page }, info) => {
   await newProject(page);
-  await page.getByRole('link', { name: 'Projet' }).click();
   await page.getByRole('link', { name: /Dessiner les pièces/ }).click();
   const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
   await dialog.getByRole('radio', { name: 'Dessin' }).click();

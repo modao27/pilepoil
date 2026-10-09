@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { emptyProject } from './helpers';
 import { newRoom, sceneStats } from './room-helpers';
 
 // GPU réel si disponible (sinon Chromium rend en logiciel, sans rapport avec un téléphone).
 test.use({ launchOptions: { args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11'] } });
 
-test('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en rotation', async ({ page }, info) => {
+// Vue Pièce du carrelage retirée en C2, refaite depuis le polygone du plan en C3.
+test.fixme('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en rotation', async ({ page }, info) => {
   test.setTimeout(90_000);
   // 4 × 3,75 m, carreaux de 10 × 10 cm : environ 4 900 pièces sur les murs et le sol
   await newRoom(page, [100, 100]);
@@ -47,16 +49,7 @@ test('parquet : 30 m² en point de Hongrie, budget de dessin et images par secon
 }, info) => {
   test.setTimeout(120_000);
   // projet, pièce de 6 × 5 m dans le plan, parquet
-  await page.goto('/#/new/carrelage');
-  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-  await next();
-  await next();
-  await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-  await next();
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
-  await page.goto(`/#/p/${id}/plan`);
+  const id = await emptyProject(page);
   const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
   for (const [label, value] of [
     ['Nom', 'Salon'],
@@ -68,8 +61,8 @@ test('parquet : 30 m² en point de Hongrie, budget de dessin et images par secon
     await f.press('Enter');
   }
   await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
-  await page.getByRole('link', { name: 'Projet' }).click();
-  await page.getByRole('button', { name: 'Ajouter parquet' }).click();
+  await page.goto(`/#/p/${id}/m/parquet`);
+  await page.getByRole('button', { name: 'Créer une pose' }).click();
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
   await p.getByRole('combobox', { name: 'Lame' }).selectOption({ label: 'Point de Hongrie 45° 600 × 90 (lames A/B)' });
   await p.getByRole('radio', { name: 'Hongrie' }).click();
