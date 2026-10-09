@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectAccessible, expectTouchTargets, shot } from './helpers';
+import { expectAccessible, expectTouchTargets, newWall, shot } from './helpers';
 import { sceneStats } from './room-helpers';
 import { serveDist } from './static-server';
 
@@ -52,19 +52,12 @@ test('hors ligne : ouvrir, créer, calculer, 3D, résultats et PDF sans réseau'
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
 
-  await page.goto('/#/new/carrelage');
-  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-  await next();
-  await next();
-  await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-  await next();
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
+  const id = await newWall(page);
   // le calcul passe par le worker, lui aussi servi par le cache
   await expect(page.getByRole('link', { name: /\d+ carreaux/ }).first()).toBeVisible();
   await page.getByRole('radio', { name: '3D' }).click();
   await sceneStats(page);
 
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
   await page.goto(`/#/p/${id}/m/carrelage/results`);
   await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
   await page.getByRole('button', { name: 'PDF' }).click();
@@ -92,13 +85,7 @@ test('nouvelle version : message, mise à jour sans perdre le projet', async ({ 
   const site = await serveDist();
   try {
     await firstVisit(page, site.url);
-    await page.goto(site.url + '#/new/carrelage');
-    const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-    await next();
-    await next();
-    await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-    await next();
-    await page.getByRole('button', { name: 'Créer le projet' }).click();
+    await newWall(page, undefined, site.url);
     await expect(page.getByRole('link', { name: /\d+ carreaux/ }).first()).toBeVisible();
     // modification encore en attente d'enregistrement au moment de la mise à jour
     if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();

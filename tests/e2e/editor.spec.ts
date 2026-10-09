@@ -1,18 +1,18 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { addPlanWindow, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import {
+  addPlanWindow,
+  expectAccessible,
+  expectNoHorizontalScroll,
+  expectTouchTargets,
+  newWall as wizardWall,
+  shot,
+} from './helpers';
 
 /** Crée un mur 300 × 240 en décalé ½, carreau 60 × 30, et ouvre l'éditeur ; renvoie l'identifiant du projet. */
 async function newWall(page: Page): Promise<string> {
-  await page.goto('/#/new/carrelage');
-  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-  await next();
-  await next();
-  await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-  await next();
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
+  const id = await wizardWall(page);
   await expect(page.getByRole('link', { name: /\d+ carreaux/ })).toBeVisible();
-  return /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  return id;
 }
 
 const isMobile = (info: TestInfo) => info.project.name === 'mobile';
@@ -178,16 +178,15 @@ test('ouvertures : fenêtre du plan avec tableaux, prise déplacée au clavier',
 test('finitions : bords visibles, plinthes du sol, alerte actionnable', async ({ page }, info) => {
   await newWall(page);
   // sol de la pièce : plinthes sur le pourtour
-  await page.getByRole('button', { name: /Mur 300 × 240/ }).click();
-  const dlg = page.getByRole('dialog', { name: 'Surfaces' });
-  await dlg.getByLabel('Sol', { exact: true }).check();
-  await dlg.getByRole('button', { name: /^Pièce, sol/ }).click();
-  await page.keyboard.press('Escape');
+  await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Sol', exact: true }).check();
+  await page.getByRole('link', { name: 'Ouvrir Pièce, sol' }).click();
   await tab(page, info, 'Finitions');
   await page.getByRole('button', { name: 'Périmètre' }).click();
   await expect(page.getByText(/\d+ pièces de 8 cm/)).toBeVisible();
   // mur : un bord visible
-  await page.getByRole('button', { name: /Mur 300 × 240/ }).click();
+  await page.getByRole('button', { name: /Pièce 300 × 240/ }).click();
+  const dlg = page.getByRole('dialog', { name: 'Surfaces' });
   await dlg.getByRole('button', { name: /^Pièce, mur 1/ }).click();
   await page.keyboard.press('Escape');
   await tab(page, info, 'Finitions');
@@ -212,9 +211,13 @@ test('optimisation : progression, résultat, annulation', async ({ page }, info)
 
 test('surfaces : sol et murs de la pièce à cocher, puis résultats et plan de découpe', async ({ page }, info) => {
   await newWall(page);
-  await page.getByRole('button', { name: /Mur 300 × 240/ }).click();
+  await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Sol', exact: true }).check();
+  for (const n of [2, 3, 4]) await page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }).check();
+  await expect(page.getByRole('link', { name: /^Ouvrir Pièce, / })).toHaveCount(5);
+  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
+  await page.getByRole('button', { name: /Pièce 300 × 240/ }).click();
   const dlg = page.getByRole('dialog', { name: 'Surfaces' });
-  for (const name of ['Sol', 'Mur 2', 'Mur 3', 'Mur 4']) await dlg.getByLabel(name, { exact: true }).check();
   await expect(dlg.getByRole('button', { name: /^Pièce, sol/ })).toBeVisible();
   await expect(dlg.getByRole('button', { name: /^Pièce, mur [1-4]/ })).toHaveCount(4);
   await expectAccessible(page);
@@ -233,6 +236,6 @@ test('surfaces : sol et murs de la pièce à cocher, puis résultats et plan de 
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);
   await shot(page, info, '70-resultats');
-  await page.getByRole('link', { name: 'Retour au plan' }).click();
-  await expect(page.getByRole('application')).toBeVisible();
+  await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /^Carrelage — / })).toBeVisible();
 });

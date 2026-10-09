@@ -12,9 +12,40 @@ export async function emptyProject(page: Page, tool = 'parquet'): Promise<string
   return /#\/p\/([^/]+)/.exec(page.url())![1]!;
 }
 
+/** Saisit un nombre et le valide (Entrée). */
+export async function fillNumber(page: Page, label: string, value: string): Promise<void> {
+  const f = page.getByLabel(label, { exact: true });
+  await f.fill(value);
+  await f.press('Enter');
+}
+
+/**
+ * Assistant du carrelage jusqu'à l'éditeur d'un mur de 300 × 240 : pièce de 300 × 240 cm, 240 cm sous plafond,
+ * seul le mur 1 carrelé. `tile` : saisie du carreau (par défaut, le carreau proposé est ajouté). Renvoie
+ * l'identifiant du projet (nommé « Pièce 300 × 240 »).
+ */
+export async function newWall(page: Page, tile?: () => Promise<void>, base = '/'): Promise<string> {
+  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
+  await page.goto(`${base}#/new/carrelage`);
+  await fillNumber(page, 'Hauteur sous plafond', '240');
+  await next();
+  await page.getByRole('checkbox', { name: 'Sol', exact: true }).uncheck();
+  await page.getByRole('checkbox', { name: /^Mur 1 / }).check();
+  await next();
+  if (tile) await tile();
+  else await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
+  await next();
+  await page.getByRole('button', { name: 'Créer le projet' }).click();
+  await expect(page.getByRole('heading', { name: /^Carrelage — / })).toBeVisible();
+  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
+  return id;
+}
+
 /**
  * Ajoute une fenêtre (valeurs par défaut) sur le premier mur de la pièce `room` dans l'éditeur de plan, puis
- * revient à l'éditeur du carrelage.
+ * ouvre l'éditeur du carrelage sur ce mur.
  */
 export async function addPlanWindow(page: Page, id: string, room = 'Pièce'): Promise<void> {
   await page.goto(`/#/p/${id}/plan`);
@@ -27,7 +58,8 @@ export async function addPlanWindow(page: Page, id: string, room = 'Pièce'): Pr
   await p.getByRole('button', { name: 'Ajouter une fenêtre' }).click();
   await expect(p.getByRole('heading', { name: `Fenêtre — ${room}` })).toBeVisible();
   await page.goto(`/#/p/${id}/m/carrelage`);
-  await expect(page.getByRole('application', { name: /^Plan de / })).toBeVisible();
+  await page.getByRole('link', { name: `Ouvrir ${room}, mur 1` }).click();
+  await expect(page.getByRole('application', { name: new RegExp(`^Plan de ${room}, mur 1`) })).toBeVisible();
 }
 
 /** Capture pleine page dans screenshots/<profil>/<nom>.png (non versionné). */

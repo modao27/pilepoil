@@ -1,13 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { newRoom, sceneStats } from './room-helpers';
-import { expectAccessible, expectNoHorizontalScroll, shot } from './helpers';
+import { addPlanWindow, expectAccessible, expectNoHorizontalScroll, shot } from './helpers';
 
-// Vue Pièce et 3D de toute la pièce retirées en C2, refaites depuis le polygone du plan en C3.
-test.fixme('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => {
+test('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => {
   await newRoom(page);
-  await page.getByRole('link', { name: 'Pièce', exact: true }).click();
+  await page.getByRole('link', { name: 'Vue de la pièce' }).click();
   await expect(page.getByRole('group', { name: /Pièce vue de dessus/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Ouvrir (Mur [A-D]|Sol)$/ })).toHaveCount(5);
+  await expect(page.getByRole('link', { name: /^Ouvrir Pièce, / })).toHaveCount(5);
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);
   await shot(page, info, '80-piece-dessus');
@@ -21,15 +20,16 @@ test.fixme('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, inf
   await shot(page, info, '82-piece-3d-plongee');
 
   await page.getByRole('radio', { name: 'Dessus' }).click();
-  await page.getByRole('link', { name: 'Ouvrir Mur B' }).click();
+  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 2' }).click();
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 2/ })).toBeVisible();
 });
 
-test.fixme('éditeur : vue 3D d’un mur avec fenêtre, puis de toute la pièce', async ({ page }, info) => {
-  await newRoom(page);
+test('éditeur : vue 3D d’un mur avec fenêtre, puis de toute la pièce', async ({ page }, info) => {
+  const id = await newRoom(page);
+  await addPlanWindow(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Ouvertures' }).click();
-  await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   const depth = page.getByLabel('Profondeur du tableau', { exact: true });
   await depth.fill('20');
   await depth.press('Enter');

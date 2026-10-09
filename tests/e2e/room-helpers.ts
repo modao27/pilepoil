@@ -1,10 +1,8 @@
 import { expect, type Page } from '@playwright/test';
 
 /** Pièce de 15 m² (4 × 3,75 m, 2,50 m sous plafond, carrelée sur 2 m), créée par l'assistant. */
-export async function newRoom(page: Page, tile?: [number, number]): Promise<void> {
+export async function newRoom(page: Page, tile?: [number, number]): Promise<string> {
   await page.goto('/#/new/carrelage');
-  await page.getByRole('radio', { name: /Une pièce/ }).click();
-  await page.getByRole('button', { name: 'Suivant' }).click();
   for (const [label, v] of [
     ['Longueur de la pièce', '400'],
     ['Largeur de la pièce', '375'],
@@ -13,6 +11,9 @@ export async function newRoom(page: Page, tile?: [number, number]): Promise<void
     await f.fill(v);
     await f.press('Enter');
   }
+  await page.getByRole('button', { name: 'Suivant' }).click();
+  // sol et quatre murs, carrelés sur 2 m
+  for (const n of [1, 2, 3, 4]) await page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }).check();
   await page.getByRole('button', { name: 'Suivant' }).click();
   if (tile) {
     for (const [label, v] of [
@@ -28,6 +29,7 @@ export async function newRoom(page: Page, tile?: [number, number]): Promise<void
   await page.getByRole('button', { name: 'Suivant' }).click();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
   await expect(page.getByRole('heading', { name: /^Carrelage — / })).toBeVisible();
+  return /#\/p\/([^/]+)/.exec(page.url())![1]!;
 }
 
 /** Attend une image rendue et renvoie les mesures de la scène 3D. */

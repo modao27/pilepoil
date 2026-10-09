@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { addPlanWindow, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import {
+  addPlanWindow,
+  newWall,
+  expectAccessible,
+  expectNoHorizontalScroll,
+  expectTouchTargets,
+  shot,
+} from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -10,18 +17,19 @@ async function check(page: Page) {
   await expectNoHorizontalScroll(page);
 }
 
+/** Éditeur du mur 1 depuis l'écran Carrelage. */
+async function openWall(page: Page, id: string) {
+  await page.goto(`/#/p/${id}/m/carrelage`);
+  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
+}
+
 /** Mur 300 × 240 avec une fenêtre à tableaux, puis page Résultats. */
 async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
-  await page.goto('/#/new/carrelage');
-  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-  await next();
-  await next();
-  await page.getByLabel('Prix', { exact: true }).fill('32,5');
-  await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-  await next();
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  const id = await newWall(page, async () => {
+    await page.getByLabel('Prix', { exact: true }).fill('32,5');
+    await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
+  });
   await addPlanWindow(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Ouvertures' }).click();
@@ -74,7 +82,7 @@ test('comparer deux scénarios, charger puis annuler', async ({ page }, info) =>
   await expect(page.getByRole('table')).toContainText('État actuel');
 
   // modifier le projet : motif bâtons rompus à 45°
-  await page.goto(`/#/p/${id}/m/carrelage`);
+  await openWall(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Motif' }).click();
   await page.getByRole('radio', { name: 'Bâtons rompus' }).click();
@@ -95,7 +103,7 @@ test('comparer deux scénarios, charger puis annuler', async ({ page }, info) =>
   await page.getByRole('button', { name: 'Charger le scénario' }).click();
   await expect(page.getByText('Scénario « Décalé droit » chargé.')).toBeVisible();
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
-  await page.goto(`/#/p/${id}/m/carrelage`);
+  await openWall(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Motif' }).click();
   await expect(page.getByRole('radio', { name: 'Bâtons rompus' })).toHaveAttribute('aria-checked', 'true');
@@ -111,7 +119,7 @@ test('export PDF A4 : téléchargement et rendu des pages', async ({ page, brows
     page.waitForEvent('download'),
     dlg.getByRole('button', { name: 'Télécharger le PDF' }).click(),
   ]);
-  expect(download.suggestedFilename()).toMatch(/^calepinage-mur-300-240\.pdf$/);
+  expect(download.suggestedFilename()).toMatch(/^calepinage-piece-300-240\.pdf$/);
   await expect(dlg.getByRole('status')).toHaveText('PDF enregistré dans vos téléchargements.');
   const bytes = readFileSync((await download.path())!);
   expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
