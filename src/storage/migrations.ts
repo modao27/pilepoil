@@ -86,7 +86,11 @@ function migrateModules(r: { doc: Project; changed: boolean }): { doc: Project; 
       continue;
     }
     const steps: Record<number, Step> = Object.fromEntries(
-      Object.entries(def.migrations).map(([v, f]) => [v, (d: Record<string, unknown>) => ({ ...d, data: f(d.data) })]),
+      // migrations[n] du module : n − 1 → n ; étapes de `migrate` : steps[n] : n → n + 1
+      Object.entries(def.migrations).map(([v, f]) => [
+        Number(v) - 1,
+        (d: Record<string, unknown>) => ({ ...d, data: f(d.data) }),
+      ]),
     );
     const out = migrate<{ schemaVersion: number; data: unknown }>(
       { schemaVersion: m.schemaVersion, data: m.data },

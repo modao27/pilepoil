@@ -23,6 +23,21 @@ describe('migrations de documents', () => {
     expect(r.doc).toBe(p);
   });
 
+  it('données d’un module : migrations[n] passe de n − 1 à n', () => {
+    const p = {
+      ...projectFromV1(createProject([])),
+      modules: {
+        parquet: { schemaVersion: 1, data: { layouts: [{ id: 'l' }], accessories: { skirting: { kind: 'mdf' } } } },
+      },
+    };
+    const { doc, changed } = migrateProject(p);
+    expect(changed).toBe(true);
+    expect(doc.modules.parquet).toEqual({
+      schemaVersion: 3,
+      data: { layouts: [{ zone: [], id: 'l' }], accessories: { skirting: { aroundObstacles: false, kind: 'mdf' } } },
+    });
+  });
+
   it('erreurs : version future, étape manquante, document illisible', () => {
     expect(() => migrate({ schemaVersion: 3 }, 2, steps)).toThrow(FutureVersionError);
     expect(() => migrate({ schemaVersion: 0 }, 2, { 1: steps[1]! })).toThrow(/manquante/);
