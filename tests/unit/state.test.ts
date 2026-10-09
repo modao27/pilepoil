@@ -1,163 +1,97 @@
 import { describe, expect, it } from 'vitest';
-import { reduce, tilingAction } from '../../src/modules/carrelage/state/actions';
+import { reduce } from '../../src/modules/carrelage/state/actions';
 import {
+  createBand,
   createData,
-  createFloorTiling,
+  createPoseSettings,
   createReservation,
-  createRoomTiling,
   createTile,
-  createWallTiling,
-  createZone,
 } from '../../src/modules/carrelage/state/factories';
 import type { CarrelageData } from '../../src/modules/carrelage/state/data';
-import { surfaceId } from '../../src/modules/carrelage/state/surfaces';
 import { HISTORY_LIMIT, initHistory, record, redo, undo } from '../../src/state/history';
 import { tileSpec } from '../../src/modules/carrelage/state/selectors';
 import type { Project } from '../../src/state/model';
 import { reduceProject } from '../../src/state/project';
 import { createProjectStore, type ProjectState } from '../../src/state/store';
-import { planProject, rect } from './planFixtures';
+import { rect, tiledProject, tilePose } from './planFixtures';
 
 const tile = createTile();
 const room = rect('r', 3000, 2000);
-const plan = { rooms: [room], passages: [] };
-const FLOOR = surfaceId({ room: 'r', wall: null });
-const W0 = surfaceId({ room: 'r', wall: 'r-w0' });
-/** Sol et mur 1 de la pièce r carrelés. */
+/** Deux poses : sol (F) et mur 1 (W). */
 const make = (): CarrelageData =>
-  createData({
-    rooms: { r: createRoomTiling({ floor: createFloorTiling(tile.id), walls: { 'r-w0': createWallTiling(tile.id) } }) },
-  });
+  createData({ poses: { F: createPoseSettings(tile.id), W: createPoseSettings(tile.id) } });
 
-describe('réducteur', () => {
+describe('réducteur du carrelage', () => {
   it('ne modifie jamais son entrée et garde la référence si rien ne change', () => {
     const p = make();
     const frozen = JSON.stringify(p);
-    const z = p.rooms.r!.floor!.zones[0]!;
-    const q = reduce(p, { type: 'carrelage/zone/update', surfaceId: FLOOR, zoneId: z.id, patch: { angle: 45 } });
+    const z = p.poses.F!.bands[0]!;
+    const q = reduce(p, { type: 'carrelage/band/update', poseId: 'F', bandId: z.id, patch: { angle: 45 } });
     expect(JSON.stringify(p)).toBe(frozen);
-    expect(q.rooms.r!.floor!.zones[0]!.angle).toBe(45);
-    expect(q.rooms.r!.walls).toBe(p.rooms.r!.walls);
-    expect(reduce(p, { type: 'carrelage/zone/update', surfaceId: FLOOR, zoneId: z.id, patch: { angle: 0 } })).toBe(p);
-    expect(reduce(p, { type: 'carrelage/surface/update', surfaceId: 'r~inconnu', patch: { joint: 1 } })).toBe(p);
-    expect(reduce(p, { type: 'carrelage/surface/update', surfaceId: 'mal formé', patch: { joint: 1 } })).toBe(p);
+    expect(q.poses.F!.bands[0]!.angle).toBe(45);
+    expect(q.poses.W).toBe(p.poses.W);
+    expect(reduce(p, { type: 'carrelage/band/update', poseId: 'F', bandId: z.id, patch: { angle: 0 } })).toBe(p);
+    expect(reduce(p, { type: 'carrelage/pose/update', poseId: 'inconnue', patch: { joint: 1 } })).toBe(p);
   });
 
-  it('réglages propres au sol ou au mur : ceux de l’autre type sont ignorés', () => {
-    const p = make();
-    const q = reduce(p, {
-      type: 'carrelage/surface/update',
-      surfaceId: W0,
-      patch: { tiledHeight: 1200, plinth: null },
-    });
-    expect(q.rooms.r!.walls['r-w0']).toMatchObject({ tiledHeight: 1200 });
-    expect(q.rooms.r!.walls['r-w0']).not.toHaveProperty('plinth');
-    expect(reduce(p, { type: 'carrelage/surface/update', surfaceId: FLOOR, patch: { tiledHeight: 1200 } })).toBe(p);
-  });
-
-  it('zones : ajout, déplacement, suppression (jamais la dernière, plinthe reportée)', () => {
+  it('les réglages d’une pose arrivent et partent avec elle (événements du projet)', () => {
     let p = make();
-    const z0 = p.rooms.r!.floor!.zones[0]!,
-      z1 = createZone(tile.id);
-    p = reduce(p, { type: 'carrelage/zone/add', surfaceId: FLOOR, zone: z1 });
-    p = reduce(p, {
-      type: 'carrelage/surface/update',
-      surfaceId: FLOOR,
-      patch: { plinth: { length: 1000, height: 80, zoneId: z0.id } },
-    });
-    p = reduce(p, { type: 'carrelage/zone/move', surfaceId: FLOOR, zoneId: z1.id, to: 0 });
-    expect(p.rooms.r!.floor!.zones.map((z) => z.id)).toEqual([z1.id, z0.id]);
-    p = reduce(p, { type: 'carrelage/zone/remove', surfaceId: FLOOR, zoneId: z0.id });
-    expect(p.rooms.r!.floor!.plinth!.zoneId).toBe(z1.id);
-    expect(reduce(p, { type: 'carrelage/zone/remove', surfaceId: FLOOR, zoneId: z1.id })).toBe(p);
+    p = reduce(p, { type: 'pose/added', poseId: 'N', settings: createPoseSettings(tile.id, { joint: 5 }) });
+    expect(p.poses.N!.joint).toBe(5);
+    expect(reduce(p, { type: 'pose/added', poseId: 'N', settings: createPoseSettings('x') })).toBe(p);
+    p = reduce(p, { type: 'pose/removed', poseId: 'N' });
+    expect(Object.keys(p.poses)).toEqual(['F', 'W']);
   });
 
-  it('modèle de zones : toutes remplacées, plinthe reportée', () => {
-    const p = reduce(make(), {
-      type: 'carrelage/surface/update',
-      surfaceId: FLOOR,
-      patch: { plinth: { length: 1000, height: 80, zoneId: 'x' } },
+  it('bandes : ajout, déplacement, suppression (jamais la dernière, plinthe reportée)', () => {
+    let p = make();
+    const z0 = p.poses.F!.bands[0]!,
+      z1 = createBand(tile.id);
+    p = reduce(p, { type: 'carrelage/band/add', poseId: 'F', band: z1 });
+    p = reduce(p, {
+      type: 'carrelage/pose/update',
+      poseId: 'F',
+      patch: { plinth: { length: 1000, height: 80, bandId: z0.id } },
     });
-    const zones = [createZone(tile.id, { unit: 'rows', size: 3 }), createZone(tile.id, { pattern: 'herring' })];
-    const q = reduce(p, { type: 'carrelage/zone/replaceAll', surfaceId: FLOOR, zones, split: 'v' });
-    expect(q.rooms.r!.floor).toMatchObject({ split: 'v', plinth: { zoneId: zones[0]!.id } });
+    p = reduce(p, { type: 'carrelage/band/move', poseId: 'F', bandId: z1.id, to: 0 });
+    expect(p.poses.F!.bands.map((z) => z.id)).toEqual([z1.id, z0.id]);
+    p = reduce(p, { type: 'carrelage/band/remove', poseId: 'F', bandId: z0.id });
+    expect(p.poses.F!.plinth!.bandId).toBe(z1.id);
+    expect(reduce(p, { type: 'carrelage/band/remove', poseId: 'F', bandId: z1.id })).toBe(p);
+  });
+
+  it('modèle de bandes : toutes remplacées, plinthe reportée', () => {
+    const p = reduce(make(), {
+      type: 'carrelage/pose/update',
+      poseId: 'F',
+      patch: { plinth: { length: 1000, height: 80, bandId: 'x' } },
+    });
+    const bands = [createBand(tile.id, { unit: 'rows', size: 3 }), createBand(tile.id, { pattern: 'herring' })];
+    const q = reduce(p, { type: 'carrelage/band/replaceAll', poseId: 'F', bands, split: 'v' });
+    expect(q.poses.F).toMatchObject({ split: 'v', plinth: { bandId: bands[0]!.id } });
   });
 
   it('réservations et finitions des ouvertures du plan', () => {
     let p = make();
-    const r = createReservation('socket', { x: 500 });
-    p = reduce(p, { type: 'carrelage/reservation/add', surfaceId: W0, reservation: r });
-    p = reduce(p, { type: 'carrelage/reservation/update', surfaceId: W0, reservationId: r.id, patch: { x: 800 } });
-    expect(p.rooms.r!.walls['r-w0']!.reservations).toMatchObject([{ id: r.id, x: 800, type: 'socket' }]);
-    p = reduce(p, { type: 'carrelage/opening/finish', surfaceId: W0, openingId: 'o1', patch: { revealDepth: 150 } });
-    expect(p.rooms.r!.walls['r-w0']!.openings.o1).toEqual({
+    const r = createReservation('socket', { room: 'r', wall: 'r-w0' }, { x: 500 });
+    p = reduce(p, { type: 'carrelage/reservation/add', poseId: 'W', reservation: r });
+    p = reduce(p, { type: 'carrelage/reservation/update', poseId: 'W', reservationId: r.id, patch: { x: 800 } });
+    expect(p.poses.W!.reservations).toMatchObject([{ id: r.id, x: 800, type: 'socket', surface: { wall: 'r-w0' } }]);
+    p = reduce(p, { type: 'carrelage/opening/finish', poseId: 'W', openingId: 'o1', patch: { revealDepth: 150 } });
+    expect(p.poses.W!.openings.o1).toEqual({
       covered: true,
       revealDepth: 150,
       reveals: { left: true, right: true, top: true, bottom: false },
     });
-    // pas de finition sur un sol
-    expect(reduce(p, { type: 'carrelage/opening/finish', surfaceId: FLOOR, openingId: 'o1', patch: {} })).toBe(p);
-    p = reduce(p, { type: 'carrelage/reservation/remove', surfaceId: W0, reservationId: r.id });
-    expect(p.rooms.r!.walls['r-w0']!.reservations).toEqual([]);
+    p = reduce(p, { type: 'carrelage/reservation/remove', poseId: 'W', reservationId: r.id });
+    expect(p.poses.W!.reservations).toEqual([]);
   });
 
-  it('carreler ou non un sol, un mur ; une pièce sans rien de carrelé disparaît', () => {
-    let p = make();
-    p = reduce(p, { type: 'carrelage/wall/enable', roomId: 'r', wallId: 'r-w1', tiling: createWallTiling(tile.id) });
-    expect(Object.keys(p.rooms.r!.walls)).toEqual(['r-w0', 'r-w1']);
-    const again = createWallTiling('');
-    expect(reduce(p, { type: 'carrelage/wall/enable', roomId: 'r', wallId: 'r-w1', tiling: again })).toBe(p);
-    p = reduce(p, { type: 'carrelage/floor/disable', roomId: 'r' });
-    p = reduce(p, { type: 'carrelage/wall/disable', roomId: 'r', wallId: 'r-w0' });
-    expect(p.rooms.r).toMatchObject({ floor: null, walls: { 'r-w1': {} } });
-    p = reduce(p, { type: 'carrelage/wall/disable', roomId: 'r', wallId: 'r-w1' });
-    expect(p.rooms).toEqual({});
-    p = reduce(p, { type: 'carrelage/floor/enable', roomId: 'b', tiling: createFloorTiling(tile.id) });
-    expect(p.rooms.b!.floor).not.toBeNull();
-    const q = reduce(p, { type: 'carrelage/room', roomId: 'b', patch: { outerCornersCovered: false } });
-    expect(q.rooms.b).toMatchObject({ outerCornersCovered: false });
-  });
-
-  it('pièce supprimée du plan, nettoyage des murs disparus', () => {
-    let p = make();
-    p = reduce(p, { type: 'carrelage/wall/enable', roomId: 'r', wallId: 'disparu', tiling: createWallTiling(tile.id) });
-    p = reduce(p, { type: 'carrelage/floor/enable', roomId: 'absente', tiling: createFloorTiling(tile.id) });
-    const pruned = reduce(p, { type: 'carrelage/prune' }, plan);
-    expect(Object.keys(pruned.rooms)).toEqual(['r']);
-    expect(Object.keys(pruned.rooms.r!.walls)).toEqual(['r-w0']);
-    expect(reduce(pruned, { type: 'carrelage/prune' }, plan)).toBe(pruned);
-    expect(reduce(pruned, { type: 'plan/room/removed', roomId: 'r' }).rooms).toEqual({});
-  });
-
-  it('prix : saisie et effacement', () => {
+  it('prix : saisie et effacement ; remplacement de toutes les données', () => {
     let p = reduce(make(), { type: 'carrelage/price', key: 'colle', value: 18.5 });
     expect(p.prices).toEqual({ colle: 18.5 });
     p = reduce(p, { type: 'carrelage/price', key: 'colle', value: null });
     expect(p.prices).toEqual({});
-  });
-
-  it('carreler une surface : reprend le carrelage d’une autre, zones copiées ; un sol a une seule zone', () => {
-    let n = 0;
-    const id = () => `z${n++}`;
-    const like = { joint: 2, split: 'v' as const, zones: [createZone(tile.id, { unit: 'rows' }), createZone(tile.id)] };
-    const wall = tilingAction({ room: 'r', wall: 'r-w1' }, true, like, '', id);
-    expect(wall).toMatchObject({ type: 'carrelage/wall/enable', wallId: 'r-w1', tiling: { joint: 2, split: 'v' } });
-    if (wall.type !== 'carrelage/wall/enable') throw new Error();
-    expect(wall.tiling.zones.map((z) => z.id)).toEqual(['z0', 'z1']);
-    const floor = tilingAction({ room: 'r', wall: null }, true, like, '', id);
-    if (floor.type !== 'carrelage/floor/enable') throw new Error();
-    expect(floor.tiling.zones).toMatchObject([{ unit: 'rest', tileId: tile.id }]);
-    expect(tilingAction({ room: 'r', wall: null }, true, undefined, 't9', id)).toMatchObject({
-      tiling: { zones: [{ tileId: 't9' }] },
-    });
-    expect(tilingAction({ room: 'r', wall: 'r-w1' }, false, like, '', id)).toEqual({
-      type: 'carrelage/wall/disable',
-      roomId: 'r',
-      wallId: 'r-w1',
-    });
-  });
-
-  it('remplacement : toutes les données carrelage', () => {
     expect(reduce(make(), { type: 'carrelage/replace', data: createData() })).toEqual(createData());
   });
 });
@@ -197,7 +131,12 @@ describe('store', () => {
   it('notifie, date les modifications, annule et enregistre', () => {
     let t = 5000;
     const saved: number[] = [];
-    const doc = planProject([room], make(), { name: 'Nouveau projet', updatedAt: 1000 });
+    const doc = tiledProject(
+      [room],
+      [tilePose('F', { room: 'r', wall: null }, createPoseSettings(tile.id))],
+      {},
+      { name: 'Nouveau projet', updatedAt: 1000 },
+    );
     const store = createProjectStore(doc, reduceProject, {
       now: () => t,
       onChange: (p) => saved.push(p.updatedAt),

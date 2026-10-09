@@ -5,6 +5,7 @@
  */
 import type { Component, Snippet } from 'svelte';
 
+import type { CoverageRules } from '../core/coverage/types';
 import type { Plan } from '../core/plan/types';
 import type { ShoppingLine } from '../core/shopping/types';
 import type { Id, Project } from '../state/model';
@@ -57,6 +58,9 @@ export interface ModuleError {
   /** Valeurs à insérer dans le message. */
   params?: Record<string, string | number>;
 }
+
+/** Envoyé par le projet au module d'une pose : ses réglages arrivent avec elle, partent avec elle. */
+export type PoseEvent = { type: 'pose/added'; poseId: Id; settings: unknown } | { type: 'pose/removed'; poseId: Id };
 
 /** Résumé court pour la carte du module sur l'écran Projet. */
 export interface ModuleSummary {
@@ -158,19 +162,21 @@ export interface ToolModule<
   /** Tracé SVG 34 × 24, trait fin. */
   icon: string;
   schemaVersion: number;
-  /** Données initiales quand on active le module sur un projet. */
+  /** Données initiales quand on active le module sur un projet (sans pose : les poses naissent des zones). */
   create(plan: Plan): Data;
-  /** Réducteur pur des actions du module ; renvoie `data` inchangé si rien ne change. */
-  reduce(data: Data, action: Action, plan: Plan): Data;
+  /** Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). */
+  coverage: CoverageRules;
+  /** Réglages d'une nouvelle pose ; `like` : pose dont on reprend les réglages. */
+  createPose(project: Project, libraries: Libraries, like?: Id): unknown;
+  /**
+   * Réducteur pur des actions du module et des événements de pose (réglages ajoutés avec une pose, retirés avec
+   * elle) ; renvoie `data` inchangé si rien ne change.
+   */
+  reduce(data: Data, action: Action | PoseEvent, plan: Plan): Data;
   /** État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. */
   toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
-  /**
-   * Ce que le module perd si la pièce est supprimée du plan, en une phrase (« Carrelage : sol, mur 2 ») ; null si
-   * rien. Sert à la confirmation de suppression. Facultatif.
-   */
-  roomUsage?(data: Data, plan: Plan, roomId: Id): string | null;
-  /** Lignes d'achat consolidables ; `plan` : plan du projet (surfaces construites depuis le plan). */
-  shopping(result: Result, data: Data, libraries: Libraries, plan: Plan): ShoppingLine[];
+  /** Lignes d'achat consolidables ; `project` : le projet calculé (plan, zones, poses). */
+  shopping(result: Result, data: Data, libraries: Libraries, project: Project): ShoppingLine[];
   /** Action qui fixe le prix unitaire d'une ligne (`key`) ; null : revenir au prix de la bibliothèque. */
   priceAction(key: string, value: number | null): Action;
   /** Résumé court pour la carte du module (« 46 carreaux, 312 € »). */

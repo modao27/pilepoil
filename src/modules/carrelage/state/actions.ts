@@ -1,63 +1,40 @@
-import type { Plan } from '../../../core/plan/types';
 import type { Id } from '../../../state/model';
-import type {
-  FloorTiling,
-  OpeningFinish,
-  ProjectSettings,
-  Reservation,
-  RoomTiling,
-  Surface,
-  SurfaceRef,
-  TilingBase,
-  WallTiling,
-  Zone,
-} from './model';
+import type { PoseEvent } from '../../types';
+import type { Band, CarrelagePose, OpeningFinish, ProjectSettings, Reservation } from './model';
 import { dataOf, type CarrelageData } from './data';
-import { createFloorTiling, createRoomTiling, createWallTiling } from './factories';
-import { DEFAULT_FINISH, parseSurfaceId, planWarnings } from './surfaces';
+import { DEFAULT_FINISH } from './surfaces';
 
-/** Réglages modifiables d'une surface (la géométrie vient du plan ; zones et réservations : actions dédiées). */
-export type SurfacePatch = Partial<
-  Omit<TilingBase, 'zones' | 'reservations'> &
-    Pick<FloorTiling, 'plinth' | 'edgesHidden'> &
-    Pick<WallTiling, 'tiledHeight' | 'hiddenEdges'>
->;
+/** Réglages modifiables d'une pose (bandes, réservations, ouvertures : actions dédiées). */
+export type PosePatch = Partial<Omit<CarrelagePose, 'bands' | 'reservations' | 'openings'>>;
 
 /**
  * Actions du carrelage, préfixées par son identifiant (docs/BOITE.md §5). Toutes passent par `reduce`, qui ne
- * modifie jamais son entrée. Les surfaces sont désignées par leur identifiant (`surfaceId`). Renommer le projet et grouper des actions (`batch`) sont des actions du projet.
+ * modifie jamais son entrée. Une pose est désignée par son identifiant (`poseId`) ; ses zones se modifient par
+ * les actions du projet (`zone/*`, `pose/*`). Renommer le projet et grouper des actions (`batch`) sont des
+ * actions du projet.
  */
 export type Action =
   | { type: 'carrelage/settings'; patch: Partial<ProjectSettings> }
   | { type: 'carrelage/price'; key: string; value: number | null }
-  | { type: 'carrelage/room'; roomId: Id; patch: Partial<Pick<RoomTiling, 'outerCornersCovered'>> }
-  | { type: 'carrelage/floor/enable'; roomId: Id; tiling: FloorTiling }
-  | { type: 'carrelage/floor/disable'; roomId: Id }
-  | { type: 'carrelage/wall/enable'; roomId: Id; wallId: Id; tiling: WallTiling }
-  | { type: 'carrelage/wall/disable'; roomId: Id; wallId: Id }
-  | { type: 'carrelage/surface/update'; surfaceId: string; patch: SurfacePatch }
-  | { type: 'carrelage/zone/add'; surfaceId: string; zone: Zone; index?: number }
-  | { type: 'carrelage/zone/remove'; surfaceId: string; zoneId: Id }
-  | { type: 'carrelage/zone/update'; surfaceId: string; zoneId: Id; patch: Partial<Omit<Zone, 'id'>> }
-  | { type: 'carrelage/zone/move'; surfaceId: string; zoneId: Id; to: number }
-  /** Toutes les zones d'une surface (modèle de zones). */
-  | { type: 'carrelage/zone/replaceAll'; surfaceId: string; zones: Zone[]; split?: TilingBase['split'] }
-  | { type: 'carrelage/reservation/add'; surfaceId: string; reservation: Reservation }
-  | { type: 'carrelage/reservation/remove'; surfaceId: string; reservationId: Id }
+  | { type: 'carrelage/pose/update'; poseId: Id; patch: PosePatch }
+  | { type: 'carrelage/band/add'; poseId: Id; band: Band; index?: number }
+  | { type: 'carrelage/band/remove'; poseId: Id; bandId: Id }
+  | { type: 'carrelage/band/update'; poseId: Id; bandId: Id; patch: Partial<Omit<Band, 'id'>> }
+  | { type: 'carrelage/band/move'; poseId: Id; bandId: Id; to: number }
+  /** Toutes les bandes d'une pose (modèle de bandes). */
+  | { type: 'carrelage/band/replaceAll'; poseId: Id; bands: Band[]; split?: CarrelagePose['split'] }
+  | { type: 'carrelage/reservation/add'; poseId: Id; reservation: Reservation }
+  | { type: 'carrelage/reservation/remove'; poseId: Id; reservationId: Id }
   | {
       type: 'carrelage/reservation/update';
-      surfaceId: string;
+      poseId: Id;
       reservationId: Id;
-      patch: Partial<Omit<Reservation, 'id'>>;
+      patch: Partial<Omit<Reservation, 'id' | 'surface'>>;
     }
-  /** Finition d'une porte ou fenêtre du plan sur un mur. */
-  | { type: 'carrelage/opening/finish'; surfaceId: string; openingId: Id; patch: Partial<OpeningFinish> }
-  /** Retire les réglages des pièces et murs qui n'existent plus dans le plan. */
-  | { type: 'carrelage/prune' }
-  /** Toutes les données (opérations composées, scénario). */
-  | { type: 'carrelage/replace'; data: CarrelageData }
-  /** Envoyée par le projet quand une pièce du plan est supprimée. */
-  | { type: 'plan/room/removed'; roomId: Id };
+  /** Finition d'une porte ou fenêtre du plan dans une pose de mur. */
+  | { type: 'carrelage/opening/finish'; poseId: Id; openingId: Id; patch: Partial<OpeningFinish> }
+  /** Toutes les données (scénario). */
+  | { type: 'carrelage/replace'; data: CarrelageData };
 
 function move<T>(list: readonly T[], from: number, to: number): T[] {
   const out = list.slice();
@@ -87,76 +64,34 @@ function patch<T extends object>(x: T, p: Partial<NoInfer<T>>): T {
 const without = <T>(r: Readonly<Record<string, T>>, key: string): Record<string, T> =>
   Object.fromEntries(Object.entries(r).filter(([k]) => k !== key));
 
-function withRoom(d: CarrelageData, roomId: Id, f: (r: RoomTiling) => RoomTiling | null): CarrelageData {
-  const old = Object.hasOwn(d.rooms, roomId) ? d.rooms[roomId]! : null;
-  const r = f(old ?? createRoomTiling());
-  if (r === old) return d;
-  // pièce sans rien de carrelé : retirée
-  if (!r || (!r.floor && !Object.keys(r.walls).length)) return old ? { ...d, rooms: without(d.rooms, roomId) } : d;
-  return { ...d, rooms: { ...d.rooms, [roomId]: r } };
-}
-
-/** Applique `f` aux réglages de la surface désignée ; sans effet si elle n'est pas carrelée. */
-function withTiling(
-  d: CarrelageData,
-  ref: SurfaceRef,
-  f: <T extends FloorTiling | WallTiling>(t: T) => T,
-): CarrelageData {
-  const room = Object.hasOwn(d.rooms, ref.room) ? d.rooms[ref.room]! : null;
-  if (!room) return d;
-  if (ref.wall == null) {
-    if (!room.floor) return d;
-    const floor = f(room.floor);
-    return floor === room.floor ? d : { ...d, rooms: { ...d.rooms, [ref.room]: { ...room, floor } } };
-  }
-  const wall = Object.hasOwn(room.walls, ref.wall) ? room.walls[ref.wall]! : null;
-  if (!wall) return d;
-  const next = f(wall);
-  if (next === wall) return d;
-  return { ...d, rooms: { ...d.rooms, [ref.room]: { ...room, walls: { ...room.walls, [ref.wall]: next } } } };
-}
-
-function tilingReduce<T extends FloorTiling | WallTiling>(t: T, a: Action, isWall: boolean): T {
+function poseReduce(t: CarrelagePose, a: Action): CarrelagePose {
   switch (a.type) {
-    case 'carrelage/surface/update': {
-      const p = { ...a.patch };
-      // réglages propres à l'autre type de surface : ignorés
-      if (isWall) {
-        delete p.plinth;
-        delete p.edgesHidden;
-      } else {
-        delete p.tiledHeight;
-        delete p.hiddenEdges;
-      }
-      return patch(t, p as Partial<T>);
+    case 'carrelage/pose/update':
+      return patch(t, a.patch);
+    case 'carrelage/band/add': {
+      const bands = t.bands.slice();
+      bands.splice(a.index ?? bands.length, 0, a.band);
+      return { ...t, bands };
     }
-    case 'carrelage/zone/add': {
-      const zones = t.zones.slice();
-      zones.splice(a.index ?? zones.length, 0, a.zone);
-      return { ...t, zones };
+    case 'carrelage/band/remove': {
+      if (t.bands.length <= 1 || !t.bands.some((z) => z.id === a.bandId)) return t;
+      const bands = t.bands.filter((z) => z.id !== a.bandId);
+      const plinth = t.plinth?.bandId === a.bandId ? { ...t.plinth, bandId: bands[0]!.id } : t.plinth;
+      return { ...t, bands, plinth };
     }
-    case 'carrelage/zone/remove': {
-      if (t.zones.length <= 1 || !t.zones.some((z) => z.id === a.zoneId)) return t;
-      const zones = t.zones.filter((z) => z.id !== a.zoneId);
-      if ('plinth' in t && t.plinth?.zoneId === a.zoneId)
-        return { ...t, zones, plinth: { ...t.plinth, zoneId: zones[0]!.id } };
-      return { ...t, zones };
+    case 'carrelage/band/update': {
+      const bands = updateById(t.bands, a.bandId, (z) => patch(z, a.patch));
+      return bands === t.bands ? t : { ...t, bands };
     }
-    case 'carrelage/zone/update': {
-      const zones = updateById(t.zones, a.zoneId, (z) => patch(z, a.patch));
-      return zones === t.zones ? t : { ...t, zones };
+    case 'carrelage/band/replaceAll': {
+      if (!a.bands.length) return t;
+      const ids = new Set(a.bands.map((z) => z.id));
+      const plinth = t.plinth && !ids.has(t.plinth.bandId) ? { ...t.plinth, bandId: a.bands[0]!.id } : t.plinth;
+      return { ...t, bands: a.bands, split: a.split ?? t.split, plinth };
     }
-    case 'carrelage/zone/replaceAll': {
-      if (!a.zones.length) return t;
-      const ids = new Set(a.zones.map((z) => z.id));
-      const next = { ...t, zones: a.zones, split: a.split ?? t.split };
-      if ('plinth' in next && next.plinth && !ids.has(next.plinth.zoneId))
-        return { ...next, plinth: { ...next.plinth, zoneId: a.zones[0]!.id } };
-      return next;
-    }
-    case 'carrelage/zone/move': {
-      const from = t.zones.findIndex((z) => z.id === a.zoneId);
-      return from < 0 || from === a.to ? t : { ...t, zones: move(t.zones, from, a.to) };
+    case 'carrelage/band/move': {
+      const from = t.bands.findIndex((z) => z.id === a.bandId);
+      return from < 0 || from === a.to ? t : { ...t, bands: move(t.bands, from, a.to) };
     }
     case 'carrelage/reservation/add':
       return { ...t, reservations: [...t.reservations, a.reservation] };
@@ -169,7 +104,6 @@ function tilingReduce<T extends FloorTiling | WallTiling>(t: T, a: Action, isWal
       return reservations === t.reservations ? t : { ...t, reservations };
     }
     case 'carrelage/opening/finish': {
-      if (!('openings' in t)) return t;
       const old = Object.hasOwn(t.openings, a.openingId) ? t.openings[a.openingId] : undefined;
       const next = patch(old ?? DEFAULT_FINISH, a.patch);
       return next === old ? t : { ...t, openings: { ...t.openings, [a.openingId]: next } };
@@ -179,25 +113,18 @@ function tilingReduce<T extends FloorTiling | WallTiling>(t: T, a: Action, isWal
   }
 }
 
-/** Retire les pièces et murs absents du plan. */
-function prune(d: CarrelageData, plan: Plan): CarrelageData {
-  const warnings = planWarnings(plan, d.rooms);
-  if (!warnings.length) return d;
-  let rooms = { ...d.rooms };
-  for (const w of warnings) {
-    if (w.code === 'room-missing') rooms = without(rooms, w.room);
-    else if (rooms[w.room]) rooms[w.room] = { ...rooms[w.room]!, walls: without(rooms[w.room]!.walls, w.wall) };
-  }
-  rooms = Object.fromEntries(Object.entries(rooms).filter(([, r]) => r.floor || Object.keys(r.walls).length));
-  return { ...d, rooms };
-}
-
 /**
- * Réducteur pur des données carrelage (ou d'une vue `CarrelageProject`, champs communs conservés).
- * Renvoie `d` inchangé (même référence) si l'action est sans effet ou n'est pas une action du carrelage.
+ * Réducteur pur des données carrelage (ou d'une vue `CarrelageProject`, champs communs conservés), et des
+ * événements de pose envoyés par le projet. Renvoie `d` inchangé (même référence) si l'action est sans effet.
  */
-export function reduce<P extends CarrelageData>(d: P, a: Action, plan: Plan = { rooms: [], passages: [] }): P {
+export function reduce<P extends CarrelageData>(d: P, a: Action | PoseEvent): P {
   switch (a.type) {
+    case 'pose/added':
+      return Object.hasOwn(d.poses, a.poseId)
+        ? d
+        : { ...d, poses: { ...d.poses, [a.poseId]: a.settings as CarrelagePose } };
+    case 'pose/removed':
+      return Object.hasOwn(d.poses, a.poseId) ? { ...d, poses: without(d.poses, a.poseId) } : d;
     case 'carrelage/settings': {
       const settings = patch(d.settings, a.patch);
       return settings === d.settings ? d : { ...d, settings };
@@ -206,59 +133,13 @@ export function reduce<P extends CarrelageData>(d: P, a: Action, plan: Plan = { 
       const rest = without(d.prices, a.key);
       return { ...d, prices: a.value != null && a.value > 0 ? { ...rest, [a.key]: a.value } : rest };
     }
-    case 'carrelage/room':
-      return withRoom(d, a.roomId, (r) => patch(r, a.patch)) as P;
-    case 'carrelage/floor/enable':
-      return withRoom(d, a.roomId, (r) => (r.floor ? r : { ...r, floor: a.tiling })) as P;
-    case 'carrelage/floor/disable':
-      return withRoom(d, a.roomId, (r) => (r.floor ? { ...r, floor: null } : r)) as P;
-    case 'carrelage/wall/enable':
-      return withRoom(d, a.roomId, (r) =>
-        Object.hasOwn(r.walls, a.wallId) ? r : { ...r, walls: { ...r.walls, [a.wallId]: a.tiling } },
-      ) as P;
-    case 'carrelage/wall/disable':
-      return withRoom(d, a.roomId, (r) =>
-        Object.hasOwn(r.walls, a.wallId) ? { ...r, walls: without(r.walls, a.wallId) } : r,
-      ) as P;
-    case 'plan/room/removed':
-      return Object.hasOwn(d.rooms, a.roomId) ? { ...d, rooms: without(d.rooms, a.roomId) } : d;
-    case 'carrelage/prune': {
-      const next = prune(d, plan);
-      return next === d ? d : { ...d, rooms: next.rooms };
-    }
     case 'carrelage/replace':
       return { ...d, ...dataOf(a.data) };
     default: {
-      const ref = 'surfaceId' in a ? parseSurfaceId(a.surfaceId) : null;
-      return ref ? (withTiling(d, ref, (t) => tilingReduce(t, a, ref.wall != null)) as P) : d;
+      if (!('poseId' in a) || !Object.hasOwn(d.poses, a.poseId)) return d;
+      const old = d.poses[a.poseId]!;
+      const next = poseReduce(old, a);
+      return next === old ? d : { ...d, poses: { ...d.poses, [a.poseId]: next } };
     }
   }
-}
-
-/**
- * Action qui carrèle ou non le sol ou un mur d'une pièce. Une surface ajoutée reprend le carrelage de `like`
- * (zones copiées avec de nouveaux identifiants, joint), sinon une zone du carreau `tileId`.
- */
-export function tilingAction(
-  ref: SurfaceRef,
-  on: boolean,
-  like: Pick<Surface, 'joint' | 'split' | 'zones'> | undefined,
-  tileId: Id,
-  newId: () => Id,
-): Action {
-  if (!on)
-    return ref.wall
-      ? { type: 'carrelage/wall/disable', roomId: ref.room, wallId: ref.wall }
-      : { type: 'carrelage/floor/disable', roomId: ref.room };
-  const copy = like && { joint: like.joint, split: like.split, zones: like.zones.map((z) => ({ ...z, id: newId() })) };
-  if (ref.wall)
-    return {
-      type: 'carrelage/wall/enable',
-      roomId: ref.room,
-      wallId: ref.wall,
-      tiling: createWallTiling(tileId, copy),
-    };
-  // un sol : une seule zone, sur toute la surface
-  const floor = copy ? { ...copy, zones: [{ ...copy.zones[0]!, unit: 'rest' as const }] } : {};
-  return { type: 'carrelage/floor/enable', roomId: ref.room, tiling: createFloorTiling(tileId, floor) };
 }

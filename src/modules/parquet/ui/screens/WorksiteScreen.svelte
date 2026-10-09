@@ -38,11 +38,12 @@
   });
 
   const data = $derived(ed?.data);
+  const layouts = $derived(ed?.layouts ?? []);
   const result = $derived(ed?.result ?? null);
   const roomName = (id: string) => ed?.doc.plan.rooms.find((r) => r.id === id)?.name ?? 'Pièce';
-  const layoutName = (id: string) => data?.layouts.find((l) => l.id === id)?.name ?? 'Pose';
+  const layoutName = (id: string) => layouts.find((l) => l.id === id)?.name ?? 'Pose';
   const sheet = $derived(
-    result && data ? cuttingSheet(result, Object.fromEntries(data.layouts.map((l) => [l.id, l.rooms]))) : [],
+    result && data ? cuttingSheet(result, Object.fromEntries(layouts.map((l) => [l.id, l.rooms]))) : [],
   );
   const multi = $derived((result?.layouts.length ?? 0) > 1);
   const total = $derived(result?.layouts.reduce((t, l) => t + l.pieces.length, 0) ?? 0);
@@ -99,7 +100,7 @@
   }
 
   function roomsOf(layoutId: string): Polygon[] {
-    const l = data?.layouts.find((x) => x.id === layoutId);
+    const l = layouts.find((x) => x.id === layoutId);
     return (l?.rooms ?? []).flatMap((id) => {
       const r = ed?.doc.plan.rooms.find((x) => x.id === id);
       return r ? [r.outline.map(([x, y]): [number, number] => [r.origin[0] + x, r.origin[1] + y])] : [];
@@ -108,7 +109,7 @@
   const layoutResult = $derived(result?.layouts.find((l) => l.id === group?.layout));
   const color = $derived(
     ((app.libraries.boards ?? []) as readonly Board[]).find(
-      (b) => b.id === data?.layouts.find((l) => l.id === group?.layout)?.boardId,
+      (b) => b.id === layouts.find((l) => l.id === group?.layout)?.boardId,
     )?.color ?? '#c9a77c',
   );
 

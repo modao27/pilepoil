@@ -74,7 +74,7 @@
   const result = $derived(ed.result?.layouts.find((l) => l.id === layout?.id) ?? null);
   // pièces de toutes les poses ; les lames des autres poses sont atténuées
   const roomShapes = $derived<Polygon[]>(
-    [...new Set(ed.data.layouts.flatMap((l) => l.rooms))].flatMap((id) => {
+    [...new Set(ed.layouts.flatMap((l) => l.rooms))].flatMap((id) => {
       const r = ed.doc.plan.rooms.find((x) => x.id === id);
       return r ? [r.outline.map(([x, y]): [number, number] => [r.origin[0] + x, r.origin[1] + y])] : [];
     }),
@@ -95,11 +95,23 @@
     (ed.result?.layouts ?? [])
       .filter((r) => r.id !== layout?.id)
       .map((r) => {
-        const l = ed.data.layouts.find((x) => x.id === r.id);
+        const l = ed.layouts.find((x) => x.id === r.id);
         return { pieces: r.pieces, color: ed.boards.find((b) => b.id === l?.boardId)?.color ?? '#c9a77c' };
       }),
   );
   const roomName = (id: string) => ed.doc.plan.rooms.find((r) => r.id === id)?.name ?? 'pièce';
+  /** Autres poses sur le sol d'une pièce (parquet ou autre revêtement) : « Pose 2 », pour la case de la pièce. */
+  function coveredBy(roomId: string): string {
+    const ids = new Set(
+      ed.doc.zones
+        .filter((z) => z.surface.room === roomId && z.surface.wall == null && z.pose !== layout?.id)
+        .map((z) => z.pose),
+    );
+    return ed.doc.poses
+      .filter((p) => ids.has(p.id))
+      .map((p) => p.name)
+      .join(', ');
+  }
   /** Seuil dans un passage : « entre Séjour et Bureau ». */
   function where(t: Threshold): string {
     const p = t.passage ? ed.doc.plan.passages.find((x) => x.id === t.passage) : undefined;
@@ -113,6 +125,8 @@
   }
   /** Seuils posés de la pose (breaks) : index pour « Retirer » ; les limites de zone n'en ont pas. */
   const breakIndex = (t: Threshold) => t.breakIndex ?? -1;
+  /** Cases des pièces refusées (sol déjà couvert…) : compteur pour les redessiner. */
+  let refused = $state(0);
   /** Tracé d'un seuil à la main : deux points sur le plan. */
   let drawing = $state(false);
   const acc = $derived(ed.data.accessories);
@@ -180,25 +194,19 @@
 
       <section aria-labelledby="pq-layouts" class="layouts">
         <h2 id="pq-layouts" class="visually-hidden">Poses</h2>
-        {#if ed.data.layouts.length > 1}
+        {#if ed.layouts.length > 1}
           <Select
             label="Pose affichée"
             value={layout.id}
-            options={ed.data.layouts.map((l) => ({ value: l.id, label: l.name }))}
+            options={ed.layouts.map((l) => ({ value: l.id, label: l.name }))}
             onchange={(id) => ((ed.current = String(id)), (ed.selected = null))}
           />
         {/if}
         <div class="row">
           <Button variant="ghost" icon="plus" onclick={() => ed.addLayout()}>Nouvelle pose</Button>
-          {#if ed.data.layouts.length > 1}
-            <Button variant="ghost" icon="trash" onclick={() => ed.removeLayout()}>Supprimer cette pose</Button>
-          {/if}
+          <Button variant="ghost" icon="trash" onclick={() => ed.removeLayout()}>Supprimer cette pose</Button>
         </div>
       </section>
-
-      {#if !layout.rooms.length}
-        <p class="muted" role="status">Cochez les pièces de cette pose.</p>
-      {/if}
 
       {#if result?.errors.length || result?.warnings.length}
         <section class="alerts" aria-label="Alertes">
@@ -211,9 +219,16 @@
 
       <section aria-labelledby="pq-rooms">
         <h2 id="pq-rooms">Pièces</h2>
-        {#each ed.doc.plan.rooms as r (r.id)}
-          <Checkbox label={r.name} checked={layout.rooms.includes(r.id)} onchange={(on) => ed.toggleRoom(r.id, on)} />
-        {/each}
+        <!-- refus : cases redessinées dans leur état réel -->
+        {#key refused}
+          {#each ed.doc.plan.rooms as r (r.id)}
+            <Checkbox
+              label={coveredBy(r.id) ? `${r.name} (${coveredBy(r.id)})` : r.name}
+              checked={layout.rooms.includes(r.id)}
+              onchange={(on) => ed.toggleRoom(r.id, on) || refused++}
+            />
+          {/each}
+        {/key}
         <Button variant="ghost" href="#/p/{ed.doc.id}/plan">Modifier le plan</Button>
         <h3>Seuils</h3>
         {#if drawing}

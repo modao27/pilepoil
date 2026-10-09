@@ -44,12 +44,12 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await expect(page.getByRole('application', { name: /2 pièces/ })).toBeVisible();
   await shot(page, info, 'C1-parcours-plan');
 
-  // 2. le carrelage : le sol de la salle de bain est proposé, on choisit le carreau
+  // 2. le carrelage : on coche le sol de la salle de bain, puis on choisit le carreau
   await page.getByRole('link', { name: 'Projet' }).click();
   await page.getByRole('button', { name: 'Ajouter carrelage' }).click();
   await expect(page.getByRole('heading', { name: 'Carrelage — Appartement' })).toBeVisible();
   const bath = page.getByRole('region', { name: 'Salle de bain' });
-  await expect(bath.getByRole('checkbox', { name: 'Sol', exact: true })).toBeChecked();
+  await bath.getByRole('checkbox', { name: 'Sol', exact: true }).check();
   await bath.getByRole('link', { name: 'Ouvrir Salle de bain, sol' }).click();
   await expect(page.getByRole('application', { name: /^Plan de Salle de bain, sol/ })).toBeVisible();
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
@@ -75,9 +75,13 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   // 4. le parquet dans la chambre
   await page.goto(page.url().replace(/\/m\/carrelage\/room\/.*$/, '/m/parquet'));
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
+  // la pose naît sur la première pièce dont le sol est libre ; la salle de bain est déjà carrelée
   await p.getByRole('button', { name: 'Créer une pose' }).click();
-  await p.getByRole('checkbox', { name: 'Chambre' }).check();
-  await p.getByRole('checkbox', { name: 'Salle de bain' }).uncheck();
+  await expect(p.getByRole('checkbox', { name: 'Chambre' })).toBeChecked();
+  await expect(p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' })).not.toBeChecked();
+  await p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' }).click();
+  await expect(page.getByText('Cette surface a déjà un autre revêtement. Retirez-le d’abord.')).toBeVisible();
+  await expect(p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' })).not.toBeChecked();
   await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).toBeVisible();
 
   // 5. acheter : carrelage et parquet sur la même liste

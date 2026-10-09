@@ -1,9 +1,11 @@
-/** Projets de test du carrelage bâti sur le plan : pièces du plan, réglages carrelage, vue. */
+/** Projets de test : pièces du plan, zones et poses, réglages carrelage, vue. */
 import { lRoom, rectRoom } from '../../src/core/plan/factories';
 import type { PlanRoom, WallOpening } from '../../src/core/plan/types';
 import { carrelageView, CARRELAGE_SCHEMA, type CarrelageData } from '../../src/modules/carrelage/state/data';
-import { createData } from '../../src/modules/carrelage/state/factories';
-import { createWizardProject, type LayoutChoice } from '../../src/modules/carrelage/state/templates';
+import { createBand, createData, createPoseSettings } from '../../src/modules/carrelage/state/factories';
+import type { CarrelagePose } from '../../src/modules/carrelage/state/model';
+import type { Cut, Pose, SurfaceRef, Zone } from '../../src/core/coverage/types';
+import type { PatternId } from '../../src/modules/carrelage/core';
 import { PROJECT_SCHEMA, type Project } from '../../src/state/model';
 
 /** Identifiants déterministes : `${prefix}0`, `${prefix}1`… */
@@ -50,21 +52,74 @@ export function planProject(rooms: PlanRoom[], data: Partial<CarrelageData> = {}
     createdAt: 0,
     updatedAt: 0,
     plan: { rooms, passages: [] },
+    zones: [],
+    poses: [],
     modules: { carrelage: { schemaVersion: CARRELAGE_SCHEMA, data: createData(data) } },
     ...o,
   };
 }
 
+/** Une pose de carrelage sur une surface : la pose, sa zone (toute la surface, ou coupée) et ses réglages. */
+export interface TiledPose {
+  pose: Pose;
+  zone: Zone;
+  settings: CarrelagePose;
+}
+
+export function tilePose(
+  id: string,
+  surface: SurfaceRef,
+  settings: CarrelagePose,
+  o: { cuts?: Cut[]; name?: string } = {},
+): TiledPose {
+  return {
+    pose: { id, module: 'carrelage', name: o.name ?? id },
+    zone: { id: `${id}-z`, surface, cuts: o.cuts ?? [], pose: id },
+    settings,
+  };
+}
+
+/** Projet avec ces pièces et ces poses de carrelage (zones dans le projet, réglages dans le module). */
+export function tiledProject(
+  rooms: PlanRoom[],
+  items: TiledPose[],
+  data: Partial<CarrelageData> = {},
+  o: Partial<Project> = {},
+): Project {
+  return planProject(
+    rooms,
+    { ...data, poses: Object.fromEntries(items.map((t) => [t.pose.id, t.settings])) },
+    { zones: items.map((t) => t.zone), poses: items.map((t) => t.pose), ...o },
+  );
+}
+
+/** Choix de pose de l'ancien assistant : carreau, sens, motif, angle, joint. */
+export interface LayoutChoice {
+  tileId: string;
+  tileUpright: boolean;
+  pattern: PatternId;
+  angle: number;
+  joint: number;
+}
+
+const settingsOf = (c: LayoutChoice) =>
+  createPoseSettings(c.tileId, {
+    joint: c.joint,
+    bands: [createBand(c.tileId, { tileUpright: c.tileUpright, pattern: c.pattern, angle: c.angle })],
+  });
+
 /** Mur seul de largeur × hauteur : premier mur d'une pièce largeur × 2 m, hauteur sous plafond = hauteur. */
 export function wallOnly(c: LayoutChoice, width: number, height: number, now = 0): Project {
-  const form = { kind: 'rect' as const, length: width, width: 2000 };
-  return createWizardProject({ ...c, form, height, tiledHeight: height, floor: false, walls: [0] }, now);
+  const room = rect('r', width, 2000, { height });
+  const p = tiledProject([room], [tilePose('t1', { room: 'r', wall: 'r-w0' }, settingsOf(c))]);
+  return { ...p, id: `mur-${now}`, name: `Pièce ${width / 10} × 200`, createdAt: now, updatedAt: now };
 }
 
 /** Sol seul longueur × largeur. */
 export function floorOnly(c: LayoutChoice, length: number, width: number, now = 0): Project {
-  const form = { kind: 'rect' as const, length, width };
-  return createWizardProject({ ...c, form, height: 2500, tiledHeight: 2500, floor: true, walls: [] }, now);
+  const room = rect('r', length, width);
+  const p = tiledProject([room], [tilePose('t1', { room: 'r', wall: null }, settingsOf(c))]);
+  return { ...p, id: `sol-${now}`, name: `Pièce ${length / 10} × ${width / 10}`, createdAt: now, updatedAt: now };
 }
 
 /** Vue carrelage d'un projet de test (le carrelage y est toujours activé). */

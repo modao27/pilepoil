@@ -1,19 +1,8 @@
 /** Objets neufs avec les valeurs par défaut de legacy. */
 import { OPENING_DEFAULTS } from '../core';
 import type { Id } from '../../../state/model';
-import type {
-  FloorTiling,
-  Opening,
-  OpeningType,
-  Reservation,
-  ReservationType,
-  RoomTiling,
-  Tile,
-  TileShape,
-  TilingBase,
-  WallTiling,
-  Zone,
-} from './model';
+import type { SurfaceRef } from '../../../core/coverage/types';
+import type { Band, CarrelagePose, Opening, OpeningType, Reservation, ReservationType, Tile, TileShape } from './model';
 import { DEFAULT_SETTINGS, type CarrelageData } from './data';
 import { TILE_SCHEMA } from './model';
 
@@ -54,7 +43,7 @@ export function createTile(o: Partial<Tile> = {}, now = Date.now()): Tile {
   };
 }
 
-export function createZone(tileId: Id, o: Partial<Zone> = {}): Zone {
+export function createBand(tileId: Id, o: Partial<Band> = {}): Band {
   return {
     id: newId(),
     size: 3,
@@ -88,35 +77,32 @@ export function createOpening(type: OpeningType = 'window', o: Partial<Opening> 
   };
 }
 
-/** Réservation propre au carrelage (prise, trappe, baignoire, autre). */
-export function createReservation(type: ReservationType = 'socket', o: Partial<Reservation> = {}): Reservation {
-  return { ...createOpening(type), type, ...o };
+/** Réservation propre au carrelage (prise, trappe, baignoire, autre), sur une surface. */
+export function createReservation(
+  type: ReservationType,
+  surface: SurfaceRef,
+  o: Partial<Omit<Reservation, 'type' | 'surface'>> = {},
+): Reservation {
+  return { ...createOpening(type), ...o, type, surface };
 }
 
-/** Réglages communs d'une surface neuve : une zone, joint de 3 mm. */
-function tilingBase(tileId: Id, o: Partial<TilingBase>): TilingBase {
-  return { joint: 3, split: 'h', zones: [createZone(tileId)], reservations: [], junctionsCovered: false, ...o };
-}
-
-export function createFloorTiling(tileId: Id, o: Partial<FloorTiling> = {}): FloorTiling {
-  return { ...tilingBase(tileId, o), plinth: null, edgesHidden: true, ...o };
-}
-
-export function createWallTiling(tileId: Id, o: Partial<WallTiling> = {}): WallTiling {
+/** Réglages d'une pose neuve : une bande du carreau `tileId`, joint de 3 mm, bords cachés. */
+export function createPoseSettings(tileId: Id, o: Partial<CarrelagePose> = {}): CarrelagePose {
   return {
-    ...tilingBase(tileId, o),
-    tiledHeight: null,
-    hiddenEdges: { top: true, bottom: true, left: true, right: true },
+    joint: 3,
+    split: 'h',
+    bands: [createBand(tileId)],
+    reservations: [],
     openings: {},
+    plinth: null,
+    edgesHidden: true,
+    hiddenEdges: { top: true, bottom: true, left: true, right: true },
+    junctionsCovered: false,
     ...o,
   };
 }
 
-export function createRoomTiling(o: Partial<RoomTiling> = {}): RoomTiling {
-  return { floor: null, walls: {}, outerCornersCovered: true, ...o };
-}
-
-/** Données carrelage neuves. */
+/** Données carrelage neuves : aucune pose (elles naissent des zones). */
 export function createData(o: Partial<CarrelageData> = {}): CarrelageData {
-  return { rooms: {}, settings: { ...DEFAULT_SETTINGS }, prices: {}, ...o };
+  return { poses: {}, settings: { ...DEFAULT_SETTINGS }, prices: {}, ...o };
 }

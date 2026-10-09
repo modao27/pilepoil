@@ -1,11 +1,15 @@
 /** Modèle persisté (voir docs/MODEL.md). Unités : mm, dates en ms. */
+import type { Pose, Zone } from '../core/coverage/types';
 import type { Plan } from '../core/plan/types';
 
 export type Id = string;
 
-export const PROJECT_SCHEMA = 2;
+export const PROJECT_SCHEMA = 3;
 
-/** Projet v2 (docs/BOITE.md §4) : plan commun + données de chaque module activé. */
+/**
+ * Projet v3 : plan commun, zones et poses (quelles parties de quelles surfaces reçoivent quel revêtement,
+ * docs/NAVIGATION.md §4), réglages de chaque module activé.
+ */
 export interface Project {
   schemaVersion: typeof PROJECT_SCHEMA;
   id: Id;
@@ -13,6 +17,10 @@ export interface Project {
   createdAt: number;
   updatedAt: number;
   plan: Plan;
+  /** Parties de surfaces revêtues ; deux zones d'une même surface ne se recouvrent pas. */
+  zones: Zone[];
+  /** Revêtements continus ; chaque zone appartient à une pose. */
+  poses: Pose[];
   /** Données de chaque module activé, avec leur propre version ; clé = identifiant du module. */
   modules: Record<string, ModuleDoc>;
 }

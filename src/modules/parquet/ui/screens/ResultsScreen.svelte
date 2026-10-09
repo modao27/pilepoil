@@ -19,6 +19,7 @@
   import type { ParquetResult, ParquetSpec } from '../../core/types';
   import { PARQUET_ID } from '../../state/model';
   import { parquetData, shopping, toSpec } from '../../state/module';
+  import { layoutsOf } from '../../state/poses';
   import CutSketch from '../components/CutSketch.svelte';
   import Parquet3D from '../components/Parquet3D.svelte';
   import ParquetPlan from '../components/ParquetPlan.svelte';
@@ -49,12 +50,13 @@
   });
 
   const data = $derived(project ? parquetData(project) : null);
+  const layouts = $derived(project ? layoutsOf(project) : []);
   const lines = $derived(result && data ? shopping(result, data, app.libraries) : []);
   const cost = $derived(lines.reduce((t, l) => t + (lineCost(l) ?? 0), 0));
   const roomName = (id: string) => project?.plan.rooms.find((r) => r.id === id)?.name ?? 'Pièce';
-  const layoutName = (id: string) => data?.layouts.find((l) => l.id === id)?.name ?? 'Pose';
+  const layoutName = (id: string) => layouts.find((l) => l.id === id)?.name ?? 'Pose';
   const sheet = $derived(
-    result && data ? cuttingSheet(result, Object.fromEntries(data.layouts.map((l) => [l.id, l.rooms]))) : [],
+    result && data ? cuttingSheet(result, Object.fromEntries(layouts.map((l) => [l.id, l.rooms]))) : [],
   );
   const seuils = $derived(result && data ? thresholdCuts(result, data.accessories.thresholds.barLength) : []);
   const seuilBars = $derived(
@@ -70,7 +72,7 @@
   const looks = $derived.by(() => {
     void app.photoUrls;
     return Object.fromEntries(
-      (data?.layouts ?? []).map((l) => {
+      layouts.map((l) => {
         const b = boards.find((x) => x.id === l.boardId);
         if (b?.photoId) app.loadPhoto(b.photoId);
         return [
@@ -86,9 +88,9 @@
     );
   });
   const boardColor = (layoutId: string) =>
-    boards.find((b) => b.id === data?.layouts.find((l) => l.id === layoutId)?.boardId)?.color ?? '#c9a77c';
+    boards.find((b) => b.id === layouts.find((l) => l.id === layoutId)?.boardId)?.color ?? '#c9a77c';
   function roomsOf(layoutId: string): Polygon[] {
-    const l = data?.layouts.find((x) => x.id === layoutId);
+    const l = layouts.find((x) => x.id === layoutId);
     return (l?.rooms ?? []).flatMap((id) => {
       const r = project?.plan.rooms.find((x) => x.id === id);
       return r ? [r.outline.map(([x, y]): [number, number] => [r.origin[0] + x, r.origin[1] + y])] : [];

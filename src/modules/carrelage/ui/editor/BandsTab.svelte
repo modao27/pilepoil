@@ -1,6 +1,6 @@
 <script lang="ts">
   import { pattern } from '../../core';
-  import type { Zone } from '../../state/model';
+  import type { Band } from '../../state/model';
   import Button from '../../../../ui/components/Button.svelte';
   import ListReorder from '../../../../ui/components/ListReorder.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
@@ -12,15 +12,15 @@
   let { ed }: { ed: EditorState } = $props();
 
   const horiz = $derived(ed.surface.split === 'h');
-  const rect = $derived(ed.build?.layout.rects[ed.zoneIndex]);
-  const sizeText = (z: Zone) =>
+  const rect = $derived(ed.build?.layout.rects[ed.bandIndex]);
+  const sizeText = (z: Band) =>
     z.unit === 'rest'
       ? 'reste de la surface'
       : z.unit === 'rows'
         ? `${z.size} rangée${z.size > 1 ? 's' : ''}`
         : cm(z.size);
-  const label = (z: Zone, i: number) =>
-    `Zone ${i + 1} : ${pattern(z.pattern).name}, ${carrelage.tile(z.tileId)?.name ?? 'carreau manquant'}, ${sizeText(z)}`;
+  const label = (z: Band, i: number) =>
+    `Bande ${i + 1} : ${pattern(z.pattern).name}, ${carrelage.tile(z.tileId)?.name ?? 'carreau manquant'}, ${sizeText(z)}`;
 </script>
 
 <div class="tab">
@@ -35,42 +35,42 @@
         { value: 'v', label: 'Côte à côte' },
       ]}
     />
-    <p class="muted">{horiz ? 'Les zones se suivent de haut en bas.' : 'Les zones se suivent de gauche à droite.'}</p>
+    <p class="muted">{horiz ? 'Les bandes se suivent de haut en bas.' : 'Les bandes se suivent de gauche à droite.'}</p>
   </section>
 
   <section aria-labelledby="z-list">
-    <h3 id="z-list">Zones</h3>
+    <h3 id="z-list">Bandes</h3>
     <ListReorder
-      label="Zones"
-      items={ed.surface.zones}
-      itemLabel={(_z, i) => `Zone ${i + 1}`}
-      onmove={(f, t) => ed.moveZone(f, t)}
+      label="Bandes"
+      items={ed.surface.bands}
+      itemLabel={(_z, i) => `Bande ${i + 1}`}
+      onmove={(f, t) => ed.moveBand(f, t)}
     >
       {#snippet item(z, i)}
-        <button type="button" class="zbtn" aria-pressed={i === ed.zoneIndex} onclick={() => ed.select({ zone: i })}>
-          <strong>Zone {i + 1}</strong>
-          <span class="muted">{label(z, i).replace(/^Zone \d+ : /, '')}</span>
+        <button type="button" class="zbtn" aria-pressed={i === ed.bandIndex} onclick={() => ed.select({ band: i })}>
+          <strong>Bande {i + 1}</strong>
+          <span class="muted">{label(z, i).replace(/^Bande \d+ : /, '')}</span>
         </button>
       {/snippet}
     </ListReorder>
     <div class="row">
-      <Button icon="plus" onclick={() => ed.addZone()}>Ajouter une zone</Button>
-      {#if ed.surface.zones.length > 1}<Button variant="danger" icon="trash" onclick={() => ed.removeZone()}
-          >Supprimer la zone</Button
+      <Button icon="plus" onclick={() => ed.addBand()}>Ajouter une bande</Button>
+      {#if ed.surface.bands.length > 1}<Button variant="danger" icon="trash" onclick={() => ed.removeBand()}
+          >Supprimer la bande</Button
         >{/if}
     </div>
   </section>
 
   <section aria-labelledby="z-size">
-    <h3 id="z-size">Taille de la zone {ed.zoneIndex + 1}</h3>
+    <h3 id="z-size">Taille de la bande {ed.bandIndex + 1}</h3>
     <Segmented
-      label="Unité de la zone"
-      value={ed.zone.unit}
+      label="Unité de la bande"
+      value={ed.band.unit}
       onchange={(u) => {
-        if (u === 'length' && ed.zone.unit !== 'length')
-          ed.updateZone({ unit: u, size: Math.round(rect?.len ?? 1000) });
-        else if (u === 'rows' && ed.zone.unit !== 'rows') ed.updateZone({ unit: u, size: 3 });
-        else ed.updateZone({ unit: u });
+        if (u === 'length' && ed.band.unit !== 'length')
+          ed.updateBand({ unit: u, size: Math.round(rect?.len ?? 1000) });
+        else if (u === 'rows' && ed.band.unit !== 'rows') ed.updateBand({ unit: u, size: 3 });
+        else ed.updateBand({ unit: u });
       }}
       options={[
         { value: 'rows', label: 'Rangées' },
@@ -78,27 +78,27 @@
         { value: 'rest', label: 'Reste' },
       ]}
     />
-    {#if ed.zone.unit === 'rows'}
+    {#if ed.band.unit === 'rows'}
       <NumberField
         label="Nombre de rangées"
-        value={ed.zone.size}
+        value={ed.band.size}
         min={0}
         max={200}
         step={1}
         decimals={0}
-        onchange={(v) => ed.updateZone({ size: Math.round(v) })}
+        onchange={(v) => ed.updateBand({ size: Math.round(v) })}
       />
-    {:else if ed.zone.unit === 'length'}
+    {:else if ed.band.unit === 'length'}
       <NumberField
         label={horiz ? 'Hauteur' : 'Largeur'}
-        value={ed.zone.size}
+        value={ed.band.size}
         unit="cm"
         factor={10}
         min={0}
-        onchange={(v) => ed.updateZone({ size: v })}
+        onchange={(v) => ed.updateBand({ size: v })}
       />
     {/if}
-    {#if rect}<p class="muted">{horiz ? 'Hauteur' : 'Largeur'} de la zone : {cm(rect.len)}.</p>{/if}
+    {#if rect}<p class="muted">{horiz ? 'Hauteur' : 'Largeur'} de la bande : {cm(rect.len)}.</p>{/if}
   </section>
 
   <section aria-labelledby="z-tpl">

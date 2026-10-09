@@ -21,6 +21,7 @@ function r7(o: Partial<LayoutSpec> = {}): ParquetSpec {
       id: 'A',
       outline: rect(4000, 3000),
       obstacles: [],
+      bounds: [],
       openings: [
         {
           segment: [
@@ -35,6 +36,7 @@ function r7(o: Partial<LayoutSpec> = {}): ParquetSpec {
       id: 'B',
       outline: rect(4000, 3000, 4072, 0),
       obstacles: [],
+      bounds: [],
       openings: [
         {
           segment: [
@@ -191,9 +193,12 @@ describe('deux poses séparées dans une même pièce', () => {
     [6000, 0],
     [6000, 5000],
   ];
-  const two = (zoneA: LayoutSpec['zone'], zoneB: LayoutSpec['zone']): ParquetSpec => {
-    const s = spec(rect(12000, 5000), { zone: zoneA });
-    s.layouts.push({ ...s.layouts[0]!, id: 'L2', zone: zoneB, angle: 90 });
+  type Bounds = LayoutSpec['rooms'][number]['bounds'];
+  const two = (zoneA: Bounds, zoneB: Bounds): ParquetSpec => {
+    const s = spec(rect(12000, 5000));
+    const l = s.layouts[0]!;
+    l.rooms = [{ ...l.rooms[0]!, bounds: zoneA }];
+    s.layouts.push({ ...l, id: 'L2', rooms: [{ ...l.rooms[0]!, bounds: zoneB }], angle: 90 });
     return s;
   };
 

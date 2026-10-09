@@ -2,6 +2,7 @@
  * Plusieurs pièces et fractionnement (docs/parquet/SPEC.md §4.1, §4.4) : bandes des passages, coupe le long
  * des seuils, zones des poses séparées, seuils proposés et alertes. Pur, repère du plan, mm.
  */
+import { offset } from '../../../core/geometry/boolean';
 import { pointInPolygon, signedArea } from '../../../core/geometry/polygon';
 import type { Point, Polygon, Segment } from '../../../core/geometry/types';
 import { alertsApply } from './defaults';
@@ -147,10 +148,14 @@ export function appliedThresholds(l: LayoutSpec, base: Polygon[]): Threshold[] {
     const s = extendBreak(b, base);
     return { segment: s, passage: passageAt(s)?.id ?? null, status: 'applied', breakIndex: i };
   });
-  for (const b of l.zone) {
-    if (b.side !== 1) continue;
-    const seg = clipLine(b.line[0], unit(sub(b.line[1], b.line[0])), base);
-    if (seg) out.push({ segment: seg, passage: passageAt(seg)?.id ?? null, status: 'applied' });
+  // limite de zone : dans sa pièce réduite du jeu, une seule fois entre deux poses (côté 1)
+  for (const r of l.rooms) {
+    const inRoom = r.bounds.some((b) => b.side === 1) ? offset([oriented(r.outline)], -l.rules.expansionGap) : [];
+    for (const b of r.bounds) {
+      if (b.side !== 1) continue;
+      const seg = clipLine(b.line[0], unit(sub(b.line[1], b.line[0])), inRoom);
+      if (seg) out.push({ segment: seg, passage: passageAt(seg)?.id ?? null, status: 'applied' });
+    }
   }
   return out;
 }

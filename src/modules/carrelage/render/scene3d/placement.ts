@@ -23,6 +23,8 @@ export interface WallFrame {
   n: Vec3;
   /** Longueur (m). */
   len: number;
+  /** Hauteur du bas de la surface au-dessus du sol (m) : une crédence commence au-dessus du plan de travail. */
+  bottom: number;
   k: number;
   last: boolean;
 }
@@ -31,6 +33,7 @@ export function wallFrames(
   s: SurfaceSpec,
   base0: [number, number] = [0, 0],
   dir0: [number, number] = [1, 0],
+  bottom = 0,
 ): WallFrame[] {
   const fs = s.corners
     .filter((f) => f.x > 1 && f.x < s.width - 1)
@@ -49,6 +52,7 @@ export function wallFrames(
       dir,
       n: [-dir[1], 0, dir[0]],
       len,
+      bottom,
       k,
       last: k === bounds.length - 2,
     });
@@ -65,7 +69,7 @@ export function wallFrames(
 /** Point d'un mur : x le long du mur (mm), hauteur Y (m), profondeur derrière le plan du mur (m, < 0 : devant). */
 export function wallPoint(fr: WallFrame, x: number, Y: number, depth: number): Vec3 {
   const t = (x - fr.x0) / 1000;
-  return [fr.base[0] + fr.dir[0] * t - fr.n[0] * depth, Y, fr.base[1] + fr.dir[1] * t - fr.n[2] * depth];
+  return [fr.base[0] + fr.dir[0] * t - fr.n[0] * depth, Y + fr.bottom, fr.base[1] + fr.dir[1] * t - fr.n[2] * depth];
 }
 
 export function frameAt(frames: WallFrame[], x: number): WallFrame {
@@ -95,8 +99,11 @@ export interface SceneLayout {
 export interface RoomShape {
   outline: Polygon;
   height: number;
-  /** Indice de surface du moteur de chaque mur, dans l'ordre du contour ; null : mur nu. */
-  walls: (number | null)[];
+  /**
+   * Surface du moteur posée sur chaque mur, dans l'ordre du contour, et position de son coin bas gauche dans le
+   * repère du mur (x depuis le début du mur, y depuis le sol, mm) ; null : mur nu.
+   */
+  walls: ({ surface: number; x: number; y: number } | null)[];
   floor: number | null;
   /** Coin haut gauche de la surface du sol dans le repère de la pièce. */
   floorOrigin: Point;
@@ -138,10 +145,12 @@ export function roomLayout(spec: ProjectSpec, r: RoomShape): SceneLayout {
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
     if (len <= 0) return;
     const dir: [number, number] = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
-    const k = r.walls[i];
-    const s = k != null ? spec.surfaces[k] : undefined;
-    if (s) instances.push({ surface: k!, kind: 'wall', frames: wallFrames(s, a, dir) });
-    else bare.push({ base: a, dir, len });
+    const w = r.walls[i];
+    const s = w ? spec.surfaces[w.surface] : undefined;
+    if (w && s) {
+      const start: [number, number] = [a[0] + (dir[0] * w.x) / 1000, a[1] + (dir[1] * w.x) / 1000];
+      instances.push({ surface: w.surface, kind: 'wall', frames: wallFrames(s, start, dir, w.y / 1000) });
+    } else bare.push({ base: a, dir, len });
   });
   const xs = pts.map((p) => p[0]),
     zs = pts.map((p) => p[1]);

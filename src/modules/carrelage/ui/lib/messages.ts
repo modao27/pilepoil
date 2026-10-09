@@ -17,9 +17,9 @@ export function errorText(e: SurfaceError): string {
     case 'invalid-surface':
       return 'Dimensions de la surface ou joint manquants. Indiquez une largeur, une hauteur et un joint positifs.';
     case 'no-zone':
-      return 'Aucune zone à carreler. Ajoutez une zone.';
+      return 'Aucune bande à carreler. Ajoutez une bande.';
     case 'invalid-tile':
-      return `Zone ${e.zone + 1} : carreau sans dimensions ou introuvable. Choisissez un carreau dans la bibliothèque.`;
+      return `Bande ${e.zone + 1} : carreau sans dimensions ou introuvable. Choisissez un carreau dans la bibliothèque.`;
     case 'too-many-tiles':
       return `Environ ${n(e.estimate, 0)} carreaux : trop pour le calcul. Choisissez un plus grand carreau ou réduisez la surface.`;
   }
@@ -28,15 +28,15 @@ export function errorText(e: SurfaceError): string {
 export function warningText(w: SurfaceWarning, s: Surface): string {
   switch (w.code) {
     case 'zones-overflow':
-      return `Les zones dépassent la surface de ${n(w.amount / 10)} cm : la dernière est tronquée. Réduisez une zone.`;
+      return `Les bandes dépassent la surface de ${n(w.amount / 10)} cm : la dernière est tronquée. Réduisez une bande.`;
     case 'zones-gap':
-      return `${n(w.amount / 10)} cm restent sans carrelage. Passez une zone en « reste de la surface ».`;
+      return `${n(w.amount / 10)} cm restent sans carrelage. Passez une bande en « reste de la surface ».`;
     case 'reveal-pattern': {
       const o = s.openings[w.opening];
       return `${o ? OPENINGS[o.type] : 'Ouverture'} ${w.opening + 1} : tableaux non calculés pour ce motif. Choisissez un motif à carreaux rectangulaires.`;
     }
     case 'plinth-pattern':
-      return 'Plinthes non calculées : choisissez une zone à carreaux rectangulaires.';
+      return 'Plinthes non calculées : choisissez une bande à carreaux rectangulaires.';
     case 'plinth-too-high':
       return 'Plinthes trop hautes pour le carreau. Réduisez leur hauteur.';
   }

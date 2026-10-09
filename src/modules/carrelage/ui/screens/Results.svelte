@@ -254,7 +254,7 @@
                   <table>
                     <thead>
                       <tr
-                        ><th scope="col">Zone</th><th scope="col">Carreau</th><th scope="col">Spatule crantée</th><th
+                        ><th scope="col">Bande</th><th scope="col">Carreau</th><th scope="col">Spatule crantée</th><th
                           scope="col">Encollage</th
                         ><th scope="col" class="n">Colle estimée</th></tr
                       >

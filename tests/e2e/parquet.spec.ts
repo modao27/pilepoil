@@ -214,24 +214,26 @@ test('parquet : deux pièces reliées par une porte, seuil conseillé, poses sé
   await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   await expect(advice).toBeVisible();
 
-  // séparer en deux poses : la nouvelle pose est affichée, son angle est libre
+  // séparer en deux poses au passage : le Bureau passe dans la nouvelle pose, affichée, son angle est libre
   await p.getByRole('button', { name: 'Séparer en deux poses' }).click();
   const which = p.getByRole('combobox', { name: 'Pose affichée' });
   await expect(which).toHaveValue(/.+/);
   await expect(which.locator('option:checked')).toHaveText('Pose 2');
-  await expect(p.getByText('Limite avec une autre pose.')).toHaveCount(0);
+  await expect(p.getByRole('checkbox', { name: 'Bureau' })).toBeChecked();
+  await expect(p.getByRole('checkbox', { name: 'Séjour (Pose 1)' })).not.toBeChecked();
   await setNumber(p, 'Angle des lames', '90');
   await expect(page.locator('g.other polygon.piece').first()).toBeAttached();
   await which.selectOption({ label: 'Pose 1' });
-  await expect(p.getByText('Limite avec une autre pose.')).toBeVisible();
+  await expect(p.getByRole('checkbox', { name: 'Bureau (Pose 2)' })).not.toBeChecked();
   await expect(p.getByText(/recouvre une autre pose/)).toHaveCount(0);
   await check(page);
   await shot(page, info, '98-parquet-poses-separees');
 
-  // supprimer la pose 2 : la pose 1 reprend toute la surface
+  // supprimer la pose 2 (annulable) : le Bureau est libre, la pose 1 le reprend quand on le coche
   await which.selectOption({ label: 'Pose 2' });
   await p.getByRole('button', { name: 'Supprimer cette pose' }).click();
   await expect(p.getByRole('combobox', { name: 'Pose affichée' })).toHaveCount(0);
+  await p.getByRole('checkbox', { name: 'Bureau' }).check();
   await expect(advice).toBeVisible();
 });
 

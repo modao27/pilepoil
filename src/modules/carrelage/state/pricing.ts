@@ -17,7 +17,7 @@ export function itemPrice(
   if (own != null && own > 0) return own;
   if (item.kind !== 'tile') return undefined;
   const ref = result.plan.groups[item.group]?.zones[0];
-  const zone = ref && project.surfaces[ref.surface]?.zones[ref.zone];
+  const zone = ref && project.surfaces[ref.surface]?.bands[ref.zone];
   const price = zone ? tiles.get(zone.tileId)?.pricePerM2 : undefined;
   return price != null && price > 0 ? price : undefined;
 }

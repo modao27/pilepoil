@@ -13,6 +13,7 @@ function r7(): ParquetSpec {
       id: 'A',
       outline: rect(4000, 3000),
       obstacles: [],
+      bounds: [],
       openings: [
         {
           segment: [
@@ -27,6 +28,7 @@ function r7(): ParquetSpec {
       id: 'B',
       outline: rect(4000, 3000, 4072, 0),
       obstacles: [],
+      bounds: [],
       openings: [
         {
           segment: [

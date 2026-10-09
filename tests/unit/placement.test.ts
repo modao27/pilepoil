@@ -59,7 +59,7 @@ describe('pièce du plan', () => {
   const shape = {
     outline,
     height: 2500,
-    walls: [1, 2, 3, null, null, null],
+    walls: [1, 2, 3, null, null, null].map((surface) => (surface == null ? null : { surface, x: 0, y: 0 })),
     floor: 0,
     floorOrigin: [100, 200] as [number, number],
   };

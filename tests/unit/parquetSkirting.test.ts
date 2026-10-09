@@ -1,7 +1,6 @@
 /** Plinthes (docs/parquet/SPEC.md §4.5) : murs moins les portes, onglets aux angles, barres, obstacles. */
 import { describe, expect, it } from 'vitest';
 import { computeParquet } from '../../src/modules/parquet/core/compute';
-import { PARQUET_MIGRATIONS } from '../../src/modules/parquet/state/model';
 import { rect, spec } from './parquetHelpers';
 
 describe('plinthes', () => {
@@ -62,13 +61,5 @@ describe('plinthes', () => {
     const s = spec(rect(4000, 3000));
     s.layouts.push({ ...s.layouts[0]!, id: 'L2' });
     expect(computeParquet(s).skirting.pieces).toHaveLength(4);
-  });
-
-  it('migration 2 → 3 : option des obstacles décochée', () => {
-    const v3 = PARQUET_MIGRATIONS[3]!({
-      layouts: [],
-      accessories: { skirting: { enabled: true, barLength: 2400, height: 60, mitreAllowance: 10 } },
-    }) as { accessories: { skirting: { aroundObstacles: boolean } } };
-    expect(v3.accessories.skirting.aroundObstacles).toBe(false);
   });
 });

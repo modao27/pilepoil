@@ -18,7 +18,7 @@ test('pièce revêtue : la suppression détaille ce qui sera perdu, et se confir
   await selectRoom(page, id);
   await panel(page).getByRole('button', { name: 'Supprimer la pièce' }).click();
   const dialog = page.getByRole('dialog', { name: 'Supprimer la pièce ?' });
-  await expect(dialog).toContainText('Carrelage : mur 1.');
+  await expect(dialog).toContainText('Carrelage : « Pose 1 » est supprimée.');
   await dialog.getByRole('button', { name: 'Garder la pièce' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
@@ -76,4 +76,26 @@ test('enregistrement refusé : message, puis « Réessayer » enregistre', async
   await expect(page.getByRole('link', { name: 'Ouvrir Pièce, mur 2' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('link', { name: 'Ouvrir Pièce, mur 2' })).toBeVisible();
+});
+
+test('bibliothèque : enregistrement refusé signalé, « Réessayer » enregistre', async ({ page }) => {
+  await page.addInitScript(() => {
+    const put = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function (this: IDBObjectStore, ...args: Parameters<typeof put>) {
+      if ((window as unknown as { __failSave?: boolean }).__failSave && this.name === 'boards')
+        throw new DOMException('Plus de place', 'QuotaExceededError');
+      return put.apply(this, args);
+    };
+  });
+  await page.goto('/#/library/boards');
+  await page.getByRole('link', { name: /Stratifié 1285 × 192/ }).click();
+  await page.evaluate(() => ((window as unknown as { __failSave: boolean }).__failSave = true));
+  await page.getByRole('button', { name: 'Dupliquer' }).click();
+  await expect(page.getByText(/^Enregistrement impossible/)).toBeVisible();
+
+  await page.evaluate(() => ((window as unknown as { __failSave: boolean }).__failSave = false));
+  await page.getByRole('status').getByRole('button', { name: 'Réessayer' }).click();
+  await page.goto('/#/library/boards');
+  await page.reload();
+  await expect(page.getByRole('link', { name: /Stratifié 1285 × 192 \(copie\)/ })).toBeVisible();
 });

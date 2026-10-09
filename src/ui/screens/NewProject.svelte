@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
-   * Nouveau projet (#/new) : choix de l'outil. Un outil qui a son assistant (carrelage) l'ouvre ; les autres
-   * (parquet) créent un projet vide avec l'outil activé, puis ouvrent le plan pour dessiner les pièces.
+   * Nouveau projet (#/new) : choix de l'outil. Un outil qui a son assistant l'ouvre ; sinon le projet est créé
+   * vide avec l'outil activé, puis le plan s'ouvre pour dessiner les pièces.
    */
   import { emptyPlan } from '../../core/plan/factories';
   import { modules } from '../../modules/registry';
@@ -29,6 +29,8 @@
         createdAt: now,
         updatedAt: now,
         plan,
+        zones: [],
+        poses: [],
         modules: { [m.id]: { schemaVersion: m.schemaVersion, data: m.create(plan) } },
       };
       if (await app.trySaveProject(p)) go({ name: 'plan', id: p.id });

@@ -51,7 +51,7 @@ const photo = (id = newId()): Photo => ({
   createdAt: 0,
 });
 const scenario = (p: Project, slot: 'A' | 'B', o: Partial<Scenario> = {}): Scenario => ({
-  schemaVersion: 3,
+  schemaVersion: 4,
   id: newId(),
   projectId: p.id,
   slot,

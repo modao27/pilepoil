@@ -24,13 +24,13 @@
       return `${NAME[o.type]} ${ed.sel.opening + 1} : ${cm(o.width)} × ${cm(o.height)}, à ${cm(o.x)} du bord gauche, ${s.kind === 'floor' ? 'à' : 'allège'} ${cm(o.sill)}.`;
     const pc = ed.build?.pieces[ed.sel.piece];
     if (!pc || !ed.result)
-      return 'Glissez dans une zone pour déplacer son motif, ou une ouverture pour la placer. Touchez un carreau pour voir sa coupe.';
-    const z = s.zones[pc.zone]!;
+      return 'Glissez dans une bande pour déplacer son motif, ou une ouverture pour la placer. Touchez un carreau pour voir sa coupe.';
+    const z = s.bands[pc.zone]!;
     const pre = pc.reveal
       ? `${NAME[s.openings[pc.reveal.opening]!.type]} ${pc.reveal.opening + 1}, ${SIDE[pc.reveal.side]}. `
       : pc.plinth
         ? 'Plinthe. '
-        : `Zone ${pc.zone + 1}, ${pc.kind === 'cab' ? 'cabochon' : pattern(z.pattern).name}. `;
+        : `Bande ${pc.zone + 1}, ${pc.kind === 'cab' ? 'cabochon' : pattern(z.pattern).name}. `;
     const d = `${mm(pc.pw)} × ${mm(pc.ph)} mm`;
     if (pc.full)
       return `${pre}Pièce entière : ${mm(pc.fw)} × ${mm(pc.fh)} mm${pc.drill ? ', perçage pour une prise' : ''}.`;

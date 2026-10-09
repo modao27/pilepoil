@@ -5,11 +5,12 @@
    */
   import type { ModuleScreenProps } from '../../../types';
   import type { ProjectResult } from '../../core';
-  import { tilingAction } from '../../state/actions';
-  import { carrelageView } from '../../state/data';
+  import { checkZone, orphanZones, type SurfaceRef } from '../../../../core/coverage';
+  import { carrelageData, carrelageView, CARRELAGE_ID } from '../../state/data';
   import { newId } from '../../state/factories';
-  import type { SurfaceRef } from '../../state/model';
-  import { planWarnings, surfaceId, wallHeight } from '../../state/surfaces';
+  import { newPoseSettings, tilePosesOn, tileSurfaceAction, untileSurfaceAction } from '../../state/poses';
+  import { coverageText } from '../../../../ui/lib/coverageMessages';
+  import { moduleById } from '../../../registry';
   import { wallLength } from '../../../../core/plan/walls';
   import { reduceProject, type ProjectAction } from '../../../../state/project';
   import Button from '../../../../ui/components/Button.svelte';
@@ -38,7 +39,10 @@
   });
 
   const index = $derived(new Map(project?.surfaces.map((s, i) => [s.id, i]) ?? []));
-  const warnings = $derived(project ? planWarnings(project.plan, project.rooms).length : 0);
+  const warnings = $derived(project ? orphanZones(project.plan, project.zones).length : 0);
+  /** Surface carrelée (première pose) d'un sol ou d'un mur. */
+  const surfaceOn = (ref: SurfaceRef) =>
+    project?.surfaces.find((s) => s.ref.room === ref.room && s.ref.wall === ref.wall);
 
   /** Résumé d'une surface carrelée : pièces posées, coupes fines, ou erreur. */
   function status(sid: string): string {
@@ -57,14 +61,29 @@
     if (next !== doc) await app.trySaveProject({ ...next, updatedAt: Date.now() });
   }
 
-  /** Carreler ou non : une surface ajoutée reprend le carrelage de la dernière surface de la pièce, sinon du projet. */
+  /**
+   * Carreler ou non toute une surface. Une nouvelle pose reprend les réglages de la dernière pose de la pièce,
+   * sinon du projet ; un refus (surface déjà couverte par un autre revêtement…) est expliqué.
+   */
   function setTiled(ref: SurfaceRef, on: boolean) {
-    if (!project) return;
+    if (!doc || !project) return;
+    if (!on) {
+      void dispatch(untileSurfaceAction(doc, ref));
+      toast('Surface retirée du carrelage.');
+      return;
+    }
     const inRoom = project.surfaces.filter((s) => s.ref.room === ref.room);
     const like = inRoom[inRoom.length - 1] ?? project.surfaces[project.surfaces.length - 1];
-    void dispatch(tilingAction(ref, on, like, carrelage.tiles[0]?.id ?? '', newId));
-    if (!on) toast('Surface retirée du carrelage.');
+    const settings = newPoseSettings(carrelageData(doc), carrelage.tiles, newId, like?.id);
+    const action = tileSurfaceAction(doc, ref, settings, newId);
+    const error = checkZone(doc.plan, doc, action.zones[0]!, moduleById(CARRELAGE_ID)!.coverage);
+    if (error) {
+      toast(coverageText(error), { tone: 'error' });
+      refused++;
+    } else void dispatch(action);
   }
+  /** Cases refusées : compteur pour les redessiner dans leur état réel. */
+  let refused = $state(0);
 </script>
 
 {#if !doc || !project}
@@ -93,52 +112,45 @@
       <div class="home">
         {#if warnings}
           <p class="warn" role="status">
-            {warnings} surface{warnings > 1 ? 's' : ''} carrelée{warnings > 1 ? 's' : ''} n’exist{warnings > 1
+            {warnings} zone{warnings > 1 ? 's' : ''} carrelée{warnings > 1 ? 's' : ''} n’exist{warnings > 1
               ? 'ent'
               : 'e'} plus dans le plan.
-            <Button variant="ghost" onclick={() => dispatch({ type: 'carrelage/prune' } as ProjectAction)}
-              >Retirer</Button
-            >
+            <Button variant="ghost" onclick={() => dispatch({ type: 'zone/prune' })}>Retirer</Button>
           </p>
         {/if}
         {#each project.plan.rooms as room (room.id)}
-          {@const tiling = project.rooms[room.id]}
+          {@const floor = !!doc && tilePosesOn(doc, { room: room.id, wall: null }).length > 0}
           {@const surfaces = project.surfaces.filter((s) => s.ref.room === room.id)}
           <section class="room card" aria-labelledby="h-{room.id}">
             <h2 id="h-{room.id}">{room.name}</h2>
             <div class="thumb">
               <RoomWalls
                 {room}
-                floor={!!tiling?.floor}
-                walls={Object.keys(tiling?.walls ?? {})}
+                {floor}
+                walls={room.walls.filter((w) => !!surfaceOn({ room: room.id, wall: w.id })).map((w) => w.id)}
                 label="Plan de {room.name}, murs numérotés"
               />
             </div>
-            <fieldset>
-              <legend>À carreler</legend>
-              <Checkbox
-                label="Sol"
-                checked={!!tiling?.floor}
-                onchange={(v) => setTiled({ room: room.id, wall: null }, v)}
-              />
-              {#each room.walls as w, i (w.id)}
-                <Checkbox
-                  label="Mur {i + 1}"
-                  hint="{cm(wallLength(room, i))}{tiling?.walls[w.id]
-                    ? `, carrelé sur ${cm(wallHeight(room, tiling.walls[w.id]!))}`
-                    : ''}"
-                  checked={!!tiling?.walls[w.id]}
-                  onchange={(v) => setTiled({ room: room.id, wall: w.id }, v)}
-                />
-              {/each}
-            </fieldset>
+            {#key refused}<fieldset>
+                <legend>À carreler</legend>
+                <Checkbox label="Sol" checked={floor} onchange={(v) => setTiled({ room: room.id, wall: null }, v)} />
+                {#each room.walls as w, i (w.id)}
+                  {@const s = surfaceOn({ room: room.id, wall: w.id })}
+                  <Checkbox
+                    label="Mur {i + 1}"
+                    hint="{cm(wallLength(room, i))}{s ? `, carrelé sur ${cm(s.origin[1] + s.height)}` : ''}"
+                    checked={!!s}
+                    onchange={(v) => setTiled({ room: room.id, wall: w.id }, v)}
+                  />
+                {/each}
+              </fieldset>{/key}
             {#if surfaces.length}
               <ul class="surfaces">
                 {#each surfaces as s (s.id)}
                   <li>
                     <a href="#/p/{id}/m/carrelage/s/{s.id}" aria-label="Ouvrir {s.name}">
                       <strong>{s.ref.wall ? s.name.slice(room.name.length + 2) : 'sol'}</strong>
-                      <span class="muted">{status(surfaceId(s.ref))}</span>
+                      <span class="muted">{status(s.id)}</span>
                     </a>
                   </li>
                 {/each}

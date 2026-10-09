@@ -18,6 +18,7 @@ import { canUndo } from '../../state/undo';
 export const SAVE_FAILED =
   'Enregistrement impossible : stockage plein ou indisponible. Vos changements sont gardés ici ; réessayez.';
 export const UNDO_STALE = 'Impossible d’annuler : le projet a été modifié depuis.';
+export const WRITE_FAILED = 'Enregistrement impossible : stockage plein ou indisponible. Réessayez.';
 
 export type Theme = 'auto' | 'light' | 'dark';
 
@@ -97,6 +98,24 @@ export class AppState {
         tone: 'error',
         timeout: null,
         action: { label: 'Réessayer', run: () => void this.trySaveProject(p) },
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Écriture hors projet (bibliothèque, scénario) : en cas d'échec, le dit et propose de réessayer (la même
+   * écriture). Renvoie true si elle a réussi du premier coup.
+   */
+  async tryWrite(run: () => Promise<unknown>, message = WRITE_FAILED): Promise<boolean> {
+    try {
+      await run();
+      return true;
+    } catch {
+      toast(message, {
+        tone: 'error',
+        timeout: null,
+        action: { label: 'Réessayer', run: () => void this.tryWrite(run, message) },
       });
       return false;
     }
@@ -244,7 +263,7 @@ export class AppState {
     const stamped = { ...item, updatedAt: Date.now() };
     this.libraries = { ...this.libraries, [lib]: upsertItem(this.libraries[lib] ?? [], stamped) };
     this.libraryVersion++;
-    void repo.putItem(this.db, repo.libraryStore(def.store), stamped);
+    void this.tryWrite(() => repo.putItem(this.db, repo.libraryStore(def.store), stamped), SAVE_FAILED);
   }
 
   removeLibraryItem(lib: string, id: Id): void {
@@ -252,7 +271,10 @@ export class AppState {
     if (!def) return;
     this.libraries = { ...this.libraries, [lib]: (this.libraries[lib] ?? []).filter((x) => x.id !== id) };
     this.libraryVersion++;
-    void repo.deleteItem(this.db, repo.libraryStore(def.store), id).then(() => this.collectPhotos());
+    void this.tryWrite(async () => {
+      await repo.deleteItem(this.db, repo.libraryStore(def.store), id);
+      this.collectPhotos();
+    }, SAVE_FAILED);
   }
 
   /** Base ouverte (modules). */

@@ -1,11 +1,14 @@
 /**
- * Réducteur racine du projet (docs/BOITE.md §5) : `plan/*` vers le plan commun, `<module>/*` vers le module,
- * renommage et groupes d'actions ici. Pur ; renvoie le projet d'origine si rien ne change.
+ * Réducteur racine du projet (docs/BOITE.md §5) : `plan/*` vers le plan commun, `pose/*` et `zone/*` vers les
+ * zones et poses (core/coverage), `<module>/*` vers le module, renommage et groupes d'actions ici. Les réglages
+ * d'une pose arrivent dans son module avec elle et en partent avec elle (événements de pose). Pur ; renvoie le
+ * projet d'origine si rien ne change.
  */
+import { reduceCoverage, removeRoom, type Coverage, type CoverageAction } from '../core/coverage';
 import { reducePlan, type PlanAction } from '../core/plan/reduce';
 import type { Plan } from '../core/plan/types';
 import { moduleById } from '../modules/registry';
-import type { ModuleAction, ModuleId, ToolModule } from '../modules/types';
+import type { ModuleAction, ModuleId, PoseEvent, ToolModule } from '../modules/types';
 import type { ModuleDoc, Project } from './model';
 
 export type ProjectAction =
@@ -15,19 +18,12 @@ export type ProjectAction =
   /** Plusieurs actions en une seule étape d'historique (ex. résultat d'optimisation). */
   | { type: 'batch'; actions: ProjectAction[] }
   | PlanAction
+  | CoverageAction
   | ModuleAction;
 
-/** Action envoyée à chaque module quand une pièce du plan disparaît : il nettoie ses données liées. */
-export interface RoomRemoved {
-  type: 'plan/room/removed';
-  roomId: string;
-}
+type Find = (id: ModuleId) => ToolModule | undefined;
 
-export function reduceProject(
-  p: Project,
-  a: ProjectAction,
-  find: (id: ModuleId) => ToolModule | undefined = moduleById,
-): Project {
+export function reduceProject(p: Project, a: ProjectAction, find: Find = moduleById): Project {
   if (a.type === 'project/rename') {
     const { name } = a as Extract<ProjectAction, { type: 'project/rename' }>;
     return name === p.name ? p : { ...p, name };
@@ -40,13 +36,25 @@ export function reduceProject(
     const { actions } = a as Extract<ProjectAction, { type: 'batch' }>;
     return actions.reduce<Project>((q, x) => reduceProject(q, x, find), p);
   }
+  if (a.type.startsWith('pose/') || a.type.startsWith('zone/')) {
+    const c = a as CoverageAction;
+    const cov = reduceCoverage(p.plan, p, c, (m) => find(m)?.coverage);
+    if (cov === p || (cov.zones === p.zones && cov.poses === p.poses)) return p;
+    const added =
+      c.type === 'pose/add'
+        ? { id: c.pose.id, settings: c.settings }
+        : c.type === 'zone/cut' && c.pose
+          ? { id: c.pose.pose.id, settings: c.pose.settings }
+          : null;
+    return withCoverage(p, cov, added, find);
+  }
   if (a.type.startsWith('plan/')) {
     const plan = reducePlan(p.plan, a as PlanAction);
     if (plan === p.plan) return p;
     let next: Project = { ...p, plan };
     if (a.type === 'plan/room/remove') {
-      const removed: RoomRemoved = { type: 'plan/room/removed', roomId: (a as { roomId: string }).roomId };
-      for (const id of Object.keys(p.modules)) next = toModule(next, id, removed, plan, find);
+      // les zones de la pièce partent avec elle ; les poses restées sans zone aussi (et leurs réglages)
+      next = withCoverage(next, removeRoom(next, (a as { roomId: string }).roomId), null, find);
     }
     return next;
   }
@@ -54,13 +62,26 @@ export function reduceProject(
   return toModule(p, id, a as ModuleAction, p.plan, find);
 }
 
-function toModule(
-  p: Project,
-  id: ModuleId,
-  a: ModuleAction,
-  plan: Plan,
-  find: (id: ModuleId) => ToolModule | undefined,
-): Project {
+/** Nouvelles zones et poses ; réglages d'une pose ajoutée envoyés à son module, ceux des poses retirées enlevés. */
+function withCoverage(p: Project, cov: Coverage, added: { id: string; settings: unknown } | null, find: Find): Project {
+  if (cov.zones === p.zones && cov.poses === p.poses) return p;
+  let next: Project = { ...p, zones: [...cov.zones], poses: [...cov.poses] };
+  const kept = new Set(cov.poses.map((x) => x.id));
+  for (const old of p.poses)
+    if (!kept.has(old.id)) next = toModule(next, old.module, { type: 'pose/removed', poseId: old.id }, next.plan, find);
+  const pose = added && cov.poses.find((x) => x.id === added.id);
+  if (pose)
+    next = toModule(
+      next,
+      pose.module,
+      { type: 'pose/added', poseId: pose.id, settings: added.settings },
+      next.plan,
+      find,
+    );
+  return next;
+}
+
+function toModule(p: Project, id: ModuleId, a: ModuleAction | PoseEvent, plan: Plan, find: Find): Project {
   const doc = Object.hasOwn(p.modules, id) ? p.modules[id] : undefined;
   const m = find(id);
   if (!doc || !m) return p;

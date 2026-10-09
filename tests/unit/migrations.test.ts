@@ -23,19 +23,12 @@ describe('migrations de documents', () => {
     expect(r.doc).toBe(p);
   });
 
-  it('données d’un module : migrations[n] passe de n − 1 à n', () => {
+  it('anciennes données du parquet (avant les zones et poses) : refusées, sans conversion', () => {
     const p = {
       ...planProject([]),
-      modules: {
-        parquet: { schemaVersion: 1, data: { layouts: [{ id: 'l' }], accessories: { skirting: { kind: 'mdf' } } } },
-      },
+      modules: { parquet: { schemaVersion: 3, data: { layouts: [{ id: 'l' }] } } },
     };
-    const { doc, changed } = migrateProject(p);
-    expect(changed).toBe(true);
-    expect(doc.modules.parquet).toEqual({
-      schemaVersion: 3,
-      data: { layouts: [{ zone: [], id: 'l' }], accessories: { skirting: { aroundObstacles: false, kind: 'mdf' } } },
-    });
+    expect(() => migrateProject(p)).toThrow(/Migration manquante/);
   });
 
   it('erreurs : version future, étape manquante, document illisible', () => {

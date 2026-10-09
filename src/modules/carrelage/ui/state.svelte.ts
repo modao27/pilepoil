@@ -22,12 +22,16 @@ import type {
 import type { OptimizeSpec } from '../engine';
 import { newId } from '../state/factories';
 import { toProjectSpec, usedTileIds } from '../state/selectors';
-import { carrelageData, carrelageView, withCarrelage, type CarrelageProject } from '../state/data';
+import { carrelageView, type CarrelageProject } from '../state/data';
+import { restoreTiling } from '../state/poses';
+import { coverageText } from '../../../ui/lib/coverageMessages';
+import { toast } from '../../../ui/lib/toasts.svelte';
 import { reduceProject } from '../../../state/project';
 import type { Action } from '../state/actions';
 
 const MODULE = 'carrelage';
 const TILES = 'tiles';
+const SCENARIO_FAILED = 'Scénario non enregistré : stockage plein ou indisponible. Réessayez.';
 
 export class CarrelageState {
   private db!: Db;
@@ -141,8 +145,11 @@ export class CarrelageState {
     return listScenarios(this.db, projectId);
   }
 
-  /** Enregistre l'état actuel du projet dans l'emplacement A ou B (copie figée avec ses carreaux). */
-  async saveScenario(p: Project, slot: 'A' | 'B', name: string, metrics: Metrics | null): Promise<Scenario> {
+  /**
+   * Enregistre l'état actuel du projet dans l'emplacement A ou B (copie figée avec ses carreaux). false : échec
+   * signalé, avec « Réessayer ».
+   */
+  async saveScenario(p: Project, slot: 'A' | 'B', name: string, metrics: Metrics | null): Promise<boolean> {
     const view = carrelageView(p);
     const used = view ? usedTileIds(view) : null;
     const s: Scenario = {
@@ -156,31 +163,38 @@ export class CarrelageState {
       thumbnailId: null,
       createdAt: Date.now(),
     };
-    if (await saveScenario(this.db, s)) app.collectPhotos();
-    return s;
+    return app.tryWrite(async () => {
+      if (await saveScenario(this.db, s)) app.collectPhotos();
+    }, SCENARIO_FAILED);
   }
 
-  async renameScenario(s: Scenario, name: string): Promise<void> {
-    await saveScenario(this.db, { ...s, name });
+  renameScenario(s: Scenario, name: string): Promise<boolean> {
+    return app.tryWrite(() => saveScenario(this.db, { ...s, name }), SCENARIO_FAILED);
   }
 
-  async deleteScenario(s: Scenario): Promise<void> {
-    await deleteScenario(this.db, s.id);
-    app.collectPhotos();
+  deleteScenario(s: Scenario): Promise<boolean> {
+    return app.tryWrite(async () => {
+      await deleteScenario(this.db, s.id);
+      app.collectPhotos();
+    }, SCENARIO_FAILED);
   }
 
   /**
-   * Remet les données carrelage du projet dans l'état du scénario (surfaces, pièce, réglages, prix ; nom,
-   * identité, plan et autres modules conservés).
+   * Remet le carrelage du projet dans l'état du scénario (poses, zones, réglages, prix ; nom, identité, plan et
+   * autres revêtements conservés).
    * Les carreaux du scénario absents de la bibliothèque y sont remis. Renvoie l'état d'avant et d'après (pour
    * l'annulation), null si rien n'a été enregistré.
    */
   async loadScenario(s: Scenario): Promise<{ before: Project; after: Project } | null> {
     const p = app.project(s.projectId);
-    const data = carrelageData(s.snapshot.project);
-    if (!p || !data) return null;
+    if (!p) return null;
+    const restored = restoreTiling(p, s.snapshot.project);
+    if ('code' in restored) {
+      toast(`Scénario non chargé : ${coverageText(restored)}`, { tone: 'error' });
+      return null;
+    }
     for (const t of s.snapshot.tiles) if (!this.tile(t.id)) this.putTile(t);
-    const after = { ...withCarrelage(p, data), updatedAt: Date.now() };
+    const after = { ...restored, updatedAt: Date.now() };
     return (await app.trySaveProject(after)) ? { before: p, after } : null;
   }
 }

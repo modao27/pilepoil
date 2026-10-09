@@ -11,6 +11,7 @@ import { thresholdCuts } from '../../core/accessories';
 import { cuttingSheet } from '../../core/sheet';
 import type { LaidPiece, ParquetResult } from '../../core/types';
 import type { ParquetData } from '../../state/model';
+import { layoutsOf } from '../../state/poses';
 import { errorText, warningText } from './messages';
 import { groupTitle, itemText, quantityText, skirtingCutText } from './sheetText';
 
@@ -91,7 +92,8 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
     const p = id ? project.plan.passages.find((x) => x.id === id) : undefined;
     return p ? ` entre ${roomName(p.a.room)} et ${roomName(p.b.room)}` : '';
   };
-  const layoutOf = (id: string) => data.layouts.find((l) => l.id === id);
+  const layouts = layoutsOf(project);
+  const layoutOf = (id: string) => layouts.find((l) => l.id === id);
   const multi = result.layouts.length > 1;
   const cost = lines.reduce((t, l) => t + (l.unitPrice != null ? l.unitPrice * l.quantity : 0), 0);
   const packs = lines.reduce((t, l) => t + (l.unit === 'pack' ? l.quantity : 0), 0);
@@ -291,7 +293,7 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
   }
 
   /* ---------- fiche de coupe ---------- */
-  const sheet = cuttingSheet(result, Object.fromEntries(data.layouts.map((l) => [l.id, l.rooms])));
+  const sheet = cuttingSheet(result, Object.fromEntries(layouts.map((l) => [l.id, l.rooms])));
   d.page();
   d.text('Fiche de coupe, dans l’ordre de pose', 13, { bold: true, gap: 1 });
   d.text(

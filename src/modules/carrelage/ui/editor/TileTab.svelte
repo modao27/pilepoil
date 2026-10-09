@@ -17,12 +17,12 @@
 
   let { ed }: { ed: EditorState } = $props();
 
-  const tile = $derived(carrelage.tile(ed.zone.tileId));
+  const tile = $derived(carrelage.tile(ed.band.tileId));
   const regular = $derived(tile?.shape === 'hex' || tile?.shape === 'octo');
   let dialog = $state<'new' | 'edit' | null>(null);
   let draft = $state<Tile>(createTile({ name: '' }));
 
-  const glue = $derived(ed.result?.glue.find((g) => g.surface === ed.surfaceIndex && g.zone === ed.zoneIndex));
+  const glue = $derived(ed.result?.glue.find((g) => g.surface === ed.surfaceIndex && g.zone === ed.bandIndex));
 
   function openNew() {
     draft = createTile({ name: '' });
@@ -35,7 +35,7 @@
   }
   function save(t: Tile) {
     carrelage.putTile(t);
-    if (dialog === 'new') ed.updateZone({ tileId: t.id });
+    if (dialog === 'new') ed.updateBand({ tileId: t.id });
     dialog = null;
     void ed.recompute();
   }
@@ -43,14 +43,14 @@
 
 <div class="tab">
   <section aria-labelledby="t-tile">
-    <h3 id="t-tile">Carreau{ed.surface.zones.length > 1 ? ` de la zone ${ed.zoneIndex + 1}` : ''}</h3>
+    <h3 id="t-tile">Carreau{ed.surface.bands.length > 1 ? ` de la bande ${ed.bandIndex + 1}` : ''}</h3>
     <div class="tiles" role="radiogroup" aria-labelledby="t-tile">
       {#each carrelage.tiles as t (t.id)}
         <button
           type="button"
           role="radio"
-          aria-checked={t.id === ed.zone.tileId}
-          onclick={() => ed.updateZone({ tileId: t.id })}
+          aria-checked={t.id === ed.band.tileId}
+          onclick={() => ed.updateBand({ tileId: t.id })}
         >
           <TileSwatch tile={t} size={36} />
           <span class="tt"
@@ -69,8 +69,8 @@
       <Checkbox
         label="Pose debout"
         hint="Long côté vertical à 0°."
-        checked={ed.zone.tileUpright}
-        onchange={(v) => ed.updateZone({ tileUpright: v })}
+        checked={ed.band.tileUpright}
+        onchange={(v) => ed.updateBand({ tileUpright: v })}
       />
     {/if}
     <NumberField
@@ -90,8 +90,8 @@
       <span class="lbl">Mélange</span>
       <Segmented
         label="Mélange de couleurs"
-        value={ed.zone.mix}
-        onchange={(v) => ed.updateZone({ mix: v })}
+        value={ed.band.mix}
+        onchange={(v) => ed.updateBand({ mix: v })}
         options={[
           { value: 'solid', label: 'Uni' },
           { value: 'alternate', label: 'Alterné' },
@@ -99,28 +99,28 @@
         ]}
       />
     </div>
-    {#if ed.zone.mix !== 'solid'}
+    {#if ed.band.mix !== 'solid'}
       <ColorSwatch
         label="Seconde couleur"
-        value={ed.zone.colorB}
+        value={ed.band.colorB}
         palette={app.palette.tiles}
-        onchange={(c) => ed.updateZone({ colorB: c }, 'colorB')}
+        onchange={(c) => ed.updateBand({ colorB: c }, 'colorB')}
         onpalette={(tiles) => app.setPalette({ ...app.palette, tiles })}
       />
     {/if}
     <ColorSwatch
       label="Couleur du joint"
-      value={ed.zone.groutColor}
+      value={ed.band.groutColor}
       palette={app.palette.grouts}
-      onchange={(c) => ed.updateZone({ groutColor: c }, 'grout')}
+      onchange={(c) => ed.updateBand({ groutColor: c }, 'grout')}
       onpalette={(grouts) => app.setPalette({ ...app.palette, grouts })}
     />
     {#if tile?.photoId}
       <Checkbox
         label="Retourner la photo au hasard"
         hint="Variation entre carreaux, dans la vue Rendu."
-        checked={ed.zone.photoRandomFlip}
-        onchange={(v) => ed.updateZone({ photoRandomFlip: v })}
+        checked={ed.band.photoRandomFlip}
+        onchange={(v) => ed.updateBand({ photoRandomFlip: v })}
       />
     {/if}
     <div class="field">
@@ -139,8 +139,8 @@
     <div class="row">
       <Button variant="ghost" icon="copy" onclick={() => ed.copyColors()}>Copier</Button>
       <Button variant="ghost" disabled={!ed.colorClip} onclick={() => ed.pasteColors()}>Coller sur cette zone</Button>
-      {#if ed.surface.zones.length > 1}
-        <Button variant="ghost" onclick={() => ed.applyColorsToAllZones()}>Appliquer à toutes les zones</Button>
+      {#if ed.surface.bands.length > 1}
+        <Button variant="ghost" onclick={() => ed.applyColorsToAllBands()}>Appliquer à toutes les bandes</Button>
       {/if}
     </div>
   </section>

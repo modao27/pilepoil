@@ -125,22 +125,22 @@ test('photo du carreau appliquée dans le rendu, retournements aléatoires', asy
   await shot(page, info, '62b-rendu-photo');
 });
 
-test('zones : ajouter, taille, modèle frise, supprimer et annuler', async ({ page }, info) => {
+test('bandes : ajouter, taille, modèle frise, supprimer et annuler', async ({ page }, info) => {
   await newWall(page);
-  await tab(page, info, 'Zones');
-  await page.getByRole('button', { name: 'Ajouter une zone' }).click();
-  const list = page.getByRole('list', { name: 'Zones' });
+  await tab(page, info, 'Bandes');
+  await page.getByRole('button', { name: 'Ajouter une bande' }).click();
+  const list = page.getByRole('list', { name: 'Bandes' });
   await expect(list.getByRole('listitem')).toHaveCount(2);
   await page.getByRole('radio', { name: 'Rangées' }).click();
   await page.getByLabel('Nombre de rangées', { exact: true }).fill('2');
   await page.getByLabel('Nombre de rangées', { exact: true }).press('Enter');
-  await expect(page.getByText(/Hauteur de la zone : 60,3 cm/)).toBeVisible();
+  await expect(page.getByText(/Hauteur de la bande : 60,3 cm/)).toBeVisible();
   await page.getByRole('button', { name: /Frise/ }).click();
   await expect(list.getByRole('listitem')).toHaveCount(3);
   await check(page);
   await shot(page, info, '64-zones-frise');
 
-  await page.getByRole('button', { name: 'Supprimer la zone' }).click();
+  await page.getByRole('button', { name: 'Supprimer la bande' }).click();
   await expect(list.getByRole('listitem')).toHaveCount(2);
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
   await expect(list.getByRole('listitem')).toHaveCount(3);
@@ -201,7 +201,7 @@ test('finitions : bords visibles, plinthes du sol, alerte actionnable', async ({
 test('optimisation : progression, résultat, annulation', async ({ page }, info) => {
   await newWall(page);
   await dragPlan(page, 0.5, 0.4, 25, 15);
-  await page.getByRole('button', { name: 'Optimiser le départ de toutes les zones' }).click();
+  await page.getByRole('button', { name: 'Optimiser le départ de toutes les bandes' }).click();
   await expect(page.getByText(/^Départ optimisé\./)).toBeVisible({ timeout: 20000 });
   await shot(page, info, '68-optimise');
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();

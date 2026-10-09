@@ -1,13 +1,13 @@
 import type { ProjectSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../core';
 import type { Id } from '../../../state/model';
-import type { Edges, Surface, Tile, Zone } from './model';
+import type { Band, Edges, Surface, Tile } from './model';
 import type { CarrelageData, CarrelageProject } from './data';
 import { roomJoints } from './surfaces';
 
 /** Correspondance entre indices du moteur et identifiants du modèle. */
 export interface SpecIds {
   surfaces: string[];
-  zones: Id[][];
+  bands: Id[][];
   openings: Id[][];
 }
 
@@ -15,7 +15,7 @@ export interface ProjectSpecResult {
   spec: ProjectSpec;
   ids: SpecIds;
   /** Zones dont le carreau est introuvable dans la bibliothèque (calcul de leur surface impossible). */
-  missingTiles: { surfaceId: string; zoneId: Id; tileId: Id }[];
+  missingTiles: { surfaceId: string; bandId: Id; tileId: Id }[];
 }
 
 const sides = (e: Edges) => ({ L: e.left, R: e.right, T: e.top, B: e.bottom });
@@ -38,7 +38,8 @@ export function tileSpec(tile: Tile, upright: boolean): TileSpec {
 /** Carreau absent : dimensions nulles, le moteur renvoie une erreur de carreau pour la surface. */
 const MISSING: TileSpec = { width: 0, height: 0, thickness: 0, color: '#000000', m2PerBox: 0, orientation: 'free' };
 
-function zoneSpec(z: Zone, tiles: ReadonlyMap<Id, Tile>): ZoneSpec {
+/** Bande → zone du moteur (le moteur garde le nom de legacy). */
+function zoneSpec(z: Band, tiles: ReadonlyMap<Id, Tile>): ZoneSpec {
   const t = tiles.get(z.tileId);
   return {
     size: z.size,
@@ -56,14 +57,14 @@ function zoneSpec(z: Zone, tiles: ReadonlyMap<Id, Tile>): ZoneSpec {
 }
 
 export function surfaceSpec(s: Surface, tiles: ReadonlyMap<Id, Tile>): SurfaceSpec {
-  const plinthZone = s.plinth ? s.zones.findIndex((z) => z.id === s.plinth!.zoneId) : -1;
+  const plinthZone = s.plinth ? s.bands.findIndex((z) => z.id === s.plinth!.bandId) : -1;
   return {
     kind: s.kind,
     width: s.width,
     height: s.height,
     joint: s.joint,
     split: s.split,
-    zones: s.zones.map((z) => zoneSpec(z, tiles)),
+    zones: s.bands.map((z) => zoneSpec(z, tiles)),
     openings: s.openings.map((o) => ({
       type: o.type,
       x: o.x,
@@ -90,8 +91,8 @@ export function toProjectSpec(project: CarrelageProject, library: readonly Tile[
   const tiles = new Map(library.map((t) => [t.id, t]));
   const missingTiles: ProjectSpecResult['missingTiles'] = [];
   for (const s of project.surfaces) {
-    for (const z of s.zones) {
-      if (!tiles.has(z.tileId)) missingTiles.push({ surfaceId: s.id, zoneId: z.id, tileId: z.tileId });
+    for (const z of s.bands) {
+      if (!tiles.has(z.tileId)) missingTiles.push({ surfaceId: s.id, bandId: z.id, tileId: z.tileId });
     }
   }
   const { margin, reuseOffcuts, kerf, minOffcut } = project.settings;
@@ -100,19 +101,18 @@ export function toProjectSpec(project: CarrelageProject, library: readonly Tile[
       surfaces: project.surfaces.map((s) => surfaceSpec(s, tiles)),
       settings: { margin, reuseOffcuts, kerf, minOffcut },
       room: null,
-      rooms: roomJoints(project.plan, project.rooms, project.surfaces),
+      rooms: roomJoints(project.plan, project.surfaces, project.settings.outerCornersCovered),
     },
     ids: {
       surfaces: project.surfaces.map((s) => s.id),
-      zones: project.surfaces.map((s) => s.zones.map((z) => z.id)),
+      bands: project.surfaces.map((s) => s.bands.map((z) => z.id)),
       openings: project.surfaces.map((s) => s.openings.map((o) => o.id)),
     },
     missingTiles,
   };
 }
 
-/** Identifiants des carreaux utilisés par un projet, y compris par des réglages dont le mur a disparu du plan. */
+/** Identifiants des carreaux utilisés par un projet (toutes ses poses de carrelage). */
 export function usedTileIds(data: CarrelageData): Set<Id> {
-  const tilings = Object.values(data.rooms).flatMap((r) => [...(r.floor ? [r.floor] : []), ...Object.values(r.walls)]);
-  return new Set(tilings.flatMap((t) => t.zones.map((z) => z.tileId)));
+  return new Set(Object.values(data.poses).flatMap((t) => t.bands.map((z) => z.tileId)));
 }

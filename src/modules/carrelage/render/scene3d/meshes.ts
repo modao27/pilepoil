@@ -214,8 +214,11 @@ export function buildMeshes(input: MeshInput): MeshData[] {
       /* support : plâtre (murs) ou chape (sol), avec les trous des ouvertures */
       let ext: [number, number, number, number];
       if (floor) ext = [0, 0, s.width, s.height];
-      else if (room) ext = [x0, -(Math.max(room.height * 1000, s.height) - s.height), x1, s.height];
-      else ext = [fr!.k === 0 ? x0 - 1200 : x0, -600, fr!.last ? x1 + 1200 : x1, s.height];
+      else if (room) {
+        // plâtre du sol au plafond autour de la surface (une crédence ne commence pas au sol)
+        const below = (fr?.bottom ?? 0) * 1000;
+        ext = [x0, -Math.max(0, room.height * 1000 - s.height - below), x1, s.height + below];
+      } else ext = [fr!.k === 0 ? x0 - 1200 : x0, -600, fr!.last ? x1 + 1200 : x1, s.height];
       // sol d'une pièce du plan : chape au contour, obstacles en trous
       const support: Point[][] = s.outline && floor ? s.outline : [rect(...ext)];
       B.shape(

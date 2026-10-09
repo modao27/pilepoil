@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type Page, type TestInfo } from '@playwright/test';
+import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 
 /**
  * Projet vide (plan sans pièce) avec un outil sans assistant (parquet), créé depuis « Nouveau projet » : l'éditeur
@@ -12,34 +12,66 @@ export async function emptyProject(page: Page, tool = 'parquet'): Promise<string
   return /#\/p\/([^/]+)/.exec(page.url())![1]!;
 }
 
-/** Saisit un nombre et le valide (Entrée). */
-export async function fillNumber(page: Page, label: string, value: string): Promise<void> {
-  const f = page.getByLabel(label, { exact: true });
+/** Saisit un nombre (ou un texte) et le valide (Entrée). */
+export async function fillNumber(scope: Page | Locator, label: string, value: string): Promise<void> {
+  const f = scope.getByLabel(label, { exact: true });
   await f.fill(value);
   await f.press('Enter');
 }
 
 /**
- * Assistant du carrelage jusqu'à l'éditeur d'un mur de 300 × 240 : pièce de 300 × 240 cm, 240 cm sous plafond,
- * seul le mur 1 carrelé. `tile` : saisie du carreau (par défaut, le carreau proposé est ajouté). Renvoie
- * l'identifiant du projet (nommé « Pièce 300 × 240 »).
+ * Carreau ajouté à la bibliothèque (#/library/tiles/new) : `fill` complète le formulaire (par défaut, le carreau
+ * proposé, 60 × 30 cm).
  */
-export async function newWall(page: Page, tile?: () => Promise<void>, base = '/'): Promise<string> {
-  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-  await page.goto(`${base}#/new/carrelage`);
-  await fillNumber(page, 'Hauteur sous plafond', '240');
-  await next();
-  await page.getByRole('checkbox', { name: 'Sol', exact: true }).uncheck();
-  await page.getByRole('checkbox', { name: /^Mur 1 / }).check();
-  await next();
-  if (tile) await tile();
-  else await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-  await next();
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
+export async function addTile(page: Page, fill?: () => Promise<void>, base = '/'): Promise<void> {
+  await page.goto(`${base}#/library/tiles/new`);
+  if (fill) await fill();
+  await page.getByRole('button', { name: 'Ajouter le carreau' }).click();
+  await expect(page).toHaveURL(/#\/library\/tiles$/);
+}
+
+/**
+ * Projet carrelage « Pièce 300 × 240 » créé par le parcours normal : nouveau projet, pièce « Pièce » de
+ * 300 × 240 cm dessinée sur le plan, 240 cm sous plafond, mur 1 coché sur l'écran Carrelage, puis son éditeur.
+ * `tile` : saisie du carreau ajouté d'abord à la bibliothèque (undefined : le carreau proposé ; null : aucun
+ * ajout, le premier de la bibliothèque sert). Renvoie l'identifiant du projet.
+ */
+export async function newWall(page: Page, tile?: (() => Promise<void>) | null, base = '/'): Promise<string> {
+  if (tile !== null) await addTile(page, tile, base);
+  const id = await planRoom(page, 'Pièce 300 × 240', [300, 240], 240, base);
+  await page.goto(`${base}#/p/${id}/m/carrelage`);
   await expect(page.getByRole('heading', { name: /^Carrelage — / })).toBeVisible();
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  await page.getByRole('checkbox', { name: /^Mur 1 / }).check();
   await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
+  return id;
+}
+
+/**
+ * Nouveau projet carrelage nommé `name`, avec une pièce « Pièce » de `size` cm (longueur × largeur) dessinée sur
+ * le plan et `height` cm sous plafond. Renvoie l'identifiant du projet.
+ */
+export async function planRoom(
+  page: Page,
+  name: string,
+  size: [number, number],
+  height: number,
+  base = '/',
+): Promise<string> {
+  await page.goto(`${base}#/new`);
+  await page.getByLabel('Nom du projet', { exact: true }).fill(name);
+  await page.getByRole('button', { name: 'Commencer : carrelage' }).click();
+  await expect(page).toHaveURL(/#\/p\/[^/]+\/plan$/);
+  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  await fillNumber(dialog, 'Nom', 'Pièce');
+  await fillNumber(dialog, 'Longueur', String(size[0]));
+  await fillNumber(dialog, 'Largeur', String(size[1]));
+  await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  const panel = page.getByRole('complementary', { name: 'Réglages du plan' }).or(page.locator('.sheet'));
+  await expect(panel.getByRole('heading', { name: 'Pièce' })).toBeVisible();
+  await fillNumber(panel, 'Hauteur sous plafond', String(height));
+  await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
   return id;
 }
 

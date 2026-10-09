@@ -28,7 +28,6 @@ async function openWall(page: Page, id: string) {
 async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
   const id = await newWall(page, async () => {
     await page.getByLabel('Prix', { exact: true }).fill('32,5');
-    await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   });
   await addPlanWindow(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();

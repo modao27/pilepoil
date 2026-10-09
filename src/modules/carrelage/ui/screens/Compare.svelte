@@ -63,8 +63,8 @@
   async function save(slot: 'A' | 'B') {
     if (!project || !current) return;
     const name = scen[slot]?.name || `Scénario ${slot}`;
-    await carrelage.saveScenario(app.project(id)!, slot, name, current.metrics);
-    toast(`État actuel enregistré dans le scénario ${slot}.`);
+    if (await carrelage.saveScenario(app.project(id)!, slot, name, current.metrics))
+      toast(`État actuel enregistré dans le scénario ${slot}.`);
     version++;
   }
 
@@ -142,7 +142,7 @@
                 <PlanPreview
                   surface={toProjectSpec(snap(s), s.snapshot.tiles).spec.surfaces[0]!}
                   pieces={first.value.pieces}
-                  grout={snap(s).surfaces[0]?.zones[0]?.groutColor}
+                  grout={snap(s).surfaces[0]?.bands[0]?.groutColor}
                   label="Aperçu du scénario {slot}"
                 />
               {/if}

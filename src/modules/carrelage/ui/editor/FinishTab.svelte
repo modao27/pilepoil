@@ -28,7 +28,7 @@
 
   const setEdge = (k: keyof Edges, v: boolean) => ed.updateSurface({ hiddenEdges: { ...s.hiddenEdges, [k]: v } });
   const setPlinth = (p: Partial<NonNullable<typeof pl>>) =>
-    ed.updateSurface({ plinth: { length: 0, height: 80, zoneId: s.zones[0]!.id, ...(pl ?? {}), ...p } });
+    ed.updateSurface({ plinth: { length: 0, height: 80, bandId: s.bands[0]!.id, ...(pl ?? {}), ...p } });
 </script>
 
 <div class="tab">
@@ -51,10 +51,10 @@
         <Checkbox label="Droite" checked={s.hiddenEdges.right} onchange={(v) => setEdge('right', v)} />
       </div>
     {/if}
-    {#if s.zones.length > 1}
+    {#if s.bands.length > 1}
       <Checkbox
-        label="Jonctions entre zones recouvertes"
-        hint="Listel ou profilé entre les zones."
+        label="Jonctions entre bandes recouvertes"
+        hint="Listel ou profilé entre les bandes."
         checked={s.junctionsCovered}
         onchange={(v) => ed.updateSurface({ junctionsCovered: v })}
       />
@@ -90,15 +90,15 @@
           onchange={(v) => setPlinth({ height: v })}
         />
       </div>
-      {#if s.zones.length > 1}
+      {#if s.bands.length > 1}
         <Select
-          label="Carreau de la zone"
-          value={pl?.zoneId ?? s.zones[0]!.id}
-          options={s.zones.map((z, i) => ({
+          label="Carreau de la bande"
+          value={pl?.bandId ?? s.bands[0]!.id}
+          options={s.bands.map((z, i) => ({
             value: z.id,
-            label: `Zone ${i + 1} — ${carrelage.tile(z.tileId)?.name ?? ''}`,
+            label: `Bande ${i + 1} — ${carrelage.tile(z.tileId)?.name ?? ''}`,
           }))}
-          onchange={(id) => setPlinth({ zoneId: id })}
+          onchange={(id) => setPlinth({ bandId: id })}
         />
       {/if}
       <p class="muted">

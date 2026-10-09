@@ -9,6 +9,7 @@ import { computeParquet } from '../../src/modules/parquet/core/compute';
 import type { ParquetData } from '../../src/modules/parquet/state/model';
 import { buildParquetPdf } from '../../src/modules/parquet/ui/lib/pdf';
 import type { Project } from '../../src/state/model';
+import { parquetProject } from './parquetHelpers';
 
 async function pagesText(blob: Blob) {
   const doc = await getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
@@ -35,23 +36,24 @@ function r7(): Project {
     rooms: [a, b],
     passages: [{ id: 'P1', a: { room: a.id, opening: 'da' }, b: { room: b.id, opening: 'db' } }],
   };
-  const d: ParquetData = parquet.create(plan);
-  d.layouts[0]!.rooms = [a.id, b.id];
-  d.layouts[0]!.breaks = [
-    [
-      [4036, 1000],
-      [4036, 1830],
-    ],
-  ];
-  return {
-    schemaVersion: 2,
-    id: 'p',
-    name: 'Maison R7',
-    createdAt: 0,
-    updatedAt: 0,
+  return parquetProject(
     plan,
-    modules: { parquet: { schemaVersion: 3, data: d } },
-  };
+    [
+      {
+        id: 'L1',
+        rooms: [a.id, b.id],
+        settings: {
+          breaks: [
+            [
+              [4036, 1000],
+              [4036, 1830],
+            ],
+          ],
+        },
+      },
+    ],
+    { name: 'Maison R7' },
+  );
 }
 
 describe('export PDF du parquet', () => {
@@ -61,7 +63,7 @@ describe('export PDF du parquet', () => {
     const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES });
     if (!('spec' in s)) throw new Error('spec');
     const result = computeParquet(s.spec);
-    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project.plan);
+    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project);
     const blob = buildParquetPdf({ project, data, result, lines, boards: BOARD_TEMPLATES, date: Date.UTC(2026, 9, 9) });
     if (process.env.PARQUET_PDF) writeFileSync(process.env.PARQUET_PDF, Buffer.from(await blob.arrayBuffer()));
     const pages = await pagesText(blob);
@@ -106,13 +108,14 @@ describe('export PDF du parquet', () => {
   it('point de Hongrie : croquis cotés des coupes en biais dans la fiche', async () => {
     const project = r7();
     const data = project.modules.parquet!.data as ParquetData;
-    data.layouts[0]!.boardId = 'modele-hongrie-45';
-    data.layouts[0]!.pattern = { kind: 'chevron', endAngle: 45 };
-    data.layouts[0]!.breaks = [];
+    const l = data.poses.L1!;
+    l.boardId = 'modele-hongrie-45';
+    l.pattern = { kind: 'chevron', endAngle: 45 };
+    l.breaks = [];
     const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES });
     if (!('spec' in s)) throw new Error('spec');
     const result = computeParquet(s.spec);
-    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project.plan);
+    const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project);
     const blob = buildParquetPdf({ project, data, result, lines, boards: BOARD_TEMPLATES, date: Date.UTC(2026, 9, 9) });
     if (process.env.PARQUET_PDF_H) writeFileSync(process.env.PARQUET_PDF_H, Buffer.from(await blob.arrayBuffer()));
     const all = (await pagesText(blob)).map((p) => p.text).join(' ');

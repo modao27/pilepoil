@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * Plan 2D interactif. Glisser : motif de la zone (aimanté aux bords), ouverture ou angle (pas de 5 mm).
+   * Plan 2D interactif. Glisser : motif de la bande (aimanté aux bords), ouverture ou angle (pas de 5 mm).
    * Toucher : sélectionner. Molette ou pincement : zoom ; deux doigts ou glisser dans le vide : déplacer la vue.
    * Clavier : flèches pour déplacer l'élément sélectionné, + / − pour zoomer, 0 pour ajuster.
    */
@@ -23,7 +23,7 @@
   let photosVersion = $state(0);
 
   const spec = $derived(ed.spec?.surfaces[ed.surfaceIndex]);
-  const multi = $derived(ed.surface.zones.length > 1);
+  const multi = $derived(ed.surface.bands.length > 1);
   const margins = $derived(
     ed.mode === 'plan'
       ? {
@@ -62,7 +62,7 @@
   // eslint-disable-next-line svelte/prefer-svelte-reactivity -- cache d'images, la mise à jour passe par photosVersion
   const images = new Map<string, HTMLImageElement>();
   function photoFor(zone: number): HTMLImageElement | null {
-    const tileId = ed.surface.zones[zone]?.tileId;
+    const tileId = ed.surface.bands[zone]?.tileId;
     const pid = tileId ? carrelage.tile(tileId)?.photoId : null;
     if (!pid) return null;
     app.loadPhoto(pid);
@@ -103,7 +103,7 @@
       height: size.h,
       mode: ed.mode === 'render' ? 'render' : 'plan',
       colors,
-      selection: { ...ed.sel, zone: ed.zoneIndex },
+      selection: { ...ed.sel, zone: ed.bandIndex },
       showNumbers: app.showCutNumbers,
       shade: ed.project.settings.shadeVariation,
       photo: photoFor,
@@ -112,8 +112,8 @@
         return im ? [im.naturalWidth, im.naturalHeight] : [1, 1];
       },
       photoFlip: (z) => {
-        const t = carrelage.tile(ed.surface.zones[z]?.tileId ?? '');
-        return !!ed.surface.zones[z]?.photoRandomFlip && t?.orientation !== 'none';
+        const t = carrelage.tile(ed.surface.bands[z]?.tileId ?? '');
+        return !!ed.surface.bands[z]?.photoRandomFlip && t?.orientation !== 'none';
       },
       guides: ed.guides,
       openingCode: (i) => {
@@ -178,7 +178,7 @@
         const o = ed.surface.openings[h.index]!;
         drag = { kind: 'opening', index: h.index, sx: o.x, sy: o.sill };
       } else if (h.kind === 'zone') {
-        const z = ed.surface.zones[h.index]!;
+        const z = ed.surface.bands[h.index]!;
         drag = { kind: 'zone', index: h.index, sx: z.offsetX, sy: z.offsetY };
       } else drag = { kind: 'pan', v: view };
     }
@@ -218,14 +218,14 @@
         sill = Math.max(0, Math.min(s.height - o.height, r5(g.sy - dY / sc)));
       schedule(() => ed.updateOpening({ x, sill }, 'drag-opening-' + o.id, g.index));
     } else {
-      const z = s.zones[g.index]!;
-      if (ed.zoneIndex !== g.index) ed.select({ zone: g.index });
+      const z = s.bands[g.index]!;
+      if (ed.bandIndex !== g.index) ed.select({ band: g.index });
       const rc = ed.build?.layout.rects[g.index];
       const zs = spec?.zones[g.index];
       if (!rc || !zs) return;
       const r = snapOffset(zs, rc, s.joint, { offsetX: g.sx + dX / sc, offsetY: g.sy + dY / sc }, 8 / sc);
       ed.guides = r.guideX != null || r.guideY != null ? { zone: g.index, x: r.guideX, y: r.guideY } : null;
-      schedule(() => ed.updateZone({ offsetX: r.offsetX, offsetY: r.offsetY }, 'drag-zone-' + z.id, g.index));
+      schedule(() => ed.updateBand({ offsetX: r.offsetX, offsetY: r.offsetY }, 'drag-zone-' + z.id, g.index));
     }
   }
 
@@ -243,8 +243,8 @@
       ed.tab = 'openings';
     } else {
       const i = pieceAt(ed.build.pieces, st.pt);
-      if (i >= 0) ed.select({ zone: ed.build.pieces[i]!.zone, piece: i === ed.sel.piece ? -1 : i });
-      else if (g?.kind === 'zone') ed.select({ zone: g.index });
+      if (i >= 0) ed.select({ band: ed.build.pieces[i]!.zone, piece: i === ed.sel.piece ? -1 : i });
+      else if (g?.kind === 'zone') ed.select({ band: g.index });
       else ed.select({});
     }
   }
@@ -265,7 +265,7 @@
           'key-opening',
         );
       else
-        ed.updateZone({ offsetX: ed.zone.offsetX + d[0]! * step, offsetY: ed.zone.offsetY + d[1]! * step }, 'key-zone');
+        ed.updateBand({ offsetX: ed.band.offsetX + d[0]! * step, offsetY: ed.band.offsetY + d[1]! * step }, 'key-zone');
     } else return;
     e.preventDefault();
   }
@@ -327,7 +327,7 @@
     oncontextmenu={(e) => e.preventDefault()}
   ></canvas>
   <p id="plan-help" class="visually-hidden">
-    Glissez dans une zone pour déplacer son motif, ou une ouverture pour la placer. Touchez un carreau pour voir sa
+    Glissez dans une bande pour déplacer son motif, ou une ouverture pour la placer. Touchez un carreau pour voir sa
     coupe. Au clavier : flèches pour déplacer l’élément choisi, plus et moins pour zoomer, zéro pour ajuster.
   </p>
 </div>
