@@ -14,6 +14,7 @@
   import { lineCost } from '../../../../ui/lib/shopping';
   import type { ModuleScreenProps } from '../../../types';
   import type { Board } from '../../core/board';
+  import { thresholdCuts } from '../../core/accessories';
   import { cuttingSheet } from '../../core/sheet';
   import type { ParquetResult } from '../../core/types';
   import { PARQUET_ID } from '../../state/model';
@@ -50,6 +51,14 @@
   const layoutName = (id: string) => data?.layouts.find((l) => l.id === id)?.name ?? 'Pose';
   const sheet = $derived(
     result && data ? cuttingSheet(result, Object.fromEntries(data.layouts.map((l) => [l.id, l.rooms]))) : [],
+  );
+  const seuils = $derived(result && data ? thresholdCuts(result, data.accessories.thresholds.barLength) : []);
+  const seuilBars = $derived(
+    seuils.flatMap((s) => {
+      const p = s.passage ? project?.plan.passages.find((x) => x.id === s.passage) : undefined;
+      const where = p ? ` entre ${roomName(p.a.room)} et ${roomName(p.b.room)}` : '';
+      return s.bars.map((b) => ({ ...b, where }));
+    }),
   );
   const multi = $derived((result?.layouts.length ?? 0) > 1);
   const boards = $derived((app.libraries.boards ?? []) as readonly Board[]);
@@ -167,10 +176,13 @@
           </section>
           {#if result!.skirting.bars}
             <section class="sec" aria-labelledby="r-skirting">
-              <h2 id="r-skirting">Plinthes : {result!.skirting.bars} barre{result!.skirting.bars > 1 ? 's' : ''}</h2>
+              <h2 id="r-skirting">
+                Plinthes : {result!.skirting.bars} barre{result!.skirting.bars > 1 ? 's' : ''} de plinthe
+              </h2>
               <ol class="bars">
                 {#each result!.skirting.plan as b, i (i)}
                   <li>
+                    Barre de plinthe {i + 1} :
                     {b.cuts.map((c) => skirtingCutText(c, roomName)).join(' + ')}{b.rest > 0
                       ? ` · reste ${fr(b.rest)} mm`
                       : ''}
@@ -178,6 +190,20 @@
                 {/each}
               </ol>
               <p class="muted">Longueurs à couper, suppléments d’onglet compris.</p>
+            </section>
+          {/if}
+          {#if seuils.length}
+            <section class="sec" aria-labelledby="r-thresholds">
+              <h2 id="r-thresholds">
+                Seuils : {seuilBars.length} barre{seuilBars.length > 1 ? 's' : ''} de seuil
+              </h2>
+              <ol class="bars">
+                {#each seuilBars as b, i (i)}
+                  <li>
+                    Barre de seuil {i + 1} : {fr(b.length)} mm{b.where}{b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}
+                  </li>
+                {/each}
+              </ol>
             </section>
           {/if}
         {:else}
@@ -275,7 +301,8 @@
     margin: 0;
     padding-left: var(--space-4);
   }
-  .sheet {
+  .sheet,
+  .bars {
     list-style: none;
     padding-left: 0;
     font-family: var(--font-num);

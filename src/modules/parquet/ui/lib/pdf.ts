@@ -7,6 +7,7 @@ import type { Polygon } from '../../../../core/geometry/types';
 import type { ShoppingLine } from '../../../../core/shopping/types';
 import type { Project } from '../../../../state/model';
 import { Doc, euro, fr, INK, LINE, M, MUTED, pdfText, poly, STATUS, THIN } from '../../../../ui/lib/pdf/doc';
+import { thresholdCuts } from '../../core/accessories';
 import { cuttingSheet } from '../../core/sheet';
 import type { LaidPiece, ParquetResult } from '../../core/types';
 import type { ParquetData } from '../../state/model';
@@ -40,6 +41,11 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
   const d = new Doc();
   const pdf = d.pdf;
   const roomName = (id: string) => project.plan.rooms.find((r) => r.id === id)?.name ?? 'Pièce';
+  /** « entre Séjour et Bureau » pour un seuil dans un passage. */
+  const passageName = (id: string | null) => {
+    const p = id ? project.plan.passages.find((x) => x.id === id) : undefined;
+    return p ? ` entre ${roomName(p.a.room)} et ${roomName(p.b.room)}` : '';
+  };
   const layoutOf = (id: string) => data.layouts.find((l) => l.id === id);
   const multi = result.layouts.length > 1;
   const cost = lines.reduce((t, l) => t + (l.unitPrice != null ? l.unitPrice * l.quantity : 0), 0);
@@ -262,18 +268,34 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
   if (result.skirting.bars) {
     d.room(20);
     d.y += 2;
-    d.text(`Plinthes : ${result.skirting.bars} barre${result.skirting.bars > 1 ? 's' : ''}`, 11, {
+    d.text(`Plinthes : ${result.skirting.bars} barre${result.skirting.bars > 1 ? 's' : ''} de plinthe`, 11, {
       bold: true,
       gap: 1,
     });
     d.text('Longueurs à couper, suppléments d’onglet compris.', 8, { color: MUTED, gap: 1.5 });
     result.skirting.plan.forEach((b, i) =>
       d.text(
-        `Barre ${i + 1} : ${b.cuts.map((c) => skirtingCutText(c, roomName)).join(' + ')}${b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}`,
+        `Barre de plinthe ${i + 1} : ${b.cuts.map((c) => skirtingCutText(c, roomName)).join(' + ')}${b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}`,
         8.5,
         { x: M + 4, gap: 0.4 },
       ),
     );
+  }
+
+  const seuils = thresholdCuts(result, data.accessories.thresholds.barLength);
+  if (seuils.length) {
+    const total = seuils.reduce((t, s) => t + s.bars.length, 0);
+    d.room(16);
+    d.y += 2;
+    d.text(`Seuils : ${total} barre${total > 1 ? 's' : ''} de seuil`, 11, { bold: true, gap: 1 });
+    let k = 0;
+    for (const s of seuils)
+      for (const b of s.bars)
+        d.text(
+          `Barre de seuil ${++k} : ${fr(b.length)} mm${passageName(s.passage)}${b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}`,
+          8.5,
+          { x: M + 4, gap: 0.4 },
+        );
   }
 
   /* ---------- pieds de page ---------- */

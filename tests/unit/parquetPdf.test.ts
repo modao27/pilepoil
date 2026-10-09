@@ -87,11 +87,14 @@ describe('export PDF du parquet', () => {
     expect(all).toMatch(/Bureau — rang 1/);
     expect(all).toMatch(/lame neuve – couper à \d/);
     expect(all).toMatch(/vient de Séjour — rang 1, n° 4/);
-    expect(all).toMatch(/Barre 1 : 2 400 mm Séjour mur 1 \(morceau 1\/2\)/);
+    expect(all).not.toMatch(/Barre 1 :/);
     // police standard : pas de texte espacé lettre par lettre (repli d'encodage)
     expect(all).not.toMatch(/l a m e/);
     expect(all).toMatch(/va au stock/);
-    expect(all).toMatch(/Plinthes : 12 barres/);
+    expect(all).toMatch(/Plinthes : 12 barres de plinthe/);
+    expect(all).toMatch(/Barre de plinthe 1 : 2 400 mm Séjour mur 1/);
+    expect(all).toMatch(/Seuils : 1 barre de seuil/);
+    expect(all).toMatch(/Barre de seuil 1 : 830 mm entre Séjour et Bureau · reste 100 mm/);
     // dernier rang : lames entières recoupées en largeur, pas « couper à 1 285 mm »
     expect(all).toMatch(/lame entière recoupée à 104 mm de large/);
     expect(all).not.toMatch(/couper à 1 285 mm/);
