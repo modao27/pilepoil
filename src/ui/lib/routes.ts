@@ -27,25 +27,19 @@ const moduleIds = modules.map((m) => m.id);
 const DEFAULT_LIBRARY = libraryIds[0]!;
 const item = (lib: string, id: string): Route => ({ name: 'libraryItem', lib, id: id === 'new' ? null : id });
 
-/** Module des projets d'avant la boîte à outils (anciennes adresses #/p/:id/…). */
-const LEGACY_MODULE = 'carrelage';
-
-const moduleRoute = (id: string, path: string): Route => ({ name: 'module', id, module: LEGACY_MODULE, path });
-
 export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#/, '').replace(/\/+$/, '') || '/';
   const parts = path.split('/').filter(Boolean).map(decodeURIComponent);
-  const [a, b, c, d, e] = parts;
+  const [a, b, c, d] = parts;
   if (!a) return { name: 'home' };
   if (a === 'new') {
     if (!b) return { name: 'new' };
     return !c && moduleIds.includes(b) ? { name: 'new', module: b } : { name: 'notFound', path };
   }
   if (a === 'library') {
-    // anciennes adresses : #/library et #/library/<carreau> mènent aux carreaux
+    // #/library : la première bibliothèque
     if (!b) return { name: 'redirect', to: { name: 'library', lib: DEFAULT_LIBRARY } };
-    if (!libraryIds.includes(b))
-      return c ? { name: 'notFound', path } : { name: 'redirect', to: item(DEFAULT_LIBRARY, b) };
+    if (!libraryIds.includes(b)) return { name: 'notFound', path };
     if (!c) return { name: 'library', lib: b };
     if (!d) return item(b, c);
   }
@@ -55,10 +49,6 @@ export function parseRoute(hash: string): Route {
   if (a === 'p' && b && !c) return { name: 'project', id: b };
   if (a === 'p' && b && c === 'plan' && !d) return { name: 'plan', id: b };
   if (a === 'p' && b && c === 'achats' && !d) return { name: 'shopping', id: b };
-  // anciennes adresses du carrelage (favoris)
-  if (a === 'p' && b && (c === 'results' || c === 'room' || c === 'compare') && !d)
-    return { name: 'redirect', to: moduleRoute(b, c) };
-  if (a === 'p' && b && c === 's' && d && !e) return { name: 'redirect', to: moduleRoute(b, 's/' + d) };
   return { name: 'notFound', path };
 }
 
