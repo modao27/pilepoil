@@ -24,7 +24,6 @@ export interface PlanColors {
 export interface Selection {
   zone: number;
   opening: number;
-  corner: number;
   piece: number;
 }
 
@@ -278,32 +277,6 @@ export function drawPlan(ctx: CanvasRenderingContext2D, d: DrawInput): void {
     }
   });
 
-  /* ---------- angles de mur ---------- */
-  if (s.kind !== 'floor') {
-    s.corners.forEach((fo, fi) => {
-      if (fo.x <= 0 || fo.x >= W) return;
-      const fx = X(fo.x),
-        sel = fi === d.selection.corner;
-      ctx.save();
-      ctx.strokeStyle = sel ? C.accent : C.ink;
-      ctx.lineWidth = sel ? 2.5 : 1.6;
-      ctx.setLineDash(fo.type === 'in' ? [10, 4, 2, 4] : [3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(fx, Y(0));
-      ctx.lineTo(fx, Y(H));
-      ctx.stroke();
-      ctx.restore();
-      if (!plan) {
-        const g = ctx.createLinearGradient(fx - 14, 0, fx + 14, 0);
-        g.addColorStop(0, 'rgba(0,0,0,0)');
-        g.addColorStop(0.5, fo.type === 'in' ? 'rgba(0,0,0,.16)' : 'rgba(255,255,255,.22)');
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(fx - 14, Y(0), 28, H * sc);
-      }
-    });
-  }
-
   /* ---------- coupes apparentes ---------- */
   if (plan) {
     ctx.strokeStyle = C.thin;
@@ -421,24 +394,6 @@ export function drawPlan(ctx: CanvasRenderingContext2D, d: DrawInput): void {
         ctx.globalAlpha = 1;
         ctx.fillStyle = C.ink;
         ctx.fillText(txt, X(cx), Y(cy) + 0.5);
-      });
-    }
-    /* étiquettes d'angles */
-    if (s.kind !== 'floor') {
-      s.corners.forEach((fo, fi) => {
-        if (fo.x <= 0 || fo.x >= W) return;
-        const sel = fi === d.selection.corner;
-        ctx.font = `600 12px ${C.font}`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const t = `A${fi + 1} ${fo.type === 'in' ? 'rentrant' : 'sortant'} ${Math.round(fo.angle)}°`,
-          w = ctx.measureText(t).width + 8;
-        const ty = Y(0) + 12,
-          tx = Math.min(Math.max(X(fo.x), X(0) + w / 2 + 2), X(W) - w / 2 - 2);
-        ctx.fillStyle = sel ? C.accent : C.ink;
-        ctx.fillRect(tx - w / 2, ty - 8, w, 16);
-        ctx.fillStyle = sel ? C.onAccent : C.sheet;
-        ctx.fillText(t, tx, ty + 0.5);
       });
     }
     /* origine du motif de la zone active */

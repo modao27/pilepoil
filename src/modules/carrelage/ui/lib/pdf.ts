@@ -277,15 +277,6 @@ function drawPlan(
       });
   });
 
-  /* angles de mur */
-  if (s.kind === 'wall') {
-    pdf.setLineDashPattern([1.5, 1], 0);
-    pdf.setLineWidth(0.3);
-    pdf.setDrawColor(...INK);
-    for (const c of s.corners) if (c.x > 0 && c.x < s.width) pdf.line(X(c.x), Y(0), X(c.x), Y(s.height));
-    pdf.setLineDashPattern([], 0);
-  }
-
   /* coupes apparentes */
   pdf.setDrawColor(...THIN);
   pdf.setLineWidth(0.7);
