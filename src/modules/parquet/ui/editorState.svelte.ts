@@ -158,12 +158,19 @@ export class ParquetEditorState {
     if (this.board) this.updateLayout({ rules: { ...RULES_BY_KIND[this.board.kind] } });
   }
 
-  /** Cocher ou décocher une pièce de la pose affichée ; refus expliqué (sol déjà couvert, pièce non reliée). */
-  toggleRoom(roomId: string, on: boolean): void {
-    if (!this.layout) return;
+  /**
+   * Cocher ou décocher une pièce de la pose affichée ; refus expliqué (sol déjà couvert, pièce non reliée).
+   * false : refusé.
+   */
+  toggleRoom(roomId: string, on: boolean): boolean {
+    if (!this.layout) return false;
     const r = toggleRoomAction(this.doc, this.layout.id, roomId, on, newId);
-    if ('error' in r) toast(coverageText(r.error), { tone: 'error' });
-    else this.dispatch(r.action);
+    if ('error' in r) {
+      toast(coverageText(r.error), { tone: 'error' });
+      return false;
+    }
+    this.dispatch(r.action);
+    return true;
   }
 
   /** Nouvelle pose sur une pièce (la première sans revêtement au sol), aux réglages de la pose affichée. */

@@ -13,7 +13,6 @@ test('achats du projet : même total que le carrelage, prix modifiable et annula
   // mur avec un carreau à 32,50 €/m²
   const id = await newWall(page, async () => {
     await page.getByLabel('Prix', { exact: true }).fill('32,5');
-    await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   });
 
   // total de l'écran Résultats du carrelage

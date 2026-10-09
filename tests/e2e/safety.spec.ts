@@ -18,7 +18,7 @@ test('pièce revêtue : la suppression détaille ce qui sera perdu, et se confir
   await selectRoom(page, id);
   await panel(page).getByRole('button', { name: 'Supprimer la pièce' }).click();
   const dialog = page.getByRole('dialog', { name: 'Supprimer la pièce ?' });
-  await expect(dialog).toContainText('Carrelage : mur 1.');
+  await expect(dialog).toContainText('Carrelage : « Pose 1 » est supprimée.');
   await dialog.getByRole('button', { name: 'Garder la pièce' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();

@@ -77,9 +77,13 @@
     const settings = newPoseSettings(carrelageData(doc), carrelage.tiles, newId, like?.id);
     const action = tileSurfaceAction(doc, ref, settings, newId);
     const error = checkZone(doc.plan, doc, action.zones[0]!, moduleById(CARRELAGE_ID)!.coverage);
-    if (error) toast(coverageText(error), { tone: 'error' });
-    else void dispatch(action);
+    if (error) {
+      toast(coverageText(error), { tone: 'error' });
+      refused++;
+    } else void dispatch(action);
   }
+  /** Cases refusées : compteur pour les redessiner dans leur état réel. */
+  let refused = $state(0);
 </script>
 
 {#if !doc || !project}
@@ -127,19 +131,19 @@
                 label="Plan de {room.name}, murs numérotés"
               />
             </div>
-            <fieldset>
-              <legend>À carreler</legend>
-              <Checkbox label="Sol" checked={floor} onchange={(v) => setTiled({ room: room.id, wall: null }, v)} />
-              {#each room.walls as w, i (w.id)}
-                {@const s = surfaceOn({ room: room.id, wall: w.id })}
-                <Checkbox
-                  label="Mur {i + 1}"
-                  hint="{cm(wallLength(room, i))}{s ? `, carrelé sur ${cm(s.origin[1] + s.height)}` : ''}"
-                  checked={!!s}
-                  onchange={(v) => setTiled({ room: room.id, wall: w.id }, v)}
-                />
-              {/each}
-            </fieldset>
+            {#key refused}<fieldset>
+                <legend>À carreler</legend>
+                <Checkbox label="Sol" checked={floor} onchange={(v) => setTiled({ room: room.id, wall: null }, v)} />
+                {#each room.walls as w, i (w.id)}
+                  {@const s = surfaceOn({ room: room.id, wall: w.id })}
+                  <Checkbox
+                    label="Mur {i + 1}"
+                    hint="{cm(wallLength(room, i))}{s ? `, carrelé sur ${cm(s.origin[1] + s.height)}` : ''}"
+                    checked={!!s}
+                    onchange={(v) => setTiled({ room: room.id, wall: w.id }, v)}
+                  />
+                {/each}
+              </fieldset>{/key}
             {#if surfaces.length}
               <ul class="surfaces">
                 {#each surfaces as s (s.id)}

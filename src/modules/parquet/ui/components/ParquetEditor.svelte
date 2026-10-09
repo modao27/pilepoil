@@ -125,6 +125,8 @@
   }
   /** Seuils posés de la pose (breaks) : index pour « Retirer » ; les limites de zone n'en ont pas. */
   const breakIndex = (t: Threshold) => t.breakIndex ?? -1;
+  /** Cases des pièces refusées (sol déjà couvert…) : compteur pour les redessiner. */
+  let refused = $state(0);
   /** Tracé d'un seuil à la main : deux points sur le plan. */
   let drawing = $state(false);
   const acc = $derived(ed.data.accessories);
@@ -217,13 +219,16 @@
 
       <section aria-labelledby="pq-rooms">
         <h2 id="pq-rooms">Pièces</h2>
-        {#each ed.doc.plan.rooms as r (r.id)}
-          <Checkbox
-            label={coveredBy(r.id) ? `${r.name} (${coveredBy(r.id)})` : r.name}
-            checked={layout.rooms.includes(r.id)}
-            onchange={(on) => ed.toggleRoom(r.id, on)}
-          />
-        {/each}
+        <!-- refus : cases redessinées dans leur état réel -->
+        {#key refused}
+          {#each ed.doc.plan.rooms as r (r.id)}
+            <Checkbox
+              label={coveredBy(r.id) ? `${r.name} (${coveredBy(r.id)})` : r.name}
+              checked={layout.rooms.includes(r.id)}
+              onchange={(on) => ed.toggleRoom(r.id, on) || refused++}
+            />
+          {/each}
+        {/key}
         <Button variant="ghost" href="#/p/{ed.doc.id}/plan">Modifier le plan</Button>
         <h3>Seuils</h3>
         {#if drawing}
