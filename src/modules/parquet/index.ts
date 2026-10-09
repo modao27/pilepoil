@@ -1,12 +1,12 @@
 /**
  * Point d'entrée du module parquet (face application) : le `ToolModule`, vu par la coquille via le registre.
- * La face moteur est engine.ts (importée par modules/engines.ts). P1 : pose droite.
+ * La face moteur est engine.ts (importée par modules/engines.ts).
  */
 import type { LibraryDefinition, ToolModule } from '../types';
 import { BOARD_SCHEMA, BOARD_TEMPLATES } from './core/board';
 import type { ParquetResult, ParquetSpec } from './core/types';
 import { reduce, type Action } from './state/actions';
-import { createParquetData, PARQUET_ID, PARQUET_SCHEMA, type ParquetData } from './state/model';
+import { createParquetData, PARQUET_ID, PARQUET_MIGRATIONS, PARQUET_SCHEMA, type ParquetData } from './state/model';
 import { priceAction, shopping, summary, toSpec } from './state/module';
 
 /** Bibliothèque de lames (#/library/boards). */
@@ -37,7 +37,7 @@ export const module: ToolModule<ParquetData, ParquetSpec, ParquetResult, Action>
   shopping,
   summary,
   priceAction,
-  migrations: {},
+  migrations: PARQUET_MIGRATIONS,
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
     results: () => import('./ui/screens/ResultsScreen.svelte').then((m) => m.default),

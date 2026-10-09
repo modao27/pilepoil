@@ -46,6 +46,7 @@ export function spec(outline: Polygon, o: Partial<LayoutSpec> = {}, obstacles: P
         method: 'floating',
         rules: { ...RULES_BY_KIND.laminate },
         breaks: [],
+        zone: [],
         seed: 1,
         ...o,
       },

@@ -81,11 +81,41 @@ export interface ParquetSpec {
   accessories: Accessories;
 }
 
+/**
+ * Passage entre deux pièces : `segment` = ouverture côté pièce `a` (repère du plan), `depth` = épaisseur du mur.
+ * La bande `segment × depth` relie les surfaces des deux pièces.
+ */
+export interface PassageSpec {
+  id: Id;
+  a: Id;
+  b: Id;
+  segment: Segment;
+  width: number;
+  depth: number;
+}
+
+/** Demi-plan : côté 1 = à gauche de la ligne orientée de line[0] vers line[1] (produit vectoriel > 0). */
+export interface ZoneBound {
+  line: Segment;
+  side: 1 | -1;
+}
+
+export interface Threshold {
+  /** Repère du plan, d'un bord posable à l'autre. */
+  segment: Segment;
+  /** Passage coupé, s'il y en a un. */
+  passage: Id | null;
+  /** proposed : conseillé par le moteur ; applied : posé (breaks ou limite de zone). */
+  status: 'proposed' | 'applied';
+  /** Seuils proposés : pourquoi. */
+  reason?: 'narrow-passage' | 'fractioning';
+}
+
 export interface LayoutSpec {
   id: Id;
   rooms: { id: Id; outline: Polygon; obstacles: Polygon[]; openings: WallOpeningSpec[] }[];
-  /** depth = épaisseur du mur traversé par le passage. */
-  passages: { a: Id; b: Id; segment: Segment; width: number; depth: number }[];
+  /** Passages entre deux pièces de la pose (P3). */
+  passages: PassageSpec[];
   /** null : lame introuvable dans la bibliothèque (erreur `missing-board`). */
   board: BoardSpec | null;
   pattern: Pattern;
@@ -101,6 +131,8 @@ export interface LayoutSpec {
   rules: LayingRules;
   /** Seuils (fractionnement), segments du plan. */
   breaks: Segment[];
+  /** Zone de la pose : demi-plans qui la limitent dans ses pièces (poses séparées). Vide : pièces entières. */
+  zone: ZoneBound[];
   /** Graine des tirages (coupe perdue, longueurs mixtes). */
   seed: number;
 }
@@ -124,8 +156,8 @@ export interface LayoutResult {
   boards: BoardUse[];
   /** Chutes restantes en fin de calcul. */
   offcuts: Offcut[];
-  /** Seuils proposés ou imposés (P3). */
-  thresholds: Segment[];
+  /** Seuils proposés ou posés (P3). */
+  thresholds: Threshold[];
   warnings: ParquetWarning[];
   errors: ParquetError[];
   /** Motifs : trois placements d'axe proposés, avec la plus petite coupe en bord de chacun. */
@@ -196,7 +228,9 @@ export type ParquetWarning =
   | { code: 'joint-offset'; row: number; offset: number }
   | { code: 'fractioning-needed'; length: number; width: number }
   | { code: 'narrow-passage'; passage: string; width: number }
-  | { code: 'tiny-piece'; piece: string; area: number };
+  | { code: 'tiny-piece'; piece: string; area: number }
+  /** La surface de cette pose recouvre celle d'une pose précédente. */
+  | { code: 'layout-overlap'; layout: Id };
 
 export type ParquetError =
   | { code: 'invalid-room'; room: Id }

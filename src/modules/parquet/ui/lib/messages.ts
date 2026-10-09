@@ -17,6 +17,8 @@ export function warningText(w: ParquetWarning): string {
       return `Passage de ${mm(w.width)} seulement : un seuil est conseillé.`;
     case 'tiny-piece':
       return 'Une pièce est très petite. Décalez la pose pour l’éviter.';
+    case 'layout-overlap':
+      return 'Cette pose recouvre une autre pose. Retirez la pièce commune de l’une des deux, ou séparez-les.';
   }
 }
 

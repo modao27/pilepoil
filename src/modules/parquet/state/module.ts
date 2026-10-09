@@ -1,5 +1,5 @@
 /** Fonctions du contrat de module (docs/BOITE.md §2) propres au parquet, hors écrans. */
-import type { Point, Polygon } from '../../../core/geometry/types';
+import type { Point, Polygon, Segment } from '../../../core/geometry/types';
 import type { Plan, PlanRoom } from '../../../core/plan/types';
 import { wallDirection, wallLength, wallSegment } from '../../../core/plan/walls';
 import type { ShoppingLine } from '../../../core/shopping/types';
@@ -49,14 +49,26 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
       openings: r.openings.flatMap((o) => {
         const i = r.walls.findIndex((w) => w.id === o.wall);
         if (i < 0) return [];
-        const [a] = wallSegment(r, i);
-        const u = wallDirection(r, i);
-        const p0: Point = [a[0] + u[0] * o.offset, a[1] + u[1] * o.offset];
-        const p1: Point = [p0[0] + u[0] * o.width, p0[1] + u[1] * o.width];
-        return [{ segment: [at(r, p0), at(r, p1)], kind: o.kind }];
+        return [{ segment: openingSegment(r, i, o.offset, o.width).map((q) => at(r, q)) as Segment, kind: o.kind }];
       }),
     })),
-    passages: [], // continuité entre pièces : P3
+    passages: plan.passages.flatMap((p) => {
+      const ra = rooms.find((r) => r.id === p.a.room),
+        rb = rooms.find((r) => r.id === p.b.room);
+      const o = ra?.openings.find((x) => x.id === p.a.opening);
+      const i = o && ra ? ra.walls.findIndex((w) => w.id === o.wall) : -1;
+      if (!ra || !rb || !o || i < 0) return [];
+      return [
+        {
+          id: p.id,
+          a: ra.id,
+          b: rb.id,
+          segment: openingSegment(ra, i, o.offset, o.width).map((q) => at(ra, q)) as Segment,
+          width: o.width,
+          depth: ra.walls[i]!.thickness,
+        },
+      ];
+    }),
     board: board && {
       id: board.id,
       lengths: board.lengths,
@@ -74,8 +86,17 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
     method: l.method,
     rules: l.rules,
     breaks: l.breaks,
+    zone: l.zone,
     seed: l.seed,
   };
+}
+
+/** Ouverture sur le mur i, repère de la pièce. */
+function openingSegment(r: PlanRoom, i: number, offset: number, width: number): Segment {
+  const [a] = wallSegment(r, i);
+  const u = wallDirection(r, i);
+  const p0: Point = [a[0] + u[0] * offset, a[1] + u[1] * offset];
+  return [p0, [p0[0] + u[0] * width, p0[1] + u[1] * width]];
 }
 
 /** Direction du mur de référence ; par défaut le plus long mur de la première pièce. */
