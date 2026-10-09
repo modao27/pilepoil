@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, fillNumber, newWall, shot } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -18,20 +18,25 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await shot(page, info, '09-nouveau-projet');
   await page.getByRole('link', { name: 'Commencer : carrelage' }).click();
 
-  // 1. type
+  // 1. pièce, saisie calculée
   await expect(page.getByText('Étape 1 sur 4')).toBeVisible();
-  await expect(page.getByRole('radio', { name: /Un mur/ })).toHaveAttribute('aria-checked', 'true');
-  await check(page);
-  await shot(page, info, '10-assistant-type');
-  await next(page);
-
-  // 2. dimensions, saisie calculée
-  const w = page.getByLabel('Largeur', { exact: true });
+  await expect(page.getByRole('radio', { name: 'Rectangle' })).toHaveAttribute('aria-checked', 'true');
+  const w = page.getByLabel('Longueur de la pièce', { exact: true });
   await w.fill('300-12');
   await w.press('Enter');
   await expect(w).toHaveValue('288');
+  await fillNumber(page, 'Hauteur sous plafond', '240');
   await check(page);
-  await shot(page, info, '11-assistant-dimensions');
+  await shot(page, info, '10-assistant-piece');
+  await next(page);
+
+  // 2. à carreler : le mur 1 seul
+  await page.getByRole('checkbox', { name: 'Sol', exact: true }).uncheck();
+  await next(page);
+  await expect(page.getByRole('alert')).toHaveText('Choisissez le sol ou au moins un mur.');
+  await page.getByRole('checkbox', { name: /^Mur 1 / }).check();
+  await check(page);
+  await shot(page, info, '11-assistant-a-carreler');
   await next(page);
 
   // 3. carreau : bibliothèque vide → formulaire
@@ -55,9 +60,13 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await shot(page, info, '14-assistant-motif');
   await page.getByRole('button', { name: 'Créer le projet' }).click();
 
-  // éditeur puis résultats
+  // écran Carrelage, éditeur puis résultats
+  await expect(page.getByRole('heading', { name: 'Carrelage — Pièce 288 × 240' })).toBeVisible();
+  await check(page);
+  await shot(page, info, '15-carrelage');
+  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
-  await expect(page.getByText('Mur 288 × 240')).toBeVisible();
+  await expect(page.getByText('Pièce 288 × 240')).toBeVisible();
   await page.getByRole('link', { name: /\d+ carreaux/ }).click();
   await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
   await check(page);
@@ -65,19 +74,19 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
   // persistance
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Résultats — Mur 288 × 240' })).toBeVisible();
-  await page.getByRole('link', { name: 'Retour au plan' }).click();
+  await expect(page.getByRole('heading', { name: 'Résultats — Pièce 288 × 240' })).toBeVisible();
+  await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
 
-  // éditeur → écran Projet → accueil, carte, menu
+  // écran Carrelage → écran Projet → accueil, carte, menu
   await page.getByRole('link', { name: 'Projet', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Outils' })).toBeVisible();
   await page.getByRole('link', { name: 'Mes projets' }).click();
-  await expect(page.getByRole('link', { name: 'Mur 288 × 240' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Pièce 288 × 240' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Aperçu de Pièce, mur 1' })).toBeVisible();
   await check(page);
   await shot(page, info, '30-accueil');
 
-  await page.getByRole('button', { name: 'Actions pour Mur 288 × 240' }).click();
+  await page.getByRole('button', { name: 'Actions pour Pièce 288 × 240' }).click();
   await page.getByRole('button', { name: 'Renommer' }).click();
   await page.getByLabel('Nouveau nom').fill('Crédence cuisine');
   await page.getByRole('dialog').getByRole('button', { name: 'Renommer' }).click();
@@ -85,7 +94,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
   await page.getByRole('button', { name: 'Actions pour Crédence cuisine' }).click();
   await page.getByRole('button', { name: 'Dupliquer' }).click();
-  await expect(page.getByRole('button', { name: /^Crédence cuisine \(copie\)/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Carrelage — Crédence cuisine (copie)' })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('link', { name: /Crédence cuisine/ })).toHaveCount(2);
 
@@ -123,45 +132,36 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
   await expect(page.getByRole('link', { name: /Hexagone terracotta/ })).toBeVisible();
 
   // utilisé par un projet → suppression refusée
-  await page.goto('/#/new/carrelage');
-  await next(page);
-  await next(page);
-  await next(page);
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
+  await newWall(page, async () => {});
   await page.goto('/#/library');
   await page.getByRole('link', { name: /Hexagone terracotta/ }).click();
   await page.getByRole('button', { name: 'Supprimer le carreau' }).click();
-  await expect(page.getByRole('dialog', { name: 'Carreau utilisé' })).toContainText('Mur 300 × 240');
+  await expect(page.getByRole('dialog', { name: 'Carreau utilisé' })).toContainText('Pièce 300 × 240');
   await shot(page, info, '43-carreau-utilise');
 });
 
-test('pièce complète : murs et sol', async ({ page }, info) => {
+test('pièce en L : sol et murs cochés dans l’assistant', async ({ page }, info) => {
   await page.goto('/#/new/carrelage');
-  await page.getByRole('radio', { name: /Une pièce/ }).click();
+  await page.getByRole('radio', { name: 'En L' }).click();
+  await fillNumber(page, 'Longueur de la pièce', '400');
+  await fillNumber(page, 'Largeur de la pièce', '300');
   await next(page);
-  await page.getByLabel('Mur C (longueur)').uncheck();
+  for (const n of [1, 2, 6]) await page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }).check();
+  await expect(page.getByRole('img', { name: 'Pièce dessinée, murs numérotés' })).toBeVisible();
   await check(page);
-  await shot(page, info, '15-assistant-piece');
+  await shot(page, info, '16-assistant-piece-L');
   await next(page);
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next(page);
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByText('Pièce 240 × 180')).toBeVisible();
-  await page.getByRole('button', { name: /Pièce 240 × 180/ }).click();
-  const dlg = page.getByRole('dialog', { name: 'Surfaces' });
-  await expect(dlg.getByRole('button', { name: /^Pièce, / })).toHaveText([
-    /^Pièce, sol/,
-    /^Pièce, mur 1/,
-    /^Pièce, mur 2/,
-    /^Pièce, mur 4/,
+  await expect(page.getByRole('heading', { name: 'Carrelage — Pièce 400 × 300' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Ouvrir Pièce, / })).toHaveText([
+    /^sol/i,
+    /^mur 1/i,
+    /^mur 2/i,
+    /^mur 6/i,
   ]);
-  await dlg.getByRole('button', { name: /^Pièce, mur 2/ }).click();
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 2/ })).toBeVisible();
-  await page.getByRole('button', { name: /Pièce 240 × 180/ }).click();
-  await dlg.getByRole('button', { name: /^Pièce, sol/ }).click();
-  await page.keyboard.press('Escape');
+  await page.getByRole('link', { name: 'Ouvrir Pièce, sol' }).click();
   await expect(page.getByRole('application', { name: /^Plan de Pièce, sol/ })).toBeVisible();
   await check(page);
   await shot(page, info, '22-projet-piece-sol');

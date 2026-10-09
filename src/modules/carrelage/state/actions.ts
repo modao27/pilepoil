@@ -6,13 +6,14 @@ import type {
   ProjectSettings,
   Reservation,
   RoomTiling,
+  Surface,
   SurfaceRef,
   TilingBase,
   WallTiling,
   Zone,
 } from './model';
 import { dataOf, type CarrelageData } from './data';
-import { createRoomTiling } from './factories';
+import { createFloorTiling, createRoomTiling, createWallTiling } from './factories';
 import { DEFAULT_FINISH, parseSurfaceId, planWarnings } from './surfaces';
 
 /** Réglages modifiables d'une surface (la géométrie vient du plan ; zones et réservations : actions dédiées). */
@@ -232,4 +233,32 @@ export function reduce<P extends CarrelageData>(d: P, a: Action, plan: Plan = { 
       return ref ? (withTiling(d, ref, (t) => tilingReduce(t, a, ref.wall != null)) as P) : d;
     }
   }
+}
+
+/**
+ * Action qui carrèle ou non le sol ou un mur d'une pièce. Une surface ajoutée reprend le carrelage de `like`
+ * (zones copiées avec de nouveaux identifiants, joint), sinon une zone du carreau `tileId`.
+ */
+export function tilingAction(
+  ref: SurfaceRef,
+  on: boolean,
+  like: Pick<Surface, 'joint' | 'split' | 'zones'> | undefined,
+  tileId: Id,
+  newId: () => Id,
+): Action {
+  if (!on)
+    return ref.wall
+      ? { type: 'carrelage/wall/disable', roomId: ref.room, wallId: ref.wall }
+      : { type: 'carrelage/floor/disable', roomId: ref.room };
+  const copy = like && { joint: like.joint, split: like.split, zones: like.zones.map((z) => ({ ...z, id: newId() })) };
+  if (ref.wall)
+    return {
+      type: 'carrelage/wall/enable',
+      roomId: ref.room,
+      wallId: ref.wall,
+      tiling: createWallTiling(tileId, copy),
+    };
+  // un sol : une seule zone, sur toute la surface
+  const floor = copy ? { ...copy, zones: [{ ...copy.zones[0]!, unit: 'rest' as const }] } : {};
+  return { type: 'carrelage/floor/enable', roomId: ref.room, tiling: createFloorTiling(tileId, floor) };
 }

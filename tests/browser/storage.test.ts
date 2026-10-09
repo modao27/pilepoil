@@ -1,7 +1,7 @@
 import { deleteDB, openDB } from 'idb';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTile, newId } from '../../src/modules/carrelage/state/factories';
-import { createSingleSurfaceProject } from '../../src/modules/carrelage/state/templates';
+import { wallOnly } from '../unit/planFixtures';
 import { migrateProject } from '../../src/storage/migrations';
 import { listScenarios, saveScenario, scenarioPhotos } from '../../src/modules/carrelage/storage/scenarios';
 import { V1_ROOM, V1_SCENARIO } from '../unit/fixtures/v1';
@@ -27,10 +27,7 @@ import {
 
 /** Projet v2 avec le carrelage : un mur de 3 m × 2,4 m. */
 const createProject = (tileId: string, o: Partial<Project> = {}, now = 0): Project => ({
-  ...createSingleSurfaceProject(
-    { tileId, tileUpright: false, pattern: 'half', angle: 0, joint: 3, kind: 'wall', width: 3000, height: 2400 },
-    now,
-  ),
+  ...wallOnly({ tileId, tileUpright: false, pattern: 'half', angle: 0, joint: 3 }, 3000, 2400, now),
   ...o,
 });
 

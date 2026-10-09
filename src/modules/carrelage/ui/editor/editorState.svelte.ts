@@ -3,10 +3,9 @@
  * calcul (worker), optimisation. Toutes les modifications passent par des actions du store.
  */
 import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../core';
-import { createFloorTiling, createReservation, createWallTiling, createZone, newId } from '../../state/factories';
+import { createReservation, createZone } from '../../state/factories';
 import type { Id, Project } from '../../../../state/model';
-import type { Opening, ReservationType, Surface, SurfaceRef, Zone } from '../../state/model';
-import { surfaceId } from '../../state/surfaces';
+import type { Opening, ReservationType, Surface, Zone } from '../../state/model';
 import { toProjectSpec } from '../../state/selectors';
 import { createProjectStore, type ProjectStore } from '../../../../state/store';
 import { carrelage } from '../state.svelte';
@@ -43,6 +42,8 @@ export class EditorState {
   sel = $state<Selection>({ zone: 0, opening: -1, piece: -1 });
   tab = $state<Tab>('tile');
   mode = $state<'plan' | 'render' | '3d'>('plan');
+  /** Vue 3D : surface seule ou toute la pièce du plan. */
+  scope3d = $state<'surface' | 'room'>('surface');
   result = $state.raw<ProjectResult | null>(null);
   spec = $state.raw<ProjectSpec | null>(null);
   guides = $state.raw<{ zone: number; x: number | null; y: number | null } | null>(null);
@@ -126,40 +127,6 @@ export class EditorState {
 
   updateSurface(patch: SurfacePatch, key?: string): void {
     this.dispatch({ type: 'carrelage/surface/update', surfaceId: this.surface.id, patch }, key);
-  }
-
-  /**
-   * Carrèle ou non le sol ou un mur d'une pièce du plan. Une surface ajoutée reprend le carrelage de la surface
-   * courante (zones copiées, joint) ; la dernière surface ne peut pas être retirée.
-   */
-  setTiled(ref: SurfaceRef, on: boolean): void {
-    const id = surfaceId(ref);
-    if (!on) {
-      if (this.project.surfaces.length < 2) {
-        toast('Gardez au moins une surface à carreler.');
-        return;
-      }
-      const i = this.project.surfaces.findIndex((s) => s.id === id);
-      this.dispatch(
-        ref.wall
-          ? { type: 'carrelage/wall/disable', roomId: ref.room, wallId: ref.wall }
-          : { type: 'carrelage/floor/disable', roomId: ref.room },
-      );
-      if (id === this.surfaceId) this.setSurface(this.project.surfaces[Math.max(0, i - 1)]!.id);
-      return;
-    }
-    const s = this.surface;
-    const copy = { joint: s.joint, split: s.split, zones: s.zones.map((z) => ({ ...z, id: newId() })) };
-    const tile = s.zones[0]!.tileId;
-    this.dispatch(
-      ref.wall
-        ? { type: 'carrelage/wall/enable', roomId: ref.room, wallId: ref.wall, tiling: createWallTiling(tile, copy) }
-        : {
-            type: 'carrelage/floor/enable',
-            roomId: ref.room,
-            tiling: createFloorTiling(tile, { ...copy, zones: [{ ...copy.zones[0]!, unit: 'rest' }] }),
-          },
-    );
   }
 
   /* ---------- zones ---------- */

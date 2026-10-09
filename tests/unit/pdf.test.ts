@@ -10,7 +10,7 @@ import {
 } from '../../src/modules/carrelage/state/factories';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { buildPdf, pdfText } from '../../src/modules/carrelage/ui/lib/pdf';
-import { planProject, rect, view, withOpening } from './planFixtures';
+import { lShape, planProject, rect, view, withOpening } from './planFixtures';
 
 /** Texte de chaque page, extrait comme le ferait un lecteur PDF. */
 async function pagesText(blob: Blob): Promise<{ text: string; width: number; height: number }[]> {
@@ -63,6 +63,18 @@ describe('export PDF', () => {
     expect(all).toMatch(/1 \/ \d+/);
     // aucun caractère hors police (affichés comme ? ou carrés)
     expect(all).not.toMatch(new RegExp(`[${String.fromCodePoint(0x202f, 0x2153, 0x2248)}]`));
+  });
+
+  it('sol d’une pièce en L : surface réelle, longueur de chaque mur', async () => {
+    const room = lShape('r', 4000, 3000, 1500, 1000);
+    const rooms = { r: createRoomTiling({ floor: createFloorTiling(tile.id) }) };
+    const p = view(planProject([room], { rooms }));
+    const sp = toProjectSpec(p, [tile]).spec;
+    const pages = await pagesText(
+      buildPdf({ project: p, spec: sp, result: computeProject(sp), tiles: [tile], date: 0 }),
+    );
+    expect(pages[1]!.text).toMatch(/Sol de 10,5 m², 400 × 300 cm hors tout/);
+    for (const l of ['400', '200', '150', '100', '250', '300']) expect(pages[1]!.text).toContain(l);
   });
 
   it('remplace les caractères absents des polices standard', () => {

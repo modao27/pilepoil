@@ -1,20 +1,20 @@
 import { expect, test } from '@playwright/test';
-import { emptyProject } from './helpers';
+import { addPlanWindow, emptyProject } from './helpers';
 import { newRoom, sceneStats } from './room-helpers';
 
 // GPU réel si disponible (sinon Chromium rend en logiciel, sans rapport avec un téléphone).
 test.use({ launchOptions: { args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11'] } });
 
-// Vue Pièce du carrelage retirée en C2, refaite depuis le polygone du plan en C3.
-test.fixme('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en rotation', async ({ page }, info) => {
+test('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en rotation', async ({ page }, info) => {
   test.setTimeout(90_000);
   // 4 × 3,75 m, carreaux de 10 × 10 cm : environ 4 900 pièces sur les murs et le sol
-  await newRoom(page, [100, 100]);
-  // fenêtre à tableaux et baignoire sur le mur A : embrasure et ombres portées
+  const id = await newRoom(page, [100, 100]);
+  // fenêtre à tableaux et baignoire sur le mur 1 : embrasure et ombres portées
+  await addPlanWindow(page, id);
   const mobile = info.project.name === 'mobile';
   if (mobile) await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Ouvertures' }).click();
-  await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   const depth = page.getByLabel('Profondeur du tableau', { exact: true });
   await depth.fill('20');
   await depth.press('Enter');
@@ -22,8 +22,8 @@ test.fixme('pièce de 15 m² en 10 × 10 : budget de dessin et images par second
   await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await page.waitForTimeout(500);
 
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1];
-  await page.goto(`/#/p/${id}/m/carrelage/room`);
+  await page.goto(`/#/p/${id}/m/carrelage`);
+  await page.getByRole('link', { name: 'Vue de la pièce' }).click();
   await page.getByRole('radio', { name: '3D' }).click();
   await sceneStats(page);
   await page.getByRole('button', { name: 'Faire tourner' }).click();

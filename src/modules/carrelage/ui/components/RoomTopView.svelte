@@ -1,121 +1,102 @@
 <script lang="ts">
   /**
-   * Vue de dessus de la pièce : le sol, et les murs A, B, C, D dépliés autour (posés à plat contre leur
-   * bord). Chaque surface est un lien vers son éditeur. Projet sans pièce : les surfaces côte à côte.
+   * Vue de dessus d'une pièce du plan : le sol calepiné à sa place, les murs carrelés dépliés vers l'extérieur
+   * contre leur segment, les murs nus en trait. Chaque surface carrelée est un lien vers son éditeur.
    */
-  import type { ProjectResult, ProjectSpec } from '../../core';
+  import type { PlanRoom } from '../../../../core/plan/types';
+  import type { Point, ProjectResult, ProjectSpec } from '../../core';
   import type { CarrelageProject } from '../../state/data';
+  import { surfaceId } from '../../state/surfaces';
   import { planDrawing } from '../../render/planSvg';
+  import { boxOf, unfoldWall } from '../../render/roomTop';
 
-  let { project, spec, result }: { project: CarrelageProject; spec: ProjectSpec; result: ProjectResult } = $props();
+  let {
+    project,
+    spec,
+    result,
+    room,
+  }: { project: CarrelageProject; spec: ProjectSpec; result: ProjectResult; room: PlanRoom } = $props();
 
-  type Placed = { i: number; transform: string; lx: number; ly: number; anchor: 'middle' | 'start' | 'end' };
-
-  const room = $derived(spec.room);
-  const placed = $derived.by<Placed[]>(() => {
-    if (!room) return [];
-    const L = room.length,
-      l = room.width,
-      out: Placed[] = [],
-      f = Math.max(L, l) / 13;
-    const W = room.walls;
-    if (W.floor != null) out.push({ i: W.floor, transform: '', lx: L / 2, ly: l / 2, anchor: 'middle' });
-    const h = (k: 'A' | 'B' | 'C' | 'D') => spec.surfaces[W[k]!]!.height;
-    if (W.A != null)
-      out.push({
-        i: W.A,
-        transform: `matrix(1 0 0 1 0 ${-h('A')})`,
-        lx: L / 2,
-        ly: -h('A') - f * 0.8,
-        anchor: 'middle',
-      });
-    if (W.B != null)
-      out.push({
-        i: W.B,
-        transform: `matrix(0 1 -1 0 ${L + h('B')} 0)`,
-        lx: L + h('B') + f * 0.4,
-        ly: l / 2,
-        anchor: 'start',
-      });
-    if (W.C != null)
-      out.push({
-        i: W.C,
-        transform: `matrix(-1 0 0 -1 ${L} ${l + h('C')})`,
-        lx: L / 2,
-        ly: l + h('C') + f * 0.9,
-        anchor: 'middle',
-      });
-    if (W.D != null)
-      out.push({
-        i: W.D,
-        transform: `matrix(0 -1 1 0 ${-h('D')} ${l})`,
-        lx: -h('D') - f * 0.4,
-        ly: l / 2,
-        anchor: 'end',
-      });
-    return out;
+  const index = $derived(new Map(project.surfaces.map((s, i) => [s.id, i])));
+  const floor = $derived(index.get(surfaceId({ room: room.id, wall: null })));
+  const walls = $derived(
+    room.walls.map((w, k) => {
+      const i = index.get(surfaceId({ room: room.id, wall: w.id }));
+      if (i == null) return { k, i: null, a: room.outline[k]!, b: room.outline[(k + 1) % room.outline.length]! };
+      const s = spec.surfaces[i]!;
+      return { k, i, ...unfoldWall(room.outline, k, s.width, s.height) };
+    }),
+  );
+  const size = $derived.by(() => {
+    const xs = room.outline.map((p) => p[0]),
+      ys = room.outline.map((p) => p[1]);
+    return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
   });
-
+  const fontSize = $derived(size / 16);
   const box = $derived.by(() => {
-    if (!room) return '0 0 1 1';
-    const r = room.walls;
-    const hA = r.A != null ? spec.surfaces[r.A]!.height : 0,
-      hB = r.B != null ? spec.surfaces[r.B]!.height : 0,
-      hC = r.C != null ? spec.surfaces[r.C]!.height : 0,
-      hD = r.D != null ? spec.surfaces[r.D]!.height : 0;
-    const m = 700;
-    return `${-hD - m - 600} ${-hA - m} ${room.length + hB + hD + 2 * m + 1200} ${room.width + hA + hC + 2 * m + 200}`;
+    const pts: Point[] = [...room.outline, ...walls.flatMap((w) => ('corners' in w ? w.corners : []))];
+    return boxOf(pts, fontSize * 2.5).join(' ');
   });
-
-  /** Taille des noms proportionnelle à la pièce : lisible quelle que soit l'échelle d'affichage. */
-  const fontSize = $derived(room ? Math.max(room.length, room.width) / 13 : 200);
 
   const drawing = (i: number) => {
     const r = result.surfaces[i];
     return planDrawing(spec.surfaces[i]!, r?.ok ? r.value.pieces : []);
   };
+  const grout = (i: number) => project.surfaces[i]?.zones[0]?.groutColor ?? '#8f8a83';
+  /** Point d'étiquette : au centre de la surface dépliée. */
+  const centre = (c: Point[]): Point => [(c[0]![0] + c[2]![0]) / 2, (c[0]![1] + c[2]![1]) / 2];
 </script>
 
-{#if room}
-  <svg class="top" viewBox={box} role="group" aria-label="Pièce vue de dessus, murs dépliés autour du sol">
-    {#each placed as p (p.i)}
-      {@const s = spec.surfaces[p.i]!}
-      {@const d = drawing(p.i)}
-      {@const name = project.surfaces[p.i]?.name ?? ''}
-      <a href="#/p/{project.id}/m/carrelage/s/{project.surfaces[p.i]?.id}" aria-label="Ouvrir {name}">
-        <g transform={p.transform}>
-          <rect width={s.width} height={s.height} fill={project.surfaces[p.i]?.zones[0]?.groutColor ?? '#8f8a83'} />
+<svg class="top" viewBox={box} role="group" aria-label="{room.name} vue de dessus, murs dépliés autour du sol">
+  <polygon class="room" points={room.outline.map((p) => p.join(',')).join(' ')} />
+  {#each walls as w (w.k)}
+    {#if 'matrix' in w && w.i != null}
+      {@const d = drawing(w.i)}
+      {@const s = project.surfaces[w.i]!}
+      {@const c = centre(w.corners)}
+      <a href="#/p/{project.id}/m/carrelage/s/{s.id}" aria-label="Ouvrir {s.name}">
+        <g transform="matrix({w.matrix.join(' ')})">
+          <path d={d.outline} fill={grout(w.i)} />
           {#each d.shapes as sh, k (k)}<path d={sh.d} fill={sh.fill} />{/each}
           {#each d.holes as h, k (k)}<path class="hole" d={h} />{/each}
-          <rect class="edge" width={s.width} height={s.height} />
+          <path class="edge" d={d.outline} />
         </g>
-        <text x={p.lx} y={p.ly} text-anchor={p.anchor} dominant-baseline="middle" font-size={fontSize}>{name}</text>
+        <text x={c[0]} y={c[1]} font-size={fontSize} text-anchor="middle" dominant-baseline="middle">{w.k + 1}</text>
       </a>
-    {/each}
-  </svg>
-{:else}
-  <ul class="grid" aria-label="Surfaces du projet">
-    {#each project.surfaces as s, i (s.id)}
-      {@const d = drawing(i)}
-      <li>
-        <a href="#/p/{project.id}/m/carrelage/s/{s.id}">
-          <svg viewBox={d.viewBox} role="img" aria-label="Aperçu de {s.name}">
-            <rect width={d.width} height={d.height} fill={s.zones[0]?.groutColor} />
-            {#each d.shapes as sh, k (k)}<path d={sh.d} fill={sh.fill} />{/each}
-            {#each d.holes as h, k (k)}<path class="hole" d={h} />{/each}
-          </svg>
-          <span>{s.name}</span>
-        </a>
-      </li>
-    {/each}
-  </ul>
-{/if}
+    {:else if 'a' in w}
+      <line class="bare" x1={w.a[0]} y1={w.a[1]} x2={w.b[0]} y2={w.b[1]} />
+    {/if}
+  {/each}
+  {#if floor != null}
+    {@const d = drawing(floor)}
+    {@const s = project.surfaces[floor]!}
+    <a href="#/p/{project.id}/m/carrelage/s/{s.id}" aria-label="Ouvrir {s.name}">
+      <g transform="translate({s.origin[0]} {s.origin[1]})">
+        <path d={d.outline} fill-rule="evenodd" fill={grout(floor)} />
+        {#each d.shapes as sh, k (k)}<path d={sh.d} fill={sh.fill} />{/each}
+        {#each d.holes as h, k (k)}<path class="hole" d={h} />{/each}
+        <path class="edge" d={d.outline} fill-rule="evenodd" />
+      </g>
+    </a>
+  {/if}
+</svg>
 
 <style>
   .top {
     display: block;
     width: 100%;
     height: 100%;
+  }
+  .room {
+    fill: var(--paper);
+    stroke: var(--muted);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .bare {
+    stroke: var(--ink);
+    stroke-width: 3;
+    vector-effect: non-scaling-stroke;
   }
   .top a:focus-visible {
     outline: none;
@@ -138,29 +119,12 @@
   }
   text {
     fill: var(--ink);
+    paint-order: stroke;
+    stroke: var(--sheet);
+    stroke-width: 6;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
     font-family: var(--font-num);
     font-weight: 600;
-  }
-  .grid {
-    list-style: none;
-    margin: 0;
-    padding: var(--space-3);
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
-    gap: var(--space-3);
-  }
-  .grid a {
-    display: grid;
-    gap: var(--space-1);
-    padding: var(--space-2);
-    border: 1px solid var(--line);
-    border-radius: var(--r-panel);
-    background: var(--sheet);
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .grid svg {
-    width: 100%;
-    aspect-ratio: 4 / 3;
   }
 </style>

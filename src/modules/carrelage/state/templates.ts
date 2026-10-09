@@ -1,12 +1,13 @@
 /**
- * Projets créés par l'assistant : une pièce rectangulaire dans le plan, dont on carrèle un mur, le sol, ou
- * plusieurs murs et le sol (murs A à D = murs 1 à 4 du contour, A en haut, sens horaire).
+ * Projet créé par l'assistant : une pièce du plan (rectangle, L ou U), le sol et les murs cochés carrelés avec le
+ * même carreau et le même motif.
  */
 import type { PatternId } from '../core';
-import { rectRoom } from '../../../core/plan/factories';
+import { lRoom, rectRoom, uRoom } from '../../../core/plan/factories';
+import type { PlanRoom } from '../../../core/plan/types';
 import { PROJECT_SCHEMA, type Id, type Project } from '../../../state/model';
 import { createData, createFloorTiling, createRoomTiling, createWallTiling, createZone, newId } from './factories';
-import type { RoomWallKey, WallTiling } from './model';
+import type { WallTiling } from './model';
 import { CARRELAGE_ID, CARRELAGE_SCHEMA } from './data';
 
 export interface LayoutChoice {
@@ -17,80 +18,72 @@ export interface LayoutChoice {
   joint: number;
 }
 
-export interface SingleSurfaceInput extends LayoutChoice {
-  kind: 'wall' | 'floor';
-  width: number;
-  height: number;
-  name?: string;
-}
+/** Forme de la pièce et ses cotes (mm), comme la création rapide du plan. */
+export type RoomForm =
+  | { kind: 'rect'; length: number; width: number }
+  | { kind: 'l'; length: number; width: number; cutLength: number; cutWidth: number }
+  | { kind: 'u'; length: number; width: number; arm: number; depth: number };
 
-export interface RoomInput extends LayoutChoice {
-  length: number;
-  width: number;
+export interface WizardInput extends LayoutChoice {
+  form: RoomForm;
+  /** Hauteur sous plafond. */
   height: number;
+  /** Hauteur carrelée des murs (bornée par la hauteur sous plafond). */
   tiledHeight: number;
-  walls: Record<RoomWallKey, boolean>;
+  floor: boolean;
+  /** Murs carrelés, par indice dans le contour (mur 1 = 0). */
+  walls: readonly number[];
+  /** Nom du projet ; par défaut « Pièce 400 × 300 ». */
   name?: string;
+  roomName?: string;
 }
 
 const cm = (mm: number) => Math.round(mm / 10);
 
-const WALLS = ['A', 'B', 'C', 'D'] as const;
-
-function base(c: LayoutChoice) {
-  return {
-    joint: c.joint,
-    zones: [createZone(c.tileId, { tileUpright: c.tileUpright, pattern: c.pattern, angle: c.angle })],
-  };
+/** Pièce du plan pour une forme : contour en sens horaire, mur 1 en haut. */
+export function formRoom(form: RoomForm, o: { name: string; height: number }, id: () => Id = newId): PlanRoom {
+  if (form.kind === 'l') return lRoom(form.length, form.width, form.cutLength, form.cutWidth, o, id);
+  if (form.kind === 'u') return uRoom(form.length, form.width, form.arm, form.depth, o, id);
+  return rectRoom(form.length, form.width, o, id);
 }
 
-function projectWith(
-  name: string,
-  room: ReturnType<typeof rectRoom>,
-  tiling: ReturnType<typeof createRoomTiling>,
-  now: number,
-): Project {
+/** Cotes cohérentes : un retrait plus petit que la pièce. */
+export function validForm(f: RoomForm): boolean {
+  if (!(f.length > 0 && f.width > 0)) return false;
+  if (f.kind === 'l') return f.cutLength > 0 && f.cutWidth > 0 && f.cutLength < f.length && f.cutWidth < f.width;
+  if (f.kind === 'u') return f.arm > 0 && f.depth > 0 && 2 * f.arm < f.length && f.depth < f.width;
+  return true;
+}
+
+export function createWizardProject(i: WizardInput, now = Date.now()): Project {
+  const room = formRoom(i.form, { name: i.roomName?.trim() || 'Pièce', height: i.height });
+  const layout = {
+    joint: i.joint,
+    zones: [createZone(i.tileId, { tileUpright: i.tileUpright, pattern: i.pattern, angle: i.angle })],
+  };
+  const walls: Record<Id, WallTiling> = {};
+  for (const k of i.walls) {
+    const w = room.walls[k];
+    if (w)
+      walls[w.id] = createWallTiling(i.tileId, {
+        ...layout,
+        zones: layout.zones.map((z) => ({ ...z, id: newId() })),
+        tiledHeight: i.tiledHeight >= i.height ? null : i.tiledHeight,
+      });
+  }
+  const floor = i.floor ? createFloorTiling(i.tileId, layout) : null;
   return {
     schemaVersion: PROJECT_SCHEMA,
     id: newId(),
-    name,
+    name: i.name?.trim() || `Pièce ${cm(i.form.length)} × ${cm(i.form.width)}`,
     createdAt: now,
     updatedAt: now,
     plan: { rooms: [room], passages: [] },
     modules: {
-      [CARRELAGE_ID]: { schemaVersion: CARRELAGE_SCHEMA, data: createData({ rooms: { [room.id]: tiling } }) },
+      [CARRELAGE_ID]: {
+        schemaVersion: CARRELAGE_SCHEMA,
+        data: createData({ rooms: { [room.id]: createRoomTiling({ floor, walls }) } }),
+      },
     },
   };
-}
-
-/**
- * Mur seul : pièce de largeur × 2 m, hauteur sous plafond = hauteur du mur, premier mur carrelé.
- * Sol seul : pièce largeur × hauteur, sol carrelé.
- */
-export function createSingleSurfaceProject(i: SingleSurfaceInput, now = Date.now()): Project {
-  const label = i.kind === 'floor' ? 'Sol' : 'Mur';
-  const name = i.name?.trim() || `${label} ${cm(i.width)} × ${cm(i.height)}`;
-  if (i.kind === 'floor') {
-    const room = rectRoom(i.width, i.height, { name: 'Pièce' }, newId);
-    return projectWith(name, room, createRoomTiling({ floor: createFloorTiling(i.tileId, base(i)) }), now);
-  }
-  const room = rectRoom(i.width, 2000, { name: 'Pièce', height: i.height }, newId);
-  const wall: WallTiling = createWallTiling(i.tileId, base(i));
-  return projectWith(name, room, createRoomTiling({ walls: { [room.walls[0]!.id]: wall } }), now);
-}
-
-/** Murs A et C sur la longueur, B et D sur la largeur, carrelés sur tiledHeight ; sol longueur × largeur. */
-export function createRoomProject(i: RoomInput, now = Date.now()): Project {
-  const room = rectRoom(i.length, i.width, { name: 'Pièce', height: i.height }, newId);
-  const walls: Record<Id, WallTiling> = {};
-  WALLS.forEach((k, n) => {
-    if (i.walls[k])
-      walls[room.walls[n]!.id] = createWallTiling(i.tileId, {
-        ...base(i),
-        tiledHeight: i.tiledHeight >= i.height ? null : i.tiledHeight,
-      });
-  });
-  const floor = i.walls.floor ? createFloorTiling(i.tileId, base(i)) : null;
-  const name = i.name?.trim() || `Pièce ${cm(i.length)} × ${cm(i.width)}`;
-  return projectWith(name, room, createRoomTiling({ floor, walls }), now);
 }

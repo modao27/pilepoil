@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reduce } from '../../src/modules/carrelage/state/actions';
+import { reduce, tilingAction } from '../../src/modules/carrelage/state/actions';
 import {
   createData,
   createFloorTiling,
@@ -134,6 +134,27 @@ describe('réducteur', () => {
     expect(p.prices).toEqual({ colle: 18.5 });
     p = reduce(p, { type: 'carrelage/price', key: 'colle', value: null });
     expect(p.prices).toEqual({});
+  });
+
+  it('carreler une surface : reprend le carrelage d’une autre, zones copiées ; un sol a une seule zone', () => {
+    let n = 0;
+    const id = () => `z${n++}`;
+    const like = { joint: 2, split: 'v' as const, zones: [createZone(tile.id, { unit: 'rows' }), createZone(tile.id)] };
+    const wall = tilingAction({ room: 'r', wall: 'r-w1' }, true, like, '', id);
+    expect(wall).toMatchObject({ type: 'carrelage/wall/enable', wallId: 'r-w1', tiling: { joint: 2, split: 'v' } });
+    if (wall.type !== 'carrelage/wall/enable') throw new Error();
+    expect(wall.tiling.zones.map((z) => z.id)).toEqual(['z0', 'z1']);
+    const floor = tilingAction({ room: 'r', wall: null }, true, like, '', id);
+    if (floor.type !== 'carrelage/floor/enable') throw new Error();
+    expect(floor.tiling.zones).toMatchObject([{ unit: 'rest', tileId: tile.id }]);
+    expect(tilingAction({ room: 'r', wall: null }, true, undefined, 't9', id)).toMatchObject({
+      tiling: { zones: [{ tileId: 't9' }] },
+    });
+    expect(tilingAction({ room: 'r', wall: 'r-w1' }, false, like, '', id)).toEqual({
+      type: 'carrelage/wall/disable',
+      roomId: 'r',
+      wallId: 'r-w1',
+    });
   });
 
   it('remplacement : toutes les données carrelage', () => {

@@ -9,7 +9,7 @@ import { CARRELAGE_ID, CARRELAGE_MIGRATIONS, CARRELAGE_SCHEMA, type CarrelageDat
 import { TILE_SCHEMA } from './state/model';
 import { create, priceAction, shopping, summary, toSpec } from './state/module';
 
-/** Même chargeur pour les deux adresses de l'éditeur : il n'est pas recréé quand seule la surface change. */
+/** Éditeur d'une surface : #/p/:id/m/carrelage/s/:surfaceId. */
 const editor = () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default);
 
 /** État du module (bibliothèque, calculs, scénarios), chargé à la demande avec l'interface. */
@@ -43,10 +43,11 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
   },
   icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M12 1v22M23 1v22M1 12h32"/>',
   screens: {
-    editor,
+    editor: () => import('./ui/screens/Home.svelte').then((m) => m.default),
     results: () => import('./ui/screens/Results.svelte').then((m) => m.default),
     routes: [
       { path: 's/:surfaceId', load: editor },
+      { path: 'room/:roomId', load: () => import('./ui/screens/Room.svelte').then((m) => m.default) },
       { path: 'compare', load: () => import('./ui/screens/Compare.svelte').then((m) => m.default) },
     ],
     create: () => import('./ui/screens/Wizard.svelte').then((m) => m.default),

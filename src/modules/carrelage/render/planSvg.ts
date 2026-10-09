@@ -22,6 +22,8 @@ export interface PlanDrawing {
   shapes: PlanShape[];
   /** Ouvertures découpées (fenêtres, portes…), en pointillés. */
   holes: string[];
+  /** Contour de la surface (sol d'une pièce : contour et obstacles, à remplir en evenodd), sinon le rectangle. */
+  outline: string;
 }
 
 const fmt = (n: number) => (Math.round(n * 10) / 10).toString();
@@ -52,5 +54,6 @@ export function planDrawing(s: SurfaceSpec, pieces: Piece[], plan: CutPlan | nul
       const y = s.height - o.sill - o.height;
       return `M${fmt(o.x)} ${fmt(y)}h${fmt(o.width)}v${fmt(o.height)}h${fmt(-o.width)}Z`;
     });
-  return { viewBox: `0 0 ${fmt(s.width)} ${fmt(s.height)}`, width: s.width, height: s.height, shapes, holes };
+  const outline = s.outline ? pathOf(s.outline) : `M0 0H${fmt(s.width)}V${fmt(s.height)}H0Z`;
+  return { viewBox: `0 0 ${fmt(s.width)} ${fmt(s.height)}`, width: s.width, height: s.height, shapes, holes, outline };
 }

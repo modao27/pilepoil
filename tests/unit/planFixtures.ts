@@ -3,6 +3,7 @@ import { lRoom, rectRoom } from '../../src/core/plan/factories';
 import type { PlanRoom, WallOpening } from '../../src/core/plan/types';
 import { carrelageView, CARRELAGE_SCHEMA, type CarrelageData } from '../../src/modules/carrelage/state/data';
 import { createData } from '../../src/modules/carrelage/state/factories';
+import { createWizardProject, type LayoutChoice } from '../../src/modules/carrelage/state/templates';
 import { PROJECT_SCHEMA, type Project } from '../../src/state/model';
 
 /** Identifiants déterministes : `${prefix}0`, `${prefix}1`… */
@@ -52,6 +53,18 @@ export function planProject(rooms: PlanRoom[], data: Partial<CarrelageData> = {}
     modules: { carrelage: { schemaVersion: CARRELAGE_SCHEMA, data: createData(data) } },
     ...o,
   };
+}
+
+/** Mur seul de largeur × hauteur : premier mur d'une pièce largeur × 2 m, hauteur sous plafond = hauteur. */
+export function wallOnly(c: LayoutChoice, width: number, height: number, now = 0): Project {
+  const form = { kind: 'rect' as const, length: width, width: 2000 };
+  return createWizardProject({ ...c, form, height, tiledHeight: height, floor: false, walls: [0] }, now);
+}
+
+/** Sol seul longueur × largeur. */
+export function floorOnly(c: LayoutChoice, length: number, width: number, now = 0): Project {
+  const form = { kind: 'rect' as const, length, width };
+  return createWizardProject({ ...c, form, height: 2500, tiledHeight: 2500, floor: true, walls: [] }, now);
 }
 
 /** Vue carrelage d'un projet de test (le carrelage y est toujours activé). */

@@ -269,7 +269,8 @@ Accueil (projets)
  ├─ Nouveau projet  #/new                 choix de l'outil : assistant (#/new/carrelage) ou projet vide + plan
  └─ Projet  #/p/:id                       cartes des modules activés + « Ajouter un outil », résumé, total
      ├─ Plan  #/p/:id/plan                éditeur de pièces commun
-     ├─ Carrelage  #/p/:id/m/carrelage/…   routes actuelles du carrelage, préfixées
+     ├─ Carrelage  #/p/:id/m/carrelage     pièces du plan, sol et murs à cocher ; /s/:surfaceId (éditeur),
+     │                                     /room/:roomId (vue de la pièce), /results, /compare
      ├─ Parquet    #/p/:id/m/parquet       éditeur ; /results ; /chantier
      └─ Achats #/p/:id/achats             liste consolidée
 Bibliothèques  #/library/tiles, #/library/boards
@@ -332,3 +333,4 @@ seul le parquet s'en sert au début.
 | 2026-10-09 | Base PDF commune `src/ui/lib/pdf/doc.ts` et découpe de barres `src/core/cutting/bars.ts` | P4 |
 | 2026-10-09 | Carrelage bâti sur le plan commun : sols et murs du plan, un mur = une surface, pas de conversion des anciens projets, parité du moteur sur les rectangles | `PLAN.md` C1–C4 |
 | 2026-10-09 | `shopping` reçoit le plan du projet (le carrelage y retrouve ses surfaces) ; données carrelage par pièce et mur du plan (schéma 2), scénarios en schéma 3, anciens supprimés | §2, `PLAN.md` C2 |
+| 2026-10-09 | Carrelage : écran d'accueil par pièce du plan, assistant qui dessine la pièce (rectangle, L, U), vue de la pièce depuis le polygone | §8, `PLAN.md` C3 |

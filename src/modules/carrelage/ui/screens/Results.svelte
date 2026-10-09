@@ -34,6 +34,12 @@
 
   const cost = $derived(project && result ? projectCost(project, carrelage.tiles, result) : null);
   const multi = $derived((project?.surfaces.length ?? 0) > 1);
+  /** Surfaces carrelées par pièce du plan. */
+  const rooms = $derived(
+    (project?.plan.rooms ?? [])
+      .map((room) => ({ room, surfaces: project!.surfaces.filter((s) => s.ref.room === room.id) }))
+      .filter((g) => g.surfaces.length),
+  );
   const mm = (v: number) => (Math.round(v * 10) / 10).toLocaleString('fr-FR');
   const tilesById = $derived(new Map(carrelage.tiles.map((t) => [t.id, t])));
 
@@ -67,7 +73,7 @@
     </EmptyState>
   </Screen>
 {:else}
-  <Screen title="Résultats — {project.name}" backHref="#/p/{project.id}/m/carrelage" backLabel="Retour au plan">
+  <Screen title="Résultats — {project.name}" backHref="#/p/{project.id}/m/carrelage" backLabel="Carrelage">
     {#snippet actions()}
       <Button variant="ghost" href="#/p/{project.id}/m/carrelage/compare">Comparer</Button>
       <Button icon="download" disabled={!result} onclick={() => (exporting = true)}>PDF</Button>
@@ -90,6 +96,18 @@
           />
           <StatCard label="Surface" value={m2(projectArea(project)).replace(' m²', '')} unit="m²" />
           <StatCard label="Coût estimé" value={cost && cost.total > 0 ? euros(cost.total) : '–'} />
+        </section>
+
+        <section class="rooms" aria-label="Surfaces carrelées">
+          {#each rooms as g (g.room.id)}
+            <p>
+              <strong>{g.room.name}</strong> :
+              {#each g.surfaces as s, k (s.id)}{k ? ', ' : ''}<a href="#/p/{project.id}/m/carrelage/s/{s.id}"
+                  >{s.ref.wall ? s.name.slice(g.room.name.length + 2) : 'sol'}</a
+                >{/each}
+              · <a href="#/p/{project.id}/m/carrelage/room/{g.room.id}">vue de la pièce</a>
+            </p>
+          {/each}
         </section>
 
         <Tabs
@@ -409,5 +427,9 @@
   }
   .err {
     color: var(--thin-ink);
+  }
+  .rooms p {
+    margin: 0;
+    line-height: 2;
   }
 </style>

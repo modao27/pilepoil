@@ -48,7 +48,7 @@ try {
     locale: 'fr-FR',
   });
   const page = ctx.pages()[0] ?? (await ctx.newPage());
-  // projet de démonstration : mur 300 × 240, carreau 60 × 30
+  // projet de démonstration : sol d'une pièce de 300 × 240, carreau 60 × 30
   await page.goto(BASE + '#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
@@ -56,11 +56,13 @@ try {
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
+  await page.getByRole('link', { name: 'Ouvrir Pièce, sol' }).click();
   await page
     .getByRole('link', { name: /\d+ carreaux/ })
     .first()
     .waitFor();
-  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  const [, id, surface] = /#\/p\/([^/]+)\/m\/carrelage\/s\/([^/]+)/.exec(page.url())!;
+  const room = surface!.split('~')[0]!;
   await page.waitForTimeout(500);
 
   // projet de parquet : pièce 400 × 300, une pose de stratifié
@@ -87,9 +89,12 @@ try {
 
   // [nom, adresse, premier chargement]
   const pages: [string, string, boolean][] = [
-    ['editeur', `#/p/${id}`, false],
-    ['resultats', `#/p/${id}/results`, false],
-    ['comparer', `#/p/${id}/compare`, false],
+    ['projet', `#/p/${id}`, false],
+    ['carrelage', `#/p/${id}/m/carrelage`, false],
+    ['editeur', `#/p/${id}/m/carrelage/s/${surface}`, false],
+    ['piece', `#/p/${id}/m/carrelage/room/${room}`, false],
+    ['resultats', `#/p/${id}/m/carrelage/results`, false],
+    ['comparer', `#/p/${id}/m/carrelage/compare`, false],
     ['parquet', `#/p/${pid}/m/parquet`, false],
     ['parquet-resultats', `#/p/${pid}/m/parquet/results`, false],
     ['parquet-chantier', `#/p/${pid}/m/parquet/chantier`, false],
@@ -130,7 +135,12 @@ try {
 } finally {
   server.kill();
   if (process.platform === 'win32' && server.pid) spawn('taskkill', ['/pid', String(server.pid), '/T', '/F']);
-  rmSync(profile, { recursive: true, force: true });
+  // Chrome peut garder le profil verrouillé un instant (Windows) : un échec ici ne doit pas masquer le résultat
+  try {
+    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+  } catch {
+    console.warn(`Profil temporaire non supprimé : ${profile}`);
+  }
 }
 if (failed) {
   console.error(`\nAu moins une note est inférieure à ${MIN}.`);

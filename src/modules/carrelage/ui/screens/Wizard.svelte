@@ -1,17 +1,22 @@
 <script lang="ts">
-  /** Assistant de création : type → dimensions → carreau → motif, aperçu en direct à chaque étape. */
+  /**
+   * Assistant de démarrage : la pièce (rectangle, L ou U) est dessinée dans le plan, on coche le sol et les murs
+   * à carreler, puis carreau et motif ; aperçu en direct. Le projet s'ouvre sur l'écran Carrelage.
+   */
   import { PATTERNS, type PatternId, type ProjectResult } from '../../core';
   import { createTile, tileName } from '../../state/factories';
-  import type { RoomWallKey, Tile } from '../../state/model';
+  import type { Tile } from '../../state/model';
   import { carrelageView } from '../../state/data';
   import type { Project } from '../../../../state/model';
   import { toProjectSpec } from '../../state/selectors';
-  import { createRoomProject, createSingleSurfaceProject } from '../../state/templates';
+  import { createWizardProject, formRoom, validForm, type RoomForm } from '../../state/templates';
+  import { wallLength } from '../../../../core/plan/walls';
   import Button from '../../../../ui/components/Button.svelte';
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
   import PatternPicker from '../components/PatternPicker.svelte';
   import PlanPreview from '../components/PlanPreview.svelte';
+  import RoomWalls from '../components/RoomWalls.svelte';
   import Screen from '../../../../ui/components/Screen.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import TextField from '../../../../ui/components/TextField.svelte';
@@ -19,18 +24,19 @@
   import TileSwatch from '../components/TileSwatch.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
-  import { count, mm, tileSize } from '../../../../ui/lib/format';
+  import { cm, count, mm, tileSize } from '../../../../ui/lib/format';
   import { go } from '../../../../ui/lib/router.svelte';
 
-  type Kind = 'wall' | 'floor' | 'room';
-  const STEPS = ['Type', 'Dimensions', 'Carreau', 'Motif'] as const;
+  type Shape = RoomForm['kind'];
+  const STEPS = ['Pièce', 'À carreler', 'Carreau', 'Motif'] as const;
 
   let step = $state(0);
-  let kind = $state<Kind>('wall');
-  let width = $state(3000);
-  let height = $state(2400);
-  let room = $state({ length: 2400, width: 1800, height: 2500, tiledHeight: 2000 });
-  let walls = $state<Record<RoomWallKey, boolean>>({ A: true, B: true, C: true, D: true, floor: true });
+  let shape = $state<Shape>('rect');
+  const dims = $state({ length: 3000, width: 2400, cutLength: 1200, cutWidth: 1000, arm: 900, depth: 1000 });
+  let height = $state(2500);
+  let tiledHeight = $state(2000);
+  let floor = $state(true);
+  let walls = $state<number[]>([]);
   let tileId = $state<string | null>(carrelage.tiles[0]?.id ?? null);
   let creating = $state(carrelage.tiles.length === 0);
   let draft = $state<Tile>(createTile({ name: '' }));
@@ -42,6 +48,21 @@
   let error = $state('');
   let saving = $state(false);
 
+  const form = $derived.by<RoomForm>(() => {
+    const { length, width } = dims;
+    if (shape === 'l') return { kind: 'l', length, width, cutLength: dims.cutLength, cutWidth: dims.cutWidth };
+    if (shape === 'u') return { kind: 'u', length, width, arm: dims.arm, depth: dims.depth };
+    return { kind: 'rect', length, width };
+  });
+  /** Pièce dessinée (aperçu des murs numérotés). */
+  const room = $derived(validForm(form) ? formRoom(form, { name: 'Pièce', height }) : null);
+
+  // changer de forme change le nombre de murs : on ne garde que ceux qui existent
+  $effect(() => {
+    const n = room?.walls.length ?? 0;
+    if (walls.some((k) => k >= n)) walls = walls.filter((k) => k < n);
+  });
+
   const tile = $derived((tileId && carrelage.tile(tileId)) || undefined);
   /** Carreau de l'aperçu : celui choisi, sinon le brouillon en cours de saisie. */
   const shown = $derived<Tile>(tile ?? $state.snapshot(draft));
@@ -52,18 +73,18 @@
     if (!allowed.some((p) => p.id === pattern)) pattern = allowed[0]!.id;
   });
 
-  function build(t: Tile): Project {
+  function build(t: Tile): Project | null {
+    if (!validForm(form)) return null;
     const layout = { tileId: t.id, tileUpright: !regular && upright, pattern, angle, joint };
-    return kind === 'room'
-      ? createRoomProject({ ...layout, ...room, walls, name }, 0)
-      : createSingleSurfaceProject({ ...layout, kind, width, height, name }, 0);
+    return createWizardProject({ ...layout, form, height, tiledHeight, floor, walls, name }, 0);
   }
 
   const doc = $derived(build(shown));
-  const project = $derived(carrelageView(doc)!);
+  const project = $derived(doc && carrelageView(doc));
   let preview = $state.raw<ProjectResult | null>(null);
   let previewSpec = $state.raw<ReturnType<typeof toProjectSpec>['spec'] | null>(null);
   $effect(() => {
+    if (!project?.surfaces.length) return;
     const spec = toProjectSpec(project, [...carrelage.tiles.filter((t) => t.id !== shown.id), shown]).spec;
     void carrelage.computeLive(spec).then((r) => {
       if (r) {
@@ -74,19 +95,18 @@
   });
   const first = $derived(preview?.surfaces[0]);
 
-  function setKind(k: Kind) {
-    kind = k;
-    if (k === 'floor' && height === 2400) height = 2000;
-    if (k === 'wall' && height === 2000) height = 2400;
+  function toggleWall(k: number, on: boolean) {
+    walls = on ? [...walls, k].sort((a, b) => a - b) : walls.filter((x) => x !== k);
   }
 
   function validate(): string {
+    if (step === 0) {
+      if (!validForm(form) || !(height > 0))
+        return 'Indiquez des cotes positives ; un retrait plus petit que la pièce.';
+    }
     if (step === 1) {
-      if (kind === 'room') {
-        if (!(room.length > 0 && room.width > 0 && room.height > 0 && room.tiledHeight > 0))
-          return 'Indiquez la longueur, la largeur et les hauteurs de la pièce.';
-        if (!Object.values(walls).some(Boolean)) return 'Choisissez au moins un mur ou le sol.';
-      } else if (!(width > 0 && height > 0)) return 'Indiquez la largeur et la hauteur.';
+      if (!floor && !walls.length) return 'Choisissez le sol ou au moins un mur.';
+      if (walls.length && !(tiledHeight > 0)) return 'Indiquez la hauteur carrelée des murs.';
     }
     if (step === 2 && !tile)
       return creating ? 'Ajoutez le carreau, ou choisissez-en un dans la liste.' : 'Choisissez un carreau.';
@@ -100,44 +120,51 @@
 
   async function create() {
     if (!tile || saving) return;
+    const p = build(tile);
+    if (!p) return;
     saving = true;
     const now = Date.now();
-    const p = { ...build(tile), createdAt: now, updatedAt: now };
-    await app.saveProject(p);
+    await app.saveProject({ ...p, createdAt: now, updatedAt: now });
     go({ name: 'module', id: p.id, module: 'carrelage', path: '' }, true);
   }
-
-  const WALL_LABELS: [RoomWallKey, string][] = [
-    ['A', 'Mur A (longueur)'],
-    ['B', 'Mur B (largeur)'],
-    ['C', 'Mur C (longueur)'],
-    ['D', 'Mur D (largeur)'],
-    ['floor', 'Sol'],
-  ];
 </script>
 
 <Screen title="Nouveau projet" backHref="#/" backLabel="Annuler et revenir à l’accueil" wide>
   <div class="wiz">
     <aside class="preview" aria-label="Aperçu">
-      <div
-        class="plan"
-        style="aspect-ratio: {previewSpec?.surfaces[0]?.width || 4} / {previewSpec?.surfaces[0]?.height || 3}"
-      >
-        {#if first?.ok && previewSpec}
-          <PlanPreview
-            surface={previewSpec.surfaces[0]!}
-            pieces={first.value.pieces}
-            grout="#8f8a83"
-            label="Aperçu de {project.surfaces[0]!.name}"
-          />
-        {/if}
-      </div>
-      <p class="cap">
-        <span
-          >{project.surfaces[0]!.name}{project.surfaces.length > 1 ? ` (+ ${project.surfaces.length - 1})` : ''}</span
+      {#if step < 2 || !project?.surfaces.length}
+        <div class="plan walls">
+          {#if room}
+            <RoomWalls
+              {room}
+              {floor}
+              walls={walls.map((k) => room.walls[k]!.id)}
+              label="Pièce dessinée, murs numérotés"
+            />
+          {/if}
+        </div>
+        <p class="cap"><span>Pièce de {cm(dims.length)} sur {cm(dims.width)}</span></p>
+      {:else}
+        <div
+          class="plan"
+          style="aspect-ratio: {previewSpec?.surfaces[0]?.width || 4} / {previewSpec?.surfaces[0]?.height || 3}"
         >
-        {#if preview}<span class="num">≈ {count(preview.metrics.order, 'carreau', 'carreaux')}</span>{/if}
-      </p>
+          {#if first?.ok && previewSpec}
+            <PlanPreview
+              surface={previewSpec.surfaces[0]!}
+              pieces={first.value.pieces}
+              grout="#8f8a83"
+              label="Aperçu de {project.surfaces[0]!.name}"
+            />
+          {/if}
+        </div>
+        <p class="cap">
+          <span
+            >{project.surfaces[0]!.name}{project.surfaces.length > 1 ? ` (+ ${project.surfaces.length - 1})` : ''}</span
+          >
+          {#if preview}<span class="num">≈ {count(preview.metrics.order, 'carreau', 'carreaux')}</span>{/if}
+        </p>
+      {/if}
     </aside>
 
     <div class="form">
@@ -156,50 +183,63 @@
       </div>
 
       {#if step === 0}
-        <h2>Que voulez-vous carreler ?</h2>
-        <div class="kinds" role="radiogroup" aria-label="Type de projet">
-          {#each [['wall', 'Un mur', 'Crédence, douche, mur de salle de bain'], ['floor', 'Un sol', 'Cuisine, entrée, terrasse'], ['room', 'Une pièce', 'Murs et sol d’une salle de bain']] as [k, t, d] (k)}
-            <button type="button" role="radio" aria-checked={kind === k} onclick={() => setKind(k as Kind)}>
-              <strong>{t}</strong><span class="muted">{d}</span>
-            </button>
-          {/each}
+        <h2>La pièce</h2>
+        <Segmented
+          label="Forme de la pièce"
+          bind:value={shape}
+          options={[
+            { value: 'rect', label: 'Rectangle' },
+            { value: 'l', label: 'En L' },
+            { value: 'u', label: 'En U' },
+          ]}
+        />
+        <div class="two">
+          <NumberField
+            label="Longueur de la pièce"
+            bind:value={dims.length}
+            unit="cm"
+            factor={10}
+            min={1}
+            hint="Calcul accepté : 300-12"
+          />
+          <NumberField label="Largeur de la pièce" bind:value={dims.width} unit="cm" factor={10} min={1} />
+          {#if shape === 'l'}
+            <NumberField label="Retrait en longueur" bind:value={dims.cutLength} unit="cm" factor={10} min={1} />
+            <NumberField label="Retrait en largeur" bind:value={dims.cutWidth} unit="cm" factor={10} min={1} />
+          {:else if shape === 'u'}
+            <NumberField label="Largeur des ailes" bind:value={dims.arm} unit="cm" factor={10} min={1} />
+            <NumberField label="Profondeur de l’encoche" bind:value={dims.depth} unit="cm" factor={10} min={1} />
+          {/if}
+          <NumberField label="Hauteur sous plafond" bind:value={height} unit="cm" factor={10} min={1} />
         </div>
+        <p class="muted small">
+          La pièce est ajoutée au plan du projet. Forme libre, portes et fenêtres : dans le plan, après la création.
+        </p>
       {:else if step === 1}
-        <h2>Dimensions</h2>
-        {#if kind === 'room'}
+        <h2>À carreler</h2>
+        {#if room}
+          <fieldset>
+            <legend>Sol et murs</legend>
+            <Checkbox label="Sol" bind:checked={floor} />
+            {#each room.walls as w, k (w.id)}
+              <Checkbox
+                label="Mur {k + 1}"
+                hint={cm(wallLength(room, k))}
+                checked={walls.includes(k)}
+                onchange={(v) => toggleWall(k, v)}
+              />
+            {/each}
+          </fieldset>
+        {/if}
+        {#if walls.length}
           <div class="two">
-            <NumberField label="Longueur de la pièce" bind:value={room.length} unit="cm" factor={10} min={1} />
-            <NumberField label="Largeur de la pièce" bind:value={room.width} unit="cm" factor={10} min={1} />
-            <NumberField label="Hauteur sous plafond" bind:value={room.height} unit="cm" factor={10} min={1} />
             <NumberField
               label="Hauteur carrelée"
-              bind:value={room.tiledHeight}
+              bind:value={tiledHeight}
               unit="cm"
               factor={10}
               min={1}
               hint="Hauteur de carrelage sur les murs."
-            />
-          </div>
-          <fieldset>
-            <legend>Surfaces à carreler</legend>
-            {#each WALL_LABELS as [k, l] (k)}<Checkbox label={l} bind:checked={walls[k]} />{/each}
-          </fieldset>
-        {:else}
-          <div class="two">
-            <NumberField
-              label={kind === 'floor' ? 'Longueur' : 'Largeur'}
-              bind:value={width}
-              unit="cm"
-              factor={10}
-              min={1}
-              hint="Calcul accepté : 300-12"
-            />
-            <NumberField
-              label={kind === 'floor' ? 'Largeur' : 'Hauteur'}
-              bind:value={height}
-              unit="cm"
-              factor={10}
-              min={1}
             />
           </div>
         {/if}
@@ -267,7 +307,7 @@
         <TextField
           label="Nom du projet"
           bind:value={name}
-          placeholder={build(shown).name}
+          placeholder={doc?.name ?? ''}
           maxlength={60}
           hint="Facultatif."
         />
@@ -357,12 +397,10 @@
     background: var(--accent);
     transition: width var(--dur);
   }
-  .kinds,
   .tiles {
     display: grid;
     gap: var(--space-2);
   }
-  .kinds button,
   .tiles button {
     display: flex;
     align-items: center;
@@ -376,12 +414,6 @@
     text-align: left;
     cursor: pointer;
   }
-  .kinds button {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-  .kinds button[aria-checked='true'],
   .tiles button[aria-checked='true'] {
     border-color: var(--accent);
     box-shadow: inset 0 0 0 1px var(--accent);
@@ -399,6 +431,9 @@
     gap: var(--space-3);
   }
   fieldset {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-2);
     margin: 0;
     padding: 0;
     border: 0;
@@ -431,5 +466,8 @@
     padding: var(--space-3) 0 calc(var(--space-3) + env(safe-area-inset-bottom));
     background: var(--paper);
     border-top: 1px solid var(--line);
+  }
+  .plan.walls {
+    aspect-ratio: 4 / 3;
   }
 </style>
