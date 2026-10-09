@@ -150,9 +150,9 @@ Marge : tant que `marginPct` vaut `null`, elle suit le motif et l'angle de la po
 met à jour). Dès que l'utilisateur la saisit, elle ne bouge plus ; un bouton « Revenir à la valeur
 conseillée » la remet à `null`.
 
-À décider avant P1 : les colonnes du tableau mêlent type de lame et mode de pose (un contrecollé peut être
-collé). Proposition : le type de lame (`Board.kind`) donne les valeurs, et une pose collée ou clouée
-désactive les alertes de fractionnement et de passage.
+Décidé (2026-10-08) : le type de lame (`Board.kind`) donne les valeurs (`core/defaults.ts`), et une pose collée
+ou clouée désactive les alertes de fractionnement et de passage. « Sans objet » s'écrit `null` dans les règles
+(sérialisable en JSON).
 
 ## 3. Entrée et sortie du moteur
 
