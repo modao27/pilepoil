@@ -16,7 +16,11 @@ export type Action =
   | { type: 'parquet/layout/split'; layoutId: Id; line: Segment; newId: Id }
   | { type: 'parquet/settings'; patch: Partial<ParquetSettings> }
   | { type: 'parquet/accessories'; patch: Partial<Accessories> }
-  | { type: 'parquet/price'; key: string; value: number | null };
+  | { type: 'parquet/price'; key: string; value: number | null }
+  /** Chantier : pièces posées (ou plus) pour le calcul d'empreinte `hash`. */
+  | { type: 'parquet/worksite/mark'; hash: string; ids: string[]; done: boolean }
+  /** Chantier : le calcul a changé ; on garde les pièces cochées qui existent encore (`valid`), ou rien. */
+  | { type: 'parquet/worksite/rebase'; hash: string; valid: string[] };
 
 /** Prévenu par le plan : une pièce a disparu (docs/BOITE.md §5). */
 interface RoomRemoved {
@@ -78,6 +82,21 @@ export function reduce(d: ParquetData, a: Action | RoomRemoved): ParquetData {
       const keys = Object.keys(a.patch) as (keyof Accessories)[];
       if (keys.every((k) => Object.is(d.accessories[k], a.patch[k]))) return d;
       return { ...d, accessories: { ...d.accessories, ...a.patch } };
+    }
+    case 'parquet/worksite/mark': {
+      const w = d.worksite?.resultHash === a.hash ? d.worksite : { resultHash: a.hash, done: [] };
+      const set = new Set(w.done);
+      for (const id of a.ids) {
+        if (a.done) set.add(id);
+        else set.delete(id);
+      }
+      const done = [...set];
+      if (w === d.worksite && done.length === w.done.length && done.every((id) => w.done.includes(id))) return d;
+      return { ...d, worksite: { resultHash: a.hash, done } };
+    }
+    case 'parquet/worksite/rebase': {
+      const keep = new Set(a.valid);
+      return { ...d, worksite: { resultHash: a.hash, done: (d.worksite?.done ?? []).filter((id) => keep.has(id)) } };
     }
     case 'parquet/price': {
       const rest = Object.fromEntries(Object.entries(d.prices).filter(([k]) => k !== a.key));

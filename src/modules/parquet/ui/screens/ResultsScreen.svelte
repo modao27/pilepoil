@@ -146,6 +146,7 @@
     {/each}
 
     <div class="actions">
+      <Button variant="primary" icon="check" href="#/p/{projectId}/m/parquet/chantier">Suivre le chantier</Button>
       <Button variant="secondary" icon="download" onclick={() => void exportPdf()} disabled={exporting}>
         {exporting ? 'Préparation…' : 'Exporter en PDF'}
       </Button>

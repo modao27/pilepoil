@@ -41,6 +41,7 @@ export const module: ToolModule<ParquetData, ParquetSpec, ParquetResult, Action>
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
     results: () => import('./ui/screens/ResultsScreen.svelte').then((m) => m.default),
+    worksite: () => import('./ui/screens/WorksiteScreen.svelte').then((m) => m.default),
   },
   library,
 };

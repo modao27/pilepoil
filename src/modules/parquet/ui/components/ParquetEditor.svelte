@@ -480,6 +480,7 @@
     <h1><span class="pname">{ed.doc.name}</span><span class="sub">Parquet</span></h1>
     <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
+    <IconButton icon="check" label="Chantier" href="#/p/{ed.doc.id}/m/parquet/chantier" />
     <IconButton icon="list" label="Résultats" href="#/p/{ed.doc.id}/m/parquet/results" />
   </header>
   <main class="body">

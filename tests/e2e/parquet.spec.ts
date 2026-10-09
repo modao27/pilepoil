@@ -234,3 +234,42 @@ test('parquet : deux pièces reliées par une porte, seuil conseillé, poses sé
   await expect(p.getByRole('combobox', { name: 'Pose affichée' })).toHaveCount(0);
   await expect(advice).toBeVisible();
 });
+
+test('parquet : chantier rang par rang, hors ligne, gardé au rechargement', async ({ page, context }, info) => {
+  const id = await parquetProject(page);
+  await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).toContainText('52 lames');
+  await page.goto(`/#/p/${id}/m/parquet/results`);
+  await page.getByRole('link', { name: 'Suivre le chantier' }).click();
+  await expect(page.getByRole('heading', { name: /^Chantier — / })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Séjour — rang 1 \(1 \/ 16\)/ })).toBeVisible();
+  await expect(page.getByText('0 / 64 pièces posées')).toBeVisible();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+
+  // sans réseau : cocher une pièce, puis tout le rang, passer au suivant
+  await context.setOffline(true);
+  await page.getByRole('checkbox', { name: /^1\. lame neuve → couper à/ }).check();
+  await expect(page.getByText('1 / 64 pièces posées')).toBeVisible();
+  await page.getByRole('button', { name: 'Tout ce rang est posé' }).click();
+  await expect(page.getByText('4 / 64 pièces posées')).toBeVisible();
+  await check(page);
+  await shot(page, info, '9a-parquet-chantier');
+  await page.getByRole('button', { name: 'Rang suivant' }).click();
+  await expect(page.getByRole('heading', { name: /rang 2 \(2 \/ 16\)/ })).toBeVisible();
+
+  // rechargement hors ligne : progression et rang retrouvés
+  await page.waitForTimeout(500);
+  await page.reload();
+  await expect(page.getByText('4 / 64 pièces posées')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /rang 2 \(2 \/ 16\)/ })).toBeVisible();
+  await context.setOffline(false);
+
+  // calcul changé (décalage ½) : bandeau, garder ce qui existe encore
+  await page.goto(`/#/p/${id}/m/parquet`);
+  await panel(page).getByRole('radio', { name: '½' }).click();
+  await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).not.toContainText('52 lames');
+  await page.goto(`/#/p/${id}/m/parquet/chantier`);
+  await expect(page.getByRole('alert')).toContainText('Le calcul a changé');
+  await page.getByRole('button', { name: 'Repartir de zéro' }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByText(/^0 \/ \d+ pièces posées/)).toBeVisible();
+});

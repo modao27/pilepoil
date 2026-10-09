@@ -15,6 +15,8 @@
     others = [],
     thresholds = [],
     dimensions = false,
+    focus,
+    done,
     ondrag,
     keyStep = 10,
     selected = $bindable(null),
@@ -31,6 +33,10 @@
     thresholds?: Threshold[];
     /** Cotes des murs (longueur intérieure, cm), à l'extérieur de chaque pièce. */
     dimensions?: boolean;
+    /** Chantier : pièces du rang en cours (les autres sont atténuées). */
+    focus?: ReadonlySet<string>;
+    /** Chantier : pièces déjà posées (grisées). */
+    done?: ReadonlySet<string>;
     /** Glissement en cours (move) ou fini (end) : déplacement depuis le début du geste, mm du plan. */
     ondrag?: (delta: [number, number], phase: 'move' | 'end') => void;
     /** Pas des flèches du clavier, mm (Maj : × 4). */
@@ -181,6 +187,9 @@
     <polygon
       class="piece {kind(p)}"
       class:sel={selected === p.id}
+      class:focus={focus?.has(p.id)}
+      class:dim={!!focus?.size && !focus.has(p.id)}
+      class:done={done?.has(p.id)}
       style={kind(p) === 'full' ? `fill: ${variants && p.variant === 'B' ? dark : color}` : undefined}
       points={pts(p.polygon)}
       onclick={() => pick(p.id)}
@@ -260,6 +269,16 @@
   }
   .threshold.proposed {
     stroke-dasharray: 8 6;
+  }
+  .piece.dim {
+    opacity: 0.35;
+  }
+  .piece.done {
+    fill: var(--line) !important;
+  }
+  .piece.focus {
+    stroke: var(--accent);
+    stroke-width: 2.5px;
   }
   .piece.sel {
     stroke: var(--accent);
