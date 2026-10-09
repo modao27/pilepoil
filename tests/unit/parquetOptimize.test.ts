@@ -27,7 +27,8 @@ describe('optimisation du départ', () => {
     const s = spec(rect(4000, 3000));
     const before = computeParquet(s).totals.boards;
     const { result, steps } = run(s);
-    expect(steps).toBe(19);
+    // coupe perdue : 20 décalages × 10 graines, moins le départ actuel
+    expect(steps).toBe(199);
     expect(result.after.total).toBeLessThanOrEqual(result.before.total);
     const after = computeParquet(apply(s, result));
     expect(after.totals.boards).toBeLessThanOrEqual(52);
