@@ -79,21 +79,4 @@ export function shopping(result: ProjectResult, data: CarrelageData, libraries: 
   });
 }
 
-/** Sol et murs carrelés de la pièce : « Carrelage : sol, murs 1 et 3 ». */
-export function roomUsage(data: CarrelageData, plan: Plan, roomId: string): string | null {
-  const t = Object.hasOwn(data.rooms, roomId) ? data.rooms[roomId]! : null;
-  const room = plan.rooms.find((r) => r.id === roomId);
-  if (!t || !room) return null;
-  const walls = room.walls.flatMap((w, i) => (Object.hasOwn(t.walls, w.id) ? [i + 1] : []));
-  const parts = [
-    ...(t.floor ? ['sol'] : []),
-    ...(walls.length
-      ? [
-          `${walls.length > 1 ? 'murs' : 'mur'} ${walls.slice(0, -1).join(', ')}${walls.length > 1 ? ' et ' : ''}${walls.at(-1)}`,
-        ]
-      : []),
-  ];
-  return parts.length ? `Carrelage : ${parts.join(', ')}.` : null;
-}
-
 export const priceAction = (key: string, value: number | null): Action => ({ type: 'carrelage/price', key, value });

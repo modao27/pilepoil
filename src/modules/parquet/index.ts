@@ -7,7 +7,7 @@ import { BOARD_SCHEMA, BOARD_TEMPLATES } from './core/board';
 import type { ParquetResult, ParquetSpec } from './core/types';
 import { reduce, type Action } from './state/actions';
 import { createParquetData, PARQUET_ID, PARQUET_MIGRATIONS, PARQUET_SCHEMA, type ParquetData } from './state/model';
-import { priceAction, roomUsage, shopping, summary, toSpec } from './state/module';
+import { priceAction, shopping, summary, toSpec } from './state/module';
 
 /** Bibliothèque de lames (#/library/boards). */
 export const library: LibraryDefinition = {
@@ -32,12 +32,13 @@ export const module: ToolModule<ParquetData, ParquetSpec, ParquetResult, Action>
   icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M1 8.3h32M1 15.7h32M12 1v7.3M26 1v7.3M6 8.3v7.4M20 8.3v7.4M15 15.7V23M29 15.7V23"/>',
   schemaVersion: PARQUET_SCHEMA,
   create: (plan) => createParquetData(plan, () => crypto.randomUUID()),
-  reduce: (data, action) => reduce(data, action),
+  coverage: { surfaces: ['floor'], extent: 'connected-floors' },
+  createPose: () => ({}),
+  reduce: (data, action) => (action.type.startsWith('pose/') ? data : reduce(data, action as Action)),
   toSpec,
   shopping,
   summary,
   priceAction,
-  roomUsage,
   migrations: PARQUET_MIGRATIONS,
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),

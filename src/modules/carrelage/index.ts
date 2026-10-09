@@ -7,7 +7,7 @@ import type { ProjectResult, ProjectSpec } from './core';
 import { reduce, type Action } from './state/actions';
 import { CARRELAGE_ID, CARRELAGE_MIGRATIONS, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
 import { TILE_SCHEMA } from './state/model';
-import { create, priceAction, roomUsage, shopping, summary, toSpec } from './state/module';
+import { create, priceAction, shopping, summary, toSpec } from './state/module';
 
 /** Éditeur d'une surface : #/p/:id/m/carrelage/s/:surfaceId. */
 const editor = () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default);
@@ -22,12 +22,13 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
   description: 'Murs et sols carrelés : calepinage, coupes, chutes, quantités.',
   schemaVersion: CARRELAGE_SCHEMA,
   create,
-  reduce: (data, action, plan) => reduce(data, action, plan),
+  coverage: { surfaces: ['floor', 'wall'], extent: 'surface' },
+  createPose: () => ({}),
+  reduce: (data, action, plan) => (action.type.startsWith('pose/') ? data : reduce(data, action as Action, plan)),
   toSpec,
   summary,
   shopping,
   priceAction,
-  roomUsage,
   migrations: CARRELAGE_MIGRATIONS,
   start: async (db) => (await state()).start(db),
   usedPhotos: (db) => import('./storage/scenarios').then((m) => m.scenarioPhotos(db)),

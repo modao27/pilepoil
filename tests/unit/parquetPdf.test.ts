@@ -44,12 +44,14 @@ function r7(): Project {
     ],
   ];
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'p',
     name: 'Maison R7',
     createdAt: 0,
     updatedAt: 0,
     plan,
+    zones: [],
+    poses: [],
     modules: { parquet: { schemaVersion: 3, data: d } },
   };
 }

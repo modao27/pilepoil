@@ -161,21 +161,3 @@ describe('avertissements du plan', () => {
     expect(view(q).rooms).toEqual({});
   });
 });
-
-describe('suppression d’une pièce : ce que le carrelage perd', () => {
-  it('sol et murs carrelés, numérotés comme sur le plan', () => {
-    const room = rect('r', 4000, 3000);
-    const walls = { 'r-w0': createWallTiling(tile.id), 'r-w2': createWallTiling(tile.id) };
-    const withFloor = planProject([room], {
-      rooms: { r: createRoomTiling({ floor: createFloorTiling(tile.id), walls }) },
-    });
-    const data = (p: Project) => p.modules.carrelage!.data as never;
-    expect(carrelage.roomUsage!(data(withFloor), withFloor.plan, 'r')).toBe('Carrelage : sol, murs 1 et 3.');
-    const oneWall = planProject([room], {
-      rooms: { r: createRoomTiling({ walls: { 'r-w1': createWallTiling(tile.id) } }) },
-    });
-    expect(carrelage.roomUsage!(data(oneWall), oneWall.plan, 'r')).toBe('Carrelage : mur 2.');
-    const bare = planProject([room]);
-    expect(carrelage.roomUsage!(data(bare), bare.plan, 'r')).toBeNull();
-  });
-});

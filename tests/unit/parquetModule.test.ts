@@ -4,7 +4,7 @@ import { module as parquet } from '../../src/modules/parquet';
 import { BOARD_TEMPLATES } from '../../src/modules/parquet/core/board';
 import { computeParquet } from '../../src/modules/parquet/core/compute';
 import type { ParquetResult } from '../../src/modules/parquet/core/types';
-import { createLayout, createParquetData, type ParquetData } from '../../src/modules/parquet/state/model';
+import { createLayout, type ParquetData } from '../../src/modules/parquet/state/model';
 import type { Project } from '../../src/state/model';
 import { reduceProject } from '../../src/state/project';
 
@@ -17,12 +17,14 @@ function project(): Project {
   const b = lRoom(5000, 4000, 2000, 2000, { name: 'Cuisine', origin: [6000, 0] }, id);
   const plan = { rooms: [a, b], passages: [] };
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: 'p',
     name: 'Maison',
     createdAt: 0,
     updatedAt: 0,
     plan,
+    zones: [],
+    poses: [],
     modules: { parquet: { schemaVersion: 1, data: parquet.create(plan) } },
   };
 }
@@ -273,22 +275,5 @@ describe('chantier (P5)', () => {
     expect(data(keep).worksite).toEqual({ resultHash: 'h2', done: ['b'] });
     const reset = reduceProject(p1, { type: 'parquet/worksite/rebase', hash: 'h2', valid: [] } as never);
     expect(data(reset).worksite).toEqual({ resultHash: 'h2', done: [] });
-  });
-});
-
-describe('suppression d’une pièce : ce que le parquet perd', () => {
-  it('pose sur une seule pièce, pose sur plusieurs, pièce sans parquet', () => {
-    const d = (layouts: ParquetData['layouts']) => ({
-      ...createParquetData({ rooms: [], passages: [] }, () => 'x'),
-      layouts,
-    });
-    const plan = { rooms: [], passages: [] };
-    const one = createLayout('l1', ['a'], { name: 'Séjour' });
-    const two = createLayout('l2', ['a', 'b'], { name: 'Couloir' });
-    expect(parquet.roomUsage!(d([one]), plan, 'a')).toBe('Parquet : la pose « Séjour » n’a plus de pièce.');
-    expect(parquet.roomUsage!(d([one, two]), plan, 'a')).toBe(
-      'Parquet : la pose « Séjour » n’a plus de pièce ; la pose « Couloir » perd cette pièce.',
-    );
-    expect(parquet.roomUsage!(d([one]), plan, 'z')).toBeNull();
   });
 });

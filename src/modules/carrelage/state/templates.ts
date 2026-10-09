@@ -79,6 +79,8 @@ export function createWizardProject(i: WizardInput, now = Date.now()): Project {
     createdAt: now,
     updatedAt: now,
     plan: { rooms: [room], passages: [] },
+    zones: [],
+    poses: [],
     modules: {
       [CARRELAGE_ID]: {
         schemaVersion: CARRELAGE_SCHEMA,

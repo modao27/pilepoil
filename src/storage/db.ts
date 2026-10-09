@@ -47,6 +47,8 @@ const UPGRADES: ((db: Db, tx: UpgradeTx) => void)[] = [
   },
   // v3 (C4) : projets v1 (avant la boîte à outils) retirés, sans conversion ; bibliothèques, photos et
   // préférences gardées. Les anciens scénarios sont retirés à la lecture par le carrelage.
+  (_db, tx) => void purge(tx, 'projects', 2),
+  // v4 (N1) : zones et poses dans le projet ; projets précédents retirés, sans conversion.
   (_db, tx) => void purge(tx, 'projects', PROJECT_SCHEMA),
 ];
 

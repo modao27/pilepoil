@@ -245,13 +245,4 @@ function accessoryLines(r: ParquetResult, d: ParquetData): ShoppingLine[] {
   });
 }
 
-/** Poses qui couvrent la pièce : « Parquet : la pose « Pose 1 » perd cette pièce. » */
-export function roomUsage(data: ParquetData, _plan: Plan, roomId: string): string | null {
-  const hit = data.layouts.filter((l) => l.rooms.includes(roomId));
-  if (!hit.length) return null;
-  const one = (l: Layout) =>
-    l.rooms.length > 1 ? `la pose « ${l.name} » perd cette pièce` : `la pose « ${l.name} » n’a plus de pièce`;
-  return `Parquet : ${hit.map(one).join(' ; ')}.`;
-}
-
 export const priceAction = (key: string, value: number | null): Action => ({ type: 'parquet/price', key, value });

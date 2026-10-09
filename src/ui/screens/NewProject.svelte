@@ -29,6 +29,8 @@
         createdAt: now,
         updatedAt: now,
         plan,
+        zones: [],
+        poses: [],
         modules: { [m.id]: { schemaVersion: m.schemaVersion, data: m.create(plan) } },
       };
       if (await app.trySaveProject(p)) go({ name: 'plan', id: p.id });

@@ -50,6 +50,8 @@ export function planProject(rooms: PlanRoom[], data: Partial<CarrelageData> = {}
     createdAt: 0,
     updatedAt: 0,
     plan: { rooms, passages: [] },
+    zones: [],
+    poses: [],
     modules: { carrelage: { schemaVersion: CARRELAGE_SCHEMA, data: createData(data) } },
     ...o,
   };

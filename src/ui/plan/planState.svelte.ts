@@ -16,7 +16,8 @@ import { createSaver, type Saver } from '../../storage/autosave';
 import { app } from '../lib/app.svelte';
 import { toast } from '../lib/toasts.svelte';
 import { undoAction } from '../lib/undoToast';
-import { modules } from '../../modules/registry';
+import { moduleById } from '../../modules/registry';
+import { posesInRoom } from '../../core/coverage';
 
 const newId = (): Id => crypto.randomUUID();
 
@@ -145,13 +146,13 @@ export class PlanEditorState {
     this.sel = { kind: 'room', room: room.id };
   }
 
-  /** Ce que chaque outil perd si la pièce est supprimée (confirmation) ; vide si rien. */
+  /** Poses touchées si la pièce est supprimée (confirmation) : « Carrelage : « Pose 1 » est supprimée. » */
   roomUsage(id: Id): string[] {
     const p = this.store.get().project;
-    return modules.flatMap((m) => {
-      const doc = Object.hasOwn(p.modules, m.id) ? p.modules[m.id] : undefined;
-      const u = doc && m.roomUsage?.(doc.data, p.plan, id);
-      return u ? [u] : [];
+    return posesInRoom(p, id).map((pose) => {
+      const label = moduleById(pose.module)?.label ?? pose.module;
+      const elsewhere = p.zones.some((z) => z.pose === pose.id && z.surface.room !== id);
+      return `${label} : « ${pose.name} » ${elsewhere ? 'perd cette pièce' : 'est supprimée'}.`;
     });
   }
 

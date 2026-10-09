@@ -138,3 +138,51 @@ describe('contrat du module carrelage', () => {
     expect(withCarrelage(p, carrelageView(p)! && (p.modules.carrelage!.data as never))).toBe(p);
   });
 });
+
+describe('zones et poses dans le projet', () => {
+  /** Module factice : garde les réglages par pose, comme le feront carrelage et parquet. */
+  const fake = {
+    ...carrelage,
+    coverage: { surfaces: ['floor', 'wall'], extent: 'surface' },
+    reduce: (d: { poses: Record<string, unknown> }, a: { type: string; poseId?: string; settings?: unknown }) => {
+      if (a.type === 'pose/added') return { poses: { ...d.poses, [a.poseId!]: a.settings } };
+      if (a.type === 'pose/removed') {
+        const { [a.poseId!]: _, ...rest } = d.poses;
+        return { poses: rest };
+      }
+      return d;
+    },
+  } as unknown as ToolModule;
+  const find = () => fake;
+  const room = rect('r', 3000, 2000);
+  const p0: Project = {
+    ...planProject([room]),
+    modules: { carrelage: { schemaVersion: 9, data: { poses: {} } } },
+  };
+  const add: ProjectAction = {
+    type: 'pose/add',
+    pose: { id: 'p1', module: 'carrelage', name: 'Pose 1' },
+    zones: [{ id: 'z1', surface: { room: 'r', wall: null }, cuts: [], pose: 'p1' }],
+    settings: { joint: 3 },
+  };
+
+  it('les réglages arrivent avec la pose et partent avec elle', () => {
+    const p1 = reduceProject(p0, add, find);
+    expect(p1.poses).toEqual([{ id: 'p1', module: 'carrelage', name: 'Pose 1' }]);
+    expect(p1.modules.carrelage!.data).toEqual({ poses: { p1: { joint: 3 } } });
+    const p2 = reduceProject(p1, { type: 'zone/remove', zoneId: 'z1' }, find);
+    expect(p2.poses).toEqual([]);
+    expect(p2.modules.carrelage!.data).toEqual({ poses: {} });
+  });
+
+  it('pièce supprimée : ses zones et ses poses partent ; règle enfreinte : rien ne change', () => {
+    const p1 = reduceProject(p0, add, find);
+    const gone = reduceProject(p1, { type: 'plan/room/remove', roomId: 'r' }, find);
+    expect([gone.zones, gone.poses, gone.modules.carrelage!.data]).toEqual([[], [], { poses: {} }]);
+    const overlap: ProjectAction = {
+      type: 'zone/add',
+      zone: { id: 'z2', surface: { room: 'r', wall: null }, cuts: [], pose: 'p1' },
+    };
+    expect(reduceProject(p1, overlap, find)).toBe(p1);
+  });
+});
