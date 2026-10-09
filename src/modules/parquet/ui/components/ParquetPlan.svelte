@@ -2,7 +2,7 @@
   /**
    * Plan des lames posées (lecture seule) : pièces de la pose, lames entières dans la couleur de la lame,
    * lames coupées en jaune, lames taillées dans une chute en vert, lames B des motifs plus foncées.
-   * Toucher une lame la sélectionne.
+   * Toucher une lame la sélectionne. Avec `ondrag` : glisser (ou flèches du clavier) décale la pose.
    */
   import type { Polygon } from '../../../../core/geometry/types';
   import type { LaidPiece, Threshold } from '../../core/types';
@@ -15,6 +15,8 @@
     others = [],
     thresholds = [],
     dimensions = false,
+    ondrag,
+    keyStep = 10,
     selected = $bindable(null),
     label,
   }: {
@@ -29,6 +31,10 @@
     thresholds?: Threshold[];
     /** Cotes des murs (longueur intérieure, cm), à l'extérieur de chaque pièce. */
     dimensions?: boolean;
+    /** Glissement en cours (move) ou fini (end) : déplacement depuis le début du geste, mm du plan. */
+    ondrag?: (delta: [number, number], phase: 'move' | 'end') => void;
+    /** Pas des flèches du clavier, mm (Maj : × 4). */
+    keyStep?: number;
     selected?: string | null;
     label: string;
   } = $props();
@@ -79,10 +85,83 @@
         })
       : [],
   );
+  /* ---------- glisser pour décaler ---------- */
+  let svg: SVGSVGElement | undefined = $state();
+  let start: { x: number; y: number; sx: number; sy: number } | null = null;
+  let moving = false;
+  let suppressClick = false;
+  const toPlan = (e: PointerEvent): [number, number] => {
+    const m = svg?.getScreenCTM();
+    if (!m) return [0, 0];
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    return [p.x, p.y];
+  };
+  function down(e: PointerEvent) {
+    if (!ondrag || e.button !== 0) return;
+    const [x, y] = toPlan(e);
+    start = { x, y, sx: e.clientX, sy: e.clientY };
+    moving = false;
+  }
+  function move(e: PointerEvent) {
+    if (!start || !ondrag) return;
+    if (!moving && Math.hypot(e.clientX - start.sx, e.clientY - start.sy) < 6) return;
+    if (!moving) svg?.setPointerCapture(e.pointerId);
+    moving = true;
+    const [x, y] = toPlan(e);
+    ondrag([x - start.x, y - start.y], 'move');
+  }
+  function up(e: PointerEvent) {
+    if (start && moving && ondrag) {
+      const [x, y] = toPlan(e);
+      ondrag([x - start.x, y - start.y], 'end');
+      suppressClick = true;
+    }
+    start = null;
+    moving = false;
+  }
+  function key(e: KeyboardEvent) {
+    if (!ondrag) return;
+    const k = e.shiftKey ? keyStep * 4 : keyStep;
+    const d: Record<string, [number, number]> = {
+      ArrowLeft: [-k, 0],
+      ArrowRight: [k, 0],
+      ArrowUp: [0, -k],
+      ArrowDown: [0, k],
+    };
+    const v = d[e.key];
+    if (!v) return;
+    e.preventDefault();
+    ondrag(v, 'end');
+  }
+  function pick(id: string) {
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
+    selected = selected === id ? null : id;
+  }
   const kind = (p: LaidPiece) => (p.cutType === 'full' ? 'full' : 'offcut' in p.source ? 'reuse' : 'cut');
 </script>
 
-<svg class="plan" viewBox={vb} role="img" aria-label={label} preserveAspectRatio="xMidYMid meet">
+<!-- glisser : complément au pointeur ; au clavier, les flèches font le même décalage. Focusable seulement
+     avec ondrag, et alors role="application" (rôle dynamique : le vérificateur ne le voit pas) -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<svg
+  bind:this={svg}
+  class="plan"
+  class:draggable={!!ondrag}
+  viewBox={vb}
+  role={ondrag ? 'application' : 'img'}
+  aria-label={label}
+  aria-roledescription={ondrag ? 'plan des lames' : undefined}
+  tabindex={ondrag ? 0 : undefined}
+  preserveAspectRatio="xMidYMid meet"
+  onpointerdown={down}
+  onpointermove={move}
+  onpointerup={up}
+  onpointercancel={up}
+  onkeydown={key}
+>
   {#each rooms as r, i (i)}<polygon class="room" points={pts(r)} />{/each}
   {#each others as o, i (i)}
     <g class="other" aria-hidden="true">
@@ -104,7 +183,7 @@
       class:sel={selected === p.id}
       style={kind(p) === 'full' ? `fill: ${variants && p.variant === 'B' ? dark : color}` : undefined}
       points={pts(p.polygon)}
-      onclick={() => (selected = selected === p.id ? null : p.id)}
+      onclick={() => pick(p.id)}
     />
   {/each}
   {#each thresholds as t, i (i)}
@@ -136,6 +215,14 @@
     width: 100%;
     height: 100%;
     background: var(--sheet);
+  }
+  .plan.draggable {
+    touch-action: none;
+    cursor: grab;
+  }
+  .plan:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: -3px;
   }
   .room {
     fill: var(--paper);

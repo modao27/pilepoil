@@ -46,7 +46,7 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   const id = await parquetProject(page);
 
   // R1 dans l'appli : 16 rangs de stratifié 1285 × 192 sur 3984 × 2984
-  const plan = page.getByRole('img', { name: /^Plan des lames : \d+ lames · \d+ paquets · perte \d+ %/ });
+  const plan = page.getByRole('application', { name: /^Plan des lames : \d+ lames · \d+ paquets · perte \d+ %/ });
   await expect(plan).toBeVisible();
   await expect(page.locator('polygon.piece')).toHaveCount(64);
   const summary = page.getByRole('link', { name: /lames · \d+ paquets/ }).first();
@@ -62,6 +62,24 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await shot(page, info, '91-parquet-demi');
   await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   await expect(summary).toContainText('52 lames · 7 paquets');
+
+  // glisser la pose sur le plan : les lames bougent ; un geste = une seule étape d'annulation
+  const firstPiece = page.locator('polygon.piece').first();
+  const before = await firstPiece.getAttribute('points');
+  const box = (await plan.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let k = 1; k <= 5; k++) await page.mouse.move(box.x + box.width / 2 + k * 6, box.y + box.height / 2 + k * 6);
+  await page.mouse.up();
+  await expect(firstPiece).not.toHaveAttribute('points', before!);
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await expect(firstPiece).toHaveAttribute('points', before!);
+  // au clavier : flèches
+  await plan.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(firstPiece).not.toHaveAttribute('points', before!);
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await expect(firstPiece).toHaveAttribute('points', before!);
 
   // diagonale
   await setNumber(p, 'Angle des lames', '45');

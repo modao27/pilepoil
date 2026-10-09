@@ -117,6 +117,25 @@
       b.every((q, i) => Math.abs(q[0] - t.segment[i]![0]) < 0.5 && Math.abs(q[1] - t.segment[i]![1]) < 0.5),
     ) ?? -1;
   const acc = $derived(ed.data.accessories);
+  /* glisser la pose sur le plan : décalage aimanté au quart de la largeur de lame, un geste = une étape */
+  let dragFrom: [number, number] | null = null;
+  let gesture = 0;
+  const snapStep = $derived((ed.board?.width ?? 100) / 4);
+  function drag(delta: [number, number], phase: 'move' | 'end') {
+    const l = layout;
+    if (!l) return;
+    if (!dragFrom) {
+      dragFrom = l.offset;
+      gesture++;
+    }
+    const snap = (v: number) => Math.round(v / snapStep) * snapStep;
+    const offset: [number, number] = [
+      Math.round((dragFrom[0] + snap(delta[0])) * 10) / 10,
+      Math.round((dragFrom[1] + snap(delta[1])) * 10) / 10,
+    ];
+    ed.updateLayout({ offset }, `parquet-drag-${gesture}`);
+    if (phase === 'end') dragFrom = null;
+  }
   const motif = $derived(layout ? family(layout.pattern) !== 'straight' : false);
   const piece = $derived(result?.pieces.find((p) => p.id === ed.selected));
   const CUT = { full: 'lame entière', straight: 'coupe droite', angled: 'coupe en biais', complex: 'découpe' };
@@ -472,6 +491,8 @@
         variants={motif}
         {others}
         thresholds={result?.thresholds ?? []}
+        ondrag={layout ? drag : undefined}
+        keyStep={snapStep}
         bind:selected={ed.selected}
         label="Plan des lames : {summary}"
       />
