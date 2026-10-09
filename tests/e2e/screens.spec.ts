@@ -56,7 +56,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await page.getByRole('button', { name: 'Créer le projet' }).click();
 
   // éditeur puis résultats
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await expect(page.getByText('Mur 288 × 240')).toBeVisible();
   await page.getByRole('link', { name: /\d+ carreaux/ }).click();
   await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
@@ -128,7 +128,7 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
   await next(page);
   await next(page);
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await page.goto('/#/library');
   await page.getByRole('link', { name: /Hexagone terracotta/ }).click();
   await page.getByRole('button', { name: 'Supprimer le carreau' }).click();
@@ -153,7 +153,7 @@ test('pièce complète : murs et sol', async ({ page }, info) => {
   await expect(dlg.getByRole('button', { name: /^(Mur|Sol)/ })).toHaveText([/^Mur A/, /^Mur B/, /^Mur D/, /^Sol/]);
   await dlg.getByRole('button', { name: /^Sol/ }).click();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('application', { name: /^Plan de Sol/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, sol/ })).toBeVisible();
   await check(page);
   await shot(page, info, '22-projet-piece-sol');
 });

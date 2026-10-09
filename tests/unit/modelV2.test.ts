@@ -3,19 +3,17 @@ import { validatePlan } from '../../src/core/plan/validate';
 import { rectRoom } from '../../src/core/plan/factories';
 import { module as carrelage } from '../../src/modules/carrelage';
 import { computeProject } from '../../src/modules/carrelage/core';
-import { carrelageView, dataOf, withCarrelage } from '../../src/modules/carrelage/state/data';
+import { carrelageView, withCarrelage } from '../../src/modules/carrelage/state/data';
 import { createTile } from '../../src/modules/carrelage/state/factories';
-import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import type { ToolModule } from '../../src/modules/types';
 import type { Project } from '../../src/state/model';
-import type { Scenario } from '../../src/modules/carrelage/state/model';
 import { reduceProject, type ProjectAction } from '../../src/state/project';
 import { FutureVersionError, migrateProject } from '../../src/storage/migrations';
-import { migrateScenario } from '../../src/modules/carrelage/storage/scenarios';
-import { V1_ROOM, V1_SCENARIO, V1_WALL } from './fixtures/v1';
+import { createSingleSurfaceProject } from '../../src/modules/carrelage/state/templates';
+import { V1_ROOM, V1_WALL } from './fixtures/v1';
 
 describe('migration v1 → v2 (documents figés)', () => {
-  it('mur seul : données carrelage déplacées, plan vide, rien d’autre ne change', () => {
+  it('mur seul : plan vide, carrelage remis à vide (pas de conversion), réglages et prix gardés', () => {
     const { doc, changed } = migrateProject(V1_WALL);
     expect(changed).toBe(true);
     expect(doc).toEqual({
@@ -27,13 +25,8 @@ describe('migration v1 → v2 (documents figés)', () => {
       plan: { rooms: [], passages: [] },
       modules: {
         carrelage: {
-          schemaVersion: 1,
-          data: {
-            surfaces: V1_WALL.surfaces,
-            room: null,
-            settings: V1_WALL.settings,
-            prices: { 'glue|kg': 12.5 },
-          },
+          schemaVersion: 2,
+          data: { rooms: {}, settings: V1_WALL.settings, prices: { 'glue|kg': 12.5 } },
         },
       },
     });
@@ -62,31 +55,14 @@ describe('migration v1 → v2 (documents figés)', () => {
       passages: [],
     });
     expect(validatePlan(doc.plan)).toEqual([]);
-    expect(dataOf(carrelageView(doc)!)).toEqual(dataOf(V1_ROOM as never));
+    expect(carrelageView(doc)!.surfaces).toEqual([]);
   });
 
-  it('déterministe et idempotente ; même résultat de calcul qu’avant', () => {
+  it('déterministe et idempotente ; rien à carreler', () => {
     const a = migrateProject(V1_ROOM).doc;
     expect(migrateProject(V1_ROOM).doc).toEqual(a);
     expect(migrateProject(a)).toEqual({ doc: a, changed: false });
-    const tiles = V1_SCENARIO.snapshot.tiles as never;
-    const spec = (p: Project) => (carrelage.toSpec(p, { tiles }) as { spec: never }).spec;
-    // calcul sur le document v1 d'origine (chemin d'avant S2) = calcul sur le v2 migré
-    const before = computeProject(toProjectSpec(V1_ROOM as never, tiles).spec);
-    const after = computeProject(spec(a));
-    expect(after.metrics).toEqual(before.metrics);
-    expect(after.metrics.order).toBeGreaterThan(0);
-    expect(after.plan).toEqual(before.plan);
-  });
-
-  it('scénario : instantané migré comme un projet, le reste inchangé', () => {
-    const { doc } = migrateScenario(V1_SCENARIO);
-    expect(doc.schemaVersion).toBe(2);
-    expect(doc.snapshot.project).toEqual(migrateProject(V1_WALL).doc);
-    expect(doc.snapshot.tiles).toEqual(V1_SCENARIO.snapshot.tiles);
-    const { snapshot: _a, schemaVersion: _b, ...rest } = doc as Scenario;
-    const { snapshot: _c, schemaVersion: _d, ...old } = V1_SCENARIO;
-    expect(rest).toEqual(old);
+    expect(carrelage.toSpec(a, { tiles: [] })).toEqual({ errors: [{ code: 'carrelage/empty' }] });
   });
 
   it('données d’un module : version future refusée, module inconnu conservé', () => {
@@ -114,7 +90,7 @@ describe('réducteur du projet', () => {
     expect(next.name).toBe('SdB');
     expect(next.plan.rooms[0]!.height).toBe(2600);
     expect(carrelageView(next)!.settings.margin).toBe(15);
-    expect(carrelageView(next)!.surfaces).toBe(carrelageView(p)!.surfaces);
+    expect(carrelageView(next)!.rooms).toBe(carrelageView(p)!.rooms);
     for (const a of [
       { type: 'project/rename', name: p.name },
       { type: 'carrelage/settings', patch: { margin: 10 } },
@@ -160,15 +136,19 @@ describe('réducteur du projet', () => {
 });
 
 describe('contrat du module carrelage', () => {
-  it('create : un sol aux dimensions de la première pièce, sinon un mur', () => {
-    const plan = migrateProject(V1_ROOM).doc.plan;
-    expect(carrelage.create(plan).surfaces[0]).toMatchObject({ kind: 'floor', width: 2400, height: 1800 });
-    expect(carrelage.create({ rooms: [], passages: [] }).surfaces[0]).toMatchObject({ kind: 'wall', width: 3000 });
+  it('create : le sol de la première pièce du plan, sinon rien', () => {
+    const p = migrateProject(V1_ROOM).doc;
+    const data = carrelage.create(p.plan);
+    expect(carrelageView(withCarrelage(p, data))!.surfaces).toMatchObject([
+      { kind: 'floor', width: 2400, height: 1800, name: 'Salle de bain, sol' },
+    ]);
+    expect(carrelage.create({ rooms: [], passages: [] }).rooms).toEqual({});
   });
 
   it('toSpec, summary ; projet sans carrelage : erreur', () => {
-    const p = migrateProject(V1_WALL).doc;
     const tile = createTile({ id: 't1' });
+    const layout = { tileId: tile.id, tileUpright: false, pattern: 'half' as const, angle: 0, joint: 3 };
+    const p = createSingleSurfaceProject({ ...layout, kind: 'wall', width: 3000, height: 2400 });
     const r = carrelage.toSpec(p, { tiles: [tile] });
     if (!('spec' in r)) throw new Error('spec attendue');
     const s = carrelage.summary(computeProject(r.spec));

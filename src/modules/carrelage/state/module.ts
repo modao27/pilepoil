@@ -1,5 +1,4 @@
 /** Fonctions du contrat de module (docs/BOITE.md §2) propres au carrelage, hors écrans. */
-import { bbox } from '../../../core/geometry/polygon';
 import type { Plan } from '../../../core/plan/types';
 import type { Project } from '../../../state/model';
 import type { Tile } from './model';
@@ -10,29 +9,25 @@ import type { ProjectResult, ProjectSpec, ShoppingItem } from '../core';
 import { shoppingLabel } from '../ui/lib/labels';
 import type { Action } from './actions';
 import { itemPrice } from './pricing';
-import { carrelageView, DEFAULT_SETTINGS, type CarrelageData } from './data';
-import { createSurface } from './factories';
+import { carrelageView, type CarrelageData } from './data';
+import { createData, createFloorTiling, createRoomTiling } from './factories';
+import { resolveSurfaces } from './surfaces';
 import { toProjectSpec } from './selectors';
 
 /**
- * Données initiales quand on active le carrelage sur un projet : un sol aux dimensions de la première pièce
- * du plan (sinon un mur 300 × 240), sans carreau choisi (l'éditeur demande d'en choisir un).
+ * Données initiales quand on active le carrelage sur un projet : le sol de la première pièce du plan (s'il y en
+ * a une), sans carreau choisi (l'éditeur demande d'en choisir un).
  */
 export function create(plan: Plan): CarrelageData {
   const room = plan.rooms[0];
-  const surface = room
-    ? (() => {
-        const [x0, x1, y0, y1] = bbox(room.outline);
-        return createSurface('', { name: 'Sol', kind: 'floor', width: x1 - x0, height: y1 - y0 });
-      })()
-    : createSurface('');
-  return { surfaces: [surface], room: null, settings: { ...DEFAULT_SETTINGS }, prices: {} };
+  return createData(room ? { rooms: { [room.id]: createRoomTiling({ floor: createFloorTiling('') }) } } : {});
 }
 
 /** Projet → entrée du moteur ; bibliothèque de carreaux sous `libraries.tiles`. */
 export function toSpec(project: Project, libraries: Libraries): { spec: ProjectSpec } | { errors: ModuleError[] } {
   const view = carrelageView(project);
   if (!view) return { errors: [{ code: 'carrelage/absent' }] };
+  if (!view.surfaces.length) return { errors: [{ code: 'carrelage/empty' }] };
   return { spec: toProjectSpec(view, (libraries.tiles ?? []) as readonly Tile[]).spec };
 }
 
@@ -61,12 +56,13 @@ const GROUPS: Record<ShoppingItem['kind'], ShoppingGroup> = {
  * Liste d'achat de l'écran Résultats en lignes consolidables, à l'identique : la quantité est celle sur
  * laquelle porte le prix (m² achetés pour un carreau vendu au carton), le détail celui de l'écran.
  */
-export function shopping(result: ProjectResult, data: CarrelageData, libraries: Libraries): ShoppingLine[] {
+export function shopping(result: ProjectResult, data: CarrelageData, libraries: Libraries, plan: Plan): ShoppingLine[] {
   const tiles = new Map(((libraries.tiles ?? []) as readonly Tile[]).map((t) => [t.id, t]));
+  const priced = { prices: data.prices, surfaces: resolveSurfaces(plan, data.rooms) };
   return result.shopping.map((it) => {
     const text = shoppingLabel(it, result.plan.groups);
     const own = data.prices[it.key];
-    const price = itemPrice(it, data, tiles, result);
+    const price = itemPrice(it, priced, tiles, result);
     const line: ShoppingLine = {
       module: 'carrelage',
       key: it.key,

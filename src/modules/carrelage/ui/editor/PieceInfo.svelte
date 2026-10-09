@@ -19,9 +19,6 @@
 
   const text = $derived.by(() => {
     const s = ed.surface;
-    const c = s.corners[ed.sel.corner];
-    if (c)
-      return `Angle ${ed.sel.corner + 1} : ${c.type === 'in' ? 'rentrant' : 'sortant'} à ${Math.round(c.angle)}°, à ${cm(c.x)} du bord gauche.`;
     const o = s.openings[ed.sel.opening];
     if (o)
       return `${NAME[o.type]} ${ed.sel.opening + 1} : ${cm(o.width)} × ${cm(o.height)}, à ${cm(o.x)} du bord gauche, ${s.kind === 'floor' ? 'à' : 'allège'} ${cm(o.sill)}.`;

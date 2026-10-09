@@ -54,7 +54,7 @@ test('parquet : 30 m² en point de Hongrie, budget de dessin et images par secon
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
   await page.goto(`/#/p/${id}/plan`);
   const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });

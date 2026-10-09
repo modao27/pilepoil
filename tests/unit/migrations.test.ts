@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSaver } from '../../src/storage/autosave';
-import { FutureVersionError, migrate, migrateProject, projectFromV1, type Step } from '../../src/storage/migrations';
-import { createProject } from '../../src/modules/carrelage/state/factories';
+import { FutureVersionError, migrate, migrateProject, type Step } from '../../src/storage/migrations';
+import { planProject } from './planFixtures';
 
 describe('migrations de documents', () => {
   const steps: Record<number, Step> = {
@@ -17,7 +17,7 @@ describe('migrations de documents', () => {
   });
 
   it('document à jour : inchangé', () => {
-    const p = projectFromV1(createProject([]));
+    const p = planProject([]);
     const r = migrateProject(p);
     expect(r.changed).toBe(false);
     expect(r.doc).toBe(p);
@@ -25,7 +25,7 @@ describe('migrations de documents', () => {
 
   it('données d’un module : migrations[n] passe de n − 1 à n', () => {
     const p = {
-      ...projectFromV1(createProject([])),
+      ...planProject([]),
       modules: {
         parquet: { schemaVersion: 1, data: { layouts: [{ id: 'l' }], accessories: { skirting: { kind: 'mdf' } } } },
       },

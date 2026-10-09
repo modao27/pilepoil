@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Alertes de la surface : ce qui ne va pas, et le bouton qui le corrige. */
   import { warningText, errorText } from '../lib/messages';
+  import { planWarnings } from '../../state/surfaces';
   import { carrelage } from '../state.svelte';
   import type { EditorState, Tab } from './editorState.svelte';
 
@@ -11,7 +12,20 @@
   const goTab = (t: Tab) => () => (ed.tab = t);
   const lastToRest = () => ed.updateZone({ unit: 'rest' }, undefined, ed.surface.zones.length - 1);
 
-  const alerts = $derived.by<Alert[]>(() => {
+  /** Réglages carrelage dont le mur ou la pièce n'existe plus dans le plan. */
+  const planAlert = $derived.by<Alert | null>(() => {
+    const n = planWarnings(ed.project.plan, ed.project.rooms).length;
+    if (!n) return null;
+    return {
+      tone: 'warn',
+      text: `${n} surface${n > 1 ? 's' : ''} carrelée${n > 1 ? 's' : ''} n’exist${n > 1 ? 'ent' : 'e'} plus dans le plan.`,
+      action: { label: 'Retirer', run: () => ed.dispatch({ type: 'carrelage/prune' }) },
+    };
+  });
+
+  const alerts = $derived.by<Alert[]>(() => [...(planAlert ? [planAlert] : []), ...surfaceAlerts]);
+
+  const surfaceAlerts = $derived.by<Alert[]>(() => {
     const r = ed.surfaceResult;
     if (!r) return [];
     if (!r.ok) {

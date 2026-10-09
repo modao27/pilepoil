@@ -1,34 +1,18 @@
 /**
- * Magasin `scenarios` du carrelage (docs/BOITE.md §4) : lecture (migrée), écriture, photos utilisées.
+ * Magasin `scenarios` du carrelage (docs/BOITE.md §4) : lecture, écriture, photos utilisées.
  * La coquille supprime les scénarios avec leur projet (index `projectId`).
  */
 import type { Id } from '../../../state/model';
 import type { Db } from '../../../storage/db';
-import { migrate, migrateProject, type Step } from '../../../storage/migrations';
 import { SCENARIO_SCHEMA, type Scenario } from '../state/model';
-
-/* Étapes du document scénario. Ajouter ici `n: (doc) => …` à chaque montée de schéma, avec un test. */
-export const SCENARIO_STEPS: Record<number, Step> = {
-  /** L'instantané est migré comme un projet. */
-  1: (doc) => ({
-    ...doc,
-    snapshot: {
-      ...(doc.snapshot as object),
-      project: migrateProject((doc.snapshot as { project: unknown }).project).doc,
-    },
-  }),
-};
-
-export const migrateScenario = (doc: unknown) => migrate<Scenario>(doc, SCENARIO_SCHEMA, SCENARIO_STEPS);
 
 export async function listScenarios(db: Db, projectId: Id): Promise<Scenario[]> {
   const all = await db.getAllFromIndex('scenarios', 'projectId', projectId);
-  return all
-    .map((raw) => {
-      const { doc, changed } = migrateScenario(raw);
-      if (changed) void db.put('scenarios', doc);
-      return doc;
-    })
+  // scénarios d'avant le carrelage bâti sur le plan : supprimés, sans conversion (PLAN C2)
+  for (const s of all as { id: Id; schemaVersion?: number }[])
+    if ((s.schemaVersion ?? 0) < SCENARIO_SCHEMA) void db.delete('scenarios', s.id);
+  return (all as Scenario[])
+    .filter((s) => s.schemaVersion === SCENARIO_SCHEMA)
     .sort((a, b) => a.slot.localeCompare(b.slot));
 }
 

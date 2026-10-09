@@ -10,7 +10,7 @@
   import IconButton from '../../../../ui/components/IconButton.svelte';
   import Scene3DView from '../components/Scene3DView.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
-  import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
+  import { surfaceLayout } from '../../render/scene3d/placement';
   import { scenePhoto } from '../lib/photos';
   import Tabs from '../../../../ui/components/Tabs.svelte';
   import Icon from '../../../../ui/icons/Icon.svelte';
@@ -65,19 +65,10 @@
   $effect(() => {
     void ed.tab;
     void ed.sel.opening;
-    void ed.sel.corner;
-    if (untrack(() => snap) === 0 && (ed.sel.opening >= 0 || ed.sel.corner >= 0)) snap = 1;
+    if (untrack(() => snap) === 0 && ed.sel.opening >= 0) snap = 1;
   });
 
-  /** La surface courante fait partie de la pièce : la 3D peut montrer toute la pièce. */
-  const inRoom = $derived(!!ed.project.room && Object.values(ed.project.room.walls).includes(ed.surface.id));
-  const layout3d = $derived(
-    ed.spec
-      ? ed.scope3d === 'room' && inRoom && ed.project.room
-        ? roomLayout(ed.spec, ed.project.room.height)
-        : surfaceLayout(ed.spec, ed.surfaceIndex)
-      : null,
-  );
+  const layout3d = $derived(ed.spec ? surfaceLayout(ed.spec, ed.surfaceIndex) : null);
   const photo = $derived.by(() => {
     void app.photoUrls;
     return scenePhoto(ed.project);
@@ -154,15 +145,6 @@
       <IconButton icon="minus" variant="outline" label="Dézoomer" onclick={() => canvas?.zoomBy(0.8)} />
       <IconButton icon="fit" variant="outline" label="Ajuster à l’écran" onclick={() => canvas?.fit()} />
     </div>
-  {:else if inRoom}
-    <Segmented
-      label="Contenu de la vue 3D"
-      bind:value={ed.scope3d}
-      options={[
-        { value: 'surface', label: 'Surface' },
-        { value: 'room', label: 'Pièce' },
-      ]}
-    />
   {/if}
 {/snippet}
 
@@ -175,7 +157,6 @@
     </button>
     <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
-    {#if ed.project.room}<IconButton icon="room" label="Pièce" href="#/p/{ed.project.id}/m/carrelage/room" />{/if}
     <IconButton icon="list" label="Résultats" href="#/p/{ed.project.id}/m/carrelage/results" />
   </header>
 
@@ -189,7 +170,7 @@
           layout={layout3d}
           shade={ed.project.settings.shadeVariation}
           {photo}
-          label="Vue 3D de {ed.scope3d === 'room' && inRoom ? 'la pièce' : ed.surface.name}"
+          label="Vue 3D de {ed.surface.name}"
         />
       {:else if ed.mode !== '3d'}
         <PlanCanvas bind:this={canvas} {ed} label="Plan de {ed.surface.name}, {summary}" />

@@ -2,7 +2,6 @@ import type { Id, Photo } from '../../../../state/model';
 import type { Tile } from '../../state/model';
 import type { Db } from '../../../../storage/db';
 import { getPref, putItem, saveProject, savePhoto, setPref } from '../../../../storage/repo';
-import { migrateScenario, saveScenario } from '../scenarios';
 import { migrateProject } from '../../../../storage/migrations';
 import { convertLegacy } from './convert';
 import { LEGACY_EXPORT_FORMAT, LEGACY_KEYS, type LegacyStorage } from './format';
@@ -88,16 +87,8 @@ export async function importLegacy(db: Db, store: LegacyStorage, now = Date.now(
   const ref = (id: Id | null) => (id && saved.has(id) ? id : null);
   const fixTile = (t: Tile): Tile => (t.photoId === ref(t.photoId) ? t : { ...t, photoId: null });
   for (const t of r.tiles) await putItem(db, 'tiles', fixTile(t));
-  // documents v1 : migrés en v2 avant écriture
+  // projet v1 : migré avant écriture (plan gardé, carrelage vide : pas de conversion, PLAN C2) ; scénarios ignorés
   if (r.project) await saveProject(db, migrateProject(r.project).doc);
-  for (const v1 of r.scenarios) {
-    const s = migrateScenario(v1).doc;
-    await saveScenario(db, {
-      ...s,
-      thumbnailId: ref(s.thumbnailId),
-      snapshot: { ...s.snapshot, tiles: s.snapshot.tiles.map(fixTile) },
-    });
-  }
   const photos = saved.size;
   if (r.palette) await setPref(db, 'palette', r.palette);
   if (r.project) await setPref(db, 'lastProjectId', r.project.id);
@@ -107,7 +98,7 @@ export async function importLegacy(db: Db, store: LegacyStorage, now = Date.now(
     surfaces: r.project?.surfaces.length ?? 0,
     tiles: r.tiles.length,
     photos,
-    scenarios: r.scenarios.length,
+    scenarios: 0,
     palette: !!r.palette,
   };
 }
@@ -121,9 +112,11 @@ export async function autoImportLegacy(db: Db, ls: Pick<Storage, 'getItem'>): Pr
   return importLegacy(db, readLocalStorage(ls));
 }
 
-/** Message après import : « Projet de l'ancienne version importé : 3 surfaces, 2 carreaux. » */
+/**
+ * Message après import : « Données de l'ancienne version importées : 2 carreaux. Le carrelage est à refaire sur
+ * le plan. » (les surfaces ne sont pas converties, PLAN C2).
+ */
 export function importMessage(s: ImportSummary): string {
-  const parts = [`${s.surfaces} surface${s.surfaces > 1 ? 's' : ''}`, `${s.tiles} carreau${s.tiles > 1 ? 'x' : ''}`];
-  if (s.scenarios) parts.push(`${s.scenarios} scénario${s.scenarios > 1 ? 's' : ''}`);
-  return `Projet de l’ancienne version importé : ${parts.join(', ')}.`;
+  const tiles = `${s.tiles} carreau${s.tiles > 1 ? 'x' : ''}`;
+  return `Données de l’ancienne version importées : ${tiles}.${s.surfaces ? ' Le carrelage est à refaire sur le plan.' : ''}`;
 }

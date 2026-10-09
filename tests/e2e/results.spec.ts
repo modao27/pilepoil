@@ -20,7 +20,7 @@ async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Ouvertures' }).click();
   await page.getByRole('button', { name: 'Ajouter', exact: true }).click();

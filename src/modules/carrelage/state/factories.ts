@@ -1,8 +1,20 @@
 /** Objets neufs avec les valeurs par défaut de legacy. */
 import { OPENING_DEFAULTS } from '../core';
 import type { Id } from '../../../state/model';
-import type { Corner, Opening, OpeningType, Surface, Tile, TileShape, Zone } from './model';
-import { DEFAULT_SETTINGS, type CarrelageProject } from './data';
+import type {
+  FloorTiling,
+  Opening,
+  OpeningType,
+  Reservation,
+  ReservationType,
+  RoomTiling,
+  Tile,
+  TileShape,
+  TilingBase,
+  WallTiling,
+  Zone,
+} from './model';
+import { DEFAULT_SETTINGS, type CarrelageData } from './data';
 import { TILE_SCHEMA } from './model';
 
 export function newId(): Id {
@@ -76,44 +88,35 @@ export function createOpening(type: OpeningType = 'window', o: Partial<Opening> 
   };
 }
 
-export function createCorner(o: Partial<Corner> = {}): Corner {
-  return { id: newId(), x: 1500, type: 'in', angle: 90, covered: true, ...o };
+/** Réservation propre au carrelage (prise, trappe, baignoire, autre). */
+export function createReservation(type: ReservationType = 'socket', o: Partial<Reservation> = {}): Reservation {
+  return { ...createOpening(type), type, ...o };
 }
 
-export function createSurface(tileId: Id, o: Partial<Surface> = {}): Surface {
+/** Réglages communs d'une surface neuve : une zone, joint de 3 mm. */
+function tilingBase(tileId: Id, o: Partial<TilingBase>): TilingBase {
+  return { joint: 3, split: 'h', zones: [createZone(tileId)], reservations: [], junctionsCovered: false, ...o };
+}
+
+export function createFloorTiling(tileId: Id, o: Partial<FloorTiling> = {}): FloorTiling {
+  return { ...tilingBase(tileId, o), plinth: null, edgesHidden: true, ...o };
+}
+
+export function createWallTiling(tileId: Id, o: Partial<WallTiling> = {}): WallTiling {
   return {
-    id: newId(),
-    name: 'Surface 1',
-    kind: 'wall',
-    width: 3000,
-    height: 2400,
-    joint: 3,
-    split: 'h',
-    zones: [createZone(tileId)],
-    openings: [],
-    corners: [],
-    plinth: null,
+    ...tilingBase(tileId, o),
+    tiledHeight: null,
     hiddenEdges: { top: true, bottom: true, left: true, right: true },
-    junctionsCovered: false,
+    openings: {},
     ...o,
   };
 }
 
-/** Projet carrelage neuf (vue) ; à enregistrer via `projectFromV1` (storage/migrations). */
-export function createProject(
-  surfaces: Surface[],
-  o: Partial<CarrelageProject> = {},
-  now = Date.now(),
-): CarrelageProject {
-  return {
-    id: newId(),
-    name: 'Nouveau projet',
-    createdAt: now,
-    updatedAt: now,
-    surfaces,
-    room: null,
-    settings: { ...DEFAULT_SETTINGS },
-    prices: {},
-    ...o,
-  };
+export function createRoomTiling(o: Partial<RoomTiling> = {}): RoomTiling {
+  return { floor: null, walls: {}, outerCornersCovered: true, ...o };
+}
+
+/** Données carrelage neuves. */
+export function createData(o: Partial<CarrelageData> = {}): CarrelageData {
+  return { rooms: {}, settings: { ...DEFAULT_SETTINGS }, prices: {}, ...o };
 }

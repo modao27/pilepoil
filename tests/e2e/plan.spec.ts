@@ -16,7 +16,7 @@ async function newProject(page: Page): Promise<string> {
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   return /#\/p\/([^/]+)/.exec(page.url())![1]!;
 }
 

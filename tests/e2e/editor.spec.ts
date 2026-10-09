@@ -10,7 +10,7 @@ async function newWall(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /\d+ carreaux/ })).toBeVisible();
 }
 
@@ -210,7 +210,7 @@ test('surfaces et pièce complète, puis résultats et plan de découpe', async 
   await shot(page, info, '69-surfaces-piece');
   await dlg.getByRole('button', { name: /^Sol/ }).click();
   await page.keyboard.press('Escape');
-  await expect(page.getByRole('application', { name: /^Plan de Sol/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, sol/ })).toBeVisible();
 
   await page
     .getByRole('link', { name: /\d+ carreaux/ })

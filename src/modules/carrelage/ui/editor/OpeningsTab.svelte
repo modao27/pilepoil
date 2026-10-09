@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { OpeningType } from '../../state/model';
+  import type { OpeningType, ReservationType } from '../../state/model';
   import Button from '../../../../ui/components/Button.svelte';
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
@@ -9,9 +9,8 @@
 
   let { ed }: { ed: EditorState } = $props();
 
-  const TYPES: { value: OpeningType; label: string }[] = [
-    { value: 'window', label: 'Fenêtre' },
-    { value: 'door', label: 'Porte' },
+  /** Réservations propres au carrelage ; portes et fenêtres viennent du plan. */
+  const TYPES: { value: ReservationType; label: string }[] = [
     { value: 'socket', label: 'Prise, interrupteur' },
     { value: 'trap', label: 'Trappe de visite' },
     { value: 'tub', label: 'Baignoire, receveur' },
@@ -25,10 +24,12 @@
     tub: 'Baignoire',
     other: 'Réservation',
   };
-  let newType = $state<OpeningType>('window');
+  let newType = $state<ReservationType>('socket');
 
   const o = $derived(ed.surface.openings[ed.sel.opening]);
   const floor = $derived(ed.surface.kind === 'floor');
+  /** Porte ou fenêtre du plan : cotes en lecture seule. */
+  const fromPlan = $derived(o?.source === 'plan');
   const revealPieces = $derived(
     ed.build?.pieces.map((p, i) => [p, i] as const).filter(([p]) => p.reveal?.opening === ed.sel.opening) ?? [],
   );
@@ -48,7 +49,8 @@
       </div>
     {:else}
       <p class="muted">
-        Aucune ouverture. Ajoutez fenêtres, portes, prises ou baignoire : les carreaux sont découpés autour.
+        Aucune ouverture. Les portes et fenêtres se placent dans le plan ; ajoutez ici prises, trappe ou baignoire : les
+        carreaux sont découpés autour.
       </p>
     {/if}
     <div class="add">
@@ -60,50 +62,62 @@
   {#if o}
     <section aria-labelledby="o-edit">
       <h3 id="o-edit">{NAME[o.type]} {ed.sel.opening + 1}</h3>
-      <Select label="Type" value={o.type} options={TYPES} onchange={(t) => ed.updateOpening({ type: t })} />
-      <div class="two">
-        <NumberField
-          label="Largeur"
-          value={o.width}
-          unit="cm"
-          factor={10}
-          min={1}
-          onchange={(v) => ed.updateOpening({ width: v })}
+      {#if fromPlan}
+        <p class="muted">
+          {cm(o.width)} × {cm(o.height)}, à {cm(o.x)} du bord gauche. Les cotes viennent du plan.
+        </p>
+        <div><Button href="#/p/{ed.project.id}/plan">Modifier le plan</Button></div>
+      {:else}
+        <Select
+          label="Type"
+          value={o.type as ReservationType}
+          options={TYPES}
+          onchange={(t) => ed.updateOpening({ type: t })}
         />
-        <NumberField
-          label="Hauteur"
-          value={o.height}
-          unit="cm"
-          factor={10}
-          min={1}
-          onchange={(v) => ed.updateOpening({ height: v })}
-        />
-        <NumberField
-          label="Depuis le bord gauche"
-          value={o.x}
-          unit="cm"
-          factor={10}
-          min={0}
-          onchange={(v) => ed.updateOpening({ x: v })}
-        />
-        <NumberField
-          label={floor ? 'Depuis le bord bas' : 'Allège depuis le bas'}
-          value={o.sill}
-          unit="cm"
-          factor={10}
-          min={0}
-          onchange={(v) => ed.updateOpening({ sill: v })}
-        />
-      </div>
-      {#if o.type === 'tub'}
-        <NumberField
-          label="Avancée dans la pièce"
-          value={o.projection}
-          unit="cm"
-          factor={10}
-          min={10}
-          onchange={(v) => ed.updateOpening({ projection: v })}
-        />
+        <div class="two">
+          <NumberField
+            label="Largeur"
+            value={o.width}
+            unit="cm"
+            factor={10}
+            min={1}
+            onchange={(v) => ed.updateOpening({ width: v })}
+          />
+          <NumberField
+            label="Hauteur"
+            value={o.height}
+            unit="cm"
+            factor={10}
+            min={1}
+            onchange={(v) => ed.updateOpening({ height: v })}
+          />
+          <NumberField
+            label="Depuis le bord gauche"
+            value={o.x}
+            unit="cm"
+            factor={10}
+            min={0}
+            onchange={(v) => ed.updateOpening({ x: v })}
+          />
+          <NumberField
+            label={floor ? 'Depuis le bord bas' : 'Allège depuis le bas'}
+            value={o.sill}
+            unit="cm"
+            factor={10}
+            min={0}
+            onchange={(v) => ed.updateOpening({ sill: v })}
+          />
+        </div>
+        {#if o.type === 'tub'}
+          <NumberField
+            label="Avancée dans la pièce"
+            value={o.projection}
+            unit="cm"
+            factor={10}
+            min={10}
+            onchange={(v) => ed.updateOpening({ projection: v })}
+          />
+        {/if}
       {/if}
       <Checkbox
         label="Bords recouverts"
@@ -152,13 +166,15 @@
           {/if}
         </fieldset>
       {/if}
-      <div class="row">
-        <Button onclick={() => ed.updateOpening({ x: Math.round((ed.surface.width - o.width) / 2) })}
-          >Centrer horizontalement</Button
-        >
-        <Button variant="danger" icon="trash" onclick={() => ed.removeOpening()}>Supprimer</Button>
-      </div>
-      <p class="muted">Sur le plan, glissez l’ouverture pour la déplacer.</p>
+      {#if !fromPlan}
+        <div class="row">
+          <Button onclick={() => ed.updateOpening({ x: Math.round((ed.surface.width - o.width) / 2) })}
+            >Centrer horizontalement</Button
+          >
+          <Button variant="danger" icon="trash" onclick={() => ed.removeOpening()}>Supprimer</Button>
+        </div>
+        <p class="muted">Sur le plan, glissez l’ouverture pour la déplacer.</p>
+      {/if}
     </section>
   {/if}
 </div>

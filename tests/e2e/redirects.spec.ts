@@ -9,7 +9,7 @@ test('anciennes adresses redirigées vers le module carrelage', async ({ page })
   await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
   await next();
   await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
   expect(page.url()).toContain(`#/p/${id}/m/carrelage`);
 
@@ -22,7 +22,7 @@ test('anciennes adresses redirigées vers le module carrelage', async ({ page })
   await expect(page).toHaveURL(/#\/$/);
 
   await page.goto(`/#/p/${id}/s/s9`);
-  await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`#/p/${id}/m/carrelage/s/s9$`));
 
   await page.goto(`/#/p/${id}/compare`);

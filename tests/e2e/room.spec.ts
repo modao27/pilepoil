@@ -21,7 +21,7 @@ test('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => 
 
   await page.getByRole('radio', { name: 'Dessus' }).click();
   await page.getByRole('link', { name: 'Ouvrir Mur B' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Mur B/ })).toBeVisible();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 2/ })).toBeVisible();
 });
 
 test('éditeur : vue 3D d’un mur avec fenêtre, puis de toute la pièce', async ({ page }, info) => {

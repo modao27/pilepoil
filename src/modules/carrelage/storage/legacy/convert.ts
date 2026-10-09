@@ -6,7 +6,7 @@
 import type { Metrics, OptimizerGoal, PatternId } from '../../core';
 import { newId, tileName } from '../../state/factories';
 import type { Id, Palette } from '../../../../state/model';
-import { TILE_SCHEMA, type CarrelageProjectV1, type Opening, type Room, type RoomWallKey, type ScenarioV1, type Surface, type Tile, type TileShape, type Zone } from '../../state/model';
+import { TILE_SCHEMA, type CarrelageProjectV1, type Opening, type RoomV1, type RoomWallKey, type ScenarioV1, type SurfaceV1, type Tile, type TileShape, type Zone } from '../../state/model';
 import type {
   LegacyFold,
   LegacyOpening,
@@ -191,7 +191,7 @@ function openingFrom(r: LegacyOpening): Opening {
   };
 }
 
-function surfaceFrom(S: LegacySurface, i: number, tiles: TileCollector, orientation: Tile['orientation']): Surface {
+function surfaceFrom(S: LegacySurface, i: number, tiles: TileCollector, orientation: Tile['orientation']): SurfaceV1 {
   const zones: Zone[] = S.zones.map((z) => {
     const { tileId, upright } = tiles.get(z, orientation);
     return {
@@ -242,7 +242,7 @@ export function convertProject(
   const act = L.surfaces[L.active] ?? L.surfaces[0]!;
   const tiles = new TileCollector(opts.now, opts.photoId);
   const surfaces = L.surfaces.map((S, i) => surfaceFrom(S, i, tiles, act.orient));
-  let room: Room | null = null;
+  let room: RoomV1 | null = null;
   if (L.room) {
     const walls: Partial<Record<RoomWallKey, Id>> = {};
     for (const [k, i] of Object.entries(L.room.surf ?? {})) {

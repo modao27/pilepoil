@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { computeProject } from '../../src/modules/carrelage/core';
 import {
-  createOpening,
-  createProject,
-  createSurface,
+  createRoomTiling,
   createTile,
+  createWallTiling,
   createZone,
 } from '../../src/modules/carrelage/state/factories';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
@@ -15,17 +14,23 @@ import {
   projectDescription,
   shoppingLabel,
 } from '../../src/modules/carrelage/ui/lib/labels';
+import { planProject, rect, view, withOpening } from './planFixtures';
 
 const tile = createTile({ name: '60 × 30 cm' });
 
 describe('libellés des résultats', () => {
-  const s = createSurface(tile.id, {
-    width: 3000,
-    height: 2400,
-    openings: [createOpening('window', { revealDepth: 150, x: 1000, sill: 900 })],
-    zones: [createZone(tile.id, { pattern: 'half' })],
-  });
-  const p = createProject([s, { ...createSurface(tile.id), name: 'Mur B' }]);
+  // mur 1 : 3 m × 2,4 m, fenêtre du plan avec tableaux de 15 cm ; mur 2 : 2 m
+  const room = withOpening(rect('r', 3000, 2000, { height: 2400 }), 0, { offset: 1000, sill: 900 });
+  const walls = {
+    'r-w0': createWallTiling(tile.id, {
+      zones: [createZone(tile.id, { pattern: 'half' })],
+      openings: {
+        'r-o0': { covered: true, revealDepth: 150, reveals: { left: true, right: true, top: true, bottom: false } },
+      },
+    }),
+    'r-w1': createWallTiling(tile.id),
+  };
+  const p = view(planProject([room], { rooms: { r: createRoomTiling({ walls }) } }));
   const R = computeProject(toProjectSpec(p, [tile]).spec);
 
   it('liste d’achat comme legacy', () => {
@@ -40,7 +45,7 @@ describe('libellés des résultats', () => {
   it('encollage par zone, nom de surface si plusieurs', () => {
     const rows = glueRows(p, R);
     expect(rows[0]).toMatchObject({
-      where: 'Surface 1, Zone 1',
+      where: 'Pièce, mur 1, Zone 1',
       tile: '60 × 30 cm',
       size: expect.stringMatching(/^1\s800 cm²$/),
       notch: 'U9 (9 mm)',
@@ -51,7 +56,7 @@ describe('libellés des résultats', () => {
   it('pièces du plan de découpe', () => {
     const reveal = R.pieces.find((x) => x.reveal)!;
     expect(pieceCutText(reveal, p)).toMatch(
-      /^(biais |encoche )?[\d,]+ × [\d,]+ \(F1 (tableau gauche|tableau droit|linteau)\) \[Surface 1\]$/,
+      /^(biais |encoche )?[\d,]+ × [\d,]+ \(F1 (tableau gauche|tableau droit|linteau)\) \[Pièce, mur 1\]$/,
     );
   });
 

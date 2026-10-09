@@ -118,7 +118,7 @@ test('nouvelle version : message, mise à jour sans perdre le projet', async ({ 
       page.waitForEvent('load'),
       page.getByRole('status').getByRole('button', { name: 'Mettre à jour' }).click(),
     ]);
-    await expect(page.getByRole('application', { name: /^Plan de Mur/ })).toBeVisible();
+    await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
     await expect(msg).toBeHidden();
     expect(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.waiting)).toBe(false);
     if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();

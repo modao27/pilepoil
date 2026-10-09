@@ -1,11 +1,12 @@
-import type { ProjectSpec, RoomSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../core';
+import type { Polygon, ProjectSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../core';
 import type { Id } from '../../../state/model';
-import type { Edges, Surface, Tile, Zone } from './model';
-import type { CarrelageProject } from './data';
+import type { Corner, Edges, Opening, Plinth, Tile, Zone } from './model';
+import type { CarrelageData, CarrelageProject } from './data';
+import { roomJoints } from './surfaces';
 
 /** Correspondance entre indices du moteur et identifiants du modèle. */
 export interface SpecIds {
-  surfaces: Id[];
+  surfaces: string[];
   zones: Id[][];
   openings: Id[][];
 }
@@ -14,7 +15,7 @@ export interface ProjectSpecResult {
   spec: ProjectSpec;
   ids: SpecIds;
   /** Zones dont le carreau est introuvable dans la bibliothèque (calcul de leur surface impossible). */
-  missingTiles: { surfaceId: Id; zoneId: Id; tileId: Id }[];
+  missingTiles: { surfaceId: string; zoneId: Id; tileId: Id }[];
 }
 
 const sides = (e: Edges) => ({ L: e.left, R: e.right, T: e.top, B: e.bottom });
@@ -54,7 +55,24 @@ function zoneSpec(z: Zone, tiles: ReadonlyMap<Id, Tile>): ZoneSpec {
   };
 }
 
-export function surfaceSpec(s: Surface, tiles: ReadonlyMap<Id, Tile>): SurfaceSpec {
+/** Ce que le moteur lit d'une surface : surface résolue, ou surface d'un projet v1 (avec ses angles). */
+export interface SurfaceSource {
+  kind: 'wall' | 'floor';
+  width: number;
+  height: number;
+  joint: number;
+  split: 'h' | 'v';
+  zones: Zone[];
+  openings: Opening[];
+  corners?: Corner[];
+  plinth: Plinth | null;
+  hiddenEdges: Edges;
+  junctionsCovered: boolean;
+  outline?: Polygon[] | null;
+  outlineHidden?: boolean;
+}
+
+export function surfaceSpec(s: SurfaceSource, tiles: ReadonlyMap<Id, Tile>): SurfaceSpec {
   const plinthZone = s.plinth ? s.zones.findIndex((z) => z.id === s.plinth!.zoneId) : -1;
   return {
     kind: s.kind,
@@ -74,40 +92,32 @@ export function surfaceSpec(s: Surface, tiles: ReadonlyMap<Id, Tile>): SurfaceSp
       reveals: sides(o.reveals),
       projection: o.projection,
     })),
-    corners: s.corners.map((c) => ({ x: c.x, type: c.type, angle: c.angle, covered: c.covered })),
+    corners: (s.corners ?? []).map((c) => ({ x: c.x, type: c.type, angle: c.angle, covered: c.covered })),
     plinth: s.plinth
       ? { length: s.plinth.length, height: s.plinth.height, zone: Math.max(0, plinthZone) }
       : { length: 0, height: 80, zone: 0 },
     hiddenEdges: sides(s.hiddenEdges),
     junctionsCovered: s.junctionsCovered,
+    ...(s.outline ? { outline: s.outline, outlineHidden: !!s.outlineHidden } : {}),
   };
 }
 
-/** Projet du modèle → entrée du moteur, carreaux résolus dans la bibliothèque. */
+/** Projet du modèle → entrée du moteur : surfaces résolues depuis le plan, carreaux de la bibliothèque. */
 export function toProjectSpec(project: CarrelageProject, library: readonly Tile[]): ProjectSpecResult {
   const tiles = new Map(library.map((t) => [t.id, t]));
-  const index = new Map(project.surfaces.map((s, i) => [s.id, i]));
   const missingTiles: ProjectSpecResult['missingTiles'] = [];
   for (const s of project.surfaces) {
     for (const z of s.zones) {
       if (!tiles.has(z.tileId)) missingTiles.push({ surfaceId: s.id, zoneId: z.id, tileId: z.tileId });
     }
   }
-  let room: RoomSpec | null = null;
-  if (project.room) {
-    const walls: RoomSpec['walls'] = {};
-    for (const [k, id] of Object.entries(project.room.walls)) {
-      const i = id != null ? index.get(id) : undefined;
-      if (i != null) walls[k as keyof RoomSpec['walls']] = i;
-    }
-    room = { length: project.room.length, width: project.room.width, walls };
-  }
   const { margin, reuseOffcuts, kerf, minOffcut } = project.settings;
   return {
     spec: {
       surfaces: project.surfaces.map((s) => surfaceSpec(s, tiles)),
       settings: { margin, reuseOffcuts, kerf, minOffcut },
-      room,
+      room: null,
+      rooms: roomJoints(project.plan, project.rooms, project.surfaces),
     },
     ids: {
       surfaces: project.surfaces.map((s) => s.id),
@@ -118,7 +128,8 @@ export function toProjectSpec(project: CarrelageProject, library: readonly Tile[
   };
 }
 
-/** Identifiants des carreaux utilisés par un projet. */
-export function usedTileIds(project: CarrelageProject): Set<Id> {
-  return new Set(project.surfaces.flatMap((s) => s.zones.map((z) => z.tileId)));
+/** Identifiants des carreaux utilisés par un projet, y compris par des réglages dont le mur a disparu du plan. */
+export function usedTileIds(data: CarrelageData): Set<Id> {
+  const tilings = Object.values(data.rooms).flatMap((r) => [...(r.floor ? [r.floor] : []), ...Object.values(r.walls)]);
+  return new Set(tilings.flatMap((t) => t.zones.map((z) => z.tileId)));
 }

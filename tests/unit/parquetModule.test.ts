@@ -87,7 +87,7 @@ describe('module parquet', () => {
     const p = project();
     const r = computeParquet(specOf(p));
     const used = r.totals.boards;
-    const lines = parquet.shopping(r, data(p), libraries).filter((x) => x.group === 'covering');
+    const lines = parquet.shopping(r, data(p), libraries, p.plan).filter((x) => x.group === 'covering');
     expect(lines).toEqual([
       expect.objectContaining({
         key: 'parquet:board:modele-stratifie',
@@ -98,7 +98,10 @@ describe('module parquet', () => {
       }),
     ]);
     const priced = parquet.reduce(data(p), parquet.priceAction('parquet:board:modele-stratifie', 21.9), p.plan);
-    expect(parquet.shopping(r, priced, libraries)[0]).toMatchObject({ unitPrice: 21.9, priceFromLibrary: false });
+    expect(parquet.shopping(r, priced, libraries, p.plan)[0]).toMatchObject({
+      unitPrice: 21.9,
+      priceFromLibrary: false,
+    });
   });
 
   it('achats : lames A et B comptées et emballées séparément', () => {
@@ -112,7 +115,7 @@ describe('module parquet', () => {
       ...data(p),
       layouts: [createLayout(data(p).layouts[0]!.id, [], { boardId: 'modele-baton-rompu' })],
     };
-    const lines = parquet.shopping(handed, d, libraries).filter((x) => x.group === 'covering');
+    const lines = parquet.shopping(handed, d, libraries, p.plan).filter((x) => x.group === 'covering');
     expect(lines.map((l) => l.key)).toEqual([
       'parquet:board:modele-baton-rompu:A',
       'parquet:board:modele-baton-rompu:B',
@@ -123,7 +126,7 @@ describe('module parquet', () => {
     const p = project();
     const r = computeParquet(specOf(p));
     expect(r.totals.boards).toBe(52);
-    const lines = parquet.shopping(r, data(p), libraries);
+    const lines = parquet.shopping(r, data(p), libraries, p.plan);
     // 52 × 1,05 / 9 = 6,07 → 7 ; 11,888 × 1,05 / 15 = 0,83 → 1 ; plinthes : voir parquetSkirting (6 barres)
     expect(lines.map((x) => [x.key, x.quantity, x.unit, x.detail])).toEqual([
       ['parquet:board:modele-stratifie', 7, 'pack', '52 lames + 5 % (9 par paquet)'],
@@ -143,7 +146,7 @@ describe('module parquet', () => {
         layoutId: data(p0).layouts[0]!.id,
         patch: { method },
       } as never);
-      const keys = parquet.shopping(computeParquet(specOf(p)), data(p), libraries).map((x) => x.key);
+      const keys = parquet.shopping(computeParquet(specOf(p)), data(p), libraries, p.plan).map((x) => x.key);
       expect(keys).toContain(key);
       expect(keys).not.toContain('parquet:underlay');
     }
@@ -225,7 +228,7 @@ describe('plusieurs pièces (P3)', () => {
     ];
     const p = reduceProject(p0, { type: 'parquet/layout/update', layoutId: l.id, patch: { breaks: [line] } } as never);
     const r = computeParquet(specOf(p));
-    const lines = parquet.shopping(r, data(p), libraries);
+    const lines = parquet.shopping(r, data(p), libraries, p.plan);
     expect(lines.map((x) => [x.key, x.quantity, x.unit])).toEqual([
       ['parquet:board:modele-stratifie', Math.ceil((r.totals.boards * 1.05) / 9), 'pack'],
       // 2 × 3984 × 2984 + bande du passage 814 × 88 − bande du seuil 814 × 16 = 23,835 m² × 1,05 / 15 = 1,67

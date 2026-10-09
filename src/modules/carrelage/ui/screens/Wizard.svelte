@@ -3,8 +3,8 @@
   import { PATTERNS, type PatternId, type ProjectResult } from '../../core';
   import { createTile, tileName } from '../../state/factories';
   import type { RoomWallKey, Tile } from '../../state/model';
-  import type { CarrelageProject } from '../../state/data';
-  import { projectFromV1 } from '../../../../storage/migrations';
+  import { carrelageView } from '../../state/data';
+  import type { Project } from '../../../../state/model';
   import { toProjectSpec } from '../../state/selectors';
   import { createRoomProject, createSingleSurfaceProject } from '../../state/templates';
   import Button from '../../../../ui/components/Button.svelte';
@@ -52,14 +52,15 @@
     if (!allowed.some((p) => p.id === pattern)) pattern = allowed[0]!.id;
   });
 
-  function build(t: Tile): CarrelageProject {
+  function build(t: Tile): Project {
     const layout = { tileId: t.id, tileUpright: !regular && upright, pattern, angle, joint };
     return kind === 'room'
       ? createRoomProject({ ...layout, ...room, walls, name }, 0)
       : createSingleSurfaceProject({ ...layout, kind, width, height, name }, 0);
   }
 
-  const project = $derived(build(shown));
+  const doc = $derived(build(shown));
+  const project = $derived(carrelageView(doc)!);
   let preview = $state.raw<ProjectResult | null>(null);
   let previewSpec = $state.raw<ReturnType<typeof toProjectSpec>['spec'] | null>(null);
   $effect(() => {
@@ -100,9 +101,9 @@
   async function create() {
     if (!tile || saving) return;
     saving = true;
-    const p = build(tile);
     const now = Date.now();
-    await app.saveProject(projectFromV1({ ...p, createdAt: now, updatedAt: now }));
+    const p = { ...build(tile), createdAt: now, updatedAt: now };
+    await app.saveProject(p);
     go({ name: 'module', id: p.id, module: 'carrelage', path: '' }, true);
   }
 

@@ -19,7 +19,11 @@ export async function moduleOutput(p: Project, m: ToolModule): Promise<ModuleOut
   const r = m.toSpec(p, app.libraries);
   if ('errors' in r) return { module: m, summary: null, lines: [] };
   const result = await app.queued(m.id, r.spec);
-  return { module: m, summary: m.summary(result), lines: m.shopping(result, p.modules[m.id]!.data, app.libraries) };
+  return {
+    module: m,
+    summary: m.summary(result),
+    lines: m.shopping(result, p.modules[m.id]!.data, app.libraries, p.plan),
+  };
 }
 
 export const projectOutputs = (p: Project): Promise<ModuleOutput[]> =>
