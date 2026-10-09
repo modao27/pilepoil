@@ -1,6 +1,6 @@
 /** Géométrie des murs d'une pièce : segment, longueur, direction, ouvertures. Repère de la pièce sauf mention. */
-import type { Point } from '../geometry/types';
-import type { Id, PlanRoom, WallOpening } from './types';
+import type { Point, Polygon } from '../geometry/types';
+import type { Id, Passage, Plan, PlanRoom, WallOpening } from './types';
 
 /** Épaisseur par défaut d'un mur : cloison placo 72/48 (docs/BOITE.md §3). */
 export const DEFAULT_WALL_THICKNESS = 72;
@@ -74,4 +74,26 @@ export function wallBands(room: PlanRoom): Point[][] {
     return [a[0] + d1[0] * s, a[1] + d1[1] * s];
   });
   return room.outline.map((p, i) => [p, room.outline[(i + 1) % n]!, outer[(i + 1) % n]!, outer[i]!]);
+}
+
+/**
+ * Bande d'un passage dans le repère du plan : la baie de la porte côté a sur toute l'épaisseur de son mur (sens
+ * horaire), prolongée de `extra` dans chaque pièce pour se souder aux sols. null si la porte n'existe plus.
+ */
+export function passageBand(plan: Plan, p: Passage, extra = 1): Polygon | null {
+  const room = plan.rooms.find((r) => r.id === p.a.room);
+  const o = room?.openings.find((x) => x.id === p.a.opening);
+  const i = room && o ? wallIndex(room, o.wall) : -1;
+  if (!room || !o || i < 0) return null;
+  const [a] = wallSegment(room, i);
+  const u = wallDirection(room, i);
+  const n = outwardNormal(u);
+  const d0 = -extra,
+    d1 = room.walls[i]!.thickness + extra;
+  const at = (s: number, d: number): Point => [
+    room.origin[0] + a[0] + u[0] * s + n[0] * d,
+    room.origin[1] + a[1] + u[1] * s + n[1] * d,
+  ];
+  // sens horaire à l'écran (aire signée > 0), comme les contours des pièces
+  return [at(o.offset, d1), at(o.offset + o.width, d1), at(o.offset + o.width, d0), at(o.offset, d0)];
 }

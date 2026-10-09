@@ -3,7 +3,7 @@
  * et deux murs → poser du parquet dans une autre pièce du même projet → acheter. Téléphone et ordinateur.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot, tick } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -23,9 +23,9 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   // 1. projet vide, le plan d'abord : salle de bain en L et chambre
   await page.goto('/');
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
-  await setNumber(page.locator('main'), 'Nom du projet', 'Appartement');
-  await page.getByRole('button', { name: 'Commencer : parquet' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  const first = page.getByRole('dialog', { name: 'Nouveau projet' });
+  await setNumber(first, 'Nom du projet', 'Appartement');
+  const dialog = page.getByRole('dialog', { name: /^(Nouveau projet|Ajouter une pièce)$/ });
   await dialog.getByRole('radio', { name: 'En L' }).click();
   await setNumber(dialog, 'Nom', 'Salle de bain');
   await setNumber(dialog, 'Longueur', '400');
@@ -62,7 +62,7 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   // 3. deux murs de la salle de bain, avec le même carreau ; cotes reprises du plan
   await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
   await bath.getByRole('checkbox', { name: /^Mur 1 / }).check();
-  await bath.getByRole('checkbox', { name: /^Mur 6 / }).check();
+  await tick(page, bath.getByRole('checkbox', { name: /^Mur 6 / }), 'new');
   await expect(bath.getByRole('link', { name: /^Ouvrir Salle de bain, / })).toHaveCount(3);
   await expect(bath.getByRole('link', { name: 'Ouvrir Salle de bain, mur 1' })).toContainText(/\d+ pièces/);
   await expect(bath.getByRole('link', { name: 'Ouvrir Salle de bain, mur 6' })).toContainText(/\d+ pièces/);
@@ -73,7 +73,8 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await shot(page, info, 'C3-parcours-piece');
 
   // 4. le parquet dans la chambre
-  await page.goto(page.url().replace(/\/m\/carrelage\/room\/.*$/, '/m/parquet'));
+  await page.goto(page.url().replace(/\/m\/carrelage\/room\/.*$/, ''));
+  await page.getByRole('button', { name: 'Ajouter parquet' }).click();
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
   // la pose naît sur la première pièce dont le sol est libre ; la salle de bain est déjà carrelée
   await p.getByRole('button', { name: 'Créer une pose' }).click();

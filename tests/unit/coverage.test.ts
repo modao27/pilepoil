@@ -9,6 +9,9 @@ import {
   removeRoom,
   roomsConnected,
   surfacePolygon,
+  wallChain,
+  wallRuns,
+  roomGroups,
   zoneArea,
   zoneRegion,
   type Coverage,
@@ -150,6 +153,86 @@ describe('règles', () => {
     expect(checkZone(plan, wood, zone('f', floor('c'), 'w'), WOOD)).toEqual({ code: 'pose-extent' });
     expect(roomsConnected(plan, ['a', 'b', 'c'])).toBe(false);
     expect(roomsConnected(plan, ['b', 'a'])).toBe(true);
+  });
+
+  it('pose continue : sols reliés, ou murs d’une même pièce qui se suivent', () => {
+    const CONT: CoverageRules = { surfaces: ['floor', 'wall'], extent: 'continuous' };
+    const wall = (room: string, i: number) => ({ room, wall: `${room}-w${i}` });
+    const walls = (ids: number[]): Coverage => ({
+      zones: ids.map((i) => zone(`z${i}`, wall('a', i), 'p')),
+      poses: [pose('p', 'carrelage')],
+    });
+    // mur 2 à côté du mur 1 : oui ; mur 3 après un trou : non ; mur 4 qui referme sur le mur 1 : oui
+    expect(checkZone(plan, walls([0]), zone('n', wall('a', 1), 'p'), CONT)).toBeNull();
+    expect(checkZone(plan, walls([0]), zone('n', wall('a', 2), 'p'), CONT)).toEqual({ code: 'pose-extent' });
+    expect(checkZone(plan, walls([0]), zone('n', wall('a', 3), 'p'), CONT)).toBeNull();
+    // mur d'une autre pièce : non ; deux zones sur un même mur (crédence coupée) : oui
+    expect(checkZone(plan, walls([0]), zone('n', wall('b', 0), 'p'), CONT)).toEqual({ code: 'pose-extent' });
+    const high = zone('n', wall('a', 0), 'p', [
+      {
+        line: [
+          [0, 1500],
+          [4000, 1500],
+        ],
+        side: 1,
+      },
+    ]);
+    const low = {
+      ...walls([0]),
+      zones: [
+        zone('z0', wall('a', 0), 'p', [
+          {
+            line: [
+              [0, 1500],
+              [4000, 1500],
+            ],
+            side: -1,
+          },
+        ]),
+      ],
+    };
+    expect(checkZone(plan, low, high, CONT)).toBeNull();
+    // sols : comme le parquet
+    const floors: Coverage = { zones: [zone('f', floor('a'), 'p')], poses: [pose('p', 'carrelage')] };
+    expect(checkZone(plan, floors, zone('n', floor('b'), 'p'), CONT)).toBeNull();
+    expect(checkZone(plan, floors, zone('n', floor('c'), 'p'), CONT)).toEqual({ code: 'pose-extent' });
+  });
+
+  it('chaîne de murs : ordre du contour, tour complet, trou refusé', () => {
+    expect(wallChain(a, ['a-w3', 'a-w0'])).toEqual(['a-w3', 'a-w0']);
+    expect(wallChain(a, ['a-w2', 'a-w1', 'a-w1'])).toEqual(['a-w1', 'a-w2']);
+    expect(wallChain(a, ['a-w0', 'a-w1', 'a-w2', 'a-w3'])).toEqual(['a-w0', 'a-w1', 'a-w2', 'a-w3']);
+    expect(wallChain(a, ['a-w0', 'a-w2'])).toBeNull();
+    expect(wallChain(a, ['x'])).toBeNull();
+  });
+
+  it('suites de murs et groupes de pièces reliées (séparer une pose qui ne se suit plus)', () => {
+    expect(wallRuns(a, ['a-w0', 'a-w2'])).toEqual([['a-w0'], ['a-w2']]);
+    expect(wallRuns(a, ['a-w3', 'a-w0', 'a-w2'])).toEqual([['a-w2', 'a-w3', 'a-w0']]);
+    expect(wallRuns(a, ['a-w0', 'a-w1', 'a-w2', 'a-w3'])).toEqual([['a-w0', 'a-w1', 'a-w2', 'a-w3']]);
+    expect(roomGroups(plan, ['c', 'b', 'a'])).toEqual([['a', 'b'], ['c']]);
+  });
+
+  it('propriété : un arc du contour est une chaîne, un arc privé d’un mur intérieur ne l’est pas', () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 3, max: 12 }), fc.nat(), fc.nat(), (n, s, l) => {
+        const room = {
+          ...rect('r', 1000, 1000),
+          walls: Array.from({ length: n }, (_, i) => ({ id: `w${i}`, thickness: 100 })),
+        };
+        const len = 1 + (l % n);
+        const arc = Array.from({ length: len }, (_, k) => `w${(s + k) % n}`);
+        const chain = wallChain(room, [...arc].reverse());
+        expect(chain).toEqual(len === n ? room.walls.map((w) => w.id) : arc);
+        if (len >= 3 && len < n)
+          expect(
+            wallChain(
+              room,
+              arc.filter((_, k) => k !== 1),
+            ),
+          ).toBeNull();
+      }),
+    );
   });
 });
 

@@ -6,6 +6,7 @@ import {
   expectTouchTargets,
   newWall as wizardWall,
   shot,
+  tick,
 } from './helpers';
 
 /** Crée un mur 300 × 240 en décalé ½, carreau 60 × 30, et ouvre l'éditeur ; renvoie l'identifiant du projet. */
@@ -213,7 +214,7 @@ test('surfaces : sol et murs de la pièce à cocher, puis résultats et plan de 
   await newWall(page);
   await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Sol', exact: true }).check();
-  for (const n of [2, 3, 4]) await page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }).check();
+  for (const n of [2, 3, 4]) await tick(page, page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }), 'new');
   await expect(page.getByRole('link', { name: /^Ouvrir Pièce, / })).toHaveCount(5);
   await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
   await page.getByRole('button', { name: /Pièce 300 × 240/ }).click();

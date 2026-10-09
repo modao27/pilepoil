@@ -4,7 +4,7 @@
  * ne mélange pas sols et murs, étendue d'une pose permise par le module. Pur.
  */
 import { intersection, regionArea } from '../geometry/boolean';
-import type { Plan } from '../plan/types';
+import type { Plan, PlanRoom } from '../plan/types';
 import { sameSurface, surfaceKey, surfacePolygon, zoneRegion } from './geometry';
 import type { CoverageRules, Pose, Zone } from './types';
 import type { Id } from '../plan/types';
@@ -46,6 +46,70 @@ export function roomsConnected(plan: Plan, rooms: readonly Id[]): boolean {
 }
 
 /**
+ * Murs d'une pièce dans l'ordre d'une chaîne continue (sens du contour ; le tour complet part du mur 1), sans
+ * doublon ; null si un mur est inconnu ou s'il y a un trou dans la chaîne.
+ */
+export function wallChain(room: PlanRoom, walls: readonly Id[]): Id[] | null {
+  const n = room.walls.length;
+  const set = new Set<number>();
+  for (const w of walls) {
+    const i = room.walls.findIndex((x) => x.id === w);
+    if (i < 0) return null;
+    set.add(i);
+  }
+  if (!set.size) return [];
+  if (set.size === n) return room.walls.map((w) => w.id);
+  const starts = [...set].filter((i) => !set.has((i - 1 + n) % n));
+  if (starts.length !== 1) return null;
+  return Array.from({ length: set.size }, (_, k) => room.walls[(starts[0]! + k) % n]!.id);
+}
+
+/** Suites de murs consécutifs d'une pièce (ordre du contour), pour séparer une chaîne coupée par un trou. */
+export function wallRuns(room: PlanRoom, walls: readonly Id[]): Id[][] {
+  const n = room.walls.length;
+  const set = new Set(walls.map((w) => room.walls.findIndex((x) => x.id === w)).filter((i) => i >= 0));
+  if (set.size === n) return [room.walls.map((w) => w.id)];
+  const starts = [...set].filter((i) => !set.has((i - 1 + n) % n)).sort((x, y) => x - y);
+  return starts.map((s) => {
+    const run: Id[] = [];
+    for (let i = s; set.has(i) && run.length < n; i = (i + 1) % n) run.push(room.walls[i]!.id);
+    return run;
+  });
+}
+
+/** Groupes de pièces reliées entre elles par les passages du plan (ordre du plan). */
+export function roomGroups(plan: Plan, rooms: readonly Id[]): Id[][] {
+  const left = plan.rooms.map((r) => r.id).filter((id) => rooms.includes(id));
+  const groups: Id[][] = [];
+  while (left.length) {
+    const group = [left.shift()!];
+    for (let k = 0; k < group.length; k++)
+      for (const p of plan.passages) {
+        const r = group[k]!;
+        const other = p.a.room === r ? p.b.room : p.b.room === r ? p.a.room : null;
+        const i = other ? left.indexOf(other) : -1;
+        if (i >= 0) group.push(...left.splice(i, 1));
+      }
+    groups.push(plan.rooms.map((r) => r.id).filter((id) => group.includes(id)));
+  }
+  return groups;
+}
+
+/** Zones d'une même pose qui se suivent : sols de pièces reliées, ou murs consécutifs d'une même pièce. */
+function continuous(plan: Plan, zones: readonly Zone[]): boolean {
+  const rooms = [...new Set(zones.map((o) => o.surface.room))];
+  if (zones.every((o) => o.surface.wall == null)) return roomsConnected(plan, rooms);
+  const room = rooms.length === 1 ? plan.rooms.find((r) => r.id === rooms[0]) : undefined;
+  return (
+    !!room &&
+    wallChain(
+      room,
+      zones.map((o) => o.surface.wall!),
+    ) != null
+  );
+}
+
+/**
  * La zone `z` (nouvelle ou modifiée, même identifiant) respecte les règles ; null sinon le premier problème.
  * `rules` : celles du module de la pose de `z`.
  */
@@ -66,6 +130,7 @@ export function checkZone(plan: Plan, cov: Coverage, z: Zone, rules: CoverageRul
   if (rules.extent === 'surface' && surfaces.size > 1) return { code: 'pose-extent' };
   if (rules.extent === 'connected-floors' && !roomsConnected(plan, [...new Set(pose.map((o) => o.surface.room))]))
     return { code: 'pose-extent' };
+  if (rules.extent === 'continuous' && !continuous(plan, pose)) return { code: 'pose-extent' };
   return null;
 }
 

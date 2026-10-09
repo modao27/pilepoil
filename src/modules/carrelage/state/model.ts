@@ -113,10 +113,32 @@ export type { SurfaceRef };
  * (`carrelageView`), jamais enregistrée. Repère : boîte englobante des zones (y vers le bas). Ouvertures : portes
  * et fenêtres du plan (source 'plan', cotes du plan), puis réservations.
  */
+/** Surface du plan couverte par une pose, et coin de la pose (origin) dans le repère de cette surface. */
+export interface SurfacePart {
+  ref: SurfaceRef;
+  /** Sol : coin haut gauche de la pose dans le repère de la pièce ; mur : coin bas gauche dans celui du mur. */
+  x: number;
+  y: number;
+}
+
+/** Angle entre deux murs consécutifs d'une pose, à `x` mm du bord gauche de la surface. */
+export interface SurfaceCorner {
+  x: number;
+  /** Rentrant (coin de la pièce vu de l'intérieur) ou sortant. */
+  type: 'in' | 'out';
+  /** Angle du coin, degrés (90 pour un angle droit). */
+  angle: number;
+}
+
 export interface Surface {
   /** Identifiant de la pose : sert aux adresses et aux actions. */
   id: Id;
+  /** Première surface du plan couverte (parts[0].ref). */
   ref: SurfaceRef;
+  /** Surfaces du plan couvertes, dans l'ordre de la pose (chaîne de murs, pièces du plan). */
+  parts: SurfacePart[];
+  /** Angles entre murs consécutifs (pose sur plusieurs murs) ; vide pour un sol ou un seul mur. */
+  corners: SurfaceCorner[];
   /** « Cuisine, sol » ; « Cuisine, sol · Pose 2 » si la surface a plusieurs poses de carrelage. */
   name: string;
   kind: 'wall' | 'floor';

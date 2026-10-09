@@ -54,6 +54,10 @@ export class PlanEditorState {
   draft = $state.raw<Point[]>([]);
   /** Première porte d'un passage en cours de liaison. */
   linkFrom = $state.raw<{ room: Id; opening: Id } | null>(null);
+  /** Contour dessiné fermé et valide : en attente de son nom. */
+  naming = $state(false);
+  /** Projet neuf (#/new) : rien n'est enregistré tant qu'il n'a pas de pièce (pas de projet vide). */
+  isNew = $state(false);
 
   readonly store: ProjectStore<Project, ProjectAction>;
   private saver: Saver<Project>;
@@ -61,14 +65,17 @@ export class PlanEditorState {
   plan = $derived<Plan>(this.doc.plan);
   errors = $derived<PlanError[]>(validatePlan(this.doc.plan));
 
-  constructor(p: Project) {
+  constructor(p: Project, o: { isNew?: boolean } = {}) {
+    this.isNew = o.isNew ?? false;
     this.saver = createSaver(
       (q) => app.saveProject(q),
       300,
       () => toast('Enregistrement impossible : stockage plein ou indisponible.', { tone: 'error' }),
     );
     this.store = createProjectStore(p, (q: Project, a: ProjectAction) => reduceProject(q, a), {
-      onChange: (q) => this.saver.schedule(q),
+      onChange: (q) => {
+        if (!this.isNew || q.plan.rooms.length) this.saver.schedule(q);
+      },
     });
     this.store.subscribe((s) => {
       this.doc = s.project;
@@ -182,7 +189,7 @@ export class PlanEditorState {
     const d = this.draft;
     const first = d[0];
     if (first && d.length >= 3 && Math.hypot(p[0] - first[0], p[1] - first[1]) <= closeTolerance) {
-      this.finishDraw();
+      this.closeDraw();
       return;
     }
     const last = d.at(-1);
@@ -194,20 +201,35 @@ export class PlanEditorState {
     this.draft = this.draft.slice(0, -1);
   }
 
-  /** Termine le dessin : pièce créée si le contour est valide, sinon message et dessin conservé. */
-  finishDraw(name = this.nextRoomName()): boolean {
+  /** Pièce du dessin en cours ; null (avec un message) si le contour n'est pas valide. */
+  private drawnRoom(name: string): PlanRoom | null {
     const pts = this.draft;
     if (pts.length < 3) {
       toast('Placez au moins 3 points pour fermer la pièce.');
-      return false;
+      return null;
     }
     const [ox, oy] = pts.reduce<Point>((m, p) => [Math.min(m[0], p[0]), Math.min(m[1], p[1])], [Infinity, Infinity]);
     const outline: Polygon = clockwise(pts.map(([x, y]) => [x - ox, y - oy]));
     const room = roomFromOutline(outline, { name, origin: [ox, oy] }, newId);
     if (validateRoom(room).length) {
       toast('Les murs se croisent : déplacez un point ou recommencez.', { tone: 'error' });
-      return false;
+      return null;
     }
+    return room;
+  }
+
+  /** Ferme le dessin : si le contour est valide, demande le nom de la pièce (`naming`). */
+  closeDraw(): boolean {
+    if (!this.drawnRoom(this.nextRoomName())) return false;
+    this.naming = true;
+    return true;
+  }
+
+  /** Termine le dessin : pièce créée si le contour est valide, sinon message et dessin conservé. */
+  finishDraw(name = this.nextRoomName()): boolean {
+    this.naming = false;
+    const room = this.drawnRoom(name.trim() || this.nextRoomName());
+    if (!room) return false;
     this.dispatch({ type: 'plan/room/add', room });
     this.mode = 'select';
     this.draft = [];

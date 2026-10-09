@@ -32,7 +32,7 @@ describe('poses de carrelage', () => {
     expect(q.zones).toEqual([{ id: 'n1', surface: { room: 'r', wall: null }, cuts: [], pose: 'n0' }]);
     expect(view(q).surfaces[0]).toMatchObject({ id: 'n0', kind: 'floor', width: 3000, height: 2000 });
     // ne plus carreler : pose et réglages retirés
-    const r = reduceProject(q, untileSurfaceAction(q, { room: 'r', wall: null }));
+    const r = reduceProject(q, untileSurfaceAction(q, { room: 'r', wall: null }, ids('u')));
     expect([r.poses, view(r).poses]).toEqual([[], {}]);
   });
 

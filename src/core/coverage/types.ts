@@ -43,7 +43,8 @@ export interface CoverageRules {
   /** Types de surface acceptés. */
   surfaces: readonly ('floor' | 'wall')[];
   /**
-   * Étendue d'une pose : une seule surface, ou des sols de pièces reliées par des passages.
+   * Étendue d'une pose : une seule surface ; des sols de pièces reliées par des passages ; ou « continue » : des
+   * sols reliés, ou des murs d'une même pièce qui se suivent (le tour complet compris).
    */
-  extent: 'surface' | 'connected-floors';
+  extent: 'surface' | 'connected-floors' | 'continuous';
 }

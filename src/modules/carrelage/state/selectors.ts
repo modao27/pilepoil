@@ -56,7 +56,7 @@ function zoneSpec(z: Band, tiles: ReadonlyMap<Id, Tile>): ZoneSpec {
   };
 }
 
-export function surfaceSpec(s: Surface, tiles: ReadonlyMap<Id, Tile>): SurfaceSpec {
+export function surfaceSpec(s: Surface, tiles: ReadonlyMap<Id, Tile>, outerCovered = true): SurfaceSpec {
   const plinthZone = s.plinth ? s.bands.findIndex((z) => z.id === s.plinth!.bandId) : -1;
   return {
     kind: s.kind,
@@ -76,7 +76,7 @@ export function surfaceSpec(s: Surface, tiles: ReadonlyMap<Id, Tile>): SurfaceSp
       reveals: sides(o.reveals),
       projection: o.projection,
     })),
-    corners: [],
+    corners: s.corners.map((c) => ({ ...c, covered: outerCovered && c.type === 'out' })),
     plinth: s.plinth
       ? { length: s.plinth.length, height: s.plinth.height, zone: Math.max(0, plinthZone) }
       : { length: 0, height: 80, zone: 0 },
@@ -98,7 +98,7 @@ export function toProjectSpec(project: CarrelageProject, library: readonly Tile[
   const { margin, reuseOffcuts, kerf, minOffcut } = project.settings;
   return {
     spec: {
-      surfaces: project.surfaces.map((s) => surfaceSpec(s, tiles)),
+      surfaces: project.surfaces.map((s) => surfaceSpec(s, tiles, project.settings.outerCornersCovered)),
       settings: { margin, reuseOffcuts, kerf, minOffcut },
       room: null,
       rooms: roomJoints(project.plan, project.surfaces, project.settings.outerCornersCovered),

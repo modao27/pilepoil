@@ -1,20 +1,21 @@
 /**
- * Poses de carrelage : nom et réglages d'une nouvelle pose, actions du projet pour carreler ou non une surface,
+ * Poses de carrelage : nom et réglages d'une nouvelle pose, actions du projet pour carreler une surface (nouvelle
+ * pose, ou suite d'une pose voisine) ou ne plus la carreler (la pose est séparée si elle ne se suit plus),
  * hauteur carrelée d'un mur (ligne haute de sa zone). Pur.
  */
-import { surfacePolygon } from '../../../core/coverage/geometry';
+import { sameSurface, surfacePolygon, zoneRegion } from '../../../core/coverage/geometry';
 import type { CoverageAction } from '../../../core/coverage/reduce';
 import type { Cut, Pose, SurfaceRef, Zone } from '../../../core/coverage/types';
 import type { Plan } from '../../../core/plan/types';
 import type { Id, Project } from '../../../state/model';
 import type { ProjectAction } from '../../../state/project';
-import { checkZone, type CoverageError } from '../../../core/coverage/rules';
+import { checkZone, roomGroups, wallRuns, type CoverageError } from '../../../core/coverage/rules';
 import { nextPoseName } from '../../../core/coverage/names';
 import type { CoverageRules } from '../../../core/coverage/types';
 import { CARRELAGE_ID, carrelageData, withCarrelage, type CarrelageData } from './data';
 
 /** Règles des zones de carrelage (aussi déclarées dans le contrat du module). */
-export const TILE_RULES: CoverageRules = { surfaces: ['floor', 'wall'], extent: 'surface' };
+export const TILE_RULES: CoverageRules = { surfaces: ['floor', 'wall'], extent: 'continuous' };
 import { createPoseSettings } from './factories';
 import type { CarrelagePose, Tile } from './model';
 
@@ -60,12 +61,95 @@ export function tileSurfaceAction(
   return { type: 'pose/add', pose, zones: [zone], settings };
 }
 
-/** Action du projet : ne plus carreler la surface (ses poses de carrelage sont retirées). */
-export function untileSurfaceAction(project: Project, surface: SurfaceRef): ProjectAction {
+/**
+ * Poses de carrelage que cette surface peut continuer (même type de surface, mur voisin ou pièce reliée, sans
+ * recouvrement), dans l'ordre du projet.
+ */
+export function continuablePoses(project: Project, surface: SurfaceRef): Pose[] {
+  return project.poses.filter((p) => {
+    if (p.module !== CARRELAGE_ID) return false;
+    const mine = project.zones.filter((z) => z.pose === p.id);
+    if (!mine.length || mine.some((z) => (z.surface.wall == null) !== (surface.wall == null))) return false;
+    if (mine.some((z) => sameSurface(z.surface, surface))) return false;
+    return !checkZone(project.plan, project, { id: '', surface, cuts: [], pose: p.id }, TILE_RULES);
+  });
+}
+
+/**
+ * Action du projet : la surface continue la pose `poseId` (une zone de plus, même calepinage). Un mur reprend la
+ * hauteur carrelée du mur voisin de la pose.
+ */
+export function continuePoseAction(
+  project: Project,
+  surface: SurfaceRef,
+  poseId: Id,
+  newId: () => Id,
+): Extract<CoverageAction, { type: 'zone/add' }> {
+  let cuts: Cut[] = [];
+  if (surface.wall != null) {
+    const room = project.plan.rooms.find((r) => r.id === surface.room);
+    const n = room?.walls.length ?? 0;
+    const i = room ? room.walls.findIndex((w) => w.id === surface.wall) : -1;
+    const near = room
+      ? [room.walls[(i + n - 1) % n]!.id, room.walls[(i + 1) % n]!.id].flatMap((wall) =>
+          project.zones.filter((z) => z.pose === poseId && z.surface.room === surface.room && z.surface.wall === wall),
+        )
+      : [];
+    const tops = near.flatMap((z) => (zoneRegion(project.plan, z) ?? []).flat().map((q) => q[1]));
+    if (tops.length) cuts = wallHeightCuts(project.plan, surface, Math.max(...tops));
+  }
+  return { type: 'zone/add', zone: { id: newId(), surface, cuts, pose: poseId } };
+}
+
+/** Réglages copiés pour une pose séparée d'une autre : bandes renumérotées, plinthe suivie. */
+function cloneSettings(t: CarrelagePose, newId: () => Id): CarrelagePose {
+  const ids = new Map(t.bands.map((b) => [b.id, newId()]));
   return {
-    type: 'batch',
-    actions: tilePosesOn(project, surface).map((p): ProjectAction => ({ type: 'pose/remove', poseId: p.id })),
+    ...structuredClone(t),
+    bands: t.bands.map((b) => ({ ...structuredClone(b), id: ids.get(b.id)! })),
+    plinth: t.plinth ? { ...t.plinth, bandId: ids.get(t.plinth.bandId) ?? t.plinth.bandId } : null,
   };
+}
+
+/**
+ * Action du projet : ne plus carreler la surface. Ses zones de carrelage sont retirées ; une pose qui ne se suit
+ * plus (mur du milieu retiré, pièce de passage retirée) est séparée : la première suite garde la pose, chaque
+ * autre devient une nouvelle pose aux mêmes réglages. Une pose sans zone disparaît.
+ */
+export function untileSurfaceAction(project: Project, surface: SurfaceRef, newId: () => Id): ProjectAction {
+  const data = carrelageData(project);
+  const actions: ProjectAction[] = [];
+  const names = [...project.poses];
+  for (const pose of tilePosesOn(project, surface)) {
+    const gone = project.zones.filter((z) => z.pose === pose.id && sameSurface(z.surface, surface));
+    actions.push(...gone.map((z): ProjectAction => ({ type: 'zone/remove', zoneId: z.id })));
+    const left = project.zones.filter((z) => z.pose === pose.id && !sameSurface(z.surface, surface));
+    const settings = data && Object.hasOwn(data.poses, pose.id) ? data.poses[pose.id]! : null;
+    if (!left.length || !settings) continue;
+    const walls = left[0]!.surface.wall != null;
+    const room = project.plan.rooms.find((r) => r.id === left[0]!.surface.room);
+    const groups: string[][] = walls
+      ? room
+        ? wallRuns(
+            room,
+            left.map((z) => z.surface.wall!),
+          )
+        : []
+      : roomGroups(project.plan, [...new Set(left.map((z) => z.surface.room))]);
+    for (const g of groups.slice(1)) {
+      const moved = left.filter((z) => g.includes(walls ? z.surface.wall! : z.surface.room));
+      const added: Pose = { id: newId(), module: CARRELAGE_ID, name: nextPoseName(names) };
+      names.push(added);
+      actions.push(...moved.map((z): ProjectAction => ({ type: 'zone/remove', zoneId: z.id })));
+      actions.push({
+        type: 'pose/add',
+        pose: added,
+        zones: moved.map((z) => ({ ...z, id: newId(), pose: added.id })),
+        settings: cloneSettings(settings, newId),
+      });
+    }
+  }
+  return { type: 'batch', actions };
 }
 
 /** Lignes d'une zone de mur carrelée du sol à `height` (null : jusqu'au plafond, aucune ligne). */

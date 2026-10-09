@@ -1,5 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { emptyProject, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import {
+  addTool,
+  createProject,
+  expectAccessible,
+  expectNoHorizontalScroll,
+  expectTouchTargets,
+  shot,
+} from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -18,16 +25,10 @@ const panel = (page: Page) =>
 
 /** Projet parquet, une pièce de 4 × 3 m dans le plan, une pose : renvoie l'identifiant. */
 async function parquetProject(page: Page): Promise<string> {
-  const id = await emptyProject(page);
-  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
-  await setNumber(dialog, 'Nom', 'Séjour');
-  await setNumber(dialog, 'Longueur', '400');
-  await setNumber(dialog, 'Largeur', '300');
-  await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
-  await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
+  const id = await createProject(page, { name: 'Séjour', size: [400, 300] });
 
   // parquet : première pose sur la pièce
-  await page.goto(`/#/p/${id}/m/parquet`);
+  await addTool(page, id, 'parquet');
   await page.getByRole('button', { name: 'Créer une pose' }).click();
   return id;
 }

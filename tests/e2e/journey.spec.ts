@@ -23,9 +23,9 @@ test('parcours : deux pièces, point de Hongrie, achats, chantier', async ({ pag
   // 1. nouveau projet de parquet : on commence par le plan
   await page.goto('/');
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
-  await setNumber(page.locator('main'), 'Nom du projet', 'Maison');
-  await page.getByRole('button', { name: 'Commencer : parquet' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  const first = page.getByRole('dialog', { name: 'Nouveau projet' });
+  await setNumber(first, 'Nom du projet', 'Maison');
+  const dialog = page.getByRole('dialog', { name: /^(Nouveau projet|Ajouter une pièce)$/ });
   await expect(dialog).toBeVisible();
 
   // 2. deux pièces reliées par une porte
@@ -61,7 +61,7 @@ test('parcours : deux pièces, point de Hongrie, achats, chantier', async ({ pag
 
   // 3. le parquet : une pose sur les deux pièces, en point de Hongrie
   await page.getByRole('link', { name: 'Projet' }).click();
-  await page.getByRole('link', { name: /Parquet/ }).click();
+  await page.getByRole('button', { name: 'Ajouter parquet' }).click();
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
   await p.getByRole('button', { name: 'Créer une pose' }).click();
   await p.getByRole('checkbox', { name: 'Bureau' }).check();

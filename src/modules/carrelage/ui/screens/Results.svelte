@@ -15,6 +15,7 @@
   import { euros, m2 } from '../../../../ui/lib/format';
   import { glueRows, pieceCutText, shoppingLabel } from '../lib/labels';
   import { errorText, productName } from '../lib/messages';
+  import { nameIn } from '../../state/surfaces';
 
   let { projectId: id }: ModuleScreenProps = $props();
 
@@ -37,7 +38,7 @@
   /** Surfaces carrelées par pièce du plan. */
   const rooms = $derived(
     (project?.plan.rooms ?? [])
-      .map((room) => ({ room, surfaces: project!.surfaces.filter((s) => s.ref.room === room.id) }))
+      .map((room) => ({ room, surfaces: project!.surfaces.filter((s) => s.parts.some((q) => q.ref.room === room.id)) }))
       .filter((g) => g.surfaces.length),
   );
   const mm = (v: number) => (Math.round(v * 10) / 10).toLocaleString('fr-FR');
@@ -103,7 +104,7 @@
             <p>
               <strong>{g.room.name}</strong> :
               {#each g.surfaces as s, k (s.id)}{k ? ', ' : ''}<a href="#/p/{project.id}/m/carrelage/s/{s.id}"
-                  >{s.ref.wall ? s.name.slice(g.room.name.length + 2) : 'sol'}</a
+                  >{nameIn(s, g.room)}</a
                 >{/each}
               · <a href="#/p/{project.id}/m/carrelage/room/{g.room.id}">vue de la pièce</a>
             </p>

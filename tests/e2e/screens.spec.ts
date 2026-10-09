@@ -1,12 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   addTile,
+  addTool,
+  createProject,
   expectAccessible,
   expectNoHorizontalScroll,
   expectTouchTargets,
   fillNumber,
   newWall,
   shot,
+  tick,
 } from './helpers';
 
 async function check(page: Page) {
@@ -18,16 +21,14 @@ async function check(page: Page) {
 test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, info) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
-  // choix de l'outil : le projet s'ouvre sur le plan
-  await expect(page.getByRole('heading', { name: 'Que voulez-vous poser ?' })).toBeVisible();
-  await page.getByLabel('Nom du projet', { exact: true }).fill('Pièce 288 × 240');
+  // nouveau projet : nom du projet et première pièce, sur le plan
+  const dialog = page.getByRole('dialog', { name: 'Nouveau projet' });
+  await dialog.getByLabel('Nom du projet', { exact: true }).fill('Pièce 288 × 240');
+  await expect(dialog.getByRole('radio', { name: 'Rectangle' })).toHaveAttribute('aria-checked', 'true');
   await check(page);
   await shot(page, info, '09-nouveau-projet');
-  await page.getByRole('button', { name: 'Commencer : carrelage' }).click();
 
-  // 1. pièce dessinée sur le plan, saisie calculée
-  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
-  await expect(dialog.getByRole('radio', { name: 'Rectangle' })).toHaveAttribute('aria-checked', 'true');
+  // 1. pièce, saisie calculée
   await fillNumber(dialog, 'Nom', 'Pièce');
   const w = dialog.getByLabel('Longueur', { exact: true });
   await w.fill('300-12');
@@ -40,8 +41,10 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await check(page);
   await shot(page, info, '10-plan-piece');
 
-  // 2. à carreler : le mur 1, sur l'écran Carrelage
-  await page.goto(page.url().replace(/\/plan$/, '/m/carrelage'));
+  // 2. revêtement choisi après le plan ; à carreler : le mur 1, sur l'écran Carrelage
+  await plan.getByRole('button', { name: 'Toutes les pièces' }).click();
+  await plan.getByRole('link', { name: 'Choisir les revêtements' }).click();
+  await page.getByRole('button', { name: 'Ajouter carrelage' }).click();
   await page.getByRole('checkbox', { name: /^Mur 1 / }).check();
   await check(page);
   await shot(page, info, '11-carrelage-surfaces');
@@ -149,19 +152,11 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
 
 test('pièce en L : sol et murs cochés sur l’écran Carrelage', async ({ page }, info) => {
   await addTile(page);
-  await page.goto('/#/new');
-  await page.getByLabel('Nom du projet', { exact: true }).fill('Pièce 400 × 300');
-  await page.getByRole('button', { name: 'Commencer : carrelage' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
-  await dialog.getByRole('radio', { name: 'En L' }).click();
-  await fillNumber(dialog, 'Nom', 'Pièce');
-  await fillNumber(dialog, 'Longueur', '400');
-  await fillNumber(dialog, 'Largeur', '300');
-  await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
-  await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
-  await page.goto(page.url().replace(/\/plan$/, '/m/carrelage'));
+  const id = await createProject(page, { project: 'Pièce 400 × 300', name: 'Pièce', size: [400, 300], shape: 'En L' });
+  await addTool(page, id, 'carrelage');
   await page.getByRole('checkbox', { name: 'Sol', exact: true }).check();
-  for (const n of [1, 2, 6]) await page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }).check();
+  for (const n of [1, 2, 6])
+    await tick(page, page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }), n > 1 ? 'new' : undefined);
   await expect(page.getByRole('heading', { name: 'Carrelage — Pièce 400 × 300' })).toBeVisible();
   await check(page);
   await shot(page, info, '16-piece-L');
