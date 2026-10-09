@@ -8,6 +8,8 @@ import type { Polygon } from '../../../core/geometry/types';
 import { fingerprint } from '../../../core/hash';
 import { selfIntersecting } from '../../../core/plan/validate';
 import { layingFrame, ringFromFrame, ringToFrame } from './frame';
+import { axisOptions } from './axis';
+import { layPattern } from './patterned';
 import { layStraight } from './straight';
 import type { LayoutResult, LayoutSpec, ParquetError, ParquetResult, ParquetSpec } from './types';
 
@@ -52,7 +54,10 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
       invalid.map((r) => ({ code: 'invalid-room', room: r.id })),
     );
   const maxLen = Math.max(...l.board.lengths);
-  if (l.rules.minCutLength + l.rules.minJointOffset > maxLen) return empty(l, [{ code: 'board-too-short-for-rules' }]);
+  const motif = l.pattern.kind === 'herringbone' || l.pattern.kind === 'chevron';
+  // décalage des joints entre rangs : règle de la pose droite seulement
+  if (!motif && l.rules.minCutLength + l.rules.minJointOffset > maxLen)
+    return empty(l, [{ code: 'board-too-short-for-rules' }]);
 
   const layable = layableSurface(l);
   if (!layable.length)
@@ -64,17 +69,17 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
   const estimate = Math.ceil((regionArea(layable) / (meanLen * l.board.width)) * 1.2);
   if (estimate > MAX_PIECES) return empty(l, [{ code: 'too-many-pieces', estimate }], layable);
 
-  if (l.pattern.kind === 'herringbone' || l.pattern.kind === 'chevron') return empty(l, [], layable); // P2
-
-  const frame = layingFrame(l.referenceDirection, l.angle);
-  const region = layable.map((r) => ringToFrame(frame, r));
-  const out = layStraight({
-    layout: l,
-    region,
-    frame,
-    kerf: spec.settings.kerf,
-    reuseOffcuts: spec.settings.reuseOffcuts,
-  });
+  const opts = { kerf: spec.settings.kerf, reuseOffcuts: spec.settings.reuseOffcuts };
+  const options = motif ? axisOptions(l, layable) : undefined;
+  let out;
+  if (options) {
+    // proposition choisie ; « porte principale » sans porte : centre de la pièce
+    const axis = typeof l.axis === 'string' ? (options.find((o) => o.kind === l.axis) ?? options[0]!).point : l.axis;
+    out = layPattern({ layout: { ...l, axis }, layable, ...opts });
+  } else {
+    const frame = layingFrame(l.referenceDirection, l.angle);
+    out = layStraight({ layout: l, region: layable.map((r) => ringToFrame(frame, r)), frame, ...opts });
+  }
 
   // pièce de chaque élément : celle qui contient son centre
   const roomOf = (poly: Polygon) => {
@@ -91,6 +96,7 @@ function computeLayout(l: LayoutSpec, spec: ParquetSpec): LayoutResult {
     boards: out.boards,
     offcuts: out.offcuts,
     thresholds: [],
+    ...(options ? { axisOptions: options } : {}),
     warnings,
     errors: [],
   };

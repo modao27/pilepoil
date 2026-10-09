@@ -6,7 +6,7 @@ import type { Point, Segment } from '../../../core/geometry/types';
 import type { Plan } from '../../../core/plan/types';
 import { BOARD_TEMPLATES } from '../core/board';
 import { DEFAULT_ACCESSORIES, DEFAULT_SETTINGS, METHOD_BY_KIND, RULES_BY_KIND } from '../core/defaults';
-import type { Accessories, LayingMethod, LayingRules, ParquetSettings, Pattern } from '../core/types';
+import type { Accessories, AxisKind, LayingMethod, LayingRules, ParquetSettings, Pattern } from '../core/types';
 
 type Id = string;
 
@@ -36,8 +36,8 @@ export interface Layout {
   angle: number;
   /** null = plus long mur de la première pièce. */
   reference: { room: Id; wall: Id } | null;
-  /** Motifs à axe : position de l'axe (P2). */
-  axis: 'room-center' | 'main-door' | { point: Point };
+  /** Motifs à axe : une des trois propositions du moteur, ou un point du plan. */
+  axis: AxisKind | { point: Point };
   /** Décalage manuel de l'origine du motif (glisser sur le plan). */
   offset: Point;
   method: LayingMethod;

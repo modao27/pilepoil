@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
-   * Éditeur du parquet (P1) : plan des lames au centre ; réglages dans le panneau (téléphone) ou à droite
-   * (ordinateur) : pièces, lame, pose droite, angle, règles ; résumé permanent vers les résultats.
+   * Éditeur du parquet : plan des lames au centre ; réglages dans le panneau (téléphone) ou à droite
+   * (ordinateur) : pièces, lame, motif, angle, axe des motifs, règles ; résumé permanent vers les résultats.
    */
   import { onMount, untrack } from 'svelte';
   import type { Polygon } from '../../../../core/geometry/types';
@@ -15,7 +15,7 @@
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import Select from '../../../../ui/components/Select.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
-  import type { LayingMethod, Pattern } from '../../core/types';
+  import type { AxisKind, LayingMethod, Pattern } from '../../core/types';
   import { shopping } from '../../state/module';
   import { ParquetEditorState } from '../editorState.svelte';
   import { errorText, warningText } from '../lib/messages';
@@ -41,16 +41,29 @@
     void ed.recompute();
   });
 
-  const PATTERNS: { value: string; label: string; pattern: Pattern }[] = [
+  type Family = 'straight' | 'herringbone' | 'chevron';
+  const FAMILIES: { value: Family; label: string; pattern: Pattern }[] = [
+    { value: 'straight', label: 'Droite', pattern: { kind: 'random-stagger' } },
+    { value: 'herringbone', label: 'Bâton rompu', pattern: { kind: 'herringbone' } },
+    { value: 'chevron', label: 'Hongrie', pattern: { kind: 'chevron', endAngle: 45 } },
+  ];
+  const family = (p: Pattern): Family =>
+    p.kind === 'herringbone' ? 'herringbone' : p.kind === 'chevron' ? 'chevron' : 'straight';
+  const STAGGERS: { value: string; label: string; pattern: Pattern }[] = [
     { value: 'random', label: 'Coupe perdue', pattern: { kind: 'random-stagger' } },
     { value: '1/2', label: '½', pattern: { kind: 'regular-stagger', step: 1 / 2 } },
     { value: '1/3', label: '⅓', pattern: { kind: 'regular-stagger', step: 1 / 3 } },
     { value: '1/4', label: '¼', pattern: { kind: 'regular-stagger', step: 1 / 4 } },
   ];
-  const patternValue = (p: Pattern) =>
+  const staggerValue = (p: Pattern) =>
     p.kind === 'regular-stagger'
-      ? (PATTERNS.find((x) => x.value === `1/${Math.round(1 / p.step)}`)?.value ?? 'random')
+      ? (STAGGERS.find((x) => x.value === `1/${Math.round(1 / p.step)}`)?.value ?? 'random')
       : 'random';
+  const AXES: Record<AxisKind, string> = {
+    'room-center': 'Centre de la pièce',
+    'main-door': 'Centre de la porte principale',
+    'reference-wall': 'Aligné sur le mur de référence',
+  };
   const METHODS: { value: LayingMethod; label: string }[] = [
     { value: 'floating', label: 'Flottante' },
     { value: 'glued', label: 'Collée' },
@@ -75,6 +88,7 @@
         ? 'Calcul impossible : voir les réglages'
         : `${ed.result.totals.boards} lames · ${packs} paquet${packs > 1 ? 's' : ''} · perte ${Math.round(ed.result.totals.wastePct)} %`,
   );
+  const motif = $derived(layout ? family(layout.pattern) !== 'straight' : false);
   const piece = $derived(result?.pieces.find((p) => p.id === ed.selected));
   const CUT = { full: 'lame entière', straight: 'coupe droite', angled: 'coupe en biais', complex: 'découpe' };
 
@@ -156,26 +170,75 @@
         <h2 id="pq-pose">Pose</h2>
         <Segmented
           label="Motif"
-          value={patternValue(layout.pattern)}
-          options={PATTERNS.map(({ value, label }) => ({ value, label }))}
-          onchange={(v) => ed.updateLayout({ pattern: PATTERNS.find((p) => p.value === v)!.pattern })}
+          value={family(layout.pattern)}
+          options={FAMILIES.map(({ value, label }) => ({ value, label }))}
+          onchange={(v) => {
+            if (v !== family(layout.pattern))
+              ed.updateLayout({ pattern: FAMILIES.find((f) => f.value === v)!.pattern });
+          }}
         />
+        {#if layout.pattern.kind === 'chevron'}
+          <Segmented
+            label="Coupe des bouts"
+            value={layout.pattern.endAngle}
+            options={[
+              { value: 45, label: '45°' },
+              { value: 60, label: '60°' },
+            ]}
+            onchange={(endAngle) => ed.updateLayout({ pattern: { kind: 'chevron', endAngle } })}
+          />
+        {:else if !motif}
+          <Segmented
+            label="Décalage des rangs"
+            value={staggerValue(layout.pattern)}
+            options={STAGGERS.map(({ value, label }) => ({ value, label }))}
+            onchange={(v) => ed.updateLayout({ pattern: STAGGERS.find((p) => p.value === v)!.pattern })}
+          />
+        {/if}
+        {#if motif && ed.board && !ed.board.handed}
+          <p class="muted">
+            Cette lame n’a pas de lames A et B. Un motif demande en général des lames gauches et droites.
+          </p>
+        {/if}
         <NumberField
-          label="Angle des lames"
+          label={motif ? 'Angle du motif' : 'Angle des lames'}
           unit="°"
           min={0}
           max={179}
           decimals={0}
           value={layout.angle}
-          hint="0° : parallèles au plus long mur."
+          hint={motif ? '0° : axe du motif parallèle au plus long mur.' : '0° : parallèles au plus long mur.'}
           onchange={(angle) => ed.updateLayout({ angle })}
         />
-        <Checkbox
-          label="Rangs de bord de même largeur"
-          checked={layout.rules.balanceEdgeRows === 'always'}
-          onchange={(on) =>
-            ed.updateLayout({ rules: { ...layout.rules, balanceEdgeRows: on ? 'always' : 'if-needed' } })}
-        />
+        {#if motif}
+          <fieldset class="axes">
+            <legend>Axe du motif</legend>
+            {#each result?.axisOptions ?? [] as o (o.kind)}
+              <label class="axis">
+                <input
+                  type="radio"
+                  name="pq-axis"
+                  value={o.kind}
+                  checked={layout.axis === o.kind}
+                  onchange={() => ed.updateLayout({ axis: o.kind })}
+                />
+                <span>
+                  <strong>{AXES[o.kind]}</strong>
+                  <small>plus petite coupe en bord : {o.minCutWidth.toLocaleString('fr-FR')} mm</small>
+                </span>
+              </label>
+            {:else}
+              <p class="muted">Calcul…</p>
+            {/each}
+          </fieldset>
+        {:else}
+          <Checkbox
+            label="Rangs de bord de même largeur"
+            checked={layout.rules.balanceEdgeRows === 'always'}
+            onchange={(on) =>
+              ed.updateLayout({ rules: { ...layout.rules, balanceEdgeRows: on ? 'always' : 'if-needed' } })}
+          />
+        {/if}
         <Select
           label="Mode de pose"
           value={layout.method}
@@ -204,22 +267,24 @@
             value={layout.rules.minCutLength}
             onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minCutLength: v } })}
           />
-          <NumberField
-            label="Décalage mini des joints"
-            unit="mm"
-            min={0}
-            decimals={0}
-            value={layout.rules.minJointOffset}
-            onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minJointOffset: v } })}
-          />
-          <NumberField
-            label="Rang de bord mini"
-            unit="mm"
-            min={0}
-            decimals={0}
-            value={layout.rules.minEdgeRowWidth}
-            onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minEdgeRowWidth: v } })}
-          />
+          {#if !motif}
+            <NumberField
+              label="Décalage mini des joints"
+              unit="mm"
+              min={0}
+              decimals={0}
+              value={layout.rules.minJointOffset}
+              onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minJointOffset: v } })}
+            />
+            <NumberField
+              label="Rang de bord mini"
+              unit="mm"
+              min={0}
+              decimals={0}
+              value={layout.rules.minEdgeRowWidth}
+              onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minEdgeRowWidth: v } })}
+            />
+          {/if}
         </div>
         <Button variant="ghost" onclick={() => ed.resetRules()} disabled={!ed.board}
           >Revenir aux valeurs du type de lame</Button
@@ -243,6 +308,7 @@
         rooms={roomShapes}
         pieces={result?.pieces ?? []}
         color={ed.board?.color ?? '#c9a77c'}
+        variants={motif}
         bind:selected={ed.selected}
         label="Plan des lames : {summary}"
       />
@@ -336,6 +402,46 @@
   .muted {
     margin: 0;
     color: var(--muted);
+  }
+  .axes {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .axes legend {
+    margin-bottom: var(--space-2);
+    padding: 0;
+    font-weight: 600;
+  }
+  .axis {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--touch);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-field);
+    background: var(--sheet);
+    cursor: pointer;
+  }
+  .axis:has(input:checked) {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .axis input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+  .axis span {
+    display: grid;
+  }
+  .axis small {
+    color: var(--muted);
+    font-family: var(--font-num);
   }
   .info p {
     margin: 0;

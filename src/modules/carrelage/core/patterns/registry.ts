@@ -1,9 +1,9 @@
 import type { PatternId } from '../types';
 import { basket } from './basket';
-import { chevron } from './chevron';
+import { chevron } from '../../../../core/patterns/chevron';
 import { grid } from './grid';
 import { half } from './half';
-import { herring } from './herring';
+import { herring } from '../../../../core/patterns/herring';
 import { hex } from './hex';
 import { octo } from './octo';
 import { quarter } from './quarter';

@@ -41,6 +41,11 @@ export async function expectTouchTargets(page: Page): Promise<void> {
         }
         if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'file' || el.type === 'color'))
           return false;
+        // bouton radio dans une étiquette : la cible réelle est l'étiquette entière
+        if (el instanceof HTMLInputElement && el.type === 'radio' && el.closest('label')) {
+          const l = el.closest('label')!.getBoundingClientRect();
+          return l.width < 43.5 || l.height < 43.5;
+        }
         return r.width < 43.5 || r.height < 43.5;
       })
       .map(
