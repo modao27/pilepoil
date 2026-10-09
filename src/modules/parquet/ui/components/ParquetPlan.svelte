@@ -18,6 +18,8 @@
     focus,
     done,
     ondrag,
+    drawing = false,
+    ondraw,
     keyStep = 10,
     selected = $bindable(null),
     label,
@@ -39,6 +41,9 @@
     done?: ReadonlySet<string>;
     /** Glissement en cours (move) ou fini (end) : déplacement depuis le début du geste, mm du plan. */
     ondrag?: (delta: [number, number], phase: 'move' | 'end') => void;
+    /** Tracé d'un seuil : deux touchers sur le plan donnent un segment (repère du plan). */
+    drawing?: boolean;
+    ondraw?: (s: [[number, number], [number, number]]) => void;
     /** Pas des flèches du clavier, mm (Maj : × 4). */
     keyStep?: number;
     selected?: string | null;
@@ -102,13 +107,37 @@
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
     return [p.x, p.y];
   };
+  /* ---------- tracé d'un seuil : premier toucher, aperçu, second toucher ---------- */
+  let drawFrom = $state<[number, number] | null>(null);
+  let drawTo = $state<[number, number] | null>(null);
+  $effect(() => {
+    if (!drawing) drawFrom = drawTo = null;
+  });
   function down(e: PointerEvent) {
+    if (drawing) {
+      if (e.button !== 0) return;
+      const p = toPlan(e);
+      if (!drawFrom) {
+        drawFrom = p;
+        drawTo = p;
+      } else if (Math.hypot(p[0] - drawFrom[0], p[1] - drawFrom[1]) > 20) {
+        const s: [[number, number], [number, number]] = [
+          [Math.round(drawFrom[0]), Math.round(drawFrom[1])],
+          [Math.round(p[0]), Math.round(p[1])],
+        ];
+        drawFrom = drawTo = null;
+        suppressClick = true;
+        ondraw?.(s);
+      }
+      return;
+    }
     if (!ondrag || e.button !== 0) return;
     const [x, y] = toPlan(e);
     start = { x, y, sx: e.clientX, sy: e.clientY };
     moving = false;
   }
   function move(e: PointerEvent) {
+    if (drawing && drawFrom) drawTo = toPlan(e);
     if (!start || !ondrag) return;
     if (!moving && Math.hypot(e.clientX - start.sx, e.clientY - start.sy) < 6) return;
     if (!moving) svg?.setPointerCapture(e.pointerId);
@@ -140,6 +169,7 @@
     ondrag(v, 'end');
   }
   function pick(id: string) {
+    if (drawing) return;
     if (suppressClick) {
       suppressClick = false;
       return;
@@ -156,11 +186,12 @@
   bind:this={svg}
   class="plan"
   class:draggable={!!ondrag}
+  class:drawing
   viewBox={vb}
-  role={ondrag ? 'application' : 'img'}
+  role={ondrag || drawing ? 'application' : 'img'}
   aria-label={label}
-  aria-roledescription={ondrag ? 'plan des lames' : undefined}
-  tabindex={ondrag ? 0 : undefined}
+  aria-roledescription={ondrag || drawing ? 'plan des lames' : undefined}
+  tabindex={ondrag || drawing ? 0 : undefined}
   preserveAspectRatio="xMidYMid meet"
   onpointerdown={down}
   onpointermove={move}
@@ -216,6 +247,10 @@
       dominant-baseline="middle">{d.text}</text
     >
   {/each}
+  {#if drawFrom && drawTo}
+    <line class="draft" x1={drawFrom[0]} y1={drawFrom[1]} x2={drawTo[0]} y2={drawTo[1]} />
+    <circle class="draft-dot" cx={drawFrom[0]} cy={drawFrom[1]} r={extent / 120} />
+  {/if}
 </svg>
 
 <style>
@@ -228,6 +263,21 @@
   .plan.draggable {
     touch-action: none;
     cursor: grab;
+  }
+  .plan.drawing {
+    touch-action: none;
+    cursor: crosshair;
+  }
+  .draft {
+    stroke: var(--thin);
+    stroke-width: 4px;
+    stroke-dasharray: 8 6;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
+  .draft-dot {
+    fill: var(--thin);
+    pointer-events: none;
   }
   .plan:focus-visible {
     outline: 3px solid var(--accent);

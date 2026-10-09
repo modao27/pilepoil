@@ -117,7 +117,9 @@ describe('R7 : deux pièces 4000 × 3000 reliées par une porte de 830', () => {
     expectInvariants(lb, t.layouts[0]!, 3);
     expect(lb.layable).toHaveLength(2);
     expect(lb.warnings.filter((w) => w.code === 'narrow-passage')).toEqual([]);
-    expect(lb.thresholds).toEqual([{ segment: l.thresholds[0]!.segment, passage: 'P1', status: 'applied' }]);
+    expect(lb.thresholds).toEqual([
+      { segment: l.thresholds[0]!.segment, passage: 'P1', status: 'applied', breakIndex: 0 },
+    ]);
     expect(lb.pieces.filter((p) => inside(p, A) > 1 && inside(p, B) > 1)).toEqual([]);
     // jeu de chaque côté du seuil : rien entre x = 4028 et x = 4044
     expect(regionArea(intersection(lb.layable, [rect(16, 3000, 4028, 0)]))).toBeLessThan(1);
@@ -220,5 +222,32 @@ describe('deux poses séparées dans une même pièce', () => {
   it('deux poses sur la même surface : alerte layout-overlap', () => {
     const [, b] = computeParquet(two([], [])).layouts;
     expect(b!.warnings).toContainEqual({ code: 'layout-overlap', layout: 'L1' });
+  });
+});
+
+describe('seuil tracé à la main', () => {
+  it('tracé court au milieu de R8 : prolongé jusqu’aux murs, deux morceaux', () => {
+    const t = spec(rect(12000, 5000), {
+      breaks: [
+        [
+          [6000, 2000],
+          [6000, 3000],
+        ],
+      ],
+    });
+    const l = computeParquet(t).layouts[0]!;
+    expect(l.layable).toHaveLength(2);
+    expect(l.thresholds.filter((x) => x.status === 'applied')).toEqual([
+      {
+        segment: [
+          [6000, 8],
+          [6000, 4992],
+        ],
+        passage: null,
+        status: 'applied',
+        breakIndex: 0,
+      },
+    ]);
+    expectInvariants(l, t.layouts[0]!, 3);
   });
 });

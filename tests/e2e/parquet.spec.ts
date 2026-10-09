@@ -81,6 +81,16 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   await expect(firstPiece).toHaveAttribute('points', before!);
 
+  // seuil tracé à la main : deux touchers sur le plan, prolongé jusqu'aux murs, puis retiré
+  await p.getByRole('button', { name: 'Tracer un seuil' }).click();
+  const b2 = (await plan.boundingBox())!;
+  await page.mouse.click(b2.x + b2.width / 2, b2.y + b2.height * 0.45);
+  await page.mouse.click(b2.x + b2.width / 2 + 2, b2.y + b2.height * 0.55);
+  await expect(p.getByText('Seuil posé', { exact: true })).toBeVisible();
+  await expect(page.locator('line.threshold:not(.proposed)')).toHaveCount(1);
+  await p.getByRole('button', { name: 'Retirer' }).click();
+  await expect(page.locator('line.threshold')).toHaveCount(0);
+
   // diagonale
   await setNumber(p, 'Angle des lames', '45');
   await expect(summary).not.toContainText('52 lames');
