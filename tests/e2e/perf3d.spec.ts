@@ -47,7 +47,7 @@ test('parquet : 30 m² en point de Hongrie, budget de dessin et images par secon
 }, info) => {
   test.setTimeout(120_000);
   // projet, pièce de 6 × 5 m dans le plan, parquet
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
   await next();

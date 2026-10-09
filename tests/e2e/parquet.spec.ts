@@ -18,7 +18,7 @@ const panel = (page: Page) =>
 
 /** Projet carrelage, une pièce de 4 × 3 m dans le plan, puis le parquet ajouté : renvoie l'identifiant. */
 async function parquetProject(page: Page): Promise<string> {
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
   await next();

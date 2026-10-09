@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 /** Les favoris d'avant la boîte à outils (#/p/:id/…) mènent aux nouvelles adresses du carrelage. */
 test('anciennes adresses redirigées vers le module carrelage', async ({ page }) => {
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
   await next();

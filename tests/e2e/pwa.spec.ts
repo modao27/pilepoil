@@ -52,7 +52,7 @@ test('hors ligne : ouvrir, créer, calculer, 3D, résultats et PDF sans réseau'
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
 
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
   await next();
@@ -92,7 +92,7 @@ test('nouvelle version : message, mise à jour sans perdre le projet', async ({ 
   const site = await serveDist();
   try {
     await firstVisit(page, site.url);
-    await page.goto(site.url + '#/new');
+    await page.goto(site.url + '#/new/carrelage');
     const next = () => page.getByRole('button', { name: 'Suivant' }).click();
     await next();
     await next();

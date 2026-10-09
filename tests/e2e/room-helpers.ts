@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 
 /** Pièce de 15 m² (4 × 3,75 m, 2,50 m sous plafond, carrelée sur 2 m), créée par l'assistant. */
 export async function newRoom(page: Page, tile?: [number, number]): Promise<void> {
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   await page.getByRole('radio', { name: /Une pièce/ }).click();
   await page.getByRole('button', { name: 'Suivant' }).click();
   for (const [label, v] of [

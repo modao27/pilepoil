@@ -3,7 +3,7 @@ import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } 
 
 /** Crée un mur 300 × 240 en décalé ½, carreau 60 × 30, et ouvre l'éditeur. */
 async function newWall(page: Page): Promise<void> {
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
   await next();

@@ -64,6 +64,8 @@ describe('routes', () => {
     ['', { name: 'home' }],
     ['#/', { name: 'home' }],
     ['#/new', { name: 'new' }],
+    ['#/new/carrelage', { name: 'new', module: 'carrelage' }],
+    ['#/new/inconnu', { name: 'notFound', path: '/new/inconnu' }],
     ['#/library/tiles', { name: 'library', lib: 'tiles' }],
     ['#/library/boards/new', { name: 'libraryItem', lib: 'boards', id: null }],
     ['#/library/tiles/abc', { name: 'libraryItem', lib: 'tiles', id: 'abc' }],
