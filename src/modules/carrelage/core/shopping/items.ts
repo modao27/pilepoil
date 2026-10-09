@@ -97,8 +97,8 @@ export function shoppingItems(project: ProjectSpec, groups: ProductGroup[], glue
 }
 
 /**
- * Mètres de profilés (arêtes recouvertes) et de silicone (angles rentrants, menuiseries, baignoire,
- * périmètre sol/murs), sur toutes les surfaces, même en erreur.
+ * Mètres de profilés (arêtes recouvertes, angles sortants) et de silicone (angles rentrants, menuiseries,
+ * baignoire, périmètre sol/murs), sur toutes les surfaces, même en erreur.
  */
 export function edgeLengths(project: ProjectSpec): { profile: number; silicone: number } {
   let prof = 0,
@@ -139,6 +139,17 @@ export function edgeLengths(project: ProjectSpec): { profile: number; silicone: 
       if (a && b) sil += Math.min(a.height, b.height) / 1000;
     }
     if (surf('floor') && walls.length) sil += (2 * (R.length + R.width)) / 1000;
+  }
+  for (const r of project.rooms ?? []) {
+    const n = r.walls.length;
+    r.walls.forEach((i, k) => {
+      const prev = r.walls[(k - 1 + n) % n];
+      if (i == null || prev == null || n < 2) return;
+      const h = Math.min(project.surfaces[i]!.height, project.surfaces[prev]!.height) / 1000;
+      if (r.corners[k] === 'in') sil += h;
+      else if (r.outerCovered) prof += h;
+    });
+    if (r.floor != null) sil += r.perimeter / 1000;
   }
   return { profile: prof, silicone: sil };
 }
