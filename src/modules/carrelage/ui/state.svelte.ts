@@ -6,8 +6,6 @@ import type { Id, Project } from '../../../state/model';
 import type { Scenario, Tile } from '../state/model';
 import { SCENARIO_SCHEMA } from '../state/model';
 import type { Db } from '../../../storage/db';
-import { toast } from '../../../ui/lib/toasts.svelte';
-import { autoImportLegacy, importMessage } from '../storage/legacy/import';
 import { deleteScenario, listScenarios, saveScenario } from '../storage/scenarios';
 import { app } from '../../../ui/lib/app.svelte';
 import { SupersededError } from '../../../workers/client';
@@ -37,18 +35,9 @@ export class CarrelageState {
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
   private cache = new Map<string, ProjectResult>();
 
-  /**
-   * Démarrage (avant le chargement des projets) : import automatique des données de l'ancienne version, une
-   * seule fois et seulement si elle a laissé des données sur cette origine.
-   */
+  /** Démarrage : base ouverte, pour les scénarios. */
   async start(db: Db): Promise<void> {
     this.db = db;
-    try {
-      const imported = await autoImportLegacy(db, localStorage);
-      if (imported?.projectId) toast(importMessage(imported));
-    } catch {
-      // stockage legacy illisible : on continue sans import
-    }
   }
 
   /** Bibliothèque de carreaux, tenue par la coquille (`app.libraries.tiles`). */

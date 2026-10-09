@@ -5,8 +5,8 @@ projet : un plan de pièces commun, des modules de calcul (carrelage, parquet, p
 consolidée. Utilisateur principal : un artisan / bricoleur averti, surtout sur téléphone, parfois sur ordinateur.
 
 Nom de l'application : **Pilepoil** (identifiant technique `pilepoil`, base IndexedDB `pilepoil`), depuis
-la phase S3 ; avant, « Calepinage » (base `calepinage`, copiée une fois puis gardée intacte). « Calepinage » reste
-le terme du métier dans le module carrelage. Décisions prises : `docs/BOITE.md` §11.
+la phase S3 ; avant, « Calepinage ». « Calepinage » reste le terme du métier dans le module carrelage.
+Décisions prises : `docs/BOITE.md` §11.
 
 ## Documents
 | Fichier | Contenu |
@@ -19,7 +19,7 @@ le terme du métier dans le module carrelage. Décisions prises : `docs/BOITE.md
 | `docs/carrelage/` | Module carrelage : règles métier (`DOMAIN.md`), historique des phases |
 | `docs/parquet/SPEC.md` | Module parquet : spécification complète (cible V3) |
 | `docs/DEPLOY.md` | Mise en ligne statique |
-| `legacy/calepinage.html` | Ancienne version du carrelage, référence de parité |
+| `legacy/calepinage.html` | Ancienne version du carrelage, référence de parité du moteur |
 
 ## Pile
 - Vite + TypeScript (strict) + Svelte 5 (runes)
@@ -44,7 +44,7 @@ src/
     carrelage/       core/ state/ ui/ render/ — code carrelage existant, déplacé
     parquet/         core/ state/ ui/ render/
   state/             store projet (immutable), historique, actions du plan, aiguillage vers les modules
-  storage/           IndexedDB : projets, bibliothèques (carreaux, lames), photos, migrations, import legacy
+  storage/           IndexedDB : projets, bibliothèques (carreaux, lames), photos, migrations
   workers/           compute.worker.ts : aiguille chaque demande vers le moteur du module
   render/            rendus partagés : vue du plan, base de scène 3D, aides SVG/canvas
   ui/                coquille, écrans communs (accueil, projet, plan, achats, bibliothèques, réglages),
@@ -79,8 +79,9 @@ tests/               unit/, parity/ (carrelage), browser/, e2e/
 
 ## Qualité
 - Chaque module `core` a ses tests, y compris les invariants listés dans sa spécification.
-- Carrelage : la parité avec `legacy/` reste à 100 % pendant toute la restructuration. Un test de parité
-  rouge bloque la phase.
+- Carrelage : le moteur reste à 100 % de parité avec `legacy/` sur les surfaces rectangulaires (sans contour,
+  pièce A–D et angles compris). Un test de parité rouge bloque la phase. Les surfaces de forme quelconque sont
+  couvertes par des invariants et des cas chiffrés.
 - Parquet : tests unitaires, tests de propriétés (`fast-check`) sur les invariants, cas de référence chiffrés.
 - `npm run check` (types + lint + tests) doit passer avant chaque commit.
 - Commits petits et décrits en français. Une phase = une branche, fusionnée quand ses critères sont remplis.

@@ -103,7 +103,7 @@
       height: size.h,
       mode: ed.mode === 'render' ? 'render' : 'plan',
       colors,
-      selection: { ...ed.sel, corner: -1, zone: ed.zoneIndex },
+      selection: { ...ed.sel, zone: ed.zoneIndex },
       showNumbers: app.showCutNumbers,
       shade: ed.project.settings.shadeVariation,
       photo: photoFor,
@@ -173,7 +173,7 @@
     let drag: Drag;
     if (e.button === 1 || e.button === 2) drag = { kind: 'pan', v: view };
     else {
-      const h = hitTest(spec!, ed.build.layout.rects, pt, 10 / view.sc);
+      const h = hitTest(spec!, ed.build.layout.rects, pt);
       if (h.kind === 'opening') {
         const o = ed.surface.openings[h.index]!;
         drag = { kind: 'opening', index: h.index, sx: o.x, sy: o.sill };

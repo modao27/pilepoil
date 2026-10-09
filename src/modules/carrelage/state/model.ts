@@ -23,18 +23,6 @@ export interface ProjectSettings {
   optimizerGoal: OptimizerGoal;
 }
 
-export type RoomWallKey = 'A' | 'B' | 'C' | 'D' | 'floor';
-
-/** Pièce A–D d'un projet v1 (conversion legacy). */
-export interface RoomV1 {
-  length: number;
-  width: number;
-  height: number;
-  tiledHeight: number;
-  /** Surface de chaque mur et du sol. */
-  walls: Partial<Record<RoomWallKey, Id>>;
-}
-
 export interface Zone {
   id: Id;
   /** Rangées, ou mm si unit = 'length'. */
@@ -69,35 +57,10 @@ export interface Opening {
   projection: number;
 }
 
-export interface Corner {
-  id: Id;
-  x: number;
-  type: 'in' | 'out';
-  angle: number;
-  covered: boolean;
-}
-
 export interface Plinth {
   length: number;
   height: number;
   zoneId: Id;
-}
-
-/** Surface d'un projet v1 (conversion legacy). */
-export interface SurfaceV1 {
-  id: Id;
-  name: string;
-  kind: 'wall' | 'floor';
-  width: number;
-  height: number;
-  joint: number;
-  split: 'h' | 'v';
-  zones: Zone[];
-  openings: Opening[];
-  corners: Corner[];
-  plinth: Plinth | null;
-  hiddenEdges: Edges;
-  junctionsCovered: boolean;
 }
 
 /* ---------- données carrelage (v2) ---------- */
@@ -186,20 +149,6 @@ export interface Surface {
 
 export type SurfaceOpening = Opening & { source: 'plan' | 'tiling' };
 
-/** Projet v1 (avant la boîte à outils) : le carrelage seul. Produit par la conversion legacy. */
-export interface CarrelageProjectV1 {
-  schemaVersion: 1;
-  id: Id;
-  name: string;
-  createdAt: number;
-  updatedAt: number;
-  surfaces: SurfaceV1[];
-  room: RoomV1 | null;
-  settings: ProjectSettings;
-  /** Prix unitaires par clé d'article de la liste d'achat. */
-  prices: Record<string, number>;
-}
-
 export type TileShape = 'rect' | 'hex' | 'octo' | 'chevron';
 
 export const TILE_SCHEMA = 1;
@@ -238,9 +187,3 @@ export interface Scenario {
   thumbnailId: Id | null;
   createdAt: number;
 }
-
-/** Scénario v1 : instantané d'un projet v1 (conversion legacy, migration). */
-export type ScenarioV1 = Omit<Scenario, 'schemaVersion' | 'snapshot'> & {
-  schemaVersion: 1;
-  snapshot: { project: CarrelageProjectV1; tiles: Tile[] };
-};

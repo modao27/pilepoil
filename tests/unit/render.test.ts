@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSurface, layoutZones } from '../../src/modules/carrelage/core';
-import { cornerAt, hitTest, openingAt, pieceAt, zoneAt } from '../../src/modules/carrelage/render/hitTest';
+import { hitTest, openingAt, pieceAt, zoneAt } from '../../src/modules/carrelage/render/hitTest';
 import { fitView, panBy, toScreen, toWorld, zoomAt } from '../../src/render/view';
 import { planDrawing } from '../../src/modules/carrelage/render/planSvg';
 import { apply, boxOf, unfoldWall } from '../../src/modules/carrelage/render/roomTop';
@@ -46,24 +46,20 @@ describe('sous le doigt', () => {
         projection: 0,
       },
     ],
-    corners: [{ x: 2500, type: 'in', angle: 90, covered: true }],
   });
   const lay = layoutZones(s);
 
-  it('ouverture (repère y vers le bas), angle, zone', () => {
+  it('ouverture (repère y vers le bas), zone', () => {
     expect(openingAt(s, [1200, 1000])).toBe(0);
     expect(openingAt(s, [1200, 1500])).toBe(-1);
-    expect(cornerAt(s, [2508, 100], 10)).toBe(0);
-    expect(cornerAt({ ...s, kind: 'floor' }, [2500, 100], 10)).toBe(-1);
     expect(zoneAt(lay.rects, 3, [10, 1001])).toBe(0);
     expect(zoneAt(lay.rects, 3, [10, 1500])).toBe(1);
   });
 
-  it('priorité : ouverture, angle, zone', () => {
-    expect(hitTest(s, lay.rects, [1200, 1000], 10)).toEqual({ kind: 'opening', index: 0 });
-    expect(hitTest(s, lay.rects, [2500, 2000], 10)).toEqual({ kind: 'corner', index: 0 });
-    expect(hitTest(s, lay.rects, [100, 2000], 10)).toEqual({ kind: 'zone', index: 1 });
-    expect(hitTest(s, lay.rects, [-500, -500], 10)).toEqual({ kind: 'none' });
+  it('priorité : ouverture, zone', () => {
+    expect(hitTest(s, lay.rects, [1200, 1000])).toEqual({ kind: 'opening', index: 0 });
+    expect(hitTest(s, lay.rects, [100, 2000])).toEqual({ kind: 'zone', index: 1 });
+    expect(hitTest(s, lay.rects, [-500, -500])).toEqual({ kind: 'none' });
   });
 
   it('pièce posée', () => {

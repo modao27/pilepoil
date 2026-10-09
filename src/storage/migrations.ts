@@ -1,7 +1,5 @@
-import { rectRoom } from '../core/plan/factories';
-import type { Plan } from '../core/plan/types';
 import { moduleById } from '../modules/registry';
-import { PROJECT_SCHEMA, type ModuleDoc, type Project, type ProjectV1 } from '../state/model';
+import { PROJECT_SCHEMA, type ModuleDoc, type Project } from '../state/model';
 
 /** Étape de migration : document en version n → version n + 1. */
 export type Step = (doc: Record<string, unknown>) => Record<string, unknown>;
@@ -35,41 +33,9 @@ export function migrate<T>(
   return { doc: d as T, changed };
 }
 
-/** Version des données carrelage créées par la migration v1 → v2 (CARRELAGE_SCHEMA du module). */
-const CARRELAGE_V1 = 1;
-
-/**
- * Projet v1 (carrelage seul) → v2 (docs/BOITE.md §4) : surfaces, pièce, réglages et prix passent dans
- * `modules.carrelage.data` ; plan vide, ou une pièce rectangulaire longueur × largeur nommée comme le projet
- * si la pièce carrelage existe (murs de 72 mm). Identifiants dérivés de celui du projet : déterministe.
- */
-export function projectFromV1(v1: Omit<ProjectV1, 'schemaVersion'>): Project {
-  const plan: Plan = { rooms: [], passages: [] };
-  if (v1.room) {
-    let n = 0;
-    const id = () => `${v1.id}:plan:${n++}`;
-    plan.rooms.push(rectRoom(v1.room.length, v1.room.width, { name: v1.name, height: v1.room.height }, id));
-  }
-  return {
-    schemaVersion: PROJECT_SCHEMA,
-    id: v1.id,
-    name: v1.name,
-    createdAt: v1.createdAt,
-    updatedAt: v1.updatedAt,
-    plan,
-    modules: {
-      carrelage: {
-        schemaVersion: CARRELAGE_V1,
-        data: { surfaces: v1.surfaces, room: v1.room, settings: v1.settings, prices: v1.prices },
-      },
-    },
-  };
-}
-
-/* Étapes par type de document. Ajouter ici `n: (doc) => …` à chaque montée de schéma, avec un test. */
-export const PROJECT_STEPS: Record<number, Step> = {
-  1: (doc) => projectFromV1(doc as unknown as ProjectV1) as unknown as Record<string, unknown>,
-};
+/* Étapes du projet. Ajouter ici `n: (doc) => …` à chaque montée de schéma, avec un test. Les projets v1 (avant
+   la boîte à outils) ne sont plus lus : la base v3 les a retirés (db.ts). */
+export const PROJECT_STEPS: Record<number, Step> = {};
 export const migrateProject = (doc: unknown) => migrateModules(migrate<Project>(doc, PROJECT_SCHEMA, PROJECT_STEPS));
 
 /**

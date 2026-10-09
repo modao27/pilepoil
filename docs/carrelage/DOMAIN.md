@@ -3,24 +3,13 @@
 Toutes les valeurs sont en mm sauf mention contraire. Implémentation de référence : `legacy/calepinage.html`
 (fonctions citées entre parenthèses).
 
-## Modèle de données
-```
-Project      { id, name, updatedAt, room?: Room, surfaces: Surface[], settings: Settings, prices: Record<key, number> }
-Room         { length, width, height, tiledHeight, walls: { A?, B?, C?, D?, floor? : surfaceId } }
-Surface      { id, name, kind: 'wall'|'floor', width, height, joint, split: 'h'|'v',
-               zones: Zone[], openings: Opening[], corners: Corner[], plinth?: Plinth,
-               hiddenEdges: {top,bottom,left,right}, junctionsCovered: boolean }
-Zone         { id, size, unit: 'rows'|'cm'|'rest', tileId, pattern, angle, start: 'corner'|'tile'|'joint',
-               offsetX, offsetY, mix: 'solid'|'alternate'|'random', colorB?, groutColor, photoRandomFlip }
-Tile (bibliothèque) { id, name, length, width, thickness, color, photoId?, m2PerBox, pricePerM2?, orientation: 'free'|'180'|'none' }
-Opening      { id, type: 'window'|'door'|'socket'|'trap'|'tub'|'other', x, sill, width, height,
-               covered, revealDepth, reveals: {L,R,T,B}, projection? }
-Corner       { id, x, type: 'in'|'out', angle, covered }
-Plinth       { length, height, zoneId }
-Settings     { margin%, reuseOffcuts, kerf, minOffcut, shadeVariation, optimizerGoal }
-```
-Nouveauté par rapport à legacy : la **bibliothèque de carreaux**. Une zone référence un `tileId`
-au lieu de porter dimensions, couleur, carton et prix.
+## Surfaces
+Le carrelage carrèle des éléments du plan commun (modèle : `docs/MODEL.md`) :
+- **sol d'une pièce** : contour de la pièce, obstacles (poteau, îlot, conduit) en trous ;
+- **mur** : longueur du segment × hauteur carrelée (au plus la hauteur de la pièce), portes et fenêtres du plan.
+Le carrelage garde ses propres réglages : carreaux (bibliothèque, une zone référence un `tileId`), zones et motif,
+joint, réservations (prises, trappe, baignoire, autre), tableaux et profilés des ouvertures, plinthe du sol,
+bords cachés. Les cotes ne se saisissent pas dans le carrelage : on les change dans le plan.
 
 ## Motifs (`gen`, `geo`)
 Chaque motif génère des **cellules sans joint** (polygones convexes) dans un repère local, puis chaque cellule
@@ -34,10 +23,13 @@ Points de départ (`tl`, `ctr`, `jn` par motif) : angle de zone, centré sur car
 Décalage X/Y appliqué à l'origine.
 
 ## Construction des pièces (`buildZone`)
-1. Carreau → repère zone, découpe par le rectangle de zone (Sutherland-Hodgman).
+1. Carreau → repère zone, découpe par le rectangle de zone (Sutherland-Hodgman). Surface de forme quelconque
+   (sol d'une pièce du plan) : un morceau qui dépasse du contour est découpé par booléens
+   (`core/geometry/boolean`) ; les coupes le long du contour sont apparentes sauf si le bord est caché (plinthe).
 2. Soustraction des ouvertures (sauf prises) : découpage en 4 régions convexes autour du rectangle.
    Plusieurs parties d'un même carreau = une seule pièce « encoche ». Les coutures internes ne sont pas des bords.
-3. Découpe aux angles de mur : un carreau à cheval devient deux pièces séparées.
+3. Découpe aux angles de mur (moteur seulement, pour la parité avec legacy : un mur du plan est une surface
+   droite, l'application ne saisit plus d'angles) : un carreau à cheval devient deux pièces séparées.
 4. Prise : pas de soustraction, la pièce est marquée « perçage ».
 5. Classement : entière si aire ≥ 99,9 % ; coupe fine si plus petite dimension < max(20 mm, ¼ du petit côté) ou aire < 8 %.
 6. Repère carreau canonique (long côté horizontal) pour les coupes et le réemploi.
@@ -88,8 +80,9 @@ Consommation : U3 2, U6 3, U9 4,5, DL20 7,5 kg/m² ; +1,5 kg/m² en double encol
 ## Consommables (`shoppingItems`)
 - Joint (kg/m²) = (L + l)/(L × l) × épaisseur × largeur joint × 1,6 (mm), sacs de 5 kg, par couleur.
 - Colle : sacs de 25 kg. Croisillons ≈ 1,3 par carreau (< 450 mm), cales ≈ 3 par carreau (≥ 450 mm).
-- Primaire 0,15 L/m². Profilés : arêtes recouvertes, barres de 2,5 m. Silicone : angles rentrants, menuiseries,
-  baignoire, périmètre sol/murs ; 10 m par cartouche.
+- Primaire 0,15 L/m². Profilés : arêtes recouvertes et angles sortants entre deux murs carrelés (si demandé),
+  barres de 2,5 m. Silicone : angles rentrants entre deux murs carrelés (sur la plus petite hauteur), menuiseries,
+  baignoire, pied des murs carrelés d'une pièce dont le sol est carrelé ; 10 m par cartouche.
 
 ## Invariants à tester
 - Joint 0 : somme des aires des pièces = aire des zones − ouvertures (écart < 0,1 %), sur tous motifs/angles/départs.

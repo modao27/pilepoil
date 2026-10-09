@@ -4,7 +4,7 @@
  * L'interface lit cet état et appelle ses méthodes ; aucun calcul métier ici (tout passe par le worker).
  */
 import type { Id, Palette, Photo, Project } from '../../state/model';
-import { copyOldDb, openDb, type Db } from '../../storage/db';
+import { openDb, type Db } from '../../storage/db';
 import * as repo from '../../storage/repo';
 import { libraries as libraryDefs, modules } from '../../modules/registry';
 import type { Libraries, LibraryDefinition, LibraryItem, ModuleId } from '../../modules/types';
@@ -30,8 +30,6 @@ export class AppState {
 
   /** Bibliothèques chargées par les modules ('tiles'…), pour `toSpec` de chaque module. */
   libraries = $state.raw<Libraries>({});
-  /** Données reprises de l'ancienne appli Calepinage sur cet appareil. */
-  oldApp = $state(false);
 
   /** Aperçu en direct : seule la dernière demande de chaque module compte (docs/BOITE.md §6). */
   live!: ComputeClient;
@@ -45,24 +43,16 @@ export class AppState {
   async init(): Promise<void> {
     try {
       this._db = await openDb();
-      // ancien nom : données reprises une fois, avant tout le reste (import legacy déjà fait compris)
-      const copied = await copyOldDb(this.db);
       this.live = createWorkerClient();
       this.batch = createWorkerClient();
-      // démarrage des modules (import de données…) avant le chargement des projets
+      // démarrage des modules (base ouverte) avant le chargement des projets
       for (const m of modules) await m.start?.(this.db);
       await this.reload();
       this.theme = (await repo.getPref(this.db, 'theme')) ?? 'auto';
       this.palette = (await repo.getPref(this.db, 'palette')) ?? DEFAULT_PALETTE;
       this.showCutNumbers = (await repo.getPref(this.db, 'showCutNumbers')) ?? true;
       applyTheme(this.theme);
-      this.oldApp = (await repo.getPref(this.db, 'copiedFrom'))?.from != null;
       this.ready = true;
-      if (copied?.projects)
-        toast(
-          'Vos projets de l’ancienne appli Calepinage sont ici. Si elle est installée sur cet appareil, vous pouvez la désinstaller.',
-          { timeout: null, action: { label: 'Compris', run: () => {} } },
-        );
     } catch (e) {
       this.fatal =
         'Stockage indisponible : ouvrez l’application hors navigation privée, ou libérez de l’espace. (' +

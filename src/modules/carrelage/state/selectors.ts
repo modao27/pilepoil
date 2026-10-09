@@ -1,6 +1,6 @@
-import type { Polygon, ProjectSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../core';
+import type { ProjectSpec, SurfaceSpec, TileSpec, ZoneSpec } from '../core';
 import type { Id } from '../../../state/model';
-import type { Corner, Edges, Opening, Plinth, Tile, Zone } from './model';
+import type { Edges, Surface, Tile, Zone } from './model';
 import type { CarrelageData, CarrelageProject } from './data';
 import { roomJoints } from './surfaces';
 
@@ -55,24 +55,7 @@ function zoneSpec(z: Zone, tiles: ReadonlyMap<Id, Tile>): ZoneSpec {
   };
 }
 
-/** Ce que le moteur lit d'une surface : surface résolue, ou surface d'un projet v1 (avec ses angles). */
-export interface SurfaceSource {
-  kind: 'wall' | 'floor';
-  width: number;
-  height: number;
-  joint: number;
-  split: 'h' | 'v';
-  zones: Zone[];
-  openings: Opening[];
-  corners?: Corner[];
-  plinth: Plinth | null;
-  hiddenEdges: Edges;
-  junctionsCovered: boolean;
-  outline?: Polygon[] | null;
-  outlineHidden?: boolean;
-}
-
-export function surfaceSpec(s: SurfaceSource, tiles: ReadonlyMap<Id, Tile>): SurfaceSpec {
+export function surfaceSpec(s: Surface, tiles: ReadonlyMap<Id, Tile>): SurfaceSpec {
   const plinthZone = s.plinth ? s.zones.findIndex((z) => z.id === s.plinth!.zoneId) : -1;
   return {
     kind: s.kind,
@@ -92,13 +75,13 @@ export function surfaceSpec(s: SurfaceSource, tiles: ReadonlyMap<Id, Tile>): Sur
       reveals: sides(o.reveals),
       projection: o.projection,
     })),
-    corners: (s.corners ?? []).map((c) => ({ x: c.x, type: c.type, angle: c.angle, covered: c.covered })),
+    corners: [],
     plinth: s.plinth
       ? { length: s.plinth.length, height: s.plinth.height, zone: Math.max(0, plinthZone) }
       : { length: 0, height: 80, zone: 0 },
     hiddenEdges: sides(s.hiddenEdges),
     junctionsCovered: s.junctionsCovered,
-    ...(s.outline ? { outline: s.outline, outlineHidden: !!s.outlineHidden } : {}),
+    ...(s.outline ? { outline: s.outline, outlineHidden: s.outlineHidden } : {}),
   };
 }
 

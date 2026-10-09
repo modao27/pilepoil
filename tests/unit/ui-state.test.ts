@@ -108,18 +108,12 @@ describe('routes', () => {
     if (r.name !== 'notFound' && h.length > 2) expect(parseRoute(href(r))).toEqual(r);
   });
 
-  it.each([
-    ['#/p/x1/s/s2', '#/p/x1/m/carrelage/s/s2'],
-    ['#/p/x1/results', '#/p/x1/m/carrelage/results'],
-    ['#/p/x1/room', '#/p/x1/m/carrelage/room'],
-    ['#/p/x1/compare', '#/p/x1/m/carrelage/compare'],
-    ['#/library', '#/library/tiles'],
-    ['#/library/new', '#/library/tiles/new'],
-    ['#/library/abc', '#/library/tiles/abc'],
-  ])('ancienne adresse %s → %s', (old, now) => {
-    const r = parseRoute(old);
+  it('#/library : la première bibliothèque ; plus d’anciennes adresses', () => {
+    const r = parseRoute('#/library');
     expect(r.name).toBe('redirect');
-    expect(href(r)).toBe(now);
+    expect(href(r)).toBe('#/library/tiles');
+    for (const old of ['#/p/x1/results', '#/p/x1/s/s2', '#/p/x1/compare', '#/library/abc'])
+      expect(parseRoute(old).name).toBe('notFound');
   });
 });
 
