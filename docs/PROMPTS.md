@@ -84,6 +84,31 @@ Réalise la phase P5 de docs/PLAN.md sur une branche phase/p5-3d-chantier.
 du §P5, lance npm run release et corrige jusqu'à ce que tout passe.
 ```
 
+## C1 — Moteur du carrelage : surfaces de forme quelconque
+```
+Réalise la phase C1 de docs/PLAN.md sur une branche phase/c1-moteur.
+Contour facultatif dans SurfaceSpec ; sans contour, rien ne change (parité verte à chaque commit).
+Montre-moi un rendu SVG d'un sol en L avec poteau avant de fusionner.
+```
+
+## C2 — Modèle et état du carrelage sur le plan
+```
+Réalise la phase C2 de docs/PLAN.md sur une branche phase/c2-modele.
+Montre-moi les nouveaux types des données du carrelage avant de modifier l'état.
+```
+
+## C3 — Interface du carrelage sur le plan
+```
+Réalise la phase C3 de docs/PLAN.md sur une branche phase/c3-interface.
+Termine par le parcours e2e « pièce en L → sol et deux murs → achats » et npm run release.
+```
+
+## C4 — Nettoyage
+```
+Réalise la phase C4 de docs/PLAN.md sur une branche phase/c4-nettoyage : retire les anciens formats,
+mets la documentation à jour, lance npm run release.
+```
+
 ## En cours de route
 
 Reprise après une interruption :
