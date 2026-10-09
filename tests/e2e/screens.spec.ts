@@ -12,6 +12,11 @@ const next = (page: Page) => page.getByRole('button', { name: 'Suivant' }).click
 test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, info) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
+  // choix de l'outil : carrelage, avec son assistant
+  await expect(page.getByRole('heading', { name: 'Que voulez-vous poser ?' })).toBeVisible();
+  await check(page);
+  await shot(page, info, '09-nouveau-projet');
+  await page.getByRole('link', { name: 'Commencer : carrelage' }).click();
 
   // 1. type
   await expect(page.getByText('Étape 1 sur 4')).toBeVisible();
@@ -118,7 +123,7 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
   await expect(page.getByRole('link', { name: /Hexagone terracotta/ })).toBeVisible();
 
   // utilisé par un projet → suppression refusée
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   await next(page);
   await next(page);
   await next(page);
@@ -132,7 +137,7 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
 });
 
 test('pièce complète : murs et sol', async ({ page }, info) => {
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   await page.getByRole('radio', { name: /Une pièce/ }).click();
   await next(page);
   await page.getByLabel('Mur C (longueur)').uncheck();

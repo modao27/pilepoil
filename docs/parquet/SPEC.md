@@ -435,11 +435,28 @@ Lame neuve gardée entière et recoupée en largeur : « lame entière recoupée
 **Chantier** (`/chantier`) : une ligne ou un rang à la fois, grandes cibles, cocher les pièces posées.
 La progression est gardée dans `worksite` avec l'empreinte du calcul ; si le calcul change, prévenir et
 proposer de repartir de zéro.
+Fait en P5 : même ordre et mêmes textes que la fiche de coupe (croquis des coupes en biais compris), case par
+pièce ou par groupe de lames entières, « Tout ce rang est posé », mini-plan (rang en évidence, posées en
+gris), progression. Actions `parquet/worksite/mark` et `parquet/worksite/rebase` ; calcul changé : « Garder
+ce qui existe encore » ou « Repartir de zéro ». Rang affiché retenu sur l'appareil (stockage du navigateur).
+Tout reste sur l'appareil : fonctionne hors ligne (vérifié en e2e).
 
 **3D** : sol des pièces avec la texture de la lame orientée pièce par pièce, plinthes, murs bas ; réutiliser
 la base de scène three.js existante (`render/scene3d`). 60 i/s sur un téléphone récent pour 30 m².
+Fait en P5 (`render/meshes.ts`, onglet 3D des résultats) : lames à teinte légèrement variée sur un fond sombre
+(joints), photo de la lame orientée lame par lame si elle existe, murs bas de 30 cm ouverts aux portes,
+plinthes à leur hauteur. Quatre maillages : 30 m² de point de Hongrie = 6 appels de dessin, 60 i/s.
+
+**Seuils tracés à la main** (P5) : « Tracer un seuil », deux touchers sur le plan. Le moteur prolonge un
+seuil tracé court jusqu'aux bords de la surface qu'il traverse (`extendBreak`) ; un seuil qui les atteint
+déjà (porte) reste tel quel. Les seuils posés gardent leur index dans `breaks`.
+
+**Croquis des coupes en biais** (P5) : pièce dans le repère de sa lame, rives cotées, angle de chaque coupe
+avec la rive ; dans la fiche (écran, chantier, PDF).
 
 ## 6. Performances
 - 30 m² en pose droite : calcul < 300 ms.
-- 100 m² en point de Hongrie, optimisation comprise : < 2 s, interruptible.
+- 100 m² en point de Hongrie, optimisation comprise : < 2 s, interruptible. Mesuré en P5 : calcul 180 ms,
+  optimisation (20 départs) 1,4 s ; cellules entièrement posables sans découpage, chutes triées avant l'essai
+  géométrique.
 - Garde-fou `too-many-pieces` au-delà de 20 000 pièces estimées.

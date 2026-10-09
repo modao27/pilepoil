@@ -90,6 +90,8 @@ Règles pour toutes les phases :
 - Tests e2e du parcours complet parquet, audit Lighthouse ≥ 90, mise en ligne.
 - Fini quand : parcours « dessiner deux pièces → poser un point de Hongrie → acheter → suivre la pose »
   réalisable sur téléphone sans aide ; 60 i/s en 3D pour 30 m².
+- Ajoutés à la demande (2026-10-09) : croquis coté des coupes en biais, seuil tracé à la main,
+  optimisation sous 2 s pour 100 m² de motif, choix de l'outil à la création d'un projet.
 
 ## Décisions en attente
 - Liaison plan ↔ surfaces carrelage (après P5).

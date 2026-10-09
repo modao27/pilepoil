@@ -14,10 +14,13 @@
   import { lineCost } from '../../../../ui/lib/shopping';
   import type { ModuleScreenProps } from '../../../types';
   import type { Board } from '../../core/board';
+  import { thresholdCuts } from '../../core/accessories';
   import { cuttingSheet } from '../../core/sheet';
-  import type { ParquetResult } from '../../core/types';
+  import type { ParquetResult, ParquetSpec } from '../../core/types';
   import { PARQUET_ID } from '../../state/model';
   import { parquetData, shopping, toSpec } from '../../state/module';
+  import CutSketch from '../components/CutSketch.svelte';
+  import Parquet3D from '../components/Parquet3D.svelte';
   import ParquetPlan from '../components/ParquetPlan.svelte';
   import { errorText, warningText } from '../lib/messages';
   import { groupTitle, itemText, quantityText, skirtingCutText } from '../lib/sheetText';
@@ -25,8 +28,9 @@
   let { projectId }: ModuleScreenProps = $props();
   const project = $derived(app.project(projectId));
   let result = $state.raw<ParquetResult | null>(null);
+  let spec = $state.raw<ParquetSpec | null>(null);
   let failed = $state(false);
-  let tab = $state<'plan' | 'cuts' | 'shop'>('plan');
+  let tab = $state<'plan' | 'cuts' | 'shop' | '3d'>('plan');
   let exporting = $state(false);
 
   $effect(() => {
@@ -39,7 +43,8 @@
       return;
     }
     let live = true;
-    void app.queued<ParquetResult>(PARQUET_ID, r.spec).then((x) => live && ((result = x), (failed = false)));
+    const sp = r.spec;
+    void app.queued<ParquetResult>(PARQUET_ID, sp).then((x) => live && ((result = x), (spec = sp), (failed = false)));
     return () => (live = false);
   });
 
@@ -51,8 +56,35 @@
   const sheet = $derived(
     result && data ? cuttingSheet(result, Object.fromEntries(data.layouts.map((l) => [l.id, l.rooms]))) : [],
   );
+  const seuils = $derived(result && data ? thresholdCuts(result, data.accessories.thresholds.barLength) : []);
+  const seuilBars = $derived(
+    seuils.flatMap((s) => {
+      const p = s.passage ? project?.plan.passages.find((x) => x.id === s.passage) : undefined;
+      const where = p ? ` entre ${roomName(p.a.room)} et ${roomName(p.b.room)}` : '';
+      return s.bars.map((b) => ({ ...b, where }));
+    }),
+  );
   const multi = $derived((result?.layouts.length ?? 0) > 1);
   const boards = $derived((app.libraries.boards ?? []) as readonly Board[]);
+  // aspect 3D de chaque pose : couleur, photo (chargée à la demande) et format de la lame
+  const looks = $derived.by(() => {
+    void app.photoUrls;
+    return Object.fromEntries(
+      (data?.layouts ?? []).map((l) => {
+        const b = boards.find((x) => x.id === l.boardId);
+        if (b?.photoId) app.loadPhoto(b.photoId);
+        return [
+          l.id,
+          {
+            color: b?.color ?? '#c9a77c',
+            photo: (b?.photoId && app.photoUrls[b.photoId]) || null,
+            length: Math.max(...(b?.lengths ?? [1000])),
+            width: b?.width ?? 100,
+          },
+        ];
+      }),
+    );
+  });
   const boardColor = (layoutId: string) =>
     boards.find((b) => b.id === data?.layouts.find((l) => l.id === layoutId)?.boardId)?.color ?? '#c9a77c';
   function roomsOf(layoutId: string): Polygon[] {
@@ -115,6 +147,7 @@
     {/each}
 
     <div class="actions">
+      <Button variant="primary" icon="check" href="#/p/{projectId}/m/parquet/chantier">Suivre le chantier</Button>
       <Button variant="secondary" icon="download" onclick={() => void exportPdf()} disabled={exporting}>
         {exporting ? 'Préparation…' : 'Exporter en PDF'}
       </Button>
@@ -127,6 +160,7 @@
         { id: 'plan', label: 'Plan' },
         { id: 'cuts', label: 'Coupes' },
         { id: 'shop', label: 'Achats' },
+        { id: '3d', label: '3D' },
       ]}
     >
       {#snippet panel(t)}
@@ -160,17 +194,26 @@
               <h3>{multi ? `${layoutName(g.layout)} · ` : ''}{groupTitle(g, roomName)}</h3>
               <ul class="sheet">
                 {#each g.items as it, i (i)}
-                  <li class:cut={it.kind === 'cut'}>{itemText(it, sheet, roomName)}</li>
+                  <li class:cut={it.kind === 'cut'}>
+                    {itemText(it, sheet, roomName)}
+                    {#if it.kind === 'cut' && it.shape && it.sameAs == null}<CutSketch
+                        shape={it.shape}
+                        angles={it.angles}
+                      />{/if}
+                  </li>
                 {/each}
               </ul>
             {/each}
           </section>
           {#if result!.skirting.bars}
             <section class="sec" aria-labelledby="r-skirting">
-              <h2 id="r-skirting">Plinthes : {result!.skirting.bars} barre{result!.skirting.bars > 1 ? 's' : ''}</h2>
+              <h2 id="r-skirting">
+                Plinthes : {result!.skirting.bars} barre{result!.skirting.bars > 1 ? 's' : ''} de plinthe
+              </h2>
               <ol class="bars">
                 {#each result!.skirting.plan as b, i (i)}
                   <li>
+                    Barre de plinthe {i + 1} :
                     {b.cuts.map((c) => skirtingCutText(c, roomName)).join(' + ')}{b.rest > 0
                       ? ` · reste ${fr(b.rest)} mm`
                       : ''}
@@ -179,6 +222,26 @@
               </ol>
               <p class="muted">Longueurs à couper, suppléments d’onglet compris.</p>
             </section>
+          {/if}
+          {#if seuils.length}
+            <section class="sec" aria-labelledby="r-thresholds">
+              <h2 id="r-thresholds">
+                Seuils : {seuilBars.length} barre{seuilBars.length > 1 ? 's' : ''} de seuil
+              </h2>
+              <ol class="bars">
+                {#each seuilBars as b, i (i)}
+                  <li>
+                    Barre de seuil {i + 1} : {fr(b.length)} mm{b.where}{b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}
+                  </li>
+                {/each}
+              </ol>
+            </section>
+          {/if}
+        {:else if t === '3d'}
+          {#if spec}
+            <div class="v3dwrap">
+              <Parquet3D {spec} result={result!} {looks} label="Vue 3D du parquet{multi ? ', toutes les poses' : ''}" />
+            </div>
           {/if}
         {:else}
           <section class="sec" aria-labelledby="r-shop">
@@ -242,6 +305,13 @@
     border-radius: var(--r-field);
     overflow: hidden;
   }
+  .v3dwrap {
+    position: relative;
+    height: min(65vh, 560px);
+    margin-top: var(--space-3);
+    border-radius: var(--r-field);
+    overflow: hidden;
+  }
   .legend {
     display: flex;
     flex-wrap: wrap;
@@ -275,7 +345,8 @@
     margin: 0;
     padding-left: var(--space-4);
   }
-  .sheet {
+  .sheet,
+  .bars {
     list-style: none;
     padding-left: 0;
     font-family: var(--font-num);

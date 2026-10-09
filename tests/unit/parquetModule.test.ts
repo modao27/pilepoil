@@ -247,3 +247,28 @@ describe('plusieurs pièces (P3)', () => {
     expect(parquet.schemaVersion).toBe(3);
   });
 });
+
+describe('chantier (P5)', () => {
+  const mark = (p: Project, hash: string, ids: string[], done = true) =>
+    reduceProject(p, { type: 'parquet/worksite/mark', hash, ids, done } as never);
+
+  it('cocher et décocher des pièces, pour une empreinte de calcul', () => {
+    const p0 = project();
+    const p1 = mark(p0, 'h1', ['a', 'b']);
+    expect(data(p1).worksite).toEqual({ resultHash: 'h1', done: ['a', 'b'] });
+    const p2 = mark(p1, 'h1', ['a'], false);
+    expect(data(p2).worksite).toEqual({ resultHash: 'h1', done: ['b'] });
+    // sans effet : même état
+    expect(mark(p2, 'h1', ['b'])).toBe(p2);
+    // autre empreinte : on repart de la nouvelle
+    expect(data(mark(p2, 'h2', ['c'])).worksite).toEqual({ resultHash: 'h2', done: ['c'] });
+  });
+
+  it('calcul changé : garder ce qui existe encore, ou repartir de zéro', () => {
+    const p1 = mark(project(), 'h1', ['a', 'b', 'c']);
+    const keep = reduceProject(p1, { type: 'parquet/worksite/rebase', hash: 'h2', valid: ['b', 'z'] } as never);
+    expect(data(keep).worksite).toEqual({ resultHash: 'h2', done: ['b'] });
+    const reset = reduceProject(p1, { type: 'parquet/worksite/rebase', hash: 'h2', valid: [] } as never);
+    expect(data(reset).worksite).toEqual({ resultHash: 'h2', done: [] });
+  });
+});

@@ -54,7 +54,7 @@ export interface ToolModule<Data, Spec, Result> {
     results: () => Promise<Component>;
     worksite?: () => Promise<Component>;       // mode chantier
     routes?: ModuleRoute[];                    // écrans propres sous #/p/:id/m/<id>/…
-    create?: () => Promise<Component>;         // #/new : assistant de création
+    create?: () => Promise<Component>;         // #/new/<id> : assistant de création
     card?: () => Promise<Component>;           // carte du projet sur l'accueil
     settings?: () => Promise<Component>;       // section des Réglages
   };
@@ -266,6 +266,7 @@ export interface ShoppingLine {
 
 ```
 Accueil (projets)
+ ├─ Nouveau projet  #/new                 choix de l'outil : assistant (#/new/carrelage) ou projet vide + plan
  └─ Projet  #/p/:id                       cartes des modules activés + « Ajouter un outil », résumé, total
      ├─ Plan  #/p/:id/plan                éditeur de pièces commun
      ├─ Carrelage  #/p/:id/m/carrelage/…   routes actuelles du carrelage, préfixées
@@ -326,3 +327,6 @@ seul le parquet s'en sert au début.
 | 2026-10-08 | Renommage complet : base `pilepoil` avec copie depuis `calepinage`, manifeste et dépôt renommés | §4, PLAN S3 |
 | 2026-10-08 | Unités d'achat communes étendues à `sachet`, `cartridge`, `litre` | §7 |
 | 2026-10-08 | Parquet : contours envoyés au moteur dans le repère du plan, modèles types de lames, marge qui suit le motif, paquets comptés en lames | `parquet/SPEC.md` |
+| 2026-10-09 | Nouveau projet : choix de l'outil à `#/new` ; un outil sans assistant crée un projet vide et ouvre le plan | §2, §8 |
+| 2026-10-09 | Base 3D commune `src/render/scene3d` et vue `ui/components/Scene3DView`, extraites du carrelage (rendu inchangé) | P5 |
+| 2026-10-09 | Base PDF commune `src/ui/lib/pdf/doc.ts` et découpe de barres `src/core/cutting/bars.ts` | P4 |

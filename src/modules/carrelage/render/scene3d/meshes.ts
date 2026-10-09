@@ -13,21 +13,10 @@ import {
   type ProjectSpec,
   type SurfaceSpec,
 } from '../../core';
+import type { MeshData } from '../../../../render/scene3d/types';
 import { frameAt, wallPoint, type SceneLayout, type Vec3, type WallFrame } from './placement';
 
-export interface MeshData {
-  /** Clé de regroupement (matériau). */
-  key: string;
-  /** Photo (URL) des carreaux, ou null : couleur seule. */
-  photo: string | null;
-  positions: number[];
-  normals: number[];
-  /** Couleurs linéaires par sommet (r, g, b). */
-  colors: number[];
-  uvs: number[];
-  castShadow: boolean;
-  receiveShadow: boolean;
-}
+export type { MeshData };
 
 export interface MeshInput {
   spec: ProjectSpec;

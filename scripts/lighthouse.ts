@@ -49,7 +49,7 @@ try {
   });
   const page = ctx.pages()[0] ?? (await ctx.newPage());
   // projet de démonstration : mur 300 × 240, carreau 60 × 30
-  await page.goto(BASE + '#/new');
+  await page.goto(BASE + '#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
   await next();
@@ -63,13 +63,39 @@ try {
   const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
   await page.waitForTimeout(500);
 
+  // projet de parquet : pièce 400 × 300, une pose de stratifié
+  await page.goto(BASE + '#/new');
+  await page.getByRole('button', { name: 'Commencer : parquet' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  for (const [label, value] of [
+    ['Longueur', '400'],
+    ['Largeur', '300'],
+  ] as const) {
+    const f = dialog.getByLabel(label, { exact: true });
+    await f.fill(value);
+    await f.press('Enter');
+  }
+  await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  const pid = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  await page.goto(BASE + `#/p/${pid}/m/parquet`);
+  await page.getByRole('button', { name: 'Créer une pose' }).first().click();
+  await page
+    .getByRole('link', { name: /\d+ lames · \d+ paquets/ })
+    .first()
+    .waitFor();
+  await page.waitForTimeout(500);
+
   // [nom, adresse, premier chargement]
   const pages: [string, string, boolean][] = [
     ['editeur', `#/p/${id}`, false],
     ['resultats', `#/p/${id}/results`, false],
     ['comparer', `#/p/${id}/compare`, false],
+    ['parquet', `#/p/${pid}/m/parquet`, false],
+    ['parquet-resultats', `#/p/${pid}/m/parquet/results`, false],
+    ['parquet-chantier', `#/p/${pid}/m/parquet/chantier`, false],
     ['accueil', '#/', true],
-    ['assistant', '#/new', true],
+    ['nouveau', '#/new', true],
+    ['assistant', '#/new/carrelage', true],
     ['bibliotheque', '#/library', true],
     ['reglages', '#/settings', true],
   ];
@@ -93,11 +119,11 @@ try {
     const scores = CATEGORIES.map((c) => Math.round((r.lhr.categories[c]?.score ?? 0) * 100));
     if (scores.some((s) => s < MIN)) failed = true;
     rows.push(
-      `${form.padEnd(8)} ${name.padEnd(13)} ${(cold ? 'froid' : 'cache').padEnd(6)} ${scores.map((s) => String(s).padStart(4)).join(' ')}`,
+      `${form.padEnd(8)} ${name.padEnd(18)} ${(cold ? 'froid' : 'cache').padEnd(6)} ${scores.map((s) => String(s).padStart(4)).join(' ')}`,
     );
     console.log(rows.at(-1));
   }
-  const table = [`profil   écran         départ perf a11y  bp  seo`, ...rows].join('\n');
+  const table = [`profil   écran              départ perf a11y  bp  seo`, ...rows].join('\n');
   writeFileSync(join(out, 'resume.txt'), table + '\n');
   console.log('\n' + table);
   await ctx.close();

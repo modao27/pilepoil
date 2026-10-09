@@ -23,6 +23,12 @@ export type SheetItem =
       cutType: LaidPiece['cutType'];
       /** Coupe en biais : longueurs des deux rives (la plus longue d'abord). */
       edges: [number, number] | null;
+      /** Coupe en biais : la pièce dans le repère de sa lame (x le long des rives, origine au coin), croquis coté. */
+      shape: Polygon | null;
+      /** Coupe en biais : angle de chaque coupe avec la rive, degrés (90 = coupe droite). */
+      angles: number[];
+      /** Coupe identique (forme au millimètre, angles) à une pièce plus haut dans la fiche : où est son croquis. */
+      sameAs: { group: number; n: number } | null;
       source: LaidPiece['source'];
       /** Chute utilisée : la pièce qui l'a produite (groupe de la fiche et numéro). */
       origin: { group: number; n: number } | null;
@@ -64,6 +70,16 @@ export function cuttingSheet(r: ParquetResult, roomOrder: Record<string, string[
         items: itemsOf(g.pieces, (i) => l.boards[i]?.length ?? Infinity),
       });
   }
+  // un seul croquis par forme de coupe dans toute la fiche : les suivantes renvoient à la première
+  const drawn: { shape: Polygon; angles: number[]; at: { group: number; n: number } }[] = [];
+  out.forEach((g, gi) => {
+    for (const it of g.items) {
+      if (it.kind !== 'cut' || !it.shape) continue;
+      const ref = drawn.find((d) => d.angles.join() === it.angles.join() && sameShape(d.shape, it.shape!));
+      if (ref) it.sameAs = ref.at;
+      else drawn.push({ shape: it.shape, angles: it.angles, at: { group: gi, n: it.n } });
+    }
+  });
   // provenance des chutes : la pièce dont la coupe les a mises au stock
   const producer = new Map<string, { group: number; n: number }>();
   out.forEach((g, gi) => {
@@ -100,12 +116,54 @@ function itemsOf(pieces: LaidPiece[], boardLength: (index: number) => number): S
       width: p.ripped ? Math.round((Math.abs(signedArea(p.polygon)) / Math.max(p.length, 1e-6)) * 10) / 10 : null,
       cutType: p.cutType,
       edges: p.cutType === 'angled' ? rives(p.polygon) : null,
+      shape: p.cutType === 'angled' ? boardShape(p.polygon) : null,
+      angles: p.cutType === 'angled' ? cutAngles(boardShape(p.polygon)) : [],
+      sameAs: null,
       source: p.source,
       origin: null,
       rest: p.rest ?? [],
     });
   });
   return items;
+}
+
+/** Même forme à 1 mm près : mêmes sommets, dans le même ordre à un décalage près. */
+function sameShape(a: Polygon, b: Polygon): boolean {
+  if (a.length !== b.length) return false;
+  const near = (p: Point, q: Point) => Math.abs(p[0] - q[0]) <= 1 && Math.abs(p[1] - q[1]) <= 1;
+  for (let k = 0; k < b.length; k++) if (a.every((p, i) => near(p, b[(i + k) % b.length]!))) return true;
+  return false;
+}
+
+/** Repère de la lame d'une pièce : x le long de sa plus longue arête (une rive), origine au coin. */
+export function boardShape(poly: Polygon): Polygon {
+  let best = 0,
+    u: Point = [1, 0];
+  poly.forEach((a, i) => {
+    const b = poly[(i + 1) % poly.length]!;
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (d > best) {
+      best = d;
+      u = [(b[0] - a[0]) / d, (b[1] - a[1]) / d];
+    }
+  });
+  const local = poly.map((p): Point => [p[0] * u[0] + p[1] * u[1], -p[0] * u[1] + p[1] * u[0]]);
+  const x0 = Math.min(...local.map((p) => p[0])),
+    y0 = Math.min(...local.map((p) => p[1]));
+  return local.map((p): Point => [Math.round((p[0] - x0) * 10) / 10, Math.round((p[1] - y0) * 10) / 10]);
+}
+
+/** Angle avec la rive de chaque arête qui n'est pas une rive, degrés entiers (90 = coupe droite). */
+export function cutAngles(shape: Polygon): number[] {
+  const out: number[] = [];
+  shape.forEach((a, i) => {
+    const b = shape[(i + 1) % shape.length]!;
+    const dx = Math.abs(b[0] - a[0]),
+      dy = Math.abs(b[1] - a[1]);
+    if (Math.hypot(dx, dy) < 1 || dy < 0.5) return; // rive (parallèle à x)
+    out.push(Math.round((Math.atan2(dy, dx) * 180) / Math.PI));
+  });
+  return out;
 }
 
 /**

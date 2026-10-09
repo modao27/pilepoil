@@ -7,6 +7,7 @@ import type { Polygon } from '../../../../core/geometry/types';
 import type { ShoppingLine } from '../../../../core/shopping/types';
 import type { Project } from '../../../../state/model';
 import { Doc, euro, fr, INK, LINE, M, MUTED, pdfText, poly, STATUS, THIN } from '../../../../ui/lib/pdf/doc';
+import { thresholdCuts } from '../../core/accessories';
 import { cuttingSheet } from '../../core/sheet';
 import type { LaidPiece, ParquetResult } from '../../core/types';
 import type { ParquetData } from '../../state/model';
@@ -35,11 +36,61 @@ const PATTERN: Record<string, string> = {
 };
 const METHOD = { floating: 'flottante', glued: 'collée', nailed: 'clouée' } as const;
 
+/** Croquis coté d'une coupe en biais (pièce dans le repère de sa lame) : rives cotées, angles des coupes. */
+function sketch(d: Doc, shape: Polygon, angles: number[]) {
+  const pdf = d.pdf;
+  const W = Math.max(...shape.map((p) => p[0]), 1),
+    H = Math.max(...shape.map((p) => p[1]), 1);
+  const k = Math.min(45 / W, 8 / H);
+  d.room(H * k + 9);
+  const x0 = M + 18,
+    y0 = d.y + 3.5;
+  pdf.setFillColor(...STATUS.cut);
+  pdf.setDrawColor(...INK);
+  pdf.setLineWidth(0.25);
+  poly(
+    pdf,
+    shape.map((p): [number, number] => [x0 + p[0] * k, y0 + p[1] * k]),
+    'FD',
+  );
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(6.5);
+  d.color(INK);
+  let a = 0;
+  const used: [number, number][] = [];
+  shape.forEach((p, i) => {
+    const q = shape[(i + 1) % shape.length]!;
+    const mx = x0 + ((p[0] + q[0]) / 2) * k,
+      my = y0 + ((p[1] + q[1]) / 2) * k;
+    if (Math.abs(p[1] - q[1]) <= 0.5) {
+      const len = Math.abs(q[0] - p[0]);
+      if (len >= 1) pdf.text(fr(len), mx, p[1] > H / 2 ? my + 2.6 : my - 0.8, { align: 'center' });
+    } else if (Math.hypot(q[0] - p[0], q[1] - p[1]) >= 1 && angles[a] != null) {
+      d.color(THIN);
+      const tx = mx < x0 + (W * k) / 2 ? mx - 2 : mx + 2;
+      let ty = my + 0.8;
+      // deux coupes proches du même côté : étiquettes l'une sous l'autre
+      while (used.some((u) => Math.abs(u[0] - tx) < 4 && Math.abs(u[1] - ty) < 2.4)) ty += 2.4;
+      used.push([tx, ty]);
+      pdf.text(`${angles[a++]}°`, tx, ty, {
+        align: mx < x0 + (W * k) / 2 ? 'right' : 'left',
+      });
+      d.color(INK);
+    }
+  });
+  d.y = y0 + H * k + 4;
+}
+
 export function buildParquetPdf(input: ParquetPdfInput): Blob {
   const { project, data, result, lines, date } = input;
   const d = new Doc();
   const pdf = d.pdf;
   const roomName = (id: string) => project.plan.rooms.find((r) => r.id === id)?.name ?? 'Pièce';
+  /** « entre Séjour et Bureau » pour un seuil dans un passage. */
+  const passageName = (id: string | null) => {
+    const p = id ? project.plan.passages.find((x) => x.id === id) : undefined;
+    return p ? ` entre ${roomName(p.a.room)} et ${roomName(p.b.room)}` : '';
+  };
   const layoutOf = (id: string) => data.layouts.find((l) => l.id === id);
   const multi = result.layouts.length > 1;
   const cost = lines.reduce((t, l) => t + (l.unitPrice != null ? l.unitPrice * l.quantity : 0), 0);
@@ -254,26 +305,44 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
       bold: true,
       gap: 0.8,
     });
-    for (const it of g.items)
+    for (const it of g.items) {
       // flèche absente des polices standard : tiret demi-cadratin
       d.text(itemText(it, sheet, roomName).replace(' → ', ' – '), 8.5, { x: M + 4, gap: 0.4, bold: it.kind === 'cut' });
+      if (it.kind === 'cut' && it.shape && it.sameAs == null) sketch(d, it.shape, it.angles);
+    }
     d.y += 2;
   }
   if (result.skirting.bars) {
     d.room(20);
     d.y += 2;
-    d.text(`Plinthes : ${result.skirting.bars} barre${result.skirting.bars > 1 ? 's' : ''}`, 11, {
+    d.text(`Plinthes : ${result.skirting.bars} barre${result.skirting.bars > 1 ? 's' : ''} de plinthe`, 11, {
       bold: true,
       gap: 1,
     });
     d.text('Longueurs à couper, suppléments d’onglet compris.', 8, { color: MUTED, gap: 1.5 });
     result.skirting.plan.forEach((b, i) =>
       d.text(
-        `Barre ${i + 1} : ${b.cuts.map((c) => skirtingCutText(c, roomName)).join(' + ')}${b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}`,
+        `Barre de plinthe ${i + 1} : ${b.cuts.map((c) => skirtingCutText(c, roomName)).join(' + ')}${b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}`,
         8.5,
         { x: M + 4, gap: 0.4 },
       ),
     );
+  }
+
+  const seuils = thresholdCuts(result, data.accessories.thresholds.barLength);
+  if (seuils.length) {
+    const total = seuils.reduce((t, s) => t + s.bars.length, 0);
+    d.room(16);
+    d.y += 2;
+    d.text(`Seuils : ${total} barre${total > 1 ? 's' : ''} de seuil`, 11, { bold: true, gap: 1 });
+    let k = 0;
+    for (const s of seuils)
+      for (const b of s.bars)
+        d.text(
+          `Barre de seuil ${++k} : ${fr(b.length)} mm${passageName(s.passage)}${b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}`,
+          8.5,
+          { x: M + 4, gap: 0.4 },
+        );
   }
 
   /* ---------- pieds de page ---------- */

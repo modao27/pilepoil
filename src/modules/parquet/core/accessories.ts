@@ -28,6 +28,30 @@ function perimeter(rings: Polygon[]): number {
 }
 const sub = (a: [number, number], b: [number, number]): [number, number] => [a[0] - b[0], a[1] - b[1]];
 
+/** Seuil posé et ses barres : chacune coupée à la largeur du passage (barres entières si plus large). */
+export interface ThresholdCut {
+  passage: string | null;
+  /** Largeur du seuil, mm. */
+  length: number;
+  /** Longueur coupée dans chaque barre et reste. */
+  bars: { length: number; rest: number }[];
+}
+
+export function thresholdCuts(r: ParquetResult, barLength: number): ThresholdCut[] {
+  if (!(barLength > 0)) return [];
+  return r.layouts
+    .flatMap((l) => l.thresholds.filter((t) => t.status === 'applied'))
+    .map((t) => {
+      const length = Math.round(Math.hypot(t.segment[1][0] - t.segment[0][0], t.segment[1][1] - t.segment[0][1]));
+      const bars: ThresholdCut['bars'] = [];
+      for (let left = length; left > EPS; left -= barLength) {
+        const cut = Math.min(left, barLength);
+        bars.push({ length: cut, rest: barLength - cut });
+      }
+      return { passage: t.passage, length, bars };
+    });
+}
+
 /**
  * @param methods mode de pose de chaque pose (par identifiant) : colle ou fixations selon la pose.
  */
@@ -68,19 +92,12 @@ export function accessoryNeeds(
     });
 
   // seuils posés : une barre par seuil, plus si le seuil est plus large qu'une barre
-  const applied = r.layouts.flatMap((l) => l.thresholds.filter((t) => t.status === 'applied'));
-  if (applied.length && acc.thresholds.barLength > 0)
+  const cuts = thresholdCuts(r, acc.thresholds.barLength);
+  if (cuts.length)
     out.push({
       kind: 'threshold',
-      count: applied.length,
-      bars: applied.reduce(
-        (t, x) =>
-          t +
-          up(
-            Math.hypot(x.segment[1][0] - x.segment[0][0], x.segment[1][1] - x.segment[0][1]) / acc.thresholds.barLength,
-          ),
-        0,
-      ),
+      count: cuts.length,
+      bars: cuts.reduce((t, c) => t + c.bars.length, 0),
       barLength: acc.thresholds.barLength,
     });
 

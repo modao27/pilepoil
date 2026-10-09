@@ -9,7 +9,7 @@ import type { BBox, Point, Polygon, Segment } from '../../../core/geometry/types
 import { chevronCells } from '../../../core/patterns/chevron';
 import { herring } from '../../../core/patterns/herring';
 import type { Cell } from '../../../core/patterns/types';
-import { components, keyhole } from './rings';
+import { components, insideRegion, keyhole } from './rings';
 import type { BoardUse, LaidPiece, Offcut, ParquetWarning, PlacedLayout } from './types';
 
 const EPS = 1e-6;
@@ -135,7 +135,10 @@ export function layPattern(input: PatternInput): PatternOutput {
       lastY = k[1];
       n = 0;
     }
-    const parts = components(intersection([c.p], layable)).filter((p) => Math.abs(signedArea(keyhole(p))) > MIN_AREA);
+    // cellule entièrement posable (la plupart) : pas de découpage
+    const parts = insideRegion(c.p, layable)
+      ? [{ outer: signedArea(c.p) < 0 ? [...c.p].reverse() : c.p, holes: [] }]
+      : components(intersection([c.p], layable)).filter((p) => Math.abs(signedArea(keyhole(p))) > MIN_AREA);
     if (!parts.length) continue;
     const frame = boardFrame(c.p);
     const blank = c.p.map((q) => toBoard(frame, q));
@@ -197,8 +200,20 @@ export function layPattern(input: PatternInput): PatternOutput {
   const order = [...cuts].sort((a, b) => Number(b.full) - Number(a.full) || b.area - a.area || (a.id < b.id ? -1 : 1));
   for (const c of order) {
     if (!c.full && input.reuseOffcuts) {
+      // tri rapide avant l'essai géométrique : la pièce ne glisse que le long de la lame, donc son étendue en
+      // travers doit tenir dans celle de la chute ; la chute doit aussi être assez longue et assez grande
+      const ext = (r: Polygon) => {
+        const xs = r.map((q) => q[0]),
+          ys = r.map((q) => q[1]);
+        return { w: Math.max(...xs) - Math.min(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+      };
+      const pe = ext(c.local);
       const candidates = stock
-        .filter((o) => o.variant === c.variant)
+        .filter((o) => {
+          if (o.variant !== c.variant || Math.abs(signedArea(o.shape)) < c.area - 1) return false;
+          const oe = ext(o.shape);
+          return oe.w >= pe.w - 0.01 && oe.y0 <= pe.y0 + 0.01 && oe.y1 >= pe.y1 - 0.01;
+        })
         .sort((a, b) => signedArea(a.shape) - signedArea(b.shape));
       let used = false;
       for (const o of candidates) {

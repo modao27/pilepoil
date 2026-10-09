@@ -3,19 +3,20 @@
   import EmptyState from './components/EmptyState.svelte';
   import Screen from './components/Screen.svelte';
   import ToastHost from './components/ToastHost.svelte';
-  import { libraryById, moduleById, modules } from '../modules/registry';
+  import { libraryById, moduleById } from '../modules/registry';
   import LibraryNav from './components/LibraryNav.svelte';
   import { app } from './lib/app.svelte';
   import { matchScreen } from './lib/moduleRoutes';
   import { router } from './lib/router.svelte';
   import Demo from './screens/Demo.svelte';
   import Home from './screens/Home.svelte';
+  import NewProject from './screens/NewProject.svelte';
   import Project from './screens/Project.svelte';
   import Settings from './screens/Settings.svelte';
 
   const route = $derived(router.route);
-  /** Assistant de création (#/new) : celui du premier outil qui en a un. */
-  const creator = modules.find((m) => m.screens.create);
+  /** Assistant de création d'un outil (#/new/<module>). */
+  const creator = $derived(route.name === 'new' && route.module ? moduleById(route.module) : undefined);
   const screen = $derived.by(() => {
     if (route.name !== 'module') return null;
     const m = moduleById(route.module);
@@ -36,6 +37,8 @@
   <p class="loading" role="status">Chargement…</p>
 {:else if route.name === 'home'}
   <Home />
+{:else if route.name === 'new' && !route.module}
+  <NewProject />
 {:else if route.name === 'new'}
   {#await creator?.screens.create?.() then Create}{#if Create}<Create />{/if}{/await}
 {:else if route.name === 'library'}

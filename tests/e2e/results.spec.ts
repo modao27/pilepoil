@@ -12,7 +12,7 @@ async function check(page: Page) {
 
 /** Mur 300 × 240 avec une fenêtre à tableaux, puis page Résultats. */
 async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
   await next();

@@ -91,6 +91,37 @@ export function clipLine(p: Point, d: Point, rings: Polygon[]): Segment | null {
   return hi - lo > 1 ? [round(add(p, d, lo)), round(add(p, d, hi))] : null;
 }
 
+/**
+ * Seuil tracé à la main : prolongé jusqu'aux bords de la surface qu'il traverse (la corde qui contient son
+ * milieu), s'il s'arrête avant. Un seuil qui atteint déjà les bords (seuil de porte) est gardé tel quel.
+ */
+export function extendBreak(s: Segment, rings: Polygon[]): Segment {
+  const len = Math.hypot(s[1][0] - s[0][0], s[1][1] - s[0][1]);
+  if (len < 1) return s;
+  const d = unit(sub(s[1], s[0]));
+  const mid: Point = [(s[0][0] + s[1][0]) / 2, (s[0][1] + s[1][1]) / 2];
+  const ts: number[] = [];
+  for (const r of rings)
+    for (let i = 0; i < r.length; i++) {
+      const a = r[i]!,
+        b = r[(i + 1) % r.length]!;
+      const e = sub(b, a);
+      const den = d[0] * e[1] - d[1] * e[0];
+      if (Math.abs(den) < 1e-12) continue;
+      const w = sub(a, mid);
+      const t = (w[0] * e[1] - w[1] * e[0]) / den;
+      const u = (w[0] * d[1] - w[1] * d[0]) / den;
+      if (u >= -1e-9 && u <= 1 + 1e-9) ts.push(t);
+    }
+  const lo = Math.max(-Infinity, ...ts.filter((t) => t < 0)),
+    hi = Math.min(Infinity, ...ts.filter((t) => t > 0));
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return s;
+  const from = Math.min(-len / 2, lo),
+    to = Math.max(len / 2, hi);
+  if (from === -len / 2 && to === len / 2) return s;
+  return [round(add(mid, d, from)), round(add(mid, d, to))];
+}
+
 /** Morceaux d'un seul tenant : contours extérieurs (aire > 0) avec leurs trous. */
 export function components(rings: Polygon[]): Polygon[][] {
   const outers = rings.filter((r) => signedArea(r) > 0);
@@ -112,7 +143,10 @@ export function appliedThresholds(l: LayoutSpec, base: Polygon[]): Threshold[] {
     const mid: Point = [(s[0][0] + s[1][0]) / 2, (s[0][1] + s[1][1]) / 2];
     return l.passages.find((p) => pointInPolygon(mid, passageBand(p, roomOf(p.a), 0))) ?? null;
   };
-  const out: Threshold[] = l.breaks.map((s) => ({ segment: s, passage: passageAt(s)?.id ?? null, status: 'applied' }));
+  const out: Threshold[] = l.breaks.map((b, i) => {
+    const s = extendBreak(b, base);
+    return { segment: s, passage: passageAt(s)?.id ?? null, status: 'applied', breakIndex: i };
+  });
   for (const b of l.zone) {
     if (b.side !== 1) continue;
     const seg = clipLine(b.line[0], unit(sub(b.line[1], b.line[0])), base);

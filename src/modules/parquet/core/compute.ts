@@ -7,7 +7,7 @@ import { pointInPolygon, signedArea } from '../../../core/geometry/polygon';
 import type { Polygon } from '../../../core/geometry/types';
 import { fingerprint } from '../../../core/hash';
 import { selfIntersecting } from '../../../core/plan/validate';
-import { appliedThresholds, breakBand, fractioning, halfPlane, passageBand } from './fractioning';
+import { appliedThresholds, breakBand, extendBreak, fractioning, halfPlane, passageBand } from './fractioning';
 import { layingFrame, ringFromFrame, ringToFrame } from './frame';
 import { axisOptions } from './axis';
 import { layPattern } from './patterned';
@@ -139,7 +139,7 @@ function cutSurface(l: LayoutSpec, base: Polygon[]): Polygon[] {
   let s = l.breaks.length
     ? difference(
         base,
-        l.breaks.map((b) => breakBand(b, gap)),
+        l.breaks.map((b) => breakBand(extendBreak(b, base), gap)),
       )
     : base;
   for (const b of l.zone) s = intersection(s, [halfPlane(b, gap)]);

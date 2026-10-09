@@ -9,7 +9,7 @@ async function check(page: Page) {
 
 /** Projet carrelage (mur) créé par l'assistant ; renvoie son identifiant. */
 async function newProject(page: Page): Promise<string> {
-  await page.goto('/#/new');
+  await page.goto('/#/new/carrelage');
   const next = () => page.getByRole('button', { name: 'Suivant' }).click();
   await next();
   await next();

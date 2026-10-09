@@ -111,6 +111,8 @@ export interface Threshold {
   status: 'proposed' | 'applied';
   /** Seuils proposés : pourquoi. */
   reason?: 'narrow-passage' | 'fractioning';
+  /** Seuils posés : index dans `breaks` (absent pour une limite de zone). */
+  breakIndex?: number;
 }
 
 export interface LayoutSpec {

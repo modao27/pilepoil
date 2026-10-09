@@ -45,8 +45,6 @@ export interface OptimizeResult {
 /** Nombre de décalages de départ et de graines essayés (SPEC : 20 × 10). */
 export const OFFSETS = 20;
 export const SEEDS = 10;
-/** Au-delà de ce nombre de lames posées, les motifs essaient 6 départs au lieu de 20. */
-export const MOTIF_CELLS = 600;
 
 export function* optimizeLayout(input: OptimizeSpec): Generator<Progress, OptimizeResult, void> {
   const { spec, layoutId } = input;
@@ -96,12 +94,9 @@ export function candidatesOf(l: LayoutSpec): { offset: Point; seed: number }[] {
     return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
   };
   const steps: [number, number][] = [];
-  if (l.pattern.kind === 'herringbone' || l.pattern.kind === 'chevron') {
-    // grandes surfaces (plus de MOTIF_CELLS lames) : grille réduite, pour rester vers 2 s (SPEC §6)
-    const area = l.rooms.reduce((t, r) => t + Math.abs(signedArea(r.outline)), 0);
-    const [ni, nj] = area / (L * W) > MOTIF_CELLS ? [3, 2] : [5, 4];
-    for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) steps.push([(i * L) / ni, (j * W) / nj]);
-  } else if (l.pattern.kind === 'regular-stagger')
+  if (l.pattern.kind === 'herringbone' || l.pattern.kind === 'chevron')
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 4; j++) steps.push([(i * L) / 5, (j * W) / 4]);
+  else if (l.pattern.kind === 'regular-stagger')
     for (let i = 0; i < 5; i++) for (let j = 0; j < 4; j++) steps.push([(i * L * l.pattern.step) / 5, (j * W) / 4]);
   else for (let j = 0; j < OFFSETS; j++) steps.push([0, (j * W) / OFFSETS]);
   // graines : tirage des longueurs mixtes, et en coupe perdue la longueur de la première pièce des rangs

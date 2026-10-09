@@ -112,10 +112,9 @@
       : `Seuil conseillé${where(t)} : surface trop grande`;
   }
   /** Seuils posés de la pose (breaks) : index pour « Retirer » ; les limites de zone n'en ont pas. */
-  const breakIndex = (t: Threshold) =>
-    layout?.breaks.findIndex((b) =>
-      b.every((q, i) => Math.abs(q[0] - t.segment[i]![0]) < 0.5 && Math.abs(q[1] - t.segment[i]![1]) < 0.5),
-    ) ?? -1;
+  const breakIndex = (t: Threshold) => t.breakIndex ?? -1;
+  /** Tracé d'un seuil à la main : deux points sur le plan. */
+  let drawing = $state(false);
   const acc = $derived(ed.data.accessories);
   /* glisser la pose sur le plan : décalage aimanté au quart de la largeur de lame, un geste = une étape */
   let dragFrom: [number, number] | null = null;
@@ -216,8 +215,19 @@
           <Checkbox label={r.name} checked={layout.rooms.includes(r.id)} onchange={(on) => ed.toggleRoom(r.id, on)} />
         {/each}
         <Button variant="ghost" href="#/p/{ed.doc.id}/plan">Modifier le plan</Button>
+        <h3>Seuils</h3>
+        {#if drawing}
+          <p class="muted" role="status">
+            Touchez le plan à deux endroits, de part et d’autre de la zone à séparer. Le seuil est prolongé jusqu’aux
+            murs.
+          </p>
+          <Button variant="secondary" onclick={() => (drawing = false)}>Annuler le tracé</Button>
+        {:else}
+          <Button variant="ghost" icon="edit" onclick={() => ((drawing = true), (ed.selected = null))}
+            >Tracer un seuil</Button
+          >
+        {/if}
         {#if result?.thresholds.length}
-          <h3>Seuils</h3>
           <ul class="thresholds">
             {#each result.thresholds as t, i (i)}
               <li class:proposed={t.status === 'proposed'}>
@@ -480,6 +490,7 @@
     <h1><span class="pname">{ed.doc.name}</span><span class="sub">Parquet</span></h1>
     <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
+    <IconButton icon="check" label="Chantier" href="#/p/{ed.doc.id}/m/parquet/chantier" />
     <IconButton icon="list" label="Résultats" href="#/p/{ed.doc.id}/m/parquet/results" />
   </header>
   <main class="body">
@@ -491,7 +502,12 @@
         variants={motif}
         {others}
         thresholds={result?.thresholds ?? []}
-        ondrag={layout ? drag : undefined}
+        ondrag={layout && !drawing ? drag : undefined}
+        {drawing}
+        ondraw={(s) => {
+          ed.addBreak(s);
+          drawing = false;
+        }}
         keyStep={snapStep}
         bind:selected={ed.selected}
         label="Plan des lames : {summary}"
