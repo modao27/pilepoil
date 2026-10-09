@@ -1,7 +1,8 @@
+import { cameraFor } from '../../src/render/scene3d/camera';
 import { describe, expect, it } from 'vitest';
 import type { ProjectSpec } from '../../src/modules/carrelage/core';
 import {
-  cameraFor,
+  frameOf,
   frameAt,
   roomLayout,
   surfaceLayout,
@@ -67,9 +68,9 @@ describe('pièce', () => {
 
   it('caméra : cible au centre de la pièce, au-dessus pour la plongée', () => {
     const lay = roomLayout(spec, 2500)!;
-    const c = cameraFor(lay, 'haut');
+    const c = cameraFor(frameOf(lay), 'haut');
     expect(c.target[0]).toBeCloseTo(1.5, 12);
     expect(c.position[1]).toBeGreaterThan(3);
-    expect(cameraFor(surfaceLayout(spec, 3), 'face').target[1]).toBe(0);
+    expect(cameraFor(frameOf(surfaceLayout(spec, 3)), 'face').target[1]).toBe(0);
   });
 });

@@ -5,8 +5,8 @@
    */
   import { onMount } from 'svelte';
   import type { ProjectResult, ProjectSpec } from '../../core';
-  import type { CameraPreset, SceneLayout } from '../../render/scene3d/placement';
-  import type { Scene3D, SceneStats } from '../../render/scene3d/scene';
+  import { frameOf, type CameraPreset, type SceneLayout } from '../../render/scene3d/placement';
+  import type { Scene3D, SceneStats } from '../../../../render/scene3d/scene';
   import IconButton from '../../../../ui/components/IconButton.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
 
@@ -39,7 +39,7 @@
   onMount(() => {
     let disposed = false,
       ro: ResizeObserver | null = null;
-    void Promise.all([import('../../render/scene3d/scene'), import('../../render/scene3d/meshes')])
+    void Promise.all([import('../../../../render/scene3d/scene'), import('../../render/scene3d/meshes')])
       .then(([sc, me]) => {
         if (disposed) return;
         const s = new sc.Scene3D(canvas, { shadowSize: matchMedia('(max-width: 700px)').matches ? 1024 : 2048 });
@@ -62,7 +62,7 @@
     if (!scene || !build) return;
     const meshes = build({ spec, result, layout, shade, photo });
     const key = layout.instances.map((i) => i.surface).join(',') + (layout.room ? 'room' : '');
-    scene.setData(meshes, layout, key !== framedFor ? preset : null);
+    scene.setData(meshes, frameOf(layout), key !== framedFor ? preset : null);
     framedFor = key;
   });
 

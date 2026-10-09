@@ -1,5 +1,6 @@
 /**
- * Scène three.js : maillages de meshes.ts, lumière avec ombres, caméra orbitale (préréglages legacy).
+ * Scène three.js partagée (carrelage, parquet) : maillages prêts (MeshData), lumière avec ombres, caméra
+ * orbitale (préréglages legacy).
  * Rendu à la demande : une image seulement quand la caméra ou les données changent (batterie).
  */
 import {
@@ -21,8 +22,8 @@ import {
   type Material,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { MeshData } from './meshes';
-import { cameraFor, FOV, type CameraPreset, type SceneLayout } from './placement';
+import { cameraFor, FOV, type CameraPreset } from './camera';
+import type { MeshData, SceneFrame } from './types';
 
 /** Direction de la lumière (legacy LDIR), normalisée. */
 const LDIR = new Vector3(-0.45, 0.75, 0.55).normalize();
@@ -43,7 +44,7 @@ export class Scene3D {
   private readonly textures = new Map<string, Texture>();
   private readonly loader = new TextureLoader();
   private meshes: Mesh[] = [];
-  private layout: SceneLayout | null = null;
+  private layout: SceneFrame | null = null;
   private frame = 0;
   private times: number[] = [];
   stats: SceneStats = { drawCalls: 0, triangles: 0, fps: 0 };
@@ -76,7 +77,7 @@ export class Scene3D {
   }
 
   /** Remplace les maillages ; la caméra n'est recadrée que si `reframe`. */
-  setData(meshes: MeshData[], layout: SceneLayout, reframe: CameraPreset | null): void {
+  setData(meshes: MeshData[], layout: SceneFrame, reframe: CameraPreset | null): void {
     for (const m of this.meshes) {
       this.scene.remove(m);
       m.geometry.dispose();
@@ -194,7 +195,7 @@ export class Scene3D {
   }
 
   /** Soleil orienté comme legacy, caméra d'ombre ajustée à la scène. */
-  private placeSun(lay: SceneLayout) {
+  private placeSun(lay: SceneFrame) {
     const { x, z, h } = lay.bounds;
     const c = new Vector3((x[0] + x[1]) / 2, h / 2, (z[0] + z[1]) / 2);
     const span = Math.max(x[1] - x[0], z[1] - z[0], h, 1) + 2;
@@ -209,8 +210,8 @@ export class Scene3D {
   }
 
   /** Limites de caméra legacy : mur vu de face (lacet ±1,2), sol et pièce vus d'en haut. */
-  private applyLimits(lay: SceneLayout) {
-    const kind = lay.room ? 'room' : lay.instances[0]?.kind === 'floor' ? 'floor' : 'wall';
+  private applyLimits(lay: SceneFrame) {
+    const kind = lay.kind;
     const { x, z, h } = lay.bounds;
     const span = Math.max(x[1] - x[0], z[1] - z[0], h, 0.5);
     const base = (span * 0.55) / Math.tan(((FOV / 2) * Math.PI) / 180);
