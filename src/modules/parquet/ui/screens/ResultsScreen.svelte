@@ -16,9 +16,10 @@
   import type { Board } from '../../core/board';
   import { thresholdCuts } from '../../core/accessories';
   import { cuttingSheet } from '../../core/sheet';
-  import type { ParquetResult } from '../../core/types';
+  import type { ParquetResult, ParquetSpec } from '../../core/types';
   import { PARQUET_ID } from '../../state/model';
   import { parquetData, shopping, toSpec } from '../../state/module';
+  import Parquet3D from '../components/Parquet3D.svelte';
   import ParquetPlan from '../components/ParquetPlan.svelte';
   import { errorText, warningText } from '../lib/messages';
   import { groupTitle, itemText, quantityText, skirtingCutText } from '../lib/sheetText';
@@ -26,8 +27,9 @@
   let { projectId }: ModuleScreenProps = $props();
   const project = $derived(app.project(projectId));
   let result = $state.raw<ParquetResult | null>(null);
+  let spec = $state.raw<ParquetSpec | null>(null);
   let failed = $state(false);
-  let tab = $state<'plan' | 'cuts' | 'shop'>('plan');
+  let tab = $state<'plan' | 'cuts' | 'shop' | '3d'>('plan');
   let exporting = $state(false);
 
   $effect(() => {
@@ -40,7 +42,8 @@
       return;
     }
     let live = true;
-    void app.queued<ParquetResult>(PARQUET_ID, r.spec).then((x) => live && ((result = x), (failed = false)));
+    const sp = r.spec;
+    void app.queued<ParquetResult>(PARQUET_ID, sp).then((x) => live && ((result = x), (spec = sp), (failed = false)));
     return () => (live = false);
   });
 
@@ -62,6 +65,25 @@
   );
   const multi = $derived((result?.layouts.length ?? 0) > 1);
   const boards = $derived((app.libraries.boards ?? []) as readonly Board[]);
+  // aspect 3D de chaque pose : couleur, photo (chargée à la demande) et format de la lame
+  const looks = $derived.by(() => {
+    void app.photoUrls;
+    return Object.fromEntries(
+      (data?.layouts ?? []).map((l) => {
+        const b = boards.find((x) => x.id === l.boardId);
+        if (b?.photoId) app.loadPhoto(b.photoId);
+        return [
+          l.id,
+          {
+            color: b?.color ?? '#c9a77c',
+            photo: (b?.photoId && app.photoUrls[b.photoId]) || null,
+            length: Math.max(...(b?.lengths ?? [1000])),
+            width: b?.width ?? 100,
+          },
+        ];
+      }),
+    );
+  });
   const boardColor = (layoutId: string) =>
     boards.find((b) => b.id === data?.layouts.find((l) => l.id === layoutId)?.boardId)?.color ?? '#c9a77c';
   function roomsOf(layoutId: string): Polygon[] {
@@ -136,6 +158,7 @@
         { id: 'plan', label: 'Plan' },
         { id: 'cuts', label: 'Coupes' },
         { id: 'shop', label: 'Achats' },
+        { id: '3d', label: '3D' },
       ]}
     >
       {#snippet panel(t)}
@@ -206,6 +229,12 @@
               </ol>
             </section>
           {/if}
+        {:else if t === '3d'}
+          {#if spec}
+            <div class="v3dwrap">
+              <Parquet3D {spec} result={result!} {looks} label="Vue 3D du parquet{multi ? ', toutes les poses' : ''}" />
+            </div>
+          {/if}
         {:else}
           <section class="sec" aria-labelledby="r-shop">
             <h2 id="r-shop">Achats du parquet</h2>
@@ -265,6 +294,13 @@
   .plan {
     height: min(60vh, 520px);
     border: 1px solid var(--line);
+    border-radius: var(--r-field);
+    overflow: hidden;
+  }
+  .v3dwrap {
+    position: relative;
+    height: min(65vh, 560px);
+    margin-top: var(--space-3);
     border-radius: var(--r-field);
     overflow: hidden;
   }
