@@ -70,6 +70,11 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   await expect(summary).toContainText('52 lames');
 
+  // optimisation du départ : progression puis départ appliqué (ou déjà le meilleur), jamais plus de lames
+  await p.getByRole('button', { name: 'Optimiser le départ' }).click();
+  await expect(page.getByText(/Départ optimisé : 52 → (5[0-2]|4\d) lames|déjà le meilleur/)).toBeVisible();
+  await expect(p.getByRole('button', { name: 'Optimiser le départ' })).toBeEnabled();
+
   // résultats et liste d'achat du projet
   await summary.click();
   await expect(page.getByRole('heading', { name: /^Résultats — / })).toBeVisible();

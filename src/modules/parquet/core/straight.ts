@@ -160,11 +160,18 @@ export function layStraight(input: StraightInput): StraightOutput {
     if (!first) {
       const Lb = drawLength();
       let len = -1;
-      for (let l = Math.min(Lb, S); l >= Math.min(rules.minCutLength, S) - EPS; l -= 1)
-        if (ok(l, Lb)) {
-          len = l;
-          break;
-        }
+      if (layout.seed === 1) {
+        for (let l = Math.min(Lb, S); l >= Math.min(rules.minCutLength, S) - EPS; l -= 1)
+          if (ok(l, Lb)) {
+            len = l;
+            break;
+          }
+      } else {
+        // autres graines (optimisation) : une longueur tirée parmi celles qui respectent les règles
+        const valid: number[] = [];
+        for (let l = Math.min(Lb, S); l >= Math.min(rules.minCutLength, S) - EPS; l -= 1) if (ok(l, Lb)) valid.push(l);
+        if (valid.length) len = valid[Math.floor(rng() * valid.length)]!;
+      }
       // aucune longueur ne respecte le décalage des joints : coupe mini et dernière pièce seulement
       if (len < 0)
         for (let l = Math.min(Lb, S); l >= Math.min(rules.minCutLength, S) - EPS; l -= 1)

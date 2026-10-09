@@ -12,6 +12,7 @@ import { toast } from '../../../ui/lib/toasts.svelte';
 import { SupersededError } from '../../../workers/client';
 import type { Board } from '../core/board';
 import { METHOD_BY_KIND, RULES_BY_KIND } from '../core/defaults';
+import type { OptimizeResult, OptimizeSpec } from '../core/optimize';
 import type { ParquetResult, ParquetSpec } from '../core/types';
 import type { Action } from '../state/actions';
 import { createLayout, PARQUET_ID, type Layout } from '../state/model';
@@ -27,6 +28,9 @@ export class ParquetEditorState {
   /** Pose affichée dans les réglages (null : la première). */
   current = $state<string | null>(null);
   computing = $state(false);
+  /** Optimisation du départ en cours : avancement en %. */
+  optimizing = $state<number | null>(null);
+  private abort: AbortController | null = null;
 
   readonly store: ProjectStore<Project, ProjectAction>;
   private saver: Saver<Project>;
@@ -75,6 +79,47 @@ export class ParquetEditorState {
     } finally {
       this.computing = false;
     }
+  }
+
+  /**
+   * Optimise le départ de la pose affichée dans le worker (tranches, progression, interruptible) ; le meilleur
+   * départ est appliqué par une seule action, annulable.
+   */
+  async optimize(): Promise<void> {
+    const l = this.layout;
+    const r = toSpec(this.doc, app.libraries);
+    if (!l || this.optimizing != null || 'errors' in r) return;
+    this.abort = new AbortController();
+    this.optimizing = 0;
+    try {
+      const res = await app.live.optimize<OptimizeResult>(
+        PARQUET_ID,
+        { spec: r.spec, layoutId: l.id } satisfies OptimizeSpec,
+        { signal: this.abort.signal, onProgress: (p) => (this.optimizing = p.percent) },
+      );
+      if (!res.improved) {
+        toast('Le départ actuel est déjà le meilleur trouvé.');
+        return;
+      }
+      this.dispatch({
+        type: 'parquet/layout/update',
+        layoutId: res.layoutId,
+        patch: { offset: res.offset, seed: res.seed },
+      });
+      toast(`Départ optimisé : ${res.before.boards} → ${res.after.boards} lames.`, {
+        action: { label: 'Annuler', run: () => this.store.undo() },
+        timeout: 8000,
+      });
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === 'AbortError')) throw e;
+    } finally {
+      this.optimizing = null;
+      this.abort = null;
+    }
+  }
+
+  stopOptimize(): void {
+    this.abort?.abort();
   }
 
   updateLayout(patch: Partial<Omit<Layout, 'id'>>, key?: string): void {

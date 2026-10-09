@@ -308,6 +308,20 @@
               ed.updateLayout({ rules: { ...layout.rules, balanceEdgeRows: on ? 'always' : 'if-needed' } })}
           />
         {/if}
+        {#if ed.optimizing != null}
+          <div class="optim" role="status">
+            <label for="pq-optim">Recherche du meilleur départ…</label>
+            <progress id="pq-optim" max="100" value={ed.optimizing}>{ed.optimizing} %</progress>
+            <Button variant="secondary" onclick={() => ed.stopOptimize()}>Arrêter</Button>
+          </div>
+        {:else}
+          <Button
+            variant="secondary"
+            icon="sparkle"
+            disabled={!result || !!result.errors.length}
+            onclick={() => void ed.optimize()}>Optimiser le départ</Button
+          >
+        {/if}
         <Select
           label="Mode de pose"
           value={layout.method}
@@ -501,6 +515,15 @@
   }
   .thresholds li.proposed {
     border-left-style: dashed;
+  }
+  .optim {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .optim progress {
+    width: 100%;
+    height: 8px;
+    accent-color: var(--accent);
   }
   .axes {
     display: grid;
