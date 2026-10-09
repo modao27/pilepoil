@@ -3,6 +3,8 @@
  * Tout est regroupé par matériau pour limiter les appels de dessin (une pièce de 15 m² ≈ 15 maillages).
  * Lit les résultats du moteur, n'écrit rien.
  */
+import { intersection } from '../../../../core/geometry/boolean';
+import { components } from '../../../../core/geometry/rings';
 import { Color, ShapeUtils, Vector2 } from 'three';
 import {
   hash,
@@ -156,17 +158,7 @@ export function buildMeshes(input: MeshInput): MeshData[] {
   /* sol de contexte */
   const hasFloor = layout.instances.some((i) => i.kind === 'floor');
   if (room && !hasFloor) {
-    B.convex(
-      B.mesh('ground'),
-      [
-        [0, 0, 0],
-        [room.length, 0, 0],
-        [room.length, 0, room.width],
-        [0, 0, room.width],
-      ],
-      [0, 1, 0],
-      B.rgb(GROUND),
-    );
+    B.shape(B.mesh('ground'), room.outline, [], (p) => [p[0], 0, p[1]], [0, 1, 0], B.rgb(GROUND));
   } else if (!room && !hasFloor) {
     const { x, z } = layout.bounds;
     B.convex(
@@ -183,28 +175,19 @@ export function buildMeshes(input: MeshInput): MeshData[] {
   }
 
   /* murs non carrelés de la pièce */
-  if (room) {
-    const defs = {
-      A: { base: [0, 0], dir: [1, 0], len: room.length },
-      B: { base: [room.length, 0], dir: [0, 1], len: room.width },
-      C: { base: [room.length, room.width], dir: [-1, 0], len: room.length },
-      D: { base: [0, room.width], dir: [0, -1], len: room.width },
-    } as const;
-    for (const k of room.missing) {
-      const d = defs[k],
-        e = [d.base[0] + d.dir[0] * d.len, d.base[1] + d.dir[1] * d.len];
-      B.convex(
-        B.mesh('plaster'),
-        [
-          [d.base[0], 0, d.base[1]],
-          [e[0]!, 0, e[1]!],
-          [e[0]!, room.height, e[1]!],
-          [d.base[0], room.height, d.base[1]],
-        ],
-        [-d.dir[1], 0, d.dir[0]],
-        B.rgb(PLASTER),
-      );
-    }
+  for (const d of room?.bare ?? []) {
+    const e = [d.base[0] + d.dir[0] * d.len, d.base[1] + d.dir[1] * d.len];
+    B.convex(
+      B.mesh('plaster'),
+      [
+        [d.base[0], 0, d.base[1]],
+        [e[0]!, 0, e[1]!],
+        [e[0]!, room!.height, e[1]!],
+        [d.base[0], room!.height, d.base[1]],
+      ],
+      [-d.dir[1], 0, d.dir[0]],
+      B.rgb(PLASTER),
+    );
   }
 
   for (const inst of layout.instances) {
@@ -213,11 +196,12 @@ export function buildMeshes(input: MeshInput): MeshData[] {
     const build = r?.ok ? r.value : null;
     const floor = inst.kind === 'floor';
     const frames = inst.kind === 'wall' ? inst.frames : null;
+    const o = inst.kind === 'floor' ? inst.origin : ([0, 0] as const);
     /** Point de la surface (mm, y vers le bas) → 3D, `lift` m vers la pièce. */
     const M3 =
       (fr: WallFrame | null) =>
       (p: Point, lift = 0): Vec3 =>
-        fr ? wallPoint(fr, p[0], (s.height - p[1]) / 1000, -lift) : [p[0] / 1000, lift, p[1] / 1000];
+        fr ? wallPoint(fr, p[0], (s.height - p[1]) / 1000, -lift) : [o[0] + p[0] / 1000, lift, o[1] + p[1] / 1000];
     const normalOf = (fr: WallFrame | null): Vec3 => (fr ? fr.n : [0, 1, 0]);
     const segments: (WallFrame | null)[] = frames ?? [null];
 
@@ -232,10 +216,12 @@ export function buildMeshes(input: MeshInput): MeshData[] {
       if (floor) ext = [0, 0, s.width, s.height];
       else if (room) ext = [x0, -(Math.max(room.height * 1000, s.height) - s.height), x1, s.height];
       else ext = [fr!.k === 0 ? x0 - 1200 : x0, -600, fr!.last ? x1 + 1200 : x1, s.height];
+      // sol d'une pièce du plan : chape au contour, obstacles en trous
+      const support: Point[][] = s.outline && floor ? s.outline : [rect(...ext)];
       B.shape(
         B.mesh(floor ? 'floorbase' : 'plaster'),
-        rect(...ext),
-        holesIn(s, ext[0], ext[2], ext[1], ext[3]),
+        support[0]!,
+        [...support.slice(1), ...holesIn(s, ext[0], ext[2], ext[1], ext[3])],
         (p) => map(p),
         n,
         B.rgb(floor ? FLOOR_BASE : PLASTER),
@@ -249,14 +235,18 @@ export function buildMeshes(input: MeshInput): MeshData[] {
           a1 = Math.min(rc.x + rc.w, x1);
         if (rc.h <= 0 || a1 <= a0) return;
         const col = s.zones[zi]!.groutColor;
-        B.shape(
-          B.mesh('grout|' + col.toLowerCase()),
-          rect(a0, rc.y, a1, rc.y + rc.h),
-          holesIn(s, a0, a1, rc.y, rc.y + rc.h),
-          (p) => map(p, LIFT_GROUT),
-          n,
-          B.rgb(col),
-        );
+        const box = rect(a0, rc.y, a1, rc.y + rc.h);
+        // sol d'une pièce du plan : la zone est découpée par le contour
+        const parts = s.outline ? components(intersection([box], s.outline)) : [{ outer: box, holes: [] }];
+        for (const c of parts)
+          B.shape(
+            B.mesh('grout|' + col.toLowerCase()),
+            c.outer,
+            [...c.holes, ...holesIn(s, a0, a1, rc.y, rc.y + rc.h)],
+            (p) => map(p, LIFT_GROUT),
+            n,
+            B.rgb(col),
+          );
       });
 
       /* carreaux */
@@ -271,9 +261,9 @@ export function buildMeshes(input: MeshInput): MeshData[] {
     }
 
     /* ouvertures */
-    s.openings.forEach((o, ri) => {
-      if (frames) wallOpening(B, input, s, o, ri, frames, build?.pieces ?? [], room);
-      else floorOpening(B, s, o);
+    s.openings.forEach((op, ri) => {
+      if (frames) wallOpening(B, input, s, op, ri, frames, build?.pieces ?? [], room);
+      else floorOpening(B, s, op, o);
     });
   }
 
@@ -448,11 +438,11 @@ function wallOpening(
   }
 }
 
-function floorOpening(B: Builder, s: SurfaceSpec, o: OpeningSpec) {
-  const y0 = (s.height - o.sill - o.height) / 1000,
-    y1 = (s.height - o.sill) / 1000,
-    x0 = o.x / 1000,
-    x1 = (o.x + o.width) / 1000;
+function floorOpening(B: Builder, s: SurfaceSpec, o: OpeningSpec, origin: readonly [number, number]) {
+  const y0 = origin[1] + (s.height - o.sill - o.height) / 1000,
+    y1 = origin[1] + (s.height - o.sill) / 1000,
+    x0 = origin[0] + o.x / 1000,
+    x1 = origin[0] + (o.x + o.width) / 1000;
   if (o.type === 'tub')
     box(
       B,

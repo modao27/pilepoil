@@ -36,41 +36,63 @@ describe('murs pliés', () => {
   });
 });
 
-describe('pièce', () => {
+describe('pièce du plan', () => {
+  // pièce en L 4 m × 3 m (coin bas droit de 1,5 m × 1 m retiré), 2,5 m sous plafond
+  const outline: [number, number][] = [
+    [0, 0],
+    [4000, 0],
+    [4000, 2000],
+    [2500, 2000],
+    [2500, 3000],
+    [0, 3000],
+  ];
   const spec: ProjectSpec = {
     surfaces: [
-      surface({ width: 3000, height: 2000 }),
+      surface({ kind: 'floor', width: 4000, height: 3000 }),
+      surface({ width: 4000, height: 2000 }),
       surface({ width: 2000, height: 2000 }),
-      surface({ width: 3000, height: 2000 }),
-      surface({ kind: 'floor', width: 3000, height: 2000 }),
+      surface({ width: 1500, height: 2000 }),
     ],
     settings,
-    room: { length: 3000, width: 2000, walls: { A: 0, B: 1, C: 2, floor: 3 } },
+    room: null,
+  };
+  const shape = {
+    outline,
+    height: 2500,
+    walls: [1, 2, 3, null, null, null],
+    floor: 0,
+    floorOrigin: [100, 200] as [number, number],
   };
 
-  it('les murs se suivent autour du sol, normales vers l’intérieur', () => {
-    const lay = roomLayout(spec, 2500)!;
-    expect(lay.room).toEqual({ length: 3, width: 2, height: 2.5, missing: ['D'] });
+  it('chaque mur le long de son segment, normales vers l’intérieur ; murs nus en plâtre', () => {
+    const lay = roomLayout(spec, shape);
+    expect(lay.instances[0]).toEqual({ surface: 0, kind: 'floor', origin: [0.1, 0.2] });
     const walls = lay.instances.filter((i) => i.kind === 'wall');
+    expect(walls.map((w) => w.surface)).toEqual([1, 2, 3]);
     const end = (i: (typeof walls)[number]) => {
       const fr = i.frames.at(-1)!;
       return [fr.base[0] + fr.dir[0] * fr.len, fr.base[1] + fr.dir[1] * fr.len];
     };
     expect(end(walls[0]!)).toEqual(walls[1]!.frames[0]!.base);
     expect(end(walls[1]!)).toEqual(walls[2]!.frames[0]!.base);
-    const centre = [1.5, 1];
+    // point intérieur proche de chaque mur : du bon côté de la normale
     for (const w of walls) {
       const fr = w.frames[0]!;
-      const toCentre = [centre[0]! - fr.base[0], centre[1]! - fr.base[1]];
-      expect(toCentre[0]! * fr.n[0] + toCentre[1]! * fr.n[2]).toBeGreaterThan(0);
+      const mid = [fr.base[0] + (fr.dir[0] * fr.len) / 2, fr.base[1] + (fr.dir[1] * fr.len) / 2];
+      const inside = [mid[0]! + fr.n[0] * 0.1, mid[1]! + fr.n[2] * 0.1];
+      expect(inside[0]! > 0 && inside[0]! < 4 && inside[1]! > 0 && inside[1]! < 3).toBe(true);
+      expect(inside[0]! > 2.5 && inside[1]! > 2).toBe(false);
     }
+    expect(lay.room!.bare.map((b) => b.len)).toEqual([1, 2.5, 3]);
+    expect(lay.room!.height).toBe(2.5);
+    expect(lay.bounds).toEqual({ x: [0, 4], z: [0, 3], h: 2.5 });
   });
 
   it('caméra : cible au centre de la pièce, au-dessus pour la plongée', () => {
-    const lay = roomLayout(spec, 2500)!;
+    const lay = roomLayout(spec, shape);
     const c = cameraFor(frameOf(lay), 'haut');
-    expect(c.target[0]).toBeCloseTo(1.5, 12);
+    expect(c.target[0]).toBeCloseTo(2, 12);
     expect(c.position[1]).toBeGreaterThan(3);
-    expect(cameraFor(frameOf(surfaceLayout(spec, 3)), 'face').target[1]).toBe(0);
+    expect(cameraFor(frameOf(surfaceLayout(spec, 0)), 'face').target[1]).toBe(0);
   });
 });
