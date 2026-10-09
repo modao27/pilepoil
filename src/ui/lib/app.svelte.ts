@@ -30,7 +30,6 @@ export class AppState {
 
   /** Bibliothèques chargées par les modules ('tiles'…), pour `toSpec` de chaque module. */
   libraries = $state.raw<Libraries>({});
-  /** Données reprises de l'ancienne appli Calepinage sur cet appareil. */
 
   /** Aperçu en direct : seule la dernière demande de chaque module compte (docs/BOITE.md §6). */
   live!: ComputeClient;
