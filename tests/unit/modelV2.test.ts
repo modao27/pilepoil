@@ -9,64 +9,40 @@ import type { ToolModule } from '../../src/modules/types';
 import type { Project } from '../../src/state/model';
 import { reduceProject, type ProjectAction } from '../../src/state/project';
 import { FutureVersionError, migrateProject } from '../../src/storage/migrations';
-import { wallOnly } from './planFixtures';
-import { V1_ROOM, V1_WALL } from './fixtures/v1';
+import { planProject, rect, wallOnly } from './planFixtures';
 
-describe('migration v1 → v2 (documents figés)', () => {
-  it('mur seul : plan vide, carrelage remis à vide (pas de conversion), réglages et prix gardés', () => {
-    const { doc, changed } = migrateProject(V1_WALL);
-    expect(changed).toBe(true);
-    expect(doc).toEqual({
-      schemaVersion: 2,
-      id: 'p-mur',
-      name: 'Mur 300 × 240',
-      createdAt: 1700000000000,
-      updatedAt: 1700000500000,
-      plan: { rooms: [], passages: [] },
+/** Projet de salle de bain 240 × 180, carrelage activé sans surface. */
+const bathroom = (): Project => planProject([rect('sdb', 2400, 1800, { name: 'Salle de bain', height: 2500 })]);
+
+describe('migrations du projet', () => {
+  it('projet v1 (avant la boîte à outils) : refusé, sans conversion', () => {
+    expect(() => migrateProject({ schemaVersion: 1, id: 'x', surfaces: [], room: null })).toThrow(
+      /Migration manquante/,
+    );
+  });
+
+  it('données carrelage du schéma 1 : remises à vide, réglages et prix gardés', () => {
+    const p = bathroom();
+    const old = {
+      ...p,
       modules: {
         carrelage: {
-          schemaVersion: 2,
-          data: { rooms: {}, settings: V1_WALL.settings, prices: { 'glue|kg': 12.5 } },
+          schemaVersion: 1,
+          data: { surfaces: [{}], room: null, settings: { margin: 12 }, prices: { colle: 3 } },
         },
       },
-    });
-  });
-
-  it('pièce : une pièce rectangulaire du plan, nommée comme le projet, murs de 72 mm', () => {
-    const { doc } = migrateProject(V1_ROOM);
-    expect(doc.plan).toEqual({
-      rooms: [
-        {
-          id: 'p-sdb:plan:0',
-          name: 'Salle de bain',
-          outline: [
-            [0, 0],
-            [2400, 0],
-            [2400, 1800],
-            [0, 1800],
-          ],
-          walls: [1, 2, 3, 4].map((n) => ({ id: `p-sdb:plan:${n}`, thickness: 72 })),
-          obstacles: [],
-          openings: [],
-          height: 2500,
-          origin: [0, 0],
-        },
-      ],
-      passages: [],
+    };
+    const { doc, changed } = migrateProject(old);
+    expect(changed).toBe(true);
+    expect(doc.modules.carrelage).toMatchObject({
+      schemaVersion: 2,
+      data: { rooms: {}, settings: { margin: 12, reuseOffcuts: true }, prices: { colle: 3 } },
     });
     expect(validatePlan(doc.plan)).toEqual([]);
-    expect(carrelageView(doc)!.surfaces).toEqual([]);
-  });
-
-  it('déterministe et idempotente ; rien à carreler', () => {
-    const a = migrateProject(V1_ROOM).doc;
-    expect(migrateProject(V1_ROOM).doc).toEqual(a);
-    expect(migrateProject(a)).toEqual({ doc: a, changed: false });
-    expect(carrelage.toSpec(a, { tiles: [] })).toEqual({ errors: [{ code: 'carrelage/empty' }] });
   });
 
   it('données d’un module : version future refusée, module inconnu conservé', () => {
-    const v2 = migrateProject(V1_WALL).doc;
+    const v2 = bathroom();
     const future = { ...v2, modules: { carrelage: { schemaVersion: 9, data: {} } } };
     expect(() => migrateProject(future)).toThrow(FutureVersionError);
     const other = { ...v2, modules: { ...v2.modules, menuiserie: { schemaVersion: 4, data: { x: 1 } } } };
@@ -75,7 +51,7 @@ describe('migration v1 → v2 (documents figés)', () => {
 });
 
 describe('réducteur du projet', () => {
-  const p = migrateProject(V1_ROOM).doc;
+  const p = bathroom();
   const room = p.plan.rooms[0]!;
 
   it('aiguille plan, carrelage, renommage et groupes ; inchangé = même objet', () => {
@@ -137,7 +113,7 @@ describe('réducteur du projet', () => {
 
 describe('contrat du module carrelage', () => {
   it('create : le sol de la première pièce du plan, sinon rien', () => {
-    const p = migrateProject(V1_ROOM).doc;
+    const p = bathroom();
     const data = carrelage.create(p.plan);
     expect(carrelageView(withCarrelage(p, data))!.surfaces).toMatchObject([
       { kind: 'floor', width: 2400, height: 1800, name: 'Salle de bain, sol' },
@@ -158,7 +134,7 @@ describe('contrat du module carrelage', () => {
   });
 
   it('withCarrelage : même objet si les données sont les mêmes', () => {
-    const p = migrateProject(V1_WALL).doc;
+    const p = bathroom();
     expect(withCarrelage(p, carrelageView(p)! && (p.modules.carrelage!.data as never))).toBe(p);
   });
 });

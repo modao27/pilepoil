@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction, type StoreNames } from 'idb';
 import type { LibraryItem } from '../modules/types';
-import type { Photo, Pref, PrefKey, Project } from '../state/model';
+import { PROJECT_SCHEMA, type Photo, type Pref, type PrefKey, type Project } from '../state/model';
 
 /** Document d'un module rattaché à un projet (scénarios du carrelage) : typé par son module. */
 export interface ProjectRecord {
@@ -39,13 +39,25 @@ const UPGRADES: ((db: Db, tx: UpgradeTx) => void)[] = [
     db.createObjectStore('scenarios', { keyPath: 'id' }).createIndex('projectId', 'projectId');
     db.createObjectStore('prefs', { keyPath: 'key' });
   },
-  // v2 (S2) : bibliothèque de lames. Les projets passent en v2 à la lecture (migrations.ts).
+  // v2 (S2) : bibliothèque de lames.
   (db) => {
     const boards = db.createObjectStore('boards', { keyPath: 'id' });
     boards.createIndex('name', 'name');
     boards.createIndex('updatedAt', 'updatedAt');
   },
+  // v3 (C4) : projets v1 (avant la boîte à outils) retirés, sans conversion ; bibliothèques, photos et
+  // préférences gardées. Les anciens scénarios sont retirés à la lecture par le carrelage.
+  (_db, tx) => void purge(tx, 'projects', PROJECT_SCHEMA),
 ];
+
+/** Supprime les documents d'un magasin dont le schéma est antérieur à `min`. */
+async function purge(tx: UpgradeTx, store: 'projects', min: number): Promise<void> {
+  let c = await tx.objectStore(store).openCursor();
+  while (c) {
+    if (((c.value as { schemaVersion?: number }).schemaVersion ?? 0) < min) await c.delete();
+    c = await c.continue();
+  }
+}
 
 export const DB_VERSION = UPGRADES.length;
 
