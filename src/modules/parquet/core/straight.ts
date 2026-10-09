@@ -8,7 +8,7 @@ import { signedArea } from '../../../core/geometry/polygon';
 import type { Point, Polygon, Segment } from '../../../core/geometry/types';
 import { seededRandom } from '../../../core/hash';
 import { ringFromFrame, toFrame, type Frame } from './frame';
-import { components, keyhole, type Component } from './rings';
+import { components, keyhole, type Component } from '../../../core/geometry/rings';
 import type { BoardUse, LaidPiece, LayoutSpec, Offcut, ParquetWarning } from './types';
 
 const EPS = 1e-6;

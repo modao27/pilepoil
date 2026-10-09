@@ -93,8 +93,53 @@ Règles pour toutes les phases :
 - Ajoutés à la demande (2026-10-09) : croquis coté des coupes en biais, seuil tracé à la main,
   optimisation sous 2 s pour 100 m² de motif, choix de l'outil à la création d'un projet.
 
+## Carrelage bâti sur le plan commun
+
+Décidé le 2026-10-09 : **le plan est la seule source de la géométrie**. Le carrelage ne décrit plus ses
+propres surfaces ni sa pièce rectangulaire A–D : il carrèle des éléments du plan, le **sol d'une pièce**
+(polygone, obstacles) ou **un mur** (longueur du mur × hauteur de la pièce, portes et fenêtres du plan). Il
+garde ce qui lui est propre : carreaux, motif, zones, joint, hauteur carrelée, réservations (prises,
+baignoire, trappe), tableaux de fenêtre, plinthe, finitions. Carrelage et parquet partagent le même plan.
+
+Choix retenus :
+- un mur du plan = une surface de carrelage (plus de surface dépliée sur plusieurs murs) ;
+- l'application n'a pas encore d'utilisateurs : aucun ancien projet n'est converti, on repart d'une base
+  vide (nouvelle version de la base) ;
+- la parité avec `legacy/` porte sur le moteur, pour les surfaces rectangulaires (contour vide) ; les
+  nouvelles formes sont couvertes par des invariants et des cas chiffrés.
+
+### C1 — Moteur : surfaces de forme quelconque
+- `SurfaceSpec` reçoit un contour facultatif. Vide : calcul inchangé. Donné (sol en L, en U, mur en
+  biais) : chaque carreau est découpé par le contour avec `core/geometry/boolean` ; classement entier /
+  coupé / coupe fine, réemploi des chutes et coupes apparentes suivent.
+- Tests : sol en L avec poteau, mur en biais, invariants d'aire, propriétés (`fast-check`).
+- Fini quand : parité verte à 100 %, invariants verts sur des contours quelconques, aucun changement pour
+  une surface sans contour.
+
+### C2 — Modèle et état du carrelage sur le plan
+- Données du carrelage rangées par élément du plan : `rooms[roomId].floor`, `rooms[roomId].walls[wallId]`
+  (réglages propres au carrelage seulement). `toSpec` construit chaque surface depuis le plan (contour,
+  ouvertures, obstacles, hauteur). Avertissements du plan (pièce ou mur supprimé).
+- Achats, scénarios (« Comparer ») et résumé adaptés. Nouvelle version de la base, sans conversion.
+- Fini quand : un mur et un sol du plan se calculent sans ressaisie de cotes ; modifier le plan met le
+  carrelage à jour ; tests du modèle et de `toSpec` verts.
+
+### C3 — Interface du carrelage sur le plan
+- Écran Carrelage : pièces du plan, sol et murs à cocher pour les carreler. Éditeur d'une surface (mêmes
+  onglets qu'aujourd'hui), cotes en lecture seule avec lien vers le plan.
+- Assistant de démarrage rapide : dessine la pièce dans le plan puis ouvre le carrelage.
+- Vue de la pièce (plan 2D et 3D) depuis le polygone du plan ; Résultats et PDF adaptés.
+- Fini quand : parcours e2e « dessiner une pièce en L → carreler le sol et deux murs → acheter » sur
+  téléphone et ordinateur ; carrelage et parquet dans le même projet.
+
+### C4 — Nettoyage
+- Retirer l'import des données de l'ancienne appli, la copie de l'ancienne base `calepinage`, la
+  migration des projets v1 → v2 et les redirections des anciennes adresses. `legacy/calepinage.html` reste,
+  seulement comme référence de parité du moteur.
+- Docs : `BOITE.md`, `MODEL.md`, `carrelage/DOMAIN.md`, règle de parité reformulée dans `CLAUDE.md`.
+- Fini quand : `npm run release` vert, plus de code mort lié aux anciens formats.
+
 ## Décisions en attente
-- Liaison plan ↔ surfaces carrelage (après P5).
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 
 Décisions prises : voir le journal de `docs/BOITE.md` §11.

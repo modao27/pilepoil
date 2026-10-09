@@ -1,5 +1,7 @@
 import { EPS } from '../../../../core/constants';
+import { difference, intersection, regionArea } from '../../../../core/geometry/boolean';
 import { area, bbox, centroid, clipBox, clipRect, inset, onLine } from '../../../../core/geometry/polygon';
+import { components, insideRegion, keyhole } from '../../../../core/geometry/rings';
 import { openingRect, zoneCutouts } from '../layout/openings';
 import type { ZoneRect } from '../layout/zones';
 import { pattern } from '../patterns/registry';
@@ -94,6 +96,8 @@ export function buildZone(s: SurfaceSpec, z: ZoneSpec, zi: number, rc: ZoneRect,
           .filter((o) => o.x > EPS && o.x < rc.w - EPS)
           .sort((p, q) => p.x - q.x);
   const RZ = zoneCutouts(s.openings, s.height, rc);
+  // contour réel (sol en L, poteau, mur en biais), en repère zone
+  const OZ = s.outline?.map((r) => r.map((q): Point => [q[0] - rc.x, q[1] - rc.y])) ?? null;
 
   for (const cell of cells) {
     const tile = j > 0 ? inset(cell.p, j / 2) : cell.p;
@@ -127,6 +131,18 @@ export function buildZone(s: SurfaceSpec, z: ZoneSpec, zi: number, rc: ZoneRect,
       parts = np;
     }
     if (!parts.length) continue;
+    // hors du contour réel : découpe par booléens ; les morceaux entièrement dedans ne sont pas touchés
+    if (OZ) {
+      // un morceau qui touche le contour sans le dépasser reste exact (pas d'arrondi des booléens)
+      parts = parts.flatMap((p) =>
+        insideRegion(p, OZ) || regionArea(difference([p], OZ)) < 0.5
+          ? [p]
+          : components(intersection([p], OZ))
+              .map(keyhole)
+              .filter((q) => q.length >= 3 && area(q) > 1),
+      );
+      if (!parts.length) continue;
+    }
     let groupsP: Polygon[][] = [parts];
     if (FX.length) {
       const bs = [-Infinity, ...FX.map((o) => o.x), Infinity];
@@ -139,7 +155,7 @@ export function buildZone(s: SurfaceSpec, z: ZoneSpec, zi: number, rc: ZoneRect,
       }
     }
     for (const gp of groupsP) {
-      const piece = buildPiece(s, z, zi, rc, cell, tile, tA, gp, FX, RZ, toW, toL);
+      const piece = buildPiece(s, z, zi, rc, cell, tile, tA, gp, FX, RZ, OZ, toW, toL);
       if (!piece) continue;
       list.push(piece);
       const k = stats[cell.kind] ?? (stats[cell.kind] = { full: 0, cut: 0, tA });
@@ -161,6 +177,7 @@ function buildPiece(
   parts: Polygon[],
   FX: CornerSpec[],
   RZ: ReturnType<typeof zoneCutouts>,
+  OZ: Polygon[] | null,
   toW: (x: number, y: number) => Point,
   toL: (x: number, y: number) => Point,
 ): RawPiece | null {
@@ -292,6 +309,14 @@ function buildPiece(
             ? 'B'
             : null;
   const W2 = (q: Point): Point => [q[0] + rc.x, q[1] + rc.y];
+  /** Arête le long du contour réel (bord de pièce, poteau, pente). */
+  const onOutline = (A: Point, B: Point): boolean =>
+    !!OZ?.some((r) =>
+      r.some((C, m) => {
+        const D = r[(m + 1) % r.length]!;
+        return onLine(A, C, D) && onLine(B, C, D);
+      }),
+    );
 
   let notch = false,
     atFold = false;
@@ -318,6 +343,7 @@ function buildPiece(
       const zs = zside(A, B);
       if (!zs) {
         if (ts) req[ts] = true;
+        else if (onOutline(A, B) && !full && !s.outlineHidden) vis.push([W2(A), W2(B)]);
       } else if (!full && !ts && !hidden(zs)) vis.push([W2(A), W2(B)]);
     }
   });

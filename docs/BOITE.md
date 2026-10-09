@@ -330,3 +330,4 @@ seul le parquet s'en sert au début.
 | 2026-10-09 | Nouveau projet : choix de l'outil à `#/new` ; un outil sans assistant crée un projet vide et ouvre le plan | §2, §8 |
 | 2026-10-09 | Base 3D commune `src/render/scene3d` et vue `ui/components/Scene3DView`, extraites du carrelage (rendu inchangé) | P5 |
 | 2026-10-09 | Base PDF commune `src/ui/lib/pdf/doc.ts` et découpe de barres `src/core/cutting/bars.ts` | P4 |
+| 2026-10-09 | Carrelage bâti sur le plan commun : sols et murs du plan, un mur = une surface, pas de conversion des anciens projets, parité du moteur sur les rectangles | `PLAN.md` C1–C4 |
