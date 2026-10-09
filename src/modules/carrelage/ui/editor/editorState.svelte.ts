@@ -15,6 +15,7 @@ import { reduceProject, type ProjectAction } from '../../../../state/project';
 import { createSaver, type Saver } from '../../../../storage/autosave';
 import { app } from '../../../../ui/lib/app.svelte';
 import { toast } from '../../../../ui/lib/toasts.svelte';
+import { undoAction } from '../../../../ui/lib/undoToast';
 
 export type Tab = 'tile' | 'pattern' | 'zones' | 'openings' | 'finish';
 
@@ -156,7 +157,7 @@ export class EditorState {
     if (this.surface.zones.length < 2) return;
     this.dispatch({ type: 'carrelage/zone/remove', surfaceId: this.surface.id, zoneId: this.zone.id });
     this.select({ zone: Math.max(0, this.zoneIndex - 1) });
-    toast('Zone supprimée.', { action: { label: 'Annuler', run: () => this.store.undo() } });
+    toast('Zone supprimée.', { action: undoAction(this.store) });
   }
 
   moveZone(from: number, to: number): void {
@@ -253,7 +254,7 @@ export class EditorState {
     if (!o || o.source === 'plan') return;
     this.dispatch({ type: 'carrelage/reservation/remove', surfaceId: this.surface.id, reservationId: o.id });
     this.select({ opening: -1 });
-    toast('Ouverture supprimée.', { action: { label: 'Annuler', run: () => this.store.undo() } });
+    toast('Ouverture supprimée.', { action: undoAction(this.store) });
   }
 
   /* ---------- optimisation ---------- */
@@ -288,7 +289,7 @@ export class EditorState {
         a = res.after;
       toast(
         `Départ optimisé. Carreaux ${b.needed} → ${a.needed}, coupes fines ${b.thin} → ${a.thin}, coupes apparentes ${b.vis} → ${a.vis}.`,
-        { action: actions.length ? { label: 'Annuler', run: () => this.store.undo() } : undefined, timeout: 8000 },
+        { action: actions.length ? undoAction(this.store) : undefined, timeout: 8000 },
       );
     } catch (e) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) toast('Optimisation impossible.', { tone: 'error' });

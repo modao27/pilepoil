@@ -15,6 +15,7 @@ import { createProjectStore, type ProjectStore } from '../../state/store';
 import { createSaver, type Saver } from '../../storage/autosave';
 import { app } from '../lib/app.svelte';
 import { toast } from '../lib/toasts.svelte';
+import { undoAction } from '../lib/undoToast';
 
 const newId = (): Id => crypto.randomUUID();
 
@@ -148,7 +149,7 @@ export class PlanEditorState {
     if (!r) return;
     this.dispatch({ type: 'plan/room/remove', roomId: id });
     this.sel = null;
-    toast(`Pièce « ${r.name} » supprimée.`, { action: { label: 'Annuler', run: () => this.undo() } });
+    toast(`Pièce « ${r.name} » supprimée.`, { action: undoAction(this.store) });
   }
 
   /** Nom par défaut d'une nouvelle pièce : « Pièce 2 »… */

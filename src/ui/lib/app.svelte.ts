@@ -13,6 +13,11 @@ import { upsertItem } from './library';
 import { DEFAULT_PALETTE } from './palette';
 import { createWorkerClient, type ComputeClient } from '../../workers/client';
 import { toast } from './toasts.svelte';
+import { canUndo } from '../../state/undo';
+
+export const SAVE_FAILED =
+  'Enregistrement impossible : stockage plein ou indisponible. Vos changements sont gardés ici ; réessayez.';
+export const UNDO_STALE = 'Impossible d’annuler : le projet a été modifié depuis.';
 
 export type Theme = 'auto' | 'light' | 'dark';
 
@@ -79,6 +84,36 @@ export class AppState {
     await repo.setPref(this.db, 'lastProjectId', p.id);
   }
 
+  /**
+   * Enregistre ; en cas d'échec, le dit avec « Réessayer » et renvoie false (l'appelant garde la saisie et rend
+   * la main). À utiliser partout hors des éditeurs (qui ont leur enregistrement différé).
+   */
+  async trySaveProject(p: Project): Promise<boolean> {
+    try {
+      await this.saveProject(p);
+      return true;
+    } catch {
+      toast(SAVE_FAILED, {
+        tone: 'error',
+        timeout: null,
+        action: { label: 'Réessayer', run: () => void this.trySaveProject(p) },
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Annulation d'un changement enregistré hors d'un éditeur : rétablit `before` seulement si le projet est
+   * encore `after` ; sinon le dit et n'écrase rien.
+   */
+  async restoreIfUnchanged(after: Project, before: Project): Promise<boolean> {
+    if (!canUndo(after, this.project(after.id))) {
+      toast(UNDO_STALE, { tone: 'error' });
+      return false;
+    }
+    return this.trySaveProject({ ...before, updatedAt: Date.now() });
+  }
+
   async duplicateProject(id: Id): Promise<Project | null> {
     const p = this.project(id);
     if (!p) return null;
@@ -90,8 +125,7 @@ export class AppState {
       createdAt: now,
       updatedAt: now,
     };
-    await this.saveProject(copy);
-    return copy;
+    return (await this.trySaveProject(copy)) ? copy : null;
   }
 
   /** Suppression annulable pendant quelques secondes. */

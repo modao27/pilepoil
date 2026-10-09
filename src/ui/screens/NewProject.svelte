@@ -31,8 +31,7 @@
         plan,
         modules: { [m.id]: { schemaVersion: m.schemaVersion, data: m.create(plan) } },
       };
-      await app.saveProject(p);
-      go({ name: 'plan', id: p.id });
+      if (await app.trySaveProject(p)) go({ name: 'plan', id: p.id });
     } finally {
       busy = false;
     }

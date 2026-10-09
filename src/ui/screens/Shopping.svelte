@@ -38,9 +38,10 @@
     const value = parsePrice(text);
     const next = reduceProject(p, m.priceAction(l.key, value));
     if (next === p) return;
-    await app.saveProject({ ...next, updatedAt: Date.now() });
+    const after = { ...next, updatedAt: Date.now() };
+    if (!(await app.trySaveProject(after))) return;
     toast(value == null ? `Prix de « ${l.label} » effacé.` : `Prix de « ${l.label} » enregistré.`, {
-      action: { label: 'Annuler', run: () => void app.saveProject({ ...p, updatedAt: Date.now() }) },
+      action: { label: 'Annuler', run: () => void app.restoreIfUnchanged(after, p) },
     });
   }
 

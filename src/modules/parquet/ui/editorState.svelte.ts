@@ -9,6 +9,7 @@ import { createProjectStore, type ProjectStore } from '../../../state/store';
 import { createSaver, type Saver } from '../../../storage/autosave';
 import { app } from '../../../ui/lib/app.svelte';
 import { toast } from '../../../ui/lib/toasts.svelte';
+import { undoAction } from '../../../ui/lib/undoToast';
 import { SupersededError } from '../../../workers/client';
 import type { Board } from '../core/board';
 import { METHOD_BY_KIND, RULES_BY_KIND } from '../core/defaults';
@@ -107,7 +108,7 @@ export class ParquetEditorState {
         patch: { offset: res.offset, seed: res.seed },
       });
       toast(`Départ optimisé : ${res.before.boards} → ${res.after.boards} lames.`, {
-        action: { label: 'Annuler', run: () => this.store.undo() },
+        action: undoAction(this.store),
         timeout: 8000,
       });
     } catch (e) {

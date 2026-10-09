@@ -87,9 +87,10 @@
     const s = scen[slot];
     confirm = null;
     if (!s) return;
-    const prev = await carrelage.loadScenario(s);
+    const done = await carrelage.loadScenario(s);
+    if (!done) return;
     toast(`Scénario « ${s.name} » chargé.`, {
-      action: prev ? { label: 'Annuler', run: () => void carrelage.restoreProject(prev) } : undefined,
+      action: { label: 'Annuler', run: () => void app.restoreIfUnchanged(done.after, done.before) },
     });
   }
 

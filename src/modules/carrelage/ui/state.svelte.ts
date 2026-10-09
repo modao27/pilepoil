@@ -132,7 +132,7 @@ export class CarrelageState {
     if (!p) return;
     const price: Action = { type: 'carrelage/price', key, value };
     const next = reduceProject(p, price);
-    if (next !== p) await app.saveProject({ ...next, updatedAt: Date.now() });
+    if (next !== p) await app.trySaveProject({ ...next, updatedAt: Date.now() });
   }
 
   /* ---------- scénarios A/B ---------- */
@@ -172,20 +172,16 @@ export class CarrelageState {
   /**
    * Remet les données carrelage du projet dans l'état du scénario (surfaces, pièce, réglages, prix ; nom,
    * identité, plan et autres modules conservés).
-   * Les carreaux du scénario absents de la bibliothèque y sont remis. Renvoie l'état remplacé (annulation).
+   * Les carreaux du scénario absents de la bibliothèque y sont remis. Renvoie l'état d'avant et d'après (pour
+   * l'annulation), null si rien n'a été enregistré.
    */
-  async loadScenario(s: Scenario): Promise<Project | null> {
+  async loadScenario(s: Scenario): Promise<{ before: Project; after: Project } | null> {
     const p = app.project(s.projectId);
-    if (!p) return null;
-    for (const t of s.snapshot.tiles) if (!this.tile(t.id)) this.putTile(t);
     const data = carrelageData(s.snapshot.project);
-    if (data) await app.saveProject({ ...withCarrelage(p, data), updatedAt: Date.now() });
-    return p;
-  }
-
-  /** Rétablit un projet tel quel (annulation d'un chargement de scénario). */
-  async restoreProject(p: Project): Promise<void> {
-    await app.saveProject({ ...p, updatedAt: Date.now() });
+    if (!p || !data) return null;
+    for (const t of s.snapshot.tiles) if (!this.tile(t.id)) this.putTile(t);
+    const after = { ...withCarrelage(p, data), updatedAt: Date.now() };
+    return (await app.trySaveProject(after)) ? { before: p, after } : null;
   }
 }
 
