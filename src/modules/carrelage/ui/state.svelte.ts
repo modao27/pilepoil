@@ -31,6 +31,7 @@ import type { Action } from '../state/actions';
 
 const MODULE = 'carrelage';
 const TILES = 'tiles';
+const SCENARIO_FAILED = 'Scénario non enregistré : stockage plein ou indisponible. Réessayez.';
 
 export class CarrelageState {
   private db!: Db;
@@ -144,8 +145,11 @@ export class CarrelageState {
     return listScenarios(this.db, projectId);
   }
 
-  /** Enregistre l'état actuel du projet dans l'emplacement A ou B (copie figée avec ses carreaux). */
-  async saveScenario(p: Project, slot: 'A' | 'B', name: string, metrics: Metrics | null): Promise<Scenario> {
+  /**
+   * Enregistre l'état actuel du projet dans l'emplacement A ou B (copie figée avec ses carreaux). false : échec
+   * signalé, avec « Réessayer ».
+   */
+  async saveScenario(p: Project, slot: 'A' | 'B', name: string, metrics: Metrics | null): Promise<boolean> {
     const view = carrelageView(p);
     const used = view ? usedTileIds(view) : null;
     const s: Scenario = {
@@ -159,17 +163,20 @@ export class CarrelageState {
       thumbnailId: null,
       createdAt: Date.now(),
     };
-    if (await saveScenario(this.db, s)) app.collectPhotos();
-    return s;
+    return app.tryWrite(async () => {
+      if (await saveScenario(this.db, s)) app.collectPhotos();
+    }, SCENARIO_FAILED);
   }
 
-  async renameScenario(s: Scenario, name: string): Promise<void> {
-    await saveScenario(this.db, { ...s, name });
+  renameScenario(s: Scenario, name: string): Promise<boolean> {
+    return app.tryWrite(() => saveScenario(this.db, { ...s, name }), SCENARIO_FAILED);
   }
 
-  async deleteScenario(s: Scenario): Promise<void> {
-    await deleteScenario(this.db, s.id);
-    app.collectPhotos();
+  deleteScenario(s: Scenario): Promise<boolean> {
+    return app.tryWrite(async () => {
+      await deleteScenario(this.db, s.id);
+      app.collectPhotos();
+    }, SCENARIO_FAILED);
   }
 
   /**

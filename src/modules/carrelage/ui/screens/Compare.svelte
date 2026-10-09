@@ -63,8 +63,8 @@
   async function save(slot: 'A' | 'B') {
     if (!project || !current) return;
     const name = scen[slot]?.name || `Scénario ${slot}`;
-    await carrelage.saveScenario(app.project(id)!, slot, name, current.metrics);
-    toast(`État actuel enregistré dans le scénario ${slot}.`);
+    if (await carrelage.saveScenario(app.project(id)!, slot, name, current.metrics))
+      toast(`État actuel enregistré dans le scénario ${slot}.`);
     version++;
   }
 
