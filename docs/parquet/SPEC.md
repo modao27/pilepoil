@@ -28,10 +28,12 @@ Vocabulaire : « point de Hongrie » = chevron (extrémités en biais, joints al
 ## 2. Données du module
 
 ```ts
-// src/modules/parquet/state/model.ts
+// src/modules/parquet/state/model.ts (schéma 4)
+// Les pièces d'une pose sont ses zones de sol dans le projet (`project.zones`, docs/NAVIGATION.md §4) ; son nom
+// est dans `project.poses`. Le module ne garde que les réglages de chaque pose.
 export interface ParquetData {
-  /** Une pose par groupe de pièces posées en continu. */
-  layouts: Layout[];
+  /** Réglages de chaque pose de parquet du projet, par identifiant de pose. */
+  poses: Record<Id, ParquetPose>;
   settings: ParquetSettings;
   accessories: Accessories;
   prices: Record<string, number>;
@@ -39,11 +41,7 @@ export interface ParquetData {
   worksite: { resultHash: string; done: string[] } | null;
 }
 
-export interface Layout {
-  id: Id;
-  name: string;
-  /** Pièces du plan couvertes par cette pose (continuité entre elles via les passages). */
-  rooms: Id[];
+export interface ParquetPose {
   boardId: Id;                       // lame de la bibliothèque
   pattern: Pattern;
   /** Degrés ; 0 = lames parallèles au mur de référence. */
@@ -57,10 +55,11 @@ export interface Layout {
   rules: LayingRules;
   /** Seuils posés par l'utilisateur (fractionnement), segments dans le repère du plan. */
   breaks: Segment[];
-  /** Zone de la pose : demi-plans qui la limitent (poses séparées dans une même pièce, schéma 2). */
-  zone: { line: Segment; side: 1 | -1 }[];
   seed: number;
 }
+
+// Pose vue par l'éditeur et les résultats (state/poses.ts, layoutsOf) : réglages + id, nom, pièces, zones.
+export interface Layout extends ParquetPose { id: Id; name: string; rooms: Id[]; zones: Zone[] }
 
 export type Pattern =
   | { kind: 'random-stagger' }                       // coupe perdue
@@ -161,7 +160,7 @@ ou clouée désactive les alertes de fractionnement et de passage. « Sans objet
 ```ts
 // src/modules/parquet/core/types.ts
 export interface ParquetSpec {
-  layouts: LayoutSpec[];             // une par Layout, pièces résolues depuis le plan
+  layouts: LayoutSpec[];             // une par pose, pièces résolues depuis ses zones et le plan
   /** marginPct résolu par toSpec (jamais null ici). */
   settings: ParquetSettings & { marginPct: number };
   accessories: Accessories;
@@ -170,7 +169,11 @@ export interface ParquetSpec {
 /** Toutes les coordonnées sont dans le repère du plan : `toSpec` applique l'origine de chaque pièce. */
 export interface LayoutSpec {
   id: string;
-  rooms: { id: string; outline: Polygon; obstacles: Polygon[]; openings: WallOpeningSpec[] }[];
+  rooms: {
+    id: string; outline: Polygon; obstacles: Polygon[]; openings: WallOpeningSpec[];
+    /** Lignes de la zone de la pose dans cette pièce (repère du plan) ; vide : pièce entière. */
+    bounds: { line: Segment; side: 1 | -1 }[];
+  }[];
   /** segment = ouverture côté a ; depth = épaisseur du mur traversé par le passage. */
   passages: { id: string; a: string; b: string; segment: Segment; width: number; depth: number }[];
   board: BoardSpec;
