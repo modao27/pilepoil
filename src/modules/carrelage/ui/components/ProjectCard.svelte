@@ -130,7 +130,7 @@
     border-color: var(--field-border);
   }
   .card:focus-within {
-    outline: 3px solid var(--accent);
+    outline: 3px solid var(--color-focus);
     outline-offset: 2px;
   }
   .thumb {

@@ -77,7 +77,7 @@ le plan coté. Le reste reste sobre.
 --color-bg        ivoire #FAF1E9          fond         (sombre #182121)
 --color-surface   #FFFFFF                 plan, cartes (sombre charbon #252D2D)
 --color-text      charbon #252D2D         texte        (sombre ivoire)
---color-text-muted #5C6666                texte secondaire, jamais sur sauge (4,49:1)
+--color-text-muted #5C6666                texte secondaire, jamais sur sauge (4,49:1) ; sélection : --color-selected-bg
 --color-border    #C9D3CE                 séparateurs seulement ; champs : --color-field-border (≥ 3:1)
 --color-primary   pétrole #174F50         action, sélection (sombre #6FB0AB)
 --color-accent    terracotta #D17A59      aplats, jamais en texte → --color-accent-text #A4502F

@@ -72,12 +72,12 @@
     border-color: transparent;
   }
   .danger {
-    color: var(--thin-ink);
-    border-color: var(--thin);
+    color: var(--color-error);
+    border-color: var(--color-error);
   }
   .danger:hover {
-    background: var(--thin-soft);
-    border-color: var(--thin);
+    background: var(--color-error-bg);
+    border-color: var(--color-error);
   }
   .btn:disabled {
     opacity: 0.5;

@@ -269,18 +269,18 @@
     cursor: crosshair;
   }
   .draft {
-    stroke: var(--thin);
+    stroke: var(--color-error);
     stroke-width: 4px;
     stroke-dasharray: 8 6;
     vector-effect: non-scaling-stroke;
     pointer-events: none;
   }
   .draft-dot {
-    fill: var(--thin);
+    fill: var(--color-error);
     pointer-events: none;
   }
   .plan:focus-visible {
-    outline: 3px solid var(--accent);
+    outline: 3px solid var(--color-focus);
     outline-offset: -3px;
   }
   .room {

@@ -180,16 +180,23 @@
   --status-reuse: #7cc4a0;
   --status-thin: var(--pp-terracotta);
   --scrim: rgb(37 45 45 / 0.45);
+  /* Fond d'un élément choisi : sauge éclairci, le texte secondaire n'atteint que 4,49:1 sur sauge pur. */
+  --color-selected-bg: #e3ece6;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --color-field-border: #7f8c88;
     --scrim: rgb(0 0 0 / 0.6);
+    --color-selected-bg: var(--color-info-bg);
   }
 }
 :root[data-theme='dark'] {
   --color-field-border: #7f8c88;
   --scrim: rgb(0 0 0 / 0.6);
+  --color-selected-bg: var(--color-info-bg);
+  /* ombres sombres : absentes du bloc data-theme de l'identité, présentes dans son bloc media */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* Anciens noms (système « plan de chantier »), gardés comme alias le temps de la transition.
@@ -203,7 +210,7 @@
   --field-border: var(--color-field-border);
   --accent: var(--color-primary);
   --on-accent: var(--color-on-primary);
-  --accent-soft: var(--color-info-bg);
+  --accent-soft: var(--color-selected-bg);
   --cut: var(--status-cut);
   --reuse: var(--status-reuse);
   --thin: var(--status-thin);
