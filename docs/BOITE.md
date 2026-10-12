@@ -50,6 +50,10 @@ export interface ToolModule<Data, Spec, Result> {
    *  calcul avec leur portée), section de l'écran Résultats commun, pages PDF et maillages 3D (repère du plan,
    *  sans l'enveloppe commune `render/scene3d/envelope`), tout chargé à la demande. */
   results(): Promise<ModuleResults<Result>>;
+  /** Réducteur, entrée moteur, achats, résumé : chargés à la demande (`ModuleLogic`) ; la coquille attend
+   *  `loadModules()` (registre) avant d'ouvrir un projet. Le reste de ce contrat est le manifeste, chargé au
+   *  démarrage. */
+  logic(): Promise<ModuleLogic<Data, Spec, Result, Action>>;
   /** Migrations des données du module, par version. */
   migrations: Record<number, (doc: unknown) => unknown>;
   /** Écrans, chargés à la demande. */
@@ -333,5 +337,6 @@ seul le parquet s'en sert au début.
 | 2026-10-09 | N1 : zones (surface coupée par des lignes) et poses dans le projet (v3, base v4 sans conversion), règles dans `core/coverage`, réglages des modules par pose (carrelage schéma 3, parquet schéma 4) ; pose de carrelage limitée à une surface jusqu'à N2 ; « bande » pour l'ancienne zone du carrelage ; limites de zone du parquet par pièce dans le moteur | `NAVIGATION.md` §4, `PLAN.md` N1 |
 | 2026-10-09 | N2 : nouveau projet par le plan (projet enregistré avec sa première pièce, revêtements après le plan) ; poses de carrelage continues (sols reliés, murs qui se suivent, hauteur carrelée par mur), étendue `continuous` ; continuer une pose voisine par une fenêtre de choix | `NAVIGATION.md` §5–6, `PLAN.md` N2 |
 | 2026-10-12 | N3 : vue globale et écran Pièce communs (revêtir, continuer, découper, changer de revêtement, retirer en séparant la pose) ; contrat `poseHref` ; écran Carrelage remplacé ; épaisseur des murs par défaut (Réglages) et par pièce, tableaux à l'épaisseur du mur ; pièce contre une autre et porte vers la voisine (`core/plan/neighbors`) | `NAVIGATION.md` §3–6, `PLAN.md` N3 |
+| 2026-10-12 | N5, premier chargement : contrat scindé en manifeste (identité, écrans, bibliothèque, migrations, chargé au démarrage) et `logic()` (réducteur, entrée moteur, achats, chargée à la demande, attendue par `loadModules()` avant tout écran de projet) ; écrans Projet, Réglages, Démo chargés à la demande ; jsPDF et l'aide de préchargement de Vite séparés (`build.rolldownOptions.output.advancedChunks`) : jsPDF n'est plus téléchargé au démarrage ; service worker enregistré après `load`. Démarrage 87 → 38 ko gzip | §2 |
 | 2026-10-12 | N5 : écran Résultats commun à trois niveaux (pose, pièce, projet) au lieu des résultats par module ; contrat `results` (rapport, section, PDF, 3D) ; enveloppe 3D commune (murs nus pleine hauteur, embrasures, sol brut), murs bas du parquet retirés ; prix modifiables seulement sur l'écran Achats ; dossier du projet en PDF (plan d'ensemble, résumé par pièce, poses, achats) ; anciennes adresses `m/<module>/results` redirigées | `NAVIGATION.md` §5, §7, `PLAN.md` N5 |
 | 2026-10-12 | N4 : coquille commune du calepinage (`ui/calepinage`, étapes Produit, Pose, Découpage, Finitions, Avancé en onglets) pour le carrelage et le parquet ; poses du parquet créées et retirées sur l'écran Pièce ; zones avec contour (`area`, `holes`), découpe d'un sol par un polygone aimanté ; tests de durée isolés (projet vitest `perf`) | `NAVIGATION.md` §5–6, `PLAN.md` N4, `parquet/SPEC.md` §3 |

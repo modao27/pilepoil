@@ -46,7 +46,8 @@ class PwaState {
     // déjà contrôlée par un service worker : le cache est complet depuis une visite précédente
     this.offlineReady = !!navigator.serviceWorker.controller;
     this.apply = registerSW({
-      immediate: true,
+      // après l'événement load : le pré-cache (1,8 Mo) ne concurrence pas le premier affichage
+      immediate: false,
       onNeedRefresh: () => {
         this.updateReady = true;
         toast('Une nouvelle version est disponible.', {

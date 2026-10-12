@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { orphanZones } from '../../src/core/coverage';
 import { area, pointInPolygon, rectPoly, signedArea } from '../../src/core/geometry/polygon';
 import type { PlanAction } from '../../src/core/plan/reduce';
-import { module as carrelage } from '../../src/modules/carrelage';
+import { module as carrelageManifest } from '../../src/modules/carrelage';
+import { logic as carrelageLogic } from '../../src/modules/carrelage/logic';
 import { computeProject, type ProjectSpec } from '../../src/modules/carrelage/core';
 import { createPoseSettings, createReservation, createTile } from '../../src/modules/carrelage/state/factories';
 import { restoreTiling, wallHeightCuts } from '../../src/modules/carrelage/state/poses';
@@ -16,6 +17,9 @@ import { roomCorners } from '../../src/modules/carrelage/state/surfaces';
 import type { Project } from '../../src/state/model';
 import { reduceProject } from '../../src/state/project';
 import { lShape, rect, tiledProject, tilePose, view, withOpening } from './planFixtures';
+
+/** Le module tel que le registre le donne une fois sa logique chargée. */
+const carrelage = { ...carrelageManifest, ...carrelageLogic };
 
 const tile = createTile({ length: 300, width: 300 });
 const spec = (p: Project): ProjectSpec => toProjectSpec(view(p), [tile]).spec;

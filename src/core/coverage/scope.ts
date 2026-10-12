@@ -3,7 +3,7 @@
  * pièces et quels murs elle touche. Pur ; unités : mm.
  */
 import type { Plan } from '../plan/types';
-import { zoneArea } from './geometry';
+import { zoneArea, zoneBox } from './geometry';
 import type { Pose, Zone } from './types';
 
 type Id = string;
@@ -38,9 +38,28 @@ export function scopeRooms(plan: Plan, cov: Covered, scope: ResultScope): Id[] {
   return plan.rooms.filter((r) => used.has(r.id)).map((r) => r.id);
 }
 
-/** Murs revêtus dans la portée : dessinés par leur module, pas par l'enveloppe de la 3D. */
-export function scopeWalls(cov: Covered, scope: ResultScope): Set<Id> {
-  return new Set(scopeZones(cov, scope).flatMap((z) => (z.surface.wall ? [z.surface.wall] : [])));
+/**
+ * Parties de murs revêtues dans la portée, par mur : intervalles le long du mur (mm, triés, fusionnés). Le module
+ * les dessine du sol au plafond (plâtre compris) ; l'enveloppe de la 3D dessine le reste du mur.
+ */
+export function scopeWallSpans(plan: Plan, cov: Covered, scope: ResultScope): Map<Id, [number, number][]> {
+  const out = new Map<Id, [number, number][]>();
+  for (const z of scopeZones(cov, scope)) {
+    if (!z.surface.wall) continue;
+    const b = zoneBox(plan, z);
+    if (!b) continue;
+    out.set(z.surface.wall, [...(out.get(z.surface.wall) ?? []), [b[0], b[1]]]);
+  }
+  for (const [w, spans] of out) {
+    const merged: [number, number][] = [];
+    for (const s of spans.sort((x, y) => x[0] - y[0])) {
+      const last = merged.at(-1);
+      if (last && s[0] <= last[1] + 1) last[1] = Math.max(last[1], s[1]);
+      else merged.push([s[0], s[1]]);
+    }
+    out.set(w, merged);
+  }
+  return out;
 }
 
 /** La pose sort-elle de la portée (zones dans d'autres pièces) ? */

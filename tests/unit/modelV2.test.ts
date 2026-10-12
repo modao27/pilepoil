@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { validatePlan } from '../../src/core/plan/validate';
 import { rectRoom } from '../../src/core/plan/factories';
-import { module as carrelage } from '../../src/modules/carrelage';
+import { module as carrelageManifest } from '../../src/modules/carrelage';
+import { logic as carrelageLogic } from '../../src/modules/carrelage/logic';
 import { computeProject } from '../../src/modules/carrelage/core';
 import { carrelageView, withCarrelage } from '../../src/modules/carrelage/state/data';
 import { createTile } from '../../src/modules/carrelage/state/factories';
@@ -10,6 +11,9 @@ import type { Project } from '../../src/state/model';
 import { reduceProject, type ProjectAction } from '../../src/state/project';
 import { FutureVersionError, migrateProject } from '../../src/storage/migrations';
 import { planProject, rect, wallOnly } from './planFixtures';
+
+/** Le module tel que le registre le donne une fois sa logique chargée. */
+const carrelage = { ...carrelageManifest, ...carrelageLogic };
 
 /** Projet de salle de bain 240 × 180, carrelage activé sans surface. */
 const bathroom = (): Project => planProject([rect('sdb', 2400, 1800, { name: 'Salle de bain', height: 2500 })]);

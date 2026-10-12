@@ -9,8 +9,9 @@ import type { Id, Project } from '../../../state/model';
 import type { CarrelagePose, ProjectSettings, Surface } from './model';
 import { resolveSurfaces } from './surfaces';
 
-export const CARRELAGE_ID = 'carrelage';
-export const CARRELAGE_SCHEMA = 3;
+import { CARRELAGE_ID, CARRELAGE_SCHEMA } from './ids';
+
+export { CARRELAGE_ID, CARRELAGE_SCHEMA };
 
 export interface CarrelageData {
   /** Réglages de chaque pose de carrelage du projet ; clé = identifiant de la pose. */

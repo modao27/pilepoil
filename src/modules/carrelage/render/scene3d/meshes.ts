@@ -4,6 +4,7 @@
  * Lit les résultats du moteur, n'écrit rien.
  */
 import { intersection } from '../../../../core/geometry/boolean';
+import { pointInPolygon } from '../../../../core/geometry/polygon';
 import { components } from '../../../../core/geometry/rings';
 import { Color, ShapeUtils, Vector2 } from 'three';
 import {
@@ -11,6 +12,7 @@ import {
   type OpeningSpec,
   type Piece,
   type Point,
+  type Polygon,
   type ProjectResult,
   type ProjectSpec,
   type SurfaceSpec,
@@ -30,6 +32,11 @@ export interface MeshInput {
   photo: (surface: number, zone: number) => { url: string; flip: boolean } | null;
   /** false : pas de sol de contexte (l'enveloppe commune des pièces le dessine). Défaut : true. */
   context?: boolean;
+  /**
+   * Sol d'une pose sur plusieurs pièces montré dans une seule (résultats d'une pièce), par indice de surface :
+   * `region` (repère de la surface) borne la chape et les joints, `keep` garde les carreaux de la pièce.
+   */
+  clip?: Readonly<Record<number, { region: Polygon[]; keep: (pc: Piece) => boolean }>>;
 }
 
 /** Hauteurs et couleurs reprises de legacy. */
@@ -234,16 +241,21 @@ export function buildMeshes(input: MeshInput): MeshData[] {
         const below = (fr?.bottom ?? 0) * 1000;
         ext = [x0, -Math.max(0, room.height * 1000 - s.height - below), x1, s.height + below];
       } else ext = [fr!.k === 0 ? x0 - 1200 : x0, -600, fr!.last ? x1 + 1200 : x1, s.height];
-      // sol d'une pièce du plan : chape au contour, obstacles en trous
+      // sol d'une pièce du plan : chape au contour, obstacles en trous ; rognée à la pièce montrée (`clip`)
       const support: Point[][] = s.outline && floor ? s.outline : [rect(...ext)];
-      B.shape(
-        B.mesh(floor ? 'floorbase' : 'plaster'),
-        support[0]!,
-        [...support.slice(1), ...holesIn(s, ext[0], ext[2], ext[1], ext[3])],
-        (p) => map(p),
-        n,
-        B.rgb(floor ? FLOOR_BASE : PLASTER),
-      );
+      const cut = floor ? input.clip?.[inst.surface] : undefined;
+      const supports = cut
+        ? components(intersection(support, cut.region))
+        : [{ outer: support[0]!, holes: support.slice(1) }];
+      for (const c of supports)
+        B.shape(
+          B.mesh(floor ? 'floorbase' : 'plaster'),
+          c.outer,
+          [...c.holes, ...holesIn(s, ext[0], ext[2], ext[1], ext[3])],
+          (p) => map(p),
+          n,
+          B.rgb(floor ? FLOOR_BASE : PLASTER),
+        );
 
       if (!build) continue;
 
@@ -255,7 +267,9 @@ export function buildMeshes(input: MeshInput): MeshData[] {
         const col = s.zones[zi]!.groutColor;
         const box = rect(a0, rc.y, a1, rc.y + rc.h);
         // sol d'une pièce du plan : la zone est découpée par le contour
-        const parts = s.outline ? components(intersection([box], s.outline)) : [{ outer: box, holes: [] }];
+        let rings: Point[][] = s.outline ? intersection([box], s.outline) : [box];
+        if (cut) rings = intersection(rings, cut.region);
+        const parts = s.outline || cut ? components(rings) : [{ outer: box, holes: [] }];
         for (const c of parts)
           B.shape(
             B.mesh('grout|' + col.toLowerCase()),
@@ -269,7 +283,7 @@ export function buildMeshes(input: MeshInput): MeshData[] {
 
       /* carreaux */
       build.pieces.forEach((pc, i) => {
-        if (!pc.parts || pc.reveal) return;
+        if (!pc.parts || pc.reveal || (cut && !cut.keep(pc))) return;
         if (fr) {
           const cx = pc.parts[0]!.reduce((t, q) => t + q[0], 0) / pc.parts[0]!.length;
           if (frameAt(frames!, cx) !== fr) return;
@@ -281,11 +295,18 @@ export function buildMeshes(input: MeshInput): MeshData[] {
     /* ouvertures */
     s.openings.forEach((op, ri) => {
       if (frames) wallOpening(B, input, s, op, ri, frames, build?.pieces ?? [], room);
-      else floorOpening(B, s, op, o);
+      else if (!clipped(input.clip?.[inst.surface], s, op)) floorOpening(B, s, op, o);
     });
   }
 
   return [...B.meshes.values()].filter((m) => m.positions.length);
+}
+
+/** Réservation au sol hors de la pièce montrée (`clip`) : pas dessinée. */
+function clipped(cut: { region: Polygon[] } | undefined, s: SurfaceSpec, o: OpeningSpec): boolean {
+  if (!cut) return false;
+  const c: Point = [o.x + o.width / 2, s.height - o.sill - o.height / 2];
+  return !cut.region.some((r) => pointInPolygon(c, r));
 }
 
 function tilePiece(B: Builder, input: MeshInput, si: number, pc: Piece, i: number, map: (p: Point) => Vec3, n: Vec3) {

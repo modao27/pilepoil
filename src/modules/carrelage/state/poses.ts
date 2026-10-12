@@ -5,15 +5,15 @@
  */
 import { wallSpanCuts } from '../../../core/coverage/geometry';
 import { checkZone, type CoverageError } from '../../../core/coverage/rules';
-import type { CoverageRules, Cut, Pose, SurfaceRef } from '../../../core/coverage/types';
+import type { Cut, Pose, SurfaceRef } from '../../../core/coverage/types';
 import type { Plan } from '../../../core/plan/types';
 import type { Id, Project } from '../../../state/model';
+import { TILE_RULES } from './ids';
 import { CARRELAGE_ID, carrelageData, withCarrelage, type CarrelageData } from './data';
 import { createPoseSettings } from './factories';
 import type { CarrelagePose, Tile } from './model';
 
-/** Règles des zones de carrelage (aussi déclarées dans le contrat du module). */
-export const TILE_RULES: CoverageRules = { surfaces: ['floor', 'wall'], extent: 'continuous' };
+export { TILE_RULES };
 /**
  * Réglages d'une nouvelle pose : ceux de la pose `like` (bandes copiées avec de nouveaux identifiants), sinon une
  * bande du premier carreau de la bibliothèque.

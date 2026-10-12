@@ -2,13 +2,12 @@
  * Point d'entrée du module parquet (face application) : le `ToolModule`, vu par la coquille via le registre.
  * La face moteur est engine.ts (importée par modules/engines.ts).
  */
-import type { LibraryDefinition, ToolModule } from '../types';
+import type { LibraryDefinition, ModuleManifest } from '../types';
 import { BOARD_SCHEMA, BOARD_TEMPLATES } from './core/board';
 import type { ParquetResult, ParquetSpec } from './core/types';
-import { reduce, type Action } from './state/actions';
+import type { Action } from './state/actions';
 import { PARQUET_ID, PARQUET_SCHEMA, type ParquetData } from './state/model';
-import { create, createPose, priceAction, shopping, summary, toSpec } from './state/module';
-import { PARQUET_RULES } from './state/poses';
+import { PARQUET_RULES } from './state/ids';
 
 /** Bibliothèque de lames (#/library/boards). */
 export const library: LibraryDefinition = {
@@ -25,22 +24,16 @@ export const library: LibraryDefinition = {
 };
 
 /** Module parquet (docs/BOITE.md §2, docs/parquet/SPEC.md). */
-export const module: ToolModule<ParquetData, ParquetSpec, ParquetResult, Action> = {
+export const module: ModuleManifest<ParquetData, ParquetSpec, ParquetResult, Action> = {
   id: PARQUET_ID,
   label: 'Parquet',
   description: 'Parquet, stratifié, vinyle clipsable : pose, coupes, chutes, paquets.',
   // lames en pose décalée, trait fin (34 × 24)
   icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M1 8.3h32M1 15.7h32M12 1v7.3M26 1v7.3M6 8.3v7.4M20 8.3v7.4M15 15.7V23M29 15.7V23"/>',
   schemaVersion: PARQUET_SCHEMA,
-  create,
   coverage: PARQUET_RULES,
-  createPose,
   poseHref: (p, pose) => `#/p/${encodeURIComponent(p)}/m/parquet/pose/${encodeURIComponent(pose)}`,
-  reduce: (data, action) => reduce(data, action),
-  toSpec,
-  shopping,
-  summary,
-  priceAction,
+  logic: () => import('./logic').then((m) => m.logic),
   results: () => import('./ui/lib/resultsModule').then((m) => m.results),
   migrations: {},
   screens: {

@@ -78,7 +78,7 @@ test('nouveau projet → pièce → poses → résultats → PDF → vue globale
 
   // vue globale, puis résultats et dossier du projet
   await page.getByRole('navigation', { name: 'Fil de navigation' }).getByRole('link', { name: 'Projet' }).click();
-  await expect(page.getByRole('heading', { name: 'Pièces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pièces', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Résultats du projet (3D, dossier PDF)' }).click();
   await expect(page.getByRole('heading', { name: 'Résultats du projet' })).toBeVisible();
   await check(page);

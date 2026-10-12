@@ -2,10 +2,11 @@
  * Poses de parquet sur les zones du projet (docs/NAVIGATION.md §4) : poses vues par l'éditeur, réglages d'une
  * nouvelle pose, actions du projet pour créer une pose, cocher une pièce, séparer une pose. Pur.
  */
+import { PARQUET_RULES } from './ids';
 import { halfPlane, zoneRegion } from '../../../core/coverage/geometry';
 import { nextPoseName } from '../../../core/coverage/names';
 import { checkZone, type CoverageError } from '../../../core/coverage/rules';
-import type { CoverageRules, Pose, Zone } from '../../../core/coverage/types';
+import type { Pose, Zone } from '../../../core/coverage/types';
 import { intersection, regionArea } from '../../../core/geometry/boolean';
 import type { Point, Segment } from '../../../core/geometry/types';
 import type { Id, Project } from '../../../state/model';
@@ -20,8 +21,7 @@ import {
   type ParquetPose,
 } from './model';
 
-/** Règles des zones de parquet (aussi déclarées dans le contrat du module). */
-export const PARQUET_RULES: CoverageRules = { surfaces: ['floor'], extent: 'connected-floors' };
+export { PARQUET_RULES };
 
 /** Aire en dessous de laquelle un côté d'une ligne est vide, mm² (1 dm²). */
 const EMPTY = 1e4;

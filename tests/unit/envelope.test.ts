@@ -1,6 +1,7 @@
 /** Enveloppe 3D commune des pièces (murs nus, embrasures, dessus des murs, sol brut) et outils de scène. */
 import { describe, expect, it } from 'vitest';
-import { buildEnvelope, mergeMeshes, planFrame, translateMeshes } from '../../src/render/scene3d/envelope';
+import { signedArea } from '../../src/core/geometry/polygon';
+import { bareWall, buildEnvelope, mergeMeshes, planFrame, translateMeshes } from '../../src/render/scene3d/envelope';
 import type { MeshData } from '../../src/render/scene3d/types';
 import type { Plan } from '../../src/core/plan/types';
 import { rect, withOpening } from './planFixtures';
@@ -59,12 +60,32 @@ describe('enveloppe des pièces', () => {
     expect(tops.length).toBeGreaterThanOrEqual(8);
   });
 
-  it('mur revêtu : laissé au module, l’embrasure reste', () => {
-    const skip = buildEnvelope(plan(), ['r'], new Set(['r-w1'])).find((m) => m.key === 'plaster')!;
+  it('mur revêtu sur toute sa largeur : laissé au module, embrasure comprise', () => {
+    const skip = buildEnvelope(plan(), ['r'], new Map([['r-w1', [[0, 2000]] as [number, number][]]])).find(
+      (m) => m.key === 'plaster',
+    )!;
     const onWall = (m: MeshData) => triangles(m).filter((t) => t.every((p) => Math.abs(p[0] - 4) < 1e-9)).length;
     expect(onWall(plaster)).toBeGreaterThan(0);
     expect(onWall(skip)).toBe(0);
     expect(skip.positions.length).toBeLessThan(plaster.positions.length);
+  });
+
+  it('mur revêtu en partie (crédence de 50 cm) : le plâtre couvre le reste du mur, sans recouvrement', () => {
+    const area = (spans: [number, number][]) =>
+      bareWall(2000, 2500, [], spans).reduce(
+        (t, c) => t + Math.abs(signedArea(c.outer)) - c.holes.reduce((u, h) => u + Math.abs(signedArea(h)), 0),
+        0,
+      );
+    expect(area([])).toBeCloseTo(2000 * 2500, 0);
+    expect(area([[500, 1000]])).toBeCloseTo(1500 * 2500, 0);
+    expect(area([[0, 2000]])).toBeCloseTo(0, 0);
+    // une baie dans la partie nue reste un trou
+    const withDoor = bareWall(2000, 2500, [[1200, 1800, 0, 2000]], [[0, 1000]]);
+    const a = withDoor.reduce(
+      (t, c) => t + Math.abs(signedArea(c.outer)) - c.holes.reduce((u, h) => u + Math.abs(signedArea(h)), 0),
+      0,
+    );
+    expect(a).toBeCloseTo(1000 * 2500 - 600 * 2000, 0);
   });
 
   it('pièce absente de la liste : rien', () => {

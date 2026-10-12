@@ -10,15 +10,16 @@ import {
   poseBeyond,
   scopePoses,
   scopeRooms,
-  scopeWalls,
+  scopeWallSpans,
   type ResultScope,
 } from '../../src/core/coverage/scope';
 import type { Plan } from '../../src/core/plan/types';
 import { computeProject, type ProjectResult } from '../../src/modules/carrelage/core';
+import { buildMeshes } from '../../src/modules/carrelage/render/scene3d/meshes';
 import { planLayouts } from '../../src/modules/carrelage/render/scene3d/scope';
 import { CARRELAGE_SCHEMA } from '../../src/modules/carrelage/state/data';
 import { createData, createPoseSettings, createTile } from '../../src/modules/carrelage/state/factories';
-import { scopePieces } from '../../src/modules/carrelage/state/results';
+import { pieceRoom, scopePieces } from '../../src/modules/carrelage/state/results';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import { writeTilingResults } from '../../src/modules/carrelage/ui/lib/pdf';
 import { tilingReport } from '../../src/modules/carrelage/ui/lib/results';
@@ -126,8 +127,8 @@ describe('portée des résultats', () => {
     expect(scopePoses(p, { kind: 'pose', pose: 'P' }).map((x) => x.id)).toEqual(['P']);
     expect(scopeRooms(p.plan, p, { kind: 'pose', pose: 'T2' })).toEqual(['a']);
     expect(scopeRooms(p.plan, p, PROJECT)).toEqual(['a', 'b']);
-    expect([...scopeWalls(p, ROOM_A)]).toEqual(['a-w0']);
-    expect([...scopeWalls(p, ROOM_B)]).toEqual([]);
+    expect([...scopeWallSpans(p.plan, p, ROOM_A)]).toEqual([['a-w0', [[0, 4000]]]]);
+    expect([...scopeWallSpans(p.plan, p, ROOM_B)]).toEqual([]);
   });
 
   it('surface revêtue d’une pose dans la portée ; pose qui sort de la pièce', () => {
@@ -204,6 +205,40 @@ describe('rapport du carrelage', () => {
     const lv = view(l);
     const [only] = planLayouts(l.plan, lv.surfaces, toProjectSpec(lv, [tile]).spec, [0]);
     expect(only!.instances).toHaveLength(1);
+  });
+});
+
+describe('3D d’une pièce : sol continu rogné à la pièce', () => {
+  it('la pose sur deux sols montrée dans le Bureau : chape, joints et carreaux dans le Bureau seulement', () => {
+    const p = project(true);
+    const v = view(p);
+    const spec = toProjectSpec(v, [tile]).spec;
+    const result = tilingResult(p);
+    const [layout] = planLayouts(p.plan, v.surfaces, spec, [0]);
+    const s = v.surfaces[0]!;
+    const part = s.parts.find((x) => x.ref.room === 'b')!;
+    const b = p.plan.rooms.find((r) => r.id === 'b')!;
+    const base = { spec, result, layout: layout!, shade: 0, photo: () => null, context: false };
+    const whole = buildMeshes(base);
+    const clipped = buildMeshes({
+      ...base,
+      clip: {
+        0: {
+          region: [b.outline.map((q): [number, number] => [q[0] - part.x, q[1] - part.y])],
+          keep: (pc) => pieceRoom(p.plan, s, pc) === 'b',
+        },
+      },
+    });
+    const xs = (ms: typeof whole, key: string) => {
+      const m = ms.find((x) => x.key.startsWith(key))!;
+      return m.positions.filter((_, i) => i % 3 === 0);
+    };
+    // le Bureau commence à x = 4,072 m ; un carreau à cheval sur la porte peut dépasser d'un carreau (30 cm)
+    expect(Math.min(...xs(whole, 'floorbase'))).toBeLessThan(1);
+    expect(Math.min(...xs(clipped, 'floorbase'))).toBeGreaterThanOrEqual(4.072 - 1e-6);
+    expect(Math.min(...xs(clipped, 'grout'))).toBeGreaterThanOrEqual(4.072 - 1e-6);
+    expect(Math.min(...xs(clipped, 'tiles'))).toBeGreaterThan(4.072 - 0.3);
+    expect(xs(clipped, 'tiles').length).toBeLessThan(xs(whole, 'tiles').length);
   });
 });
 

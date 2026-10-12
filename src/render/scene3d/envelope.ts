@@ -5,6 +5,8 @@
  * Repère three.js : x = x du plan, z = y du plan, y vers le haut ; mètres. Lit le plan, n'écrit rien.
  */
 import { Color, ShapeUtils, Vector2 } from 'three';
+import { difference } from '../../core/geometry/boolean';
+import { components } from '../../core/geometry/rings';
 import type { Point } from '../../core/geometry/types';
 import type { Id, Plan, PlanRoom } from '../../core/plan/types';
 import { outwardNormal, wallBands, wallDirection, wallLength } from '../../core/plan/walls';
@@ -81,11 +83,46 @@ function wallHoles(room: PlanRoom, i: number): [number, number, number, number][
     .filter(([x0, x1, y0, y1]) => x1 > x0 && y1 > y0);
 }
 
+const rect = (x0: number, y0: number, x1: number, y1: number): Point[] => [
+  [x0, y0],
+  [x1, y0],
+  [x1, y1],
+  [x0, y1],
+];
+
 /**
- * Enveloppe des pièces `rooms` : sol brut, murs nus (sauf ceux de `skip`), embrasures, dessus des murs.
+ * Plâtre nu d'un mur (repère du mur, x le long, y depuis le sol) : le mur entier, moins les baies et les parties
+ * dessinées par un module (`spans`, du sol au plafond). Composants : contour et trous, prêts à trianguler.
+ */
+export function bareWall(
+  len: number,
+  height: number,
+  holes: readonly [number, number, number, number][],
+  spans: readonly [number, number][] = [],
+): { outer: Point[]; holes: Point[][] }[] {
+  const cut = [
+    ...holes.map(([x0, x1, y0, y1]) => rect(x0, y0, x1, y1)),
+    ...spans.map(([x0, x1]) => rect(Math.max(0, x0), -1, Math.min(len, x1), height + 1)),
+  ];
+  if (!spans.length)
+    return [{ outer: rect(0, 0, len, height), holes: holes.map(([x0, x1, y0, y1]) => rect(x0, y0, x1, y1).reverse()) }];
+  return components(difference([rect(0, 0, len, height)], cut));
+}
+
+/** La baie est-elle dans une partie de mur dessinée par un module (qui dessine aussi son embrasure) ? */
+const drawnBy = (spans: readonly [number, number][], x0: number, x1: number) =>
+  spans.some(([a, b]) => (x0 + x1) / 2 >= a && (x0 + x1) / 2 <= b);
+
+/**
+ * Enveloppe des pièces `rooms` : sol brut, murs nus, embrasures, dessus des murs. `skip` : parties de murs
+ * dessinées par un module (intervalles le long du mur, mm), laissées vides ici.
  * Deux maillages au plus (plâtre, sol) : peu d'appels de dessin.
  */
-export function buildEnvelope(plan: Plan, rooms: readonly Id[], skip: ReadonlySet<Id> = new Set()): MeshData[] {
+export function buildEnvelope(
+  plan: Plan,
+  rooms: readonly Id[],
+  skip: ReadonlyMap<Id, readonly [number, number][]> = new Map(),
+): MeshData[] {
   const plaster = emptyMesh('plaster', true),
     ground = emptyMesh('ground');
   const P = linear(PLASTER),
@@ -117,28 +154,15 @@ export function buildEnvelope(plan: Plan, rooms: readonly Id[], skip: ReadonlySe
         m(y),
         m(a[1] + u[1] * x + out[1] * depth),
       ];
+      const spans = skip.get(wall.id) ?? [];
       const holes = wallHoles(room, i);
-      if (!skip.has(wall.id)) {
-        const rect = (x0: number, y0: number, x1: number, y1: number): Point[] => [
-          [x0, y0],
-          [x1, y0],
-          [x1, y1],
-          [x0, y1],
-        ];
-        shape(
-          plaster,
-          rect(0, 0, len, h),
-          holes.map(([x0, x1, y0, y1]) => rect(x0, y0, x1, y1).reverse()),
-          (p) => W(p[0], p[1]),
-          inward,
-          P,
-        );
-      }
+      for (const c of bareWall(len, h, holes, spans)) shape(plaster, c.outer, c.holes, (p) => W(p[0], p[1]), inward, P);
       // embrasures : les côtés de chaque baie sur l'épaisseur du mur
       const t = wall.thickness;
       if (t <= 0) continue;
       const along: Vec3 = [u[0], 0, u[1]];
       for (const [x0, x1, y0, y1] of holes) {
+        if (drawnBy(spans, x0, x1)) continue;
         quad(plaster, [W(x0, y0), W(x0, y1), W(x0, y1, t), W(x0, y0, t)], along, P);
         quad(plaster, [W(x1, y0), W(x1, y1), W(x1, y1, t), W(x1, y0, t)], [-along[0], 0, -along[2]], P);
         quad(plaster, [W(x0, y1), W(x1, y1), W(x1, y1, t), W(x0, y1, t)], [0, -1, 0], P);

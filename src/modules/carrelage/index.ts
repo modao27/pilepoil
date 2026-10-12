@@ -2,13 +2,12 @@
  * Point d'entrée du module carrelage (face application) : le `ToolModule`, seul objet vu par la coquille via
  * le registre. La face moteur est engine.ts (importée par modules/engines.ts).
  */
-import type { ToolModule } from '../types';
+import type { ModuleManifest } from '../types';
 import type { ProjectResult, ProjectSpec } from './core';
-import { reduce, type Action } from './state/actions';
-import { CARRELAGE_ID, CARRELAGE_SCHEMA, type CarrelageData } from './state/data';
+import type { Action } from './state/actions';
+import type { CarrelageData } from './state/data';
+import { CARRELAGE_ID, CARRELAGE_SCHEMA, TILE_RULES } from './state/ids';
 import { TILE_SCHEMA } from './state/model';
-import { TILE_RULES } from './state/poses';
-import { create, createPose, priceAction, shopping, summary, toSpec } from './state/module';
 
 /** Éditeur d'une surface : #/p/:id/m/carrelage/s/:surfaceId. */
 const editor = () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default);
@@ -17,20 +16,14 @@ const editor = () => import('./ui/screens/EditorScreen.svelte').then((m) => m.de
 const state = () => import('./ui/state.svelte').then((m) => m.carrelage);
 
 /** Module carrelage (docs/BOITE.md §2). */
-export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Action> = {
+export const module: ModuleManifest<CarrelageData, ProjectSpec, ProjectResult, Action> = {
   id: CARRELAGE_ID,
   label: 'Carrelage',
   description: 'Murs et sols carrelés : calepinage, coupes, chutes, quantités.',
   schemaVersion: CARRELAGE_SCHEMA,
-  create,
   coverage: TILE_RULES,
-  createPose,
   poseHref: (p, pose) => `#/p/${encodeURIComponent(p)}/m/carrelage/s/${encodeURIComponent(pose)}`,
-  reduce: (data, action) => reduce(data, action),
-  toSpec,
-  summary,
-  shopping,
-  priceAction,
+  logic: () => import('./logic').then((m) => m.logic),
   results: () => import('./ui/lib/resultsModule').then((m) => m.results),
   migrations: {},
   start: async (db) => (await state()).start(db),

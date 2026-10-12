@@ -103,7 +103,7 @@ test('plan : pièce en L avec poteau et porte, seconde pièce reliée par un pas
   // enregistré : retour au projet, puis réouverture
   await page.getByRole('link', { name: 'Projet' }).click();
   await expect(page).toHaveURL(new RegExp(`#/p/${id}$`));
-  await expect(page.getByRole('heading', { name: 'Pièces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pièces', exact: true })).toBeVisible();
   // vue globale : les deux pièces sur le plan et dans la liste
   await expect(page.getByRole('link', { name: /^Ouvrir Séjour/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Ouvrir Cuisine/ })).toBeVisible();

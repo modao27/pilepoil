@@ -215,27 +215,18 @@ export interface ModuleResults<Result = unknown> {
   exports(): Promise<ResultExports<Result>>;
 }
 
-/** Face application : état, sélecteurs, écrans. */
-export interface ToolModule<
+/**
+ * Logique d'un module : réducteur, entrée moteur, achats. Chargée à la demande (`ModuleManifest.logic`), hors du
+ * premier chargement de l'application ; la coquille l'attend par `loadModules()` avant d'ouvrir un projet.
+ */
+export interface ModuleLogic<
   Data = unknown,
   Spec = unknown,
   Result = unknown,
   Action extends ModuleAction = ModuleAction,
 > {
-  id: ModuleId;
-  /** « Carrelage ». */
-  label: string;
-  /** Une phrase pour l'accueil du projet. */
-  description: string;
-  /** Tracé SVG 34 × 24, trait fin. */
-  icon: string;
-  schemaVersion: number;
   /** Données initiales quand on active le module sur un projet (sans pose : les poses naissent des zones). */
   create(plan: Plan): Data;
-  /** Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). */
-  coverage: CoverageRules;
-  /** Adresse de l'éditeur (calepinage) d'une pose du module : la coquille y mène sans connaître ses écrans. */
-  poseHref(projectId: Id, poseId: Id): string;
   /** Réglages d'une nouvelle pose ; `like` : pose dont on reprend les réglages. */
   createPose(project: Project, libraries: Libraries, like?: Id): unknown;
   /**
@@ -251,6 +242,29 @@ export interface ToolModule<
   priceAction(key: string, value: number | null): Action;
   /** Résumé court pour la carte du module (« 46 carreaux, 312 € »). */
   summary(result: Result): ModuleSummary;
+}
+
+/** Ce que la coquille sait d'un module dès le démarrage : identité, écrans, bibliothèque, migrations. */
+export interface ModuleManifest<
+  Data = unknown,
+  Spec = unknown,
+  Result = unknown,
+  Action extends ModuleAction = ModuleAction,
+> {
+  id: ModuleId;
+  /** « Carrelage ». */
+  label: string;
+  /** Une phrase pour l'accueil du projet. */
+  description: string;
+  /** Tracé SVG 34 × 24, trait fin. */
+  icon: string;
+  schemaVersion: number;
+  /** Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). */
+  coverage: CoverageRules;
+  /** Adresse de l'éditeur (calepinage) d'une pose du module : la coquille y mène sans connaître ses écrans. */
+  poseHref(projectId: Id, poseId: Id): string;
+  /** Logique du module (réducteur, entrée moteur, achats), chargée à la demande. */
+  logic(): Promise<ModuleLogic<Data, Spec, Result, Action>>;
   /** Résultats par pose, pièce et projet : chiffres, détail, PDF, 3D (chargés à la demande). */
   results(): Promise<ModuleResults<Result>>;
   /** Migrations des données du module : migrations[n] passe de la version n - 1 à n. */
@@ -264,3 +278,14 @@ export interface ToolModule<
   /** Bibliothèque de produits propre au module (carreaux, lames…). Facultatif. */
   library?: LibraryDefinition;
 }
+
+/**
+ * Module vu par la coquille via le registre : son manifeste et sa logique. La logique n'est utilisable qu'une
+ * fois `loadModules()` résolu (modules/registry.ts) ; avant, ses fonctions lèvent une erreur.
+ */
+export type ToolModule<
+  Data = unknown,
+  Spec = unknown,
+  Result = unknown,
+  Action extends ModuleAction = ModuleAction,
+> = ModuleManifest<Data, Spec, Result, Action> & ModuleLogic<Data, Spec, Result, Action>;

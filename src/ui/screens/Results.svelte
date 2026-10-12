@@ -7,7 +7,7 @@
    */
   import { untrack } from 'svelte';
   import { poseWhere, type Pose } from '../../core/coverage';
-  import { poseArea, scopePoses, scopeRooms, scopeWalls, type ResultScope } from '../../core/coverage/scope';
+  import { poseArea, scopePoses, scopeRooms, scopeWallSpans, type ResultScope } from '../../core/coverage/scope';
   import { moduleById, modules } from '../../modules/registry';
   import type { ModuleResults, PoseReport, ResultExports, ToolModule } from '../../modules/types';
   import type { Project } from '../../state/model';
@@ -136,13 +136,13 @@
       const x = ex[m.id];
       return c && x ? [{ m, c, x }] : [];
     });
-    // murs revêtus par un module calculé : il les dessine (plâtre compris) ; les autres sont dans l'enveloppe
+    // parties de murs revêtues par un module calculé : il les dessine (plâtre compris) ; le reste est dans l'enveloppe
     const drawn = new Set(entries.map((e) => e.m.id));
     const covered = {
       zones: p.zones.filter((z) => drawn.has(p.poses.find((x) => x.id === z.pose)?.module ?? '')),
       poses: p.poses,
     };
-    const skip = scopeWalls(covered, scope);
+    const skip = scopeWallSpans(p.plan, covered, scope);
     const libraries = app.libraries;
     return () =>
       env.mergeMeshes([

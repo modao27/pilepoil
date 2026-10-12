@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { intersection, regionArea } from '../../src/core/geometry/boolean';
 import type { Segment } from '../../src/core/geometry/types';
 import { lRoom, rectRoom } from '../../src/core/plan/factories';
-import { module as parquet } from '../../src/modules/parquet';
+import { module as parquetManifest } from '../../src/modules/parquet';
+import { logic as parquetLogic } from '../../src/modules/parquet/logic';
 import { BOARD_TEMPLATES } from '../../src/modules/parquet/core/board';
 import { computeParquet } from '../../src/modules/parquet/core/compute';
 import type { ParquetResult } from '../../src/modules/parquet/core/types';
@@ -17,6 +18,9 @@ import {
 import type { Project } from '../../src/state/model';
 import { reduceProject } from '../../src/state/project';
 import { parquetProject } from './parquetHelpers';
+
+/** Le module tel que le registre le donne une fois sa logique chargée. */
+const parquet = { ...parquetManifest, ...parquetLogic };
 
 let n = 0;
 const id = () => 'i' + ++n;

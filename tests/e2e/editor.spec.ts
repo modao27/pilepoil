@@ -241,5 +241,5 @@ test('surfaces : sol et murs revêtus sur l’écran Pièce, puis résultats et 
   await expectNoHorizontalScroll(page);
   await shot(page, info, '70-resultats');
   await page.getByRole('link', { name: 'Projet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Pièces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pièces', exact: true })).toBeVisible();
 });
