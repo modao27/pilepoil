@@ -14,7 +14,7 @@
 
 <Screen title="Mes projets" brand>
   {#snippet actions()}
-    <IconButton icon="tiles" label="Bibliothèques" href="#/library/tiles" />
+    <IconButton icon="library" label="Bibliothèques" href="#/library/tiles" />
     <IconButton icon="settings" label="Réglages" href="#/settings" />
   {/snippet}
 

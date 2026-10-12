@@ -264,8 +264,7 @@
               ? 'PDF de la pièce'
               : 'PDF du calepinage'}
         </Button>
-        {#if share}<Button icon="upload" disabled={!ready || status === 'busy'} onclick={sharePdf}>Partager</Button
-          >{/if}
+        {#if share}<Button icon="share" disabled={!ready || status === 'busy'} onclick={sharePdf}>Partager</Button>{/if}
         {#if scope.kind === 'project'}<Button variant="ghost" href="#/p/{id}/achats">Achats</Button>{/if}
         <p class="status" role="status">
           {#if !ready}Calcul…{:else if status === 'busy'}Préparation du PDF…{:else if status === 'done'}PDF enregistré

@@ -28,8 +28,8 @@ export const module: ModuleManifest<ParquetData, ParquetSpec, ParquetResult, Act
   id: PARQUET_ID,
   label: 'Parquet',
   description: 'Parquet, stratifié, vinyle clipsable : pose, coupes, chutes, paquets.',
-  // lames en pose décalée, trait fin (34 × 24)
-  icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M1 8.3h32M1 15.7h32M12 1v7.3M26 1v7.3M6 8.3v7.4M20 8.3v7.4M15 15.7V23M29 15.7V23"/>',
+  // identité : icones/modules/parquet-34x24.svg (lames en pose décalée)
+  icon: '<rect x="2" y="2" width="30" height="20" rx="1.5"/><path d="M2 7h30M2 12h30M2 17h30M13 2v5M25 7v5M8 12v5M20 12v5M28 17v5M15 17v5"/><path fill="currentColor" fill-opacity=".18" stroke="none" d="M13 2h17.5a1.5 1.5 0 0 1 1.5 1.5V7H13z"/>',
   schemaVersion: PARQUET_SCHEMA,
   coverage: PARQUET_RULES,
   poseHref: (p, pose) => `#/p/${encodeURIComponent(p)}/m/parquet/pose/${encodeURIComponent(pose)}`,
