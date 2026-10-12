@@ -19,14 +19,7 @@ import { coverageText } from '../../../ui/lib/coverageMessages';
 import type { Action } from '../state/actions';
 import { PARQUET_ID, type Layout, type ParquetPose } from '../state/model';
 import { toSpec } from '../state/module';
-import {
-  addPoseAction,
-  layoutsOf,
-  newPoseSettings,
-  parquetData,
-  splitPoseAction,
-  toggleRoomAction,
-} from '../state/poses';
+import { layoutsOf, parquetData, splitPoseAction, toggleRoomAction } from '../state/poses';
 
 const newId = () => crypto.randomUUID();
 
@@ -171,29 +164,6 @@ export class ParquetEditorState {
     }
     this.dispatch(r.action);
     return true;
-  }
-
-  /** Nouvelle pose sur une pièce (la première sans revêtement au sol), aux réglages de la pose affichée. */
-  addLayout(): void {
-    const floors = this.doc.zones.filter((z) => z.surface.wall == null);
-    const room = this.doc.plan.rooms.find((r) => !floors.some((z) => z.surface.room === r.id));
-    if (!room) {
-      toast('Tous les sols ont déjà un revêtement. Décochez une pièce d’une pose ou séparez une pose.', {
-        tone: 'error',
-      });
-      return;
-    }
-    const settings = newPoseSettings(this.data, this.boards, this.layout?.id);
-    const a = addPoseAction(this.doc, room.id, settings, newId);
-    this.dispatch(a);
-    this.current = a.pose.id;
-  }
-
-  removeLayout(): void {
-    if (!this.layout) return;
-    this.dispatch({ type: 'pose/remove', poseId: this.layout.id });
-    this.current = null;
-    toast('Pose supprimée.', { action: undoAction(this.store) });
   }
 
   /** Accepter un seuil proposé : il passe dans les seuils posés de la pose. */

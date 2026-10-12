@@ -3,7 +3,7 @@
  * suivre la pose. Écrit pour le téléphone (profil mobile 390 px), vérifié aussi sur ordinateur.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot, woodFloor } from './helpers';
+import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot, step, woodFloor } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -63,15 +63,20 @@ test('parcours : deux pièces, point de Hongrie, achats, chantier', async ({ pag
   const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
   await woodFloor(page, id, 'Séjour');
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
+  await step(page, 'Découpage');
   await p.getByRole('checkbox', { name: 'Bureau' }).check();
+  await step(page, 'Produit');
   await p.getByRole('combobox', { name: 'Lame' }).selectOption({ label: 'Point de Hongrie 45° 600 × 90 (lames A/B)' });
+  await step(page, 'Pose');
   await p.getByRole('radio', { name: 'Hongrie' }).click();
   const summary = page.getByRole('link', { name: /lames · \d+ paquets/ }).first();
   await expect(summary).toBeVisible();
   // porte étroite : seuil conseillé, posé
+  await step(page, 'Découpage');
   await p.getByRole('button', { name: 'Poser ce seuil' }).click();
   await expect(p.getByText('Seuil posé entre Séjour et Bureau')).toBeVisible();
   // axe aligné sur le mur de référence
+  await step(page, 'Pose');
   await p.getByRole('group', { name: 'Axe du motif' }).getByText('Aligné sur le mur de référence').click();
   await check(page);
   await shot(page, info, 'P2-parcours-hongrie');

@@ -3,7 +3,7 @@
  * et deux murs → poser du parquet dans une autre pièce du même projet → acheter. Téléphone et ordinateur.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { cover, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, openPose, shot } from './helpers';
+import { cover, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, openPose, shot, step } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -82,6 +82,7 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await cover(page, 'Sol', 'parquet');
   await openPose(page, 'Sol');
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
+  await step(page, 'Découpage');
   await expect(p.getByRole('checkbox', { name: 'Chambre' })).toBeChecked();
   await expect(p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' })).not.toBeChecked();
   await p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' }).click();
