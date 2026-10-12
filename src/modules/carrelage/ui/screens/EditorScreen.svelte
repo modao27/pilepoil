@@ -14,7 +14,7 @@
   const empty = $derived(!!project && !carrelageView(project)?.surfaces.length);
 
   $effect(() => {
-    if (empty) go({ name: 'module', id: projectId, module: 'carrelage', path: '' }, true);
+    if (empty) go({ name: 'project', id: projectId }, true);
   });
 </script>
 

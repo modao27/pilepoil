@@ -7,7 +7,7 @@
   import type { Point, ProjectResult, ProjectSpec } from '../../core';
   import type { CarrelageProject } from '../../state/data';
   import { planDrawing } from '../../render/planSvg';
-  import { boxOf, unfoldWall } from '../../render/roomTop';
+  import { boxOf, unfoldWall } from '../../../../render/roomTop';
   import { wallLength } from '../../../../core/plan/walls';
   import { covers } from '../../state/surfaces';
 

@@ -3,9 +3,15 @@
  * n'écrase jamais un changement fait depuis, enregistrement refusé signalé et réessayable.
  */
 import { expect, test, type Page } from '@playwright/test';
-import { newWall, tick } from './helpers';
+import { cover, newWall, openRoom } from './helpers';
 
 const panel = (page: Page) => page.getByRole('complementary', { name: 'Réglages du plan' }).or(page.locator('.sheet'));
+
+/** Mur n dans la liste de l'écran Pièce, avec ce qui le couvre. */
+const wallButton = (page: Page, n: number, what: string) =>
+  page
+    .getByRole('region', { name: 'Sol et murs' })
+    .getByRole('button', { name: new RegExp(`^Mur ${n} \\(.*: ${what}$`) });
 
 /** Plan du projet, pièce « Pièce » sélectionnée. */
 async function selectRoom(page: Page, id: string) {
@@ -28,8 +34,9 @@ test('pièce revêtue : la suppression détaille ce qui sera perdu, et se confir
   await expect(page.getByText('Pièce « Pièce » supprimée.')).toBeVisible();
   // annulation juste après : la pièce et son carrelage reviennent
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
-  await page.goto(`/#/p/${id}/m/carrelage`);
-  await expect(page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' })).toBeVisible();
+  await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
+  await openRoom(page, id);
+  await expect(wallButton(page, 1, 'Pose 1')).toBeVisible();
 });
 
 test('annuler après un changement fait ailleurs : refusé, rien n’est écrasé', async ({ page }) => {
@@ -64,18 +71,18 @@ test('enregistrement refusé : message, puis « Réessayer » enregistre', async
     };
   });
   const id = await newWall(page);
-  await page.goto(`/#/p/${id}/m/carrelage`);
+  await openRoom(page, id);
   await page.evaluate(() => ((window as unknown as { __failSave: boolean }).__failSave = true));
-  await tick(page, page.getByRole('checkbox', { name: /^Mur 2 / }), 'new');
+  await cover(page, 'Mur 2', 'carrelage', 'new');
   await expect(page.getByText(/^Enregistrement impossible/)).toBeVisible();
   // rien n'est faussement affiché comme enregistré
-  await expect(page.getByRole('link', { name: 'Ouvrir Pièce, mur 2' })).toHaveCount(0);
+  await expect(wallButton(page, 2, 'sans revêtement')).toBeVisible();
 
   await page.evaluate(() => ((window as unknown as { __failSave: boolean }).__failSave = false));
   await page.getByRole('status').getByRole('button', { name: 'Réessayer' }).click();
-  await expect(page.getByRole('link', { name: 'Ouvrir Pièce, mur 2' })).toBeVisible();
+  await expect(wallButton(page, 2, 'Pose 2')).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('link', { name: 'Ouvrir Pièce, mur 2' })).toBeVisible();
+  await expect(wallButton(page, 2, 'Pose 2')).toBeVisible();
 });
 
 test('bibliothèque : enregistrement refusé signalé, « Réessayer » enregistre', async ({ page }) => {

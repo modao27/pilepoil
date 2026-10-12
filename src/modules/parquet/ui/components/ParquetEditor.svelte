@@ -21,9 +21,13 @@
   import { errorText, warningText } from '../lib/messages';
   import ParquetPlan from './ParquetPlan.svelte';
 
-  let { project }: { project: Project } = $props();
+  /** `poseId` : pose affichée à l'ouverture (#/p/:id/m/parquet/pose/:poseId). */
+  let { project, poseId }: { project: Project; poseId?: string } = $props();
 
   const ed = untrack(() => new ParquetEditorState(project));
+  $effect(() => {
+    if (poseId) untrack(() => (ed.current = poseId));
+  });
   let desktop = $state(false);
   let snap = $state<0 | 1 | 2>(1);
 

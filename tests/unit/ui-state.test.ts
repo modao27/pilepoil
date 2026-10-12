@@ -2,15 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { computeProject } from '../../src/modules/carrelage/core';
 import { createPoseSettings, createTile } from '../../src/modules/carrelage/state/factories';
 import { rectPoly } from '../../src/core/geometry/polygon';
-import { ids, lShape, planProject, rect, tiledProject, tilePose, view, wallOnly } from './planFixtures';
+import { ids, lShape, rect, tiledProject, tilePose, view, wallOnly } from './planFixtures';
 import { carrelageData } from '../../src/modules/carrelage/state/data';
-import {
-  newPoseSettings,
-  tileSurfaceAction,
-  untileSurfaceAction,
-  wallHeightCuts,
-} from '../../src/modules/carrelage/state/poses';
-import { reduceProject } from '../../src/state/project';
+import { newPoseSettings, wallHeightCuts } from '../../src/modules/carrelage/state/poses';
 import { projectArea, projectCost } from '../../src/modules/carrelage/state/pricing';
 import { toProjectSpec } from '../../src/modules/carrelage/state/selectors';
 import type { Component } from 'svelte';
@@ -23,19 +17,6 @@ const tile = createTile({ pricePerM2: 30 });
 const layout = { tileId: tile.id, tileUpright: false, pattern: 'half' as const, angle: 0, joint: 3 };
 
 describe('poses de carrelage', () => {
-  it('carreler une surface entière : nouvelle pose « Pose n », une zone sans découpe, réglages au module', () => {
-    const p = planProject([rect('r', 3000, 2000)]);
-    const settings = newPoseSettings(carrelageData(p), [tile], () => 'b1');
-    const a = tileSurfaceAction(p, { room: 'r', wall: null }, settings, ids('n'));
-    const q = reduceProject(p, a);
-    expect(q.poses).toEqual([{ id: 'n0', module: 'carrelage', name: 'Pose 1' }]);
-    expect(q.zones).toEqual([{ id: 'n1', surface: { room: 'r', wall: null }, cuts: [], pose: 'n0' }]);
-    expect(view(q).surfaces[0]).toMatchObject({ id: 'n0', kind: 'floor', width: 3000, height: 2000 });
-    // ne plus carreler : pose et réglages retirés
-    const r = reduceProject(q, untileSurfaceAction(q, { room: 'r', wall: null }, ids('u')));
-    expect([r.poses, view(r).poses]).toEqual([[], {}]);
-  });
-
   it('nouvelle pose : reprend les réglages d’une autre (bandes copiées), sinon le premier carreau', () => {
     const p = wallOnly(layout, 3000, 2400);
     const copy = newPoseSettings(carrelageData(p), [tile], ids('c'), 't1');

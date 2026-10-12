@@ -1,24 +1,27 @@
 <script lang="ts">
-  /** Écran Projet (#/p/:id) : plan des pièces, outils activés avec leur résumé, ajout d'un outil. */
+  /**
+   * Vue globale du projet (#/p/:id, docs/NAVIGATION.md §3) : plan d'ensemble cliquable (une pièce ouvre son écran
+   * Pièce), pièces avec leurs surfaces revêtues et leurs poses (chaque pose ouvre son calepinage), résumé de chaque
+   * revêtement, achats.
+   */
   import { modules } from '../../modules/registry';
   import type { ShoppingLine } from '../../core/shopping/types';
-  import type { ModuleSummary, ToolModule } from '../../modules/types';
-  import { reduceProject } from '../../state/project';
+  import type { ModuleSummary } from '../../modules/types';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
-  import { go } from '../lib/router.svelte';
   import { euros } from '../lib/format';
   import { moduleOutput } from '../lib/moduleOutputs';
   import { consolidate } from '../lib/shopping';
-  import PlanThumb from '../plan/PlanThumb.svelte';
+  import { moduleById } from '../../modules/registry';
+  import { poseColor } from '../room/colors';
+  import PlanMap from '../room/PlanMap.svelte';
 
   let { id }: { id: string } = $props();
 
   const project = $derived(app.project(id));
   const active = $derived(project ? modules.filter((m) => Object.hasOwn(project.modules, m.id)) : []);
-  const available = $derived(project ? modules.filter((m) => !Object.hasOwn(project.modules, m.id)) : []);
   const rooms = $derived(project?.plan.rooms.length ?? 0);
 
   let summaries = $state.raw<Record<string, ModuleSummary | null | undefined>>({});
@@ -43,16 +46,26 @@
     return () => (live = false);
   });
 
-  async function addTool(m: ToolModule) {
+  /** Poses d'une pièce, avec les surfaces qu'elles y couvrent : « Sol », « Murs 1, 2 ». */
+  function posesIn(roomId: string) {
     const p = project;
-    if (!p) return;
-    const next = reduceProject(p, {
-      type: 'project/module/add',
-      id: m.id,
-      doc: { schemaVersion: m.schemaVersion, data: m.create(p.plan) },
+    if (!p) return [];
+    const room = p.plan.rooms.find((r) => r.id === roomId);
+    return p.poses.flatMap((pose) => {
+      const zs = p.zones.filter((z) => z.pose === pose.id && z.surface.room === roomId);
+      if (!zs.length || !room) return [];
+      const floor = zs.some((z) => z.surface.wall == null);
+      const walls = [
+        ...new Set(
+          zs.flatMap((z) => (z.surface.wall ? [room.walls.findIndex((w) => w.id === z.surface.wall) + 1] : [])),
+        ),
+      ].sort((a, b) => a - b);
+      const where = [floor ? 'sol' : '', walls.length ? `mur${walls.length > 1 ? 's' : ''} ${walls.join(', ')}` : '']
+        .filter(Boolean)
+        .join(', ');
+      const m = moduleById(pose.module);
+      return [{ pose, module: m, where, index: p.poses.indexOf(pose) }];
     });
-    if (await app.trySaveProject({ ...next, updatedAt: Date.now() }))
-      go({ name: 'module', id: p.id, module: m.id, path: '' });
   }
 </script>
 
@@ -64,45 +77,73 @@
   </Screen>
 {:else}
   <Screen title={project.name} backHref="#/" backLabel="Mes projets">
+    {#snippet actions()}<Button variant="ghost" href="#/p/{project.id}/plan">Modifier le plan</Button>{/snippet}
     <div class="layout">
       <section aria-labelledby="h-plan">
         <h2 id="h-plan">Plan</h2>
-        <a class="card plan" href="#/p/{project.id}/plan">
-          <span class="thumb">
-            {#if rooms}
-              <PlanThumb plan={project.plan} label="Plan de {project.name}" />
-            {:else}
-              <span class="empty">Aucune pièce dessinée</span>
-            {/if}
-          </span>
-          <span class="text">
-            <span class="title">{rooms ? `${rooms} pièce${rooms > 1 ? 's' : ''}` : 'Dessiner les pièces'}</span>
-            <span class="muted">{rooms ? 'Modifier le plan' : 'Murs, portes, fenêtres, poteaux'}</span>
-          </span>
-        </a>
+        {#if rooms}
+          <div class="map"><PlanMap {project} /></div>
+          <p class="muted">Touchez une pièce pour choisir ses revêtements.</p>
+        {:else}
+          <a class="card plan" href="#/p/{project.id}/plan">
+            <span class="thumb"><span class="empty">Aucune pièce dessinée</span></span>
+            <span class="text">
+              <span class="title">Ajoutez votre première pièce</span>
+              <span class="muted">Murs, portes, fenêtres, poteaux</span>
+            </span>
+          </a>
+        {/if}
       </section>
 
-      <section aria-labelledby="h-tools">
-        <h2 id="h-tools">Outils</h2>
+      <section aria-labelledby="h-rooms">
+        <h2 id="h-rooms">Pièces</h2>
         <ul class="tools">
-          {#each active as m (m.id)}
-            {@const s = summaries[m.id]}
-            <li>
-              <a class="card tool" href="#/p/{project.id}/m/{m.id}">
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- tracé de l'icône du module, fourni par le code -->
-                <svg class="icon" viewBox="0 0 34 24" aria-hidden="true">{@html m.icon}</svg>
-                <span class="text">
-                  <span class="title">{m.label}</span>
-                  <span class="muted num"
-                    >{s === undefined ? 'Calcul…' : s === null ? 'À compléter' : s.text}{#if s?.alerts}
-                      · <span class="alert">{s.alerts} alerte{s.alerts > 1 ? 's' : ''}</span>{/if}</span
-                  >
-                </span>
+          {#each project.plan.rooms as r (r.id)}
+            {@const poses = posesIn(r.id)}
+            <li class="card room">
+              <a class="text" href="#/p/{project.id}/r/{r.id}">
+                <span class="title">{r.name}</span>
+                <span class="muted">{poses.length ? '' : 'Sans revêtement : choisir les revêtements'}</span>
               </a>
+              {#if poses.length}
+                <ul class="poses">
+                  {#each poses as x (x.pose.id)}
+                    <li style="--pose: {poseColor(x.index)}">
+                      <a href={x.module?.poseHref(project.id, x.pose.id)}
+                        ><span class="chip" aria-hidden="true"></span>{x.module?.label} · {x.pose.name}
+                        <span class="muted">({x.where})</span></a
+                      >
+                    </li>
+                  {/each}
+                </ul>
+              {/if}
             </li>
           {/each}
         </ul>
+        <div class="row">
+          <Button icon="plus" href="#/p/{project.id}/plan">Ajouter une pièce</Button>
+        </div>
+
         {#if active.length}
+          <h2 class="sub">Revêtements</h2>
+          <ul class="tools">
+            {#each active as m (m.id)}
+              {@const s = summaries[m.id]}
+              <li>
+                <a class="card tool" href="#/p/{project.id}/m/{m.id}/results">
+                  <!-- eslint-disable-next-line svelte/no-at-html-tags -- tracé de l'icône du module, fourni par le code -->
+                  <svg class="icon" viewBox="0 0 34 24" aria-hidden="true">{@html m.icon}</svg>
+                  <span class="text">
+                    <span class="title">{m.label}</span>
+                    <span class="muted num"
+                      >{s === undefined ? 'Calcul…' : s === null ? 'À compléter' : s.text}{#if s?.alerts}
+                        · <span class="alert">{s.alerts} alerte{s.alerts > 1 ? 's' : ''}</span>{/if}</span
+                    >
+                  </span>
+                </a>
+              </li>
+            {/each}
+          </ul>
           <a class="card shop" href="#/p/{project.id}/achats">
             <span class="text">
               <span class="title">Achats</span>
@@ -117,22 +158,6 @@
               >
             </span>
           </a>
-        {/if}
-        {#if available.length}
-          <h3>Ajouter un outil</h3>
-          <ul class="tools">
-            {#each available as m (m.id)}
-              <li class="card add">
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- tracé de l'icône du module, fourni par le code -->
-                <svg class="icon" viewBox="0 0 34 24" aria-hidden="true">{@html m.icon}</svg>
-                <span class="text">
-                  <span class="title">{m.label}</span>
-                  <span class="muted">{m.description}</span>
-                </span>
-                <Button icon="plus" onclick={() => addTool(m)}>Ajouter {m.label.toLowerCase()}</Button>
-              </li>
-            {/each}
-          </ul>
         {/if}
       </section>
     </div>
@@ -153,10 +178,6 @@
   h2 {
     margin: 0 0 var(--space-3);
     font-size: var(--fs-lg);
-  }
-  h3 {
-    margin: var(--space-4) 0 var(--space-2);
-    font-size: var(--fs-md);
   }
   .card {
     display: flex;
@@ -200,7 +221,8 @@
     color: var(--muted);
   }
   .alert {
-    color: var(--thin);
+    /* texte : --thin-ink (contraste AA), --thin est réservé aux tracés */
+    color: var(--thin-ink);
   }
   .tools {
     list-style: none;
@@ -217,10 +239,51 @@
     stroke: currentColor;
     stroke-width: 1.5;
   }
-  .add {
-    flex-wrap: wrap;
-  }
   .shop {
     margin-top: var(--space-2);
+  }
+  .map {
+    aspect-ratio: 4 / 3;
+    border: 1px solid var(--line);
+    border-radius: var(--r-panel);
+    background: var(--paper);
+  }
+  .sub {
+    margin-top: var(--space-5);
+  }
+  .room {
+    display: grid;
+    align-items: start;
+  }
+  .room > a {
+    color: var(--ink);
+    text-decoration: none;
+    min-height: var(--touch);
+    display: grid;
+    align-content: center;
+  }
+  .poses {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .poses a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--touch);
+    color: var(--ink);
+  }
+  .chip {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: var(--pose);
+    border: 1px solid var(--ink);
+  }
+  .row {
+    margin-top: var(--space-3);
   }
 </style>

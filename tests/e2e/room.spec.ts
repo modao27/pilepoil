@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { newRoom, sceneStats } from './room-helpers';
-import { addPlanWindow, expectAccessible, expectNoHorizontalScroll, shot } from './helpers';
+import { addPlanWindow, expectAccessible, expectNoHorizontalScroll, openPose, shot } from './helpers';
 
 test('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => {
   await newRoom(page);
-  await page.getByRole('link', { name: 'Vue de la pièce' }).click();
+  await expectAccessible(page);
+  await expectNoHorizontalScroll(page);
+  await shot(page, info, '79-ecran-piece');
+  await openPose(page, 'Mur 1');
+  await page.getByRole('link', { name: 'Vue 3D de la pièce' }).click();
   await expect(page.getByRole('group', { name: /Pièce vue de dessus/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Ouvrir Pièce, / })).toHaveCount(5);
   await expectAccessible(page);

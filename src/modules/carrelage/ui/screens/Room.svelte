@@ -1,5 +1,8 @@
 <script lang="ts">
-  /** Vue d'une pièce du plan (#/p/:id/m/carrelage/room/:roomId) : dessus (murs dépliés, liens) et maquette 3D. */
+  /**
+   * Carrelage d'une pièce du plan (#/p/:id/m/carrelage/room/:roomId) : dessus (murs dépliés, liens) et maquette 3D.
+   * Le choix des surfaces se fait sur l'écran Pièce commun.
+   */
   import type { ModuleScreenProps } from '../../../types';
   import type { ProjectResult } from '../../core';
   import { roomLayout } from '../../render/scene3d/placement';
@@ -42,13 +45,13 @@
 </script>
 
 {#if !project || !room}
-  <Screen title="Pièce introuvable" backHref={project ? `#/p/${id}/m/carrelage` : '#/'} backLabel="Retour">
+  <Screen title="Pièce introuvable" backHref={project ? `#/p/${id}` : '#/'} backLabel="Retour">
     <EmptyState icon="info" title="Cette pièce n’existe plus" text="Elle a peut-être été supprimée du plan.">
-      {#snippet action()}<Button variant="primary" href="#/p/{id}/m/carrelage">Voir le carrelage</Button>{/snippet}
+      {#snippet action()}<Button variant="primary" href="#/p/{id}">Revenir au projet</Button>{/snippet}
     </EmptyState>
   </Screen>
 {:else}
-  <Screen title="{room.name} — {project.name}" backHref="#/p/{id}/m/carrelage" backLabel="Carrelage" wide>
+  <Screen title="{room.name} — {project.name}" backHref="#/p/{id}/r/{room.id}" backLabel="Pièce" wide>
     {#snippet actions()}
       <Segmented
         label="Vue de la pièce"

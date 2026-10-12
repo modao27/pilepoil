@@ -63,7 +63,7 @@
     </section>
 
     <div class="row">
-      <Button href="#/p/{ed.project.id}/m/carrelage">Sol et murs à carreler</Button>
+      <Button href="#/p/{ed.project.id}/r/{ed.surface.ref.room}">Sol et murs de la pièce</Button>
       <Button href="#/p/{ed.project.id}/plan">Modifier le plan</Button>
     </div>
   </div>

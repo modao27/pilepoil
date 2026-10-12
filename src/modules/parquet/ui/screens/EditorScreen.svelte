@@ -7,13 +7,13 @@
   import { parquetData } from '../../state/module';
   import ParquetEditor from '../components/ParquetEditor.svelte';
 
-  let { projectId }: ModuleScreenProps = $props();
+  let { projectId, params }: ModuleScreenProps = $props();
   const project = $derived(app.project(projectId));
 </script>
 
 {#if project && parquetData(project)}
   <!-- l'éditeur garde son propre état : recréé seulement quand on change de projet -->
-  {#key projectId}<ParquetEditor {project} />{/key}
+  {#key projectId}<ParquetEditor {project} poseId={params.poseId} />{/key}
 {:else}
   <Screen title="Parquet" backHref="#/p/{projectId}" backLabel="Projet">
     <EmptyState

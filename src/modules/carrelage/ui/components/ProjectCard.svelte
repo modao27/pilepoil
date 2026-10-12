@@ -92,7 +92,7 @@
         onclick={async () => {
           menu = false;
           const c = await app.duplicateProject(project.id);
-          if (c) go({ name: 'module', id: c.id, module: 'carrelage', path: '' });
+          if (c) go({ name: 'project', id: c.id });
         }}>Dupliquer</Button
       >
       <Button

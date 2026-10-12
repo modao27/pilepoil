@@ -3,7 +3,7 @@
  * suivre la pose. Écrit pour le téléphone (profil mobile 390 px), vérifié aussi sur ordinateur.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot, woodFloor } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -59,11 +59,10 @@ test('parcours : deux pièces, point de Hongrie, achats, chantier', async ({ pag
   await expect(pp.getByRole('heading', { name: 'Passage' })).toBeVisible();
   await shot(page, info, 'P1-parcours-plan');
 
-  // 3. le parquet : une pose sur les deux pièces, en point de Hongrie
-  await page.getByRole('link', { name: 'Projet' }).click();
-  await page.getByRole('button', { name: 'Ajouter parquet' }).click();
+  // 3. le parquet : le sol du séjour (écran Pièce), puis le bureau relié par la porte, en point de Hongrie
+  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  await woodFloor(page, id, 'Séjour');
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
-  await p.getByRole('button', { name: 'Créer une pose' }).click();
   await p.getByRole('checkbox', { name: 'Bureau' }).check();
   await p.getByRole('combobox', { name: 'Lame' }).selectOption({ label: 'Point de Hongrie 45° 600 × 90 (lames A/B)' });
   await p.getByRole('radio', { name: 'Hongrie' }).click();

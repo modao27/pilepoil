@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addPlanWindow, addTool, createProject } from './helpers';
+import { addPlanWindow, createProject, woodFloor } from './helpers';
 import { newRoom, sceneStats } from './room-helpers';
 
 // GPU réel si disponible (sinon Chromium rend en logiciel, sans rapport avec un téléphone).
@@ -22,8 +22,7 @@ test('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en r
   await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await page.waitForTimeout(500);
 
-  await page.goto(`/#/p/${id}/m/carrelage`);
-  await page.getByRole('link', { name: 'Vue de la pièce' }).click();
+  await page.getByRole('link', { name: 'Vue 3D de la pièce' }).click();
   await page.getByRole('radio', { name: '3D' }).click();
   await sceneStats(page);
   await page.getByRole('button', { name: 'Faire tourner' }).click();
@@ -50,8 +49,7 @@ test('parquet : 30 m² en point de Hongrie, budget de dessin et images par secon
   test.setTimeout(120_000);
   // projet, pièce de 6 × 5 m dans le plan, parquet
   const id = await createProject(page, { name: 'Salon', size: [600, 500] });
-  await addTool(page, id, 'parquet');
-  await page.getByRole('button', { name: 'Créer une pose' }).click();
+  await woodFloor(page, id, 'Salon');
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
   await p.getByRole('combobox', { name: 'Lame' }).selectOption({ label: 'Point de Hongrie 45° 600 × 90 (lames A/B)' });
   await p.getByRole('radio', { name: 'Hongrie' }).click();

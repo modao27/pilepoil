@@ -1,15 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   addTile,
-  addTool,
+  cover,
   createProject,
   expectAccessible,
   expectNoHorizontalScroll,
   expectTouchTargets,
   fillNumber,
   newWall,
+  openPose,
+  openRoom,
   shot,
-  tick,
 } from './helpers';
 
 async function check(page: Page) {
@@ -41,14 +42,15 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await check(page);
   await shot(page, info, '10-plan-piece');
 
-  // 2. revêtement choisi après le plan ; à carreler : le mur 1, sur l'écran Carrelage
+  // 2. revêtement choisi après le plan : vue globale, la pièce, son mur 1 en carrelage
   await plan.getByRole('button', { name: 'Toutes les pièces' }).click();
   await plan.getByRole('link', { name: 'Choisir les revêtements' }).click();
-  await page.getByRole('button', { name: 'Ajouter carrelage' }).click();
-  await page.getByRole('checkbox', { name: /^Mur 1 / }).check();
+  await expect(page).toHaveURL(/#\/p\/[^/]+$/);
+  await page.getByRole('link', { name: /^Pièce Sans revêtement/ }).click();
+  await cover(page, 'Mur 1');
   await check(page);
-  await shot(page, info, '11-carrelage-surfaces');
-  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
+  await shot(page, info, '11-piece-mur');
+  await openPose(page, 'Mur 1');
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
 
   // 3. carreau : bibliothèque vide → nouveau carreau, utilisé par la bande
@@ -69,12 +71,13 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await check(page);
   await shot(page, info, '14-motif');
 
-  // écran Carrelage, éditeur puis résultats
-  await page.goto(page.url().replace(/\/m\/carrelage.*$/, '/m/carrelage'));
-  await expect(page.getByRole('heading', { name: 'Carrelage — Pièce 288 × 240' })).toBeVisible();
+  // vue globale, puis la pose depuis la liste des pièces, puis résultats
+  await page.getByRole('link', { name: 'Pièce', exact: true }).click();
+  await page.getByRole('link', { name: 'Projet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Pièce 288 × 240' })).toBeVisible();
   await check(page);
-  await shot(page, info, '15-carrelage');
-  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
+  await shot(page, info, '15-vue-globale');
+  await page.getByRole('link', { name: /^Carrelage · Pose 1/ }).click();
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await expect(page.getByText('Pièce 288 × 240')).toBeVisible();
   await page.getByRole('link', { name: /\d+ carreaux/ }).click();
@@ -85,11 +88,10 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   // persistance
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Résultats — Pièce 288 × 240' })).toBeVisible();
-  await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
 
-  // écran Carrelage → écran Projet → accueil, carte, menu
+  // résultats → vue globale → accueil, carte, menu
   await page.getByRole('link', { name: 'Projet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Outils' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Revêtements' })).toBeVisible();
   await page.getByRole('link', { name: 'Mes projets' }).click();
   await expect(page.getByRole('link', { name: 'Pièce 288 × 240' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Aperçu de Pièce, mur 1' })).toBeVisible();
@@ -104,7 +106,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
   await page.getByRole('button', { name: 'Actions pour Crédence cuisine' }).click();
   await page.getByRole('button', { name: 'Dupliquer' }).click();
-  await expect(page.getByRole('heading', { name: 'Carrelage — Crédence cuisine (copie)' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Crédence cuisine (copie)' })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('link', { name: /Crédence cuisine/ })).toHaveCount(2);
 
@@ -150,23 +152,18 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
   await shot(page, info, '43-carreau-utilise');
 });
 
-test('pièce en L : sol et murs cochés sur l’écran Carrelage', async ({ page }, info) => {
+test('pièce en L : sol et murs revêtus sur l’écran Pièce', async ({ page }, info) => {
   await addTile(page);
   const id = await createProject(page, { project: 'Pièce 400 × 300', name: 'Pièce', size: [400, 300], shape: 'En L' });
-  await addTool(page, id, 'carrelage');
-  await page.getByRole('checkbox', { name: 'Sol', exact: true }).check();
-  for (const n of [1, 2, 6])
-    await tick(page, page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) }), n > 1 ? 'new' : undefined);
-  await expect(page.getByRole('heading', { name: 'Carrelage — Pièce 400 × 300' })).toBeVisible();
+  await openRoom(page, id);
+  await cover(page, 'Sol');
+  for (const n of [1, 2, 6]) await cover(page, `Mur ${n}`, 'carrelage', n > 1 ? 'new' : undefined);
   await check(page);
   await shot(page, info, '16-piece-L');
-  await expect(page.getByRole('link', { name: /^Ouvrir Pièce, / })).toHaveText([
-    /^sol/i,
-    /^mur 1/i,
-    /^mur 2/i,
-    /^mur 6/i,
-  ]);
-  await page.getByRole('link', { name: 'Ouvrir Pièce, sol' }).click();
+  await expect(
+    page.getByRole('region', { name: 'Sol et murs' }).getByRole('button', { name: /: Pose \d$/ }),
+  ).toHaveText([/Sol :/, /Mur 1 /, /Mur 2 /, /Mur 6 /]);
+  await openPose(page, 'Sol');
   await expect(page.getByRole('application', { name: /^Plan de Pièce, sol/ })).toBeVisible();
   await check(page);
   await shot(page, info, '22-projet-piece-sol');

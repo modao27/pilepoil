@@ -65,3 +65,32 @@ export const sameSurface = (a: SurfaceRef, b: SurfaceRef): boolean => a.room ===
 
 /** Clé d'une surface : `${pièce}~floor` ou `${pièce}~${mur}`. */
 export const surfaceKey = (s: SurfaceRef): string => `${s.room}~${s.wall ?? 'floor'}`;
+
+/**
+ * Lignes d'une zone de mur carrelée de `from` à `to` mm au-dessus du sol (null : depuis le sol, jusqu'au
+ * plafond). Repère du mur (y vers le haut) : côté 1 d'une ligne orientée vers +x = au-dessus. Aucune ligne si la
+ * zone couvre toute la hauteur.
+ */
+export function wallSpanCuts(plan: Plan, s: SurfaceRef, from: number | null, to: number | null): Cut[] {
+  const rect = surfacePolygon(plan, s);
+  if (!rect || s.wall == null) return [];
+  const length = Math.max(...rect[0]!.map((p) => p[0]));
+  const ceiling = Math.max(...rect[0]!.map((p) => p[1]));
+  const line = (y: number): Cut['line'] => [
+    [0, y],
+    [length, y],
+  ];
+  const cuts: Cut[] = [];
+  if (from != null && from > 0) cuts.push({ line: line(from), side: 1 });
+  if (to != null && to < ceiling) cuts.push({ line: line(to), side: -1 });
+  return cuts;
+}
+
+/** Boîte d'une zone dans le repère de sa surface [xmin, xmax, ymin, ymax] ; null si elle n'existe plus ou est vide. */
+export function zoneBox(plan: Plan, z: Pick<Zone, 'surface' | 'cuts'>): [number, number, number, number] | null {
+  const pts = (zoneRegion(plan, z) ?? []).flat();
+  if (!pts.length) return null;
+  const xs = pts.map((p) => p[0]),
+    ys = pts.map((p) => p[1]);
+  return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+}

@@ -25,6 +25,7 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
   create,
   coverage: TILE_RULES,
   createPose,
+  poseHref: (p, pose) => `#/p/${encodeURIComponent(p)}/m/carrelage/s/${encodeURIComponent(pose)}`,
   reduce: (data, action) => reduce(data, action),
   toSpec,
   summary,
@@ -46,7 +47,7 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
   },
   icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M12 1v22M23 1v22M1 12h32"/>',
   screens: {
-    editor: () => import('./ui/screens/Home.svelte').then((m) => m.default),
+    editor: () => import('./ui/screens/ToProject.svelte').then((m) => m.default),
     results: () => import('./ui/screens/Results.svelte').then((m) => m.default),
     routes: [
       { path: 's/:surfaceId', load: editor },

@@ -103,13 +103,14 @@ test('plan : pièce en L avec poteau et porte, seconde pièce reliée par un pas
   // enregistré : retour au projet, puis réouverture
   await page.getByRole('link', { name: 'Projet' }).click();
   await expect(page).toHaveURL(new RegExp(`#/p/${id}$`));
-  await expect(page.getByRole('heading', { name: 'Outils' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /2 pièces/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pièces' })).toBeVisible();
+  // vue globale : les deux pièces sur le plan et dans la liste
+  await expect(page.getByRole('link', { name: /^Ouvrir Séjour/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Ouvrir Cuisine/ })).toBeVisible();
   await check(page);
   await shot(page, info, '60-projet');
-  await shot(page, info, '65-projet-plan');
   await page.reload();
-  await page.getByRole('link', { name: /2 pièces/ }).click();
+  await page.getByRole('link', { name: 'Modifier le plan' }).click();
   await expect(page.locator('line.passage')).toHaveCount(1);
   await expect(page.locator('.obstacle')).toHaveCount(1);
 });

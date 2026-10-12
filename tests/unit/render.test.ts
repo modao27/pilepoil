@@ -3,7 +3,7 @@ import { buildSurface, layoutZones } from '../../src/modules/carrelage/core';
 import { hitTest, openingAt, pieceAt, zoneAt } from '../../src/modules/carrelage/render/hitTest';
 import { fitView, panBy, toScreen, toWorld, zoomAt } from '../../src/render/view';
 import { planDrawing } from '../../src/modules/carrelage/render/planSvg';
-import { apply, boxOf, unfoldWall } from '../../src/modules/carrelage/render/roomTop';
+import { apply, boxOf, unfoldWall } from '../../src/render/roomTop';
 import type { Polygon } from '../../src/core/geometry/types';
 import { surface, zone } from './fixtures';
 
