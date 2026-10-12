@@ -5,10 +5,12 @@
  */
 import {
   AmbientLight,
+  BackSide,
   BufferGeometry,
   Color,
   DirectionalLight,
   DoubleSide,
+  FrontSide,
   Float32BufferAttribute,
   Mesh,
   MeshBasicMaterial,
@@ -59,6 +61,7 @@ export class Scene3D {
   private readonly textures = new Map<string, Texture>();
   private readonly loader = new TextureLoader();
   private meshes: Mesh[] = [];
+  private wallMode: WallMode = 'full';
   private highlight: Mesh[] = [];
   /** Uniformes partagés par tous les matériaux : mode des murs, hauteur de coupe, caméra, tranche. */
   private readonly cut = {
@@ -118,7 +121,15 @@ export class Scene3D {
   }
 
   setWallMode(mode: WallMode): void {
+    if (mode === this.wallMode) return;
+    this.wallMode = mode;
     this.cut.uCutMode.value = MODES[mode];
+    for (const m of this.meshes) {
+      const mat = m.material as Material;
+      if (mat.transparent) continue;
+      mat.side = this.opaqueSide();
+      mat.needsUpdate = true;
+    }
     this.requestRender();
   }
 
@@ -242,7 +253,8 @@ export class Scene3D {
     this.times.push(t);
     if (this.times.length > 60) this.times.shift();
     const n = this.times.length;
-    const fps = n > 10 ? ((n - 1) * 1000) / (this.times[n - 1]! - this.times[0]!) : this.stats.fps;
+    // dès trois images : un appareil lent (rendu logiciel) donne une mesure, pas 0
+    const fps = n >= 3 ? ((n - 1) * 1000) / (this.times[n - 1]! - this.times[0]!) : this.stats.fps;
     this.stats = { drawCalls: info.calls, triangles: info.triangles, fps: Math.round(fps) };
     if (!moving) this.times = [];
     this.onStats?.(this.stats);
@@ -260,8 +272,9 @@ export class Scene3D {
     const mat = new MeshLambertMaterial({
       vertexColors: true,
       map: d.photo ? this.texture(d.photo) : null,
-      // faces arrière visibles : la tranche d'un mur coupé se dessine en charbon
-      side: DoubleSide,
+      side: glass ? DoubleSide : this.opaqueSide(),
+      // ombres comme sans coupe : faces arrière seules (moitié moins de travail qu'en double face)
+      shadowSide: BackSide,
       transparent: glass,
       opacity: d.opacity ?? 1,
       depthWrite: !glass,
@@ -275,6 +288,14 @@ export class Scene3D {
     this.cutaway(depth, false);
     m.customDepthMaterial = depth;
     return m;
+  }
+
+  /**
+   * Faces arrière dessinées seulement quand les murs sont coupés (leur tranche, en charbon) : murs pleins, elles
+   * sont cachées et ne coûtent rien.
+   */
+  private opaqueSide() {
+    return this.wallMode === 'full' ? FrontSide : DoubleSide;
   }
 
   /** Coupe des murs dans le shader : position monde et normale de mur par sommet ; fragments au-dessus jetés. */
