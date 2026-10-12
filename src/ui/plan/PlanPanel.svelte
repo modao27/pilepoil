@@ -321,6 +321,27 @@
       {/each}
     </ul>
     {@render items(room.openings, room.obstacles)}
+    {@const neighbors = st.neighbors(room.id)}
+    {#if neighbors.length}
+      <h3>Pièces voisines</h3>
+      <ul class="walls">
+        {#each neighbors as f (f.a.wall + f.b.wall)}
+          {@const mine = f.a.room === room.id ? f.a : f.b}
+          {@const other = st.room(f.a.room === room.id ? f.b.room : f.a.room)}
+          {@const linked = st.linked(f)}
+          <li>
+            <span
+              >{other?.name}, de l’autre côté du mur {room.walls.findIndex((w) => w.id === mine.wall) + 1}{linked
+                ? ' : reliée par une porte'
+                : ''}</span
+            >
+            {#if !linked}
+              <Button icon="plus" onclick={() => st.doorTo(f)}>Porte vers {other?.name}</Button>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
     <div class="row">
       <Button icon="plus" onclick={() => st.addObstacle(room.id)}>Ajouter un obstacle</Button>
       <Button variant="danger" icon="trash" onclick={() => askRemove(room)}>Supprimer la pièce</Button>

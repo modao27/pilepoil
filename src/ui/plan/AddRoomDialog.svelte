@@ -4,6 +4,7 @@
   import Dialog from '../components/Dialog.svelte';
   import NumberField from '../components/NumberField.svelte';
   import Segmented from '../components/Segmented.svelte';
+  import Select from '../components/Select.svelte';
   import TextField from '../components/TextField.svelte';
   import type { PlanEditorState } from './planState.svelte';
 
@@ -18,6 +19,14 @@
   let cutWidth = $state(1200);
   let arm = $state(1200);
   let depth = $state(1200);
+  /** Emplacement : '' à côté du plan, sinon « pièce~mur » contre lequel poser la nouvelle pièce. */
+  let place = $state('');
+  const places = $derived([
+    { value: '', label: 'À côté du plan' },
+    ...st.plan.rooms.flatMap((r) =>
+      r.walls.map((w, i) => ({ value: `${r.id}~${w.id}`, label: `Contre ${r.name}, mur ${i + 1}` })),
+    ),
+  ]);
 
   /** Première pièce d'un projet neuf : on nomme aussi le projet. */
   const first = $derived(st.isNew && !st.plan.rooms.length);
@@ -42,10 +51,12 @@
     if (!valid) return;
     const n = name.trim() || st.nextRoomName();
     if (first && projectName.trim()) st.dispatch({ type: 'project/rename', name: projectName.trim() });
+    const [room, wall] = place.split('~');
+    const against = room && wall ? { room, wall } : undefined;
     if (kind === 'draw') st.startDraw();
-    else if (kind === 'rect') st.addRoom({ kind, length, width }, n);
-    else if (kind === 'l') st.addRoom({ kind, length, width, cutLength, cutWidth }, n);
-    else st.addRoom({ kind, length, width, arm, depth }, n);
+    else if (kind === 'rect') st.addRoom({ kind, length, width }, n, against);
+    else if (kind === 'l') st.addRoom({ kind, length, width, cutLength, cutWidth }, n, against);
+    else st.addRoom({ kind, length, width, arm, depth }, n, against);
     open = false;
   }
 </script>
@@ -82,6 +93,9 @@
         {/if}
       </div>
       {#if !valid}<p class="error" role="alert">Le retrait doit rester plus petit que la pièce.</p>{/if}
+      {#if st.plan.rooms.length}
+        <Select label="Emplacement" bind:value={place} options={places} />
+      {/if}
     {/if}
   </div>
   {#snippet actions()}
