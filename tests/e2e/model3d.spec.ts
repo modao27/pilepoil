@@ -37,8 +37,10 @@ test('vue 3D : aperçu, murs pleins, bas et coupés, pièce touchée puis ouvert
   await plan.getByRole('button', { name: 'Porte vers Séjour' }).click();
   await expect(plan.getByRole('heading', { name: 'Passage' })).toBeVisible();
 
+  // le séjour : parquet au sol, carrelage sur la cloison commune avec le bureau (mur 2)
   await openRoom(page, id, 'Séjour');
   await cover(page, 'Sol', 'parquet');
+  await cover(page, 'Mur 2');
   await openRoom(page, id, 'Bureau');
   await cover(page, 'Sol');
   await cover(page, 'Mur 1');

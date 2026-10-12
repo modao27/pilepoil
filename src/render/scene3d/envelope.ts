@@ -109,6 +109,40 @@ export function bareWall(
   return components(difference([rect(0, 0, len, height)], cut));
 }
 
+/**
+ * Parties de la face extérieure du mur i (abscisses le long du mur, de xa à xb) qui ne touchent aucune autre pièce
+ * de `rooms` : une bande de 2 mm juste derrière la face, moins les autres pièces et leurs murs.
+ */
+export function exposed(
+  plan: Plan,
+  rooms: readonly Id[],
+  room: PlanRoom,
+  i: number,
+  xa: number,
+  xb: number,
+): [number, number][] {
+  if (xb - xa <= 1) return [];
+  const t = room.walls[i]?.thickness ?? 0;
+  const a = abs(room, room.outline[i]!);
+  const u = wallDirection(room, i);
+  const out = outwardNormal(u);
+  const at = (x: number, d: number): Point => [a[0] + u[0] * x + out[0] * d, a[1] + u[1] * x + out[1] * d];
+  // les autres pièces avec leurs murs : un bout d'angle peut tomber dans l'épaisseur d'un mur voisin
+  const others = plan.rooms
+    .filter((r) => r.id !== room.id && rooms.includes(r.id) && r.outline.length >= 3)
+    .flatMap((r) => [r.outline, ...wallBands(r)].map((ring) => ring.map((q) => abs(r, q))));
+  if (!others.length) return [[xa, xb]];
+  const strip = [at(xa, t + 1), at(xb, t + 1), at(xb, t + 3), at(xa, t + 3)];
+  const along = (q: Point) => (q[0] - a[0]) * u[0] + (q[1] - a[1]) * u[1];
+  return components(difference([strip], others))
+    .map((c): [number, number] => {
+      const xs = c.outer.map(along);
+      return [Math.max(xa, Math.min(...xs)), Math.min(xb, Math.max(...xs))];
+    })
+    .filter(([s0, s1]) => s1 - s0 > 1)
+    .sort((p, q) => p[0] - q[0]);
+}
+
 /** La baie est-elle dans une partie de mur dessinée par un module (qui dessine aussi son embrasure) ? */
 const drawnBy = (spans: readonly [number, number][], x0: number, x1: number) =>
   spans.some(([a, b]) => (x0 + x1) / 2 >= a && (x0 + x1) / 2 <= b);
@@ -166,11 +200,12 @@ export function buildEnvelope(
       const alongOf = (p: Point) => (p[0] - rel[0]) * u[0] + (p[1] - rel[1]) * u[1];
       const xa = alongOf(bands[i]![3]!),
         xb = alongOf(bands[i]![2]!);
-      if (xb - xa > 1) {
-        const inside = holes.filter(([x0, x1]) => x0 > xa && x1 < xb);
+      // sauf contre une pièce voisine : sa propre cloison est déjà là (sinon deux faces au même endroit)
+      for (const [s0, s1] of exposed(plan, rooms, room, i, xa, xb)) {
+        const inside = holes.filter(([x0, x1]) => x0 > s0 && x1 < s1);
         shape(
           plaster,
-          rect(xa, 0, xb, h),
+          rect(s0, 0, s1, h),
           inside.map(([x0, x1, y0, y1]) => rect(x0, y0, x1, y1).reverse()),
           (p) => W(p[0], p[1], t),
           [out[0], 0, out[1]],
