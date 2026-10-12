@@ -139,6 +139,13 @@
 
   /** Découpe d'une zone de sol : points touchés sur le dessin. */
   let cutting = $state.raw<{ zone: Zone; points: Point[] } | null>(null);
+  let drawingEl = $state<HTMLDivElement>();
+  /** Début de la découpe : le dessin revient en vue (sur téléphone, le panneau est dessous). */
+  function startCut(zone: Zone) {
+    cutting = { zone, points: [] };
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    drawingEl?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  }
   function cutPoint(p: Point) {
     if (!cutting) return;
     const points = [...cutting.points, p];
@@ -174,7 +181,7 @@
   <Screen title={room.name} backHref="#/p/{id}" backLabel="Projet">
     {#snippet actions()}<Button variant="ghost" href="#/p/{id}/plan">Modifier le plan</Button>{/snippet}
     <div class="layout">
-      <div class="drawing">
+      <div class="drawing" bind:this={drawingEl}>
         <RoomDrawing
           {project}
           {room}
@@ -234,7 +241,7 @@
                     <div class="row">
                       {#if m}<Button variant="primary" href={m.poseHref(id, z.pose)}>Calepinage</Button>{/if}
                       {#if kind === 'floor'}
-                        <Button onclick={() => (cutting = { zone: z, points: [] })}>Découper par une ligne</Button>
+                        <Button onclick={() => startCut(z)}>Découper par une ligne</Button>
                       {/if}
                       {#each modulesFor(selected).filter((x) => x.id !== m?.id) as other (other.id)}
                         <Button onclick={() => switchTo(z, other)}>Passer en {other.label.toLowerCase()}</Button>

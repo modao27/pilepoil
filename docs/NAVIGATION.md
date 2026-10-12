@@ -103,9 +103,9 @@ Capacités des moteurs :
 |---|---|---|---|
 | 1 | Mes projets | `#/` | [Existe] |
 | 2 | Nouveau projet : nom du projet et première pièce, sur le plan | `#/new` | [Existe] (N2) |
-| 3 | **Vue globale du projet** | `#/p/:id` | [Existe], à refaire |
+| 3 | **Vue globale du projet** | `#/p/:id` | [Existe] (N3) |
 | 4 | Plan : dessin et cotes | `#/p/:id/plan` | [Existe] |
-| 5 | **Pièce** : surfaces, zones et poses sur le dessin | `#/p/:id/r/:pièce` | [Existe ailleurs] (vue Pièce du carrelage) |
+| 5 | **Pièce** : surfaces, zones et poses sur le dessin | `#/p/:id/r/:pièce[/:surface]` | [Existe] (N3) ; remplace l'écran Carrelage |
 | 6 | **Calepinage d'une pose** | `#/p/:id/pose/:pose` | [Existe] dans chaque module ; coquille commune [À créer] |
 | 7 | **Résultats** surface, pièce ou projet, avec export | `…/resultats` à chaque niveau | [À créer] par surface et par pièce |
 | 8 | Achats du projet | `#/p/:id/achats` | [Existe] |
@@ -177,7 +177,7 @@ sont pas gardés, l'application ne peut pas savoir s'ils sont à jour).
 | Vue globale | Toucher une pièce | Pièce | — |
 | Vue globale | Toucher une pose dans la liste | Calepinage de la pose | — |
 | Pièce | Toucher le sol ou un mur | Même écran, surface sélectionnée | Sélection dans l'adresse |
-| Pièce | « Revêtir toute la surface » → Carrelage | Calepinage de la nouvelle pose | Si une pose carrelage touche la zone : « Continuer la pose 1 ou nouvelle pose ? » |
+| Pièce | « Revêtir : carrelage » (ou parquet) | Même écran, surface revêtue ; « Calepinage » ouvre la pose | Si une pose du même revêtement touche la surface : « Continuer « Pose 1 » / Nouvelle pose » ; l'outil est ajouté au projet s'il n'y est pas |
 | Pièce | Sol → « Découper en zones », tracer une ligne | Même écran, deux zones | Annuler ; aucune pose perdue |
 | Pièce | Mur → « Crédence », 90 → 150 cm | Zone de mur | Bornée par la hauteur de la pièce, message clair |
 | Pièce | Zone du mur 2 → « Ajouter à la pose du mur 1 » | La pose fait l'angle | Seulement des murs qui se suivent, sinon grisé avec la raison |
