@@ -1,7 +1,7 @@
 /** Maquette du projet : murs en volume, repérage des murs pour la coupe, pièce touchée, menuiseries, terrain. */
 import { describe, expect, it } from 'vitest';
 import type { Plan } from '../../src/core/plan/types';
-import { buildJoinery, buildSite, pickRoom, roomRing, tagWalls } from '../../src/render/scene3d/cutaway';
+import { buildJoinery, buildSections, buildSite, pickRoom, roomRing, tagWalls } from '../../src/render/scene3d/cutaway';
 import { buildEnvelope, planFrame } from '../../src/render/scene3d/envelope';
 import type { MeshData } from '../../src/render/scene3d/types';
 import { rect, withOpening } from './planFixtures';
@@ -268,5 +268,25 @@ describe('pièce voisine plus courte', () => {
     // la couleur est interpolée au point de coupe (ni noir ni blanc pur)
     const cut = m!.colors.filter((_, i) => i % 3 === 0).filter((v) => v > 0 && v < 1);
     expect(cut.length).toBeGreaterThan(0);
+  });
+});
+
+describe('dessus de coupe', () => {
+  const area = (m: MeshData) =>
+    tris(m).reduce((sum, t) => {
+      const [a, b, c] = t.p;
+      return sum + Math.abs((b[0] - a[0]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[0] - a[0])) / 2;
+    }, 0);
+
+  it('épaisseur des murs à 40 cm, en charbon, moins la porte qui traverse la coupe', () => {
+    const sec = buildSections(plan('door'), ['r']);
+    expect(sec.section).toBe(true);
+    expect(new Set(sec.positions.filter((_, i) => i % 3 === 1))).toEqual(new Set([0.4]));
+    // bande des murs : (3,144 × 2,144) − (3 × 2) m², moins la porte (0,8 m × 72 mm)
+    expect(area(sec)).toBeCloseTo(3.144 * 2.144 - 6 - 0.8 * 0.072, 6);
+  });
+
+  it('une fenêtre au-dessus de la coupe ne la troue pas', () => {
+    expect(area(buildSections(plan('window'), ['r']))).toBeCloseTo(3.144 * 2.144 - 6, 6);
   });
 });

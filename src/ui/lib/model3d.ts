@@ -51,6 +51,7 @@ export function modelMeshes(
   const merged = envelope.mergeMeshes([
     ...envelope.buildEnvelope(p.plan, rooms, skip),
     ...cutaway.buildJoinery(p.plan, rooms),
+    cutaway.buildSections(p.plan, rooms),
     ...entries.flatMap((e) => e.exports.meshes({ project: e.project, libraries, result: e.result, scope })),
   ]);
   return [...cutaway.tagWalls(merged, p.plan, rooms), cutaway.buildSite(envelope.planFrame(p.plan, rooms))];
