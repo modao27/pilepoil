@@ -34,7 +34,8 @@ disponible » (vérification à l'ouverture puis toutes les heures, ou depuis R�
 les changements de format passent par les migrations (`src/storage/migrations.ts`).
 
 ## Icônes
-Source : `src/pwa/icon.ts`. Après modification : `npm run icons` (régénère `public/favicon.svg` et `public/icons/`).
+Fichiers de l'identité (`src/ui/design/identite/pwa/`) copiés tels quels dans `public/` : favicons, icônes 192 et
+512 (normales et « maskable »), `apple-touch-icon-180.png`, `og-image-1200x630.png`. Manifeste : `src/pwa/manifest.ts`.
 
 ## Renommage en Pilepoil (S3)
 L'application s'appelait « Calepinage » (dépôt `calepinage-pwa`, base IndexedDB `calepinage`). GitHub Pages ne

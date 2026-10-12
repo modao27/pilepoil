@@ -57,7 +57,7 @@ class PwaState {
       },
       onOfflineReady: () => {
         this.offlineReady = true;
-        toast('Pilepoil fonctionne maintenant sans connexion.');
+        toast('PilePoil fonctionne maintenant sans connexion.');
       },
       onRegisteredSW: (_url, reg) => {
         this.registration = reg;

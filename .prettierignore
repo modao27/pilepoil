@@ -1,4 +1,5 @@
 legacy/
+src/ui/design/identite/
 docs/
 dist/
 node_modules/

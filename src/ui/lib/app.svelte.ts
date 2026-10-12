@@ -10,6 +10,7 @@ import * as repo from '../../storage/repo';
 import { libraries as libraryDefs, modules } from '../../modules/registry';
 import type { Libraries, LibraryDefinition, LibraryItem, ModuleId } from '../../modules/types';
 import { migrate, type Step } from '../../storage/migrations';
+import { background, brand } from '../brand';
 import { upsertItem } from './library';
 import { DEFAULT_PALETTE } from './palette';
 import { createWorkerClient, type ComputeClient } from '../../workers/client';
@@ -313,7 +314,7 @@ function applyTheme(t: Theme) {
   }
 }
 
-/** --paper clair et sombre (tokens.css). */
-const THEME_COLORS = { light: '#e6ebee', dark: '#0e161b' };
+/** Barre d'état : pétrole en clair, fond de l'application en sombre (identité, pwa/head-extrait.html). */
+const THEME_COLORS = { light: brand.petrole, dark: background.dark };
 
 export const app = new AppState();

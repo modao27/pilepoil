@@ -137,11 +137,11 @@
     overflow: hidden;
   }
   .row:focus-within {
-    outline: 3px solid var(--accent);
+    outline: 3px solid var(--color-focus);
     outline-offset: 1px;
   }
   .row.invalid {
-    box-shadow: inset 0 0 0 2px var(--thin);
+    box-shadow: inset 0 0 0 2px var(--color-error);
   }
   .box {
     flex: 1;
@@ -158,6 +158,7 @@
     background: transparent;
     font-family: var(--font-num);
     font-size: var(--fs-lg);
+    font-variant-numeric: tabular-nums;
     text-align: right;
   }
   input:focus-visible {

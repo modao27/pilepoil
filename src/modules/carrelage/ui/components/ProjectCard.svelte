@@ -130,7 +130,7 @@
     border-color: var(--field-border);
   }
   .card:focus-within {
-    outline: 3px solid var(--accent);
+    outline: 3px solid var(--color-focus);
     outline-offset: 2px;
   }
   .thumb {
@@ -172,9 +172,14 @@
   }
   .figs {
     display: flex;
-    gap: var(--space-3);
+    flex-wrap: wrap;
+    gap: 0 var(--space-3);
+    font-family: var(--font-display);
     font-size: var(--fs-lg);
     font-weight: 600;
+  }
+  .figs > span {
+    white-space: nowrap;
   }
   .figs .muted {
     font-family: var(--font);

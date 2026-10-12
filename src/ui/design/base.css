@@ -1,9 +1,5 @@
-@import '@fontsource/barlow/400.css';
-@import '@fontsource/barlow/500.css';
-@import '@fontsource/barlow/600.css';
-@import '@fontsource/barlow-condensed/500.css';
-@import '@fontsource/barlow-condensed/600.css';
 @import './tokens.css';
+@import './typo.css';
 
 *,
 *::before,
@@ -19,48 +15,46 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font);
-  font-size: var(--fs-md);
-  line-height: 1.4;
-  -webkit-font-smoothing: antialiased;
+  background: var(--color-bg);
+  color: var(--color-text);
+  /* 16 px : lecture sur téléphone (typo.css met 14 px sur html) */
+  font: var(--text-body-lg);
 }
 
+/* Titres en Manrope (typo.css) ; h2 et h3 un cran plus petits que la charte : écrans de téléphone denses. */
 h1,
 h2,
 h3 {
   margin: 0;
-  line-height: 1.2;
-  font-weight: 600;
-}
-h1 {
-  font-size: var(--fs-xl);
 }
 h2 {
-  font-size: var(--fs-lg);
+  font: var(--text-h3);
 }
 h3 {
-  font-size: var(--fs-md);
+  font: 600 1rem/1.5rem var(--font-display);
 }
 p {
   margin: 0;
 }
 
 a {
-  color: var(--accent);
+  color: var(--color-primary);
 }
 
-button,
+button {
+  font: inherit;
+  color: inherit;
+}
+/* Saisie : jamais sous 16 px, sinon Safari iOS zoome au focus. */
 input,
 select,
 textarea {
-  font: inherit;
+  font: var(--text-input);
   color: inherit;
 }
 
 :focus-visible {
-  outline: 3px solid var(--accent);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -70,7 +64,7 @@ textarea {
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .visually-hidden {

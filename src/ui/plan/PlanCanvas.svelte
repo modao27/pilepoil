@@ -492,7 +492,7 @@
     cursor: grab;
   }
   .plan:focus-visible {
-    outline: 3px solid var(--accent);
+    outline: 3px solid var(--color-focus);
     outline-offset: -3px;
   }
   .plan.draw {

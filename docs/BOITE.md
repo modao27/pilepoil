@@ -290,7 +290,10 @@ redirigent vers `#/library/tiles…`.
 
 ## 10. Ce qui ne change pas
 
-Design system, composants, moteur et résultats du carrelage, PWA, déploiement GitHub Pages.
+Composants, moteur et résultats du carrelage, PWA, déploiement GitHub Pages.
+
+Le design system n'est plus figé depuis le 2026-10-12 : l'identité PilePoil (`docs/IDENTITE.md`) le
+remplace, parce que l'application a désormais un nom, un logo et une charte propres. Phase `phase/identite`.
 
 Le code commun est extrait quand un second module en a besoin, pas avant : en S1, le PDF, la scène 3D et
 les motifs bâton rompu / Hongrie partent avec le reste du carrelage dans `modules/carrelage/`. Les motifs
@@ -339,4 +342,5 @@ seul le parquet s'en sert au début.
 | 2026-10-12 | N3 : vue globale et écran Pièce communs (revêtir, continuer, découper, changer de revêtement, retirer en séparant la pose) ; contrat `poseHref` ; écran Carrelage remplacé ; épaisseur des murs par défaut (Réglages) et par pièce, tableaux à l'épaisseur du mur ; pièce contre une autre et porte vers la voisine (`core/plan/neighbors`) | `NAVIGATION.md` §3–6, `PLAN.md` N3 |
 | 2026-10-12 | N5, premier chargement : contrat scindé en manifeste (identité, écrans, bibliothèque, migrations, chargé au démarrage) et `logic()` (réducteur, entrée moteur, achats, chargée à la demande, attendue par `loadModules()` avant tout écran de projet) ; écrans Projet, Réglages, Démo chargés à la demande ; jsPDF et l'aide de préchargement de Vite séparés (`build.rolldownOptions.output.advancedChunks`) : jsPDF n'est plus téléchargé au démarrage ; service worker enregistré après `load`. Démarrage 87 → 38 ko gzip | §2 |
 | 2026-10-12 | N5 : écran Résultats commun à trois niveaux (pose, pièce, projet) au lieu des résultats par module ; contrat `results` (rapport, section, PDF, 3D) ; enveloppe 3D commune (murs nus pleine hauteur, embrasures, sol brut), murs bas du parquet retirés ; prix modifiables seulement sur l'écran Achats ; dossier du projet en PDF (plan d'ensemble, résumé par pièce, poses, achats) ; anciennes adresses `m/<module>/results` redirigées | `NAVIGATION.md` §5, §7, `PLAN.md` N5 |
+| 2026-10-12 | Identité PilePoil (« Vos travaux, au millimètre près. ») : palette pétrole / terracotta / ocre / sauge / ivoire / charbon, Manrope et Inter, logo, icônes et PWA de `src/ui/design/identite/` ; remplace la règle « le design system ne change pas » et l'icône niveau à bulle ; anciens noms de variables gardés en alias pendant la transition ; statuts de coupe aux couleurs de la palette | §10, `UX.md`, `IDENTITE.md` |
 | 2026-10-12 | N4 : coquille commune du calepinage (`ui/calepinage`, étapes Produit, Pose, Découpage, Finitions, Avancé en onglets) pour le carrelage et le parquet ; poses du parquet créées et retirées sur l'écran Pièce ; zones avec contour (`area`, `holes`), découpe d'un sol par un polygone aimanté ; tests de durée isolés (projet vitest `perf`) | `NAVIGATION.md` §5–6, `PLAN.md` N4, `parquet/SPEC.md` §3 |

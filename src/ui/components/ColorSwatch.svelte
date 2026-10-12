@@ -116,7 +116,7 @@
     border: 2px solid var(--sheet);
   }
   .custom:focus-within {
-    outline: 3px solid var(--accent);
+    outline: 3px solid var(--color-focus);
     outline-offset: 2px;
   }
   .custom input {

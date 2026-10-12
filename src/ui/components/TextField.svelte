@@ -42,7 +42,7 @@
     background: var(--sheet);
   }
   input[aria-invalid='true'] {
-    border-color: var(--thin);
+    border-color: var(--color-error);
   }
   .msg {
     font-size: var(--fs-xs);

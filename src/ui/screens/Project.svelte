@@ -246,6 +246,8 @@
     fill: none;
     stroke: currentColor;
     stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
   .shop {
     margin-top: var(--space-2);

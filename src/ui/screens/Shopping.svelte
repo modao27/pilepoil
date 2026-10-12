@@ -77,7 +77,7 @@
       <p class="muted" role="status">Calcul de la liste…</p>
     {:else if !c.groups.length}
       <EmptyState
-        icon="list"
+        icon="shopping"
         title="Rien à acheter pour l’instant"
         text="Ajoutez un outil au projet et complétez-le."
       />
@@ -205,7 +205,8 @@
     border-radius: var(--r-field);
     background: var(--sheet);
     color: var(--ink);
-    font: inherit;
+    font: var(--text-input);
+    font-variant-numeric: tabular-nums;
     text-align: right;
   }
   .u {

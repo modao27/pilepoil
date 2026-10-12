@@ -39,7 +39,17 @@ const otherModules = (m) => [
 ];
 
 export default ts.config(
-  { ignores: ['dist/', 'node_modules/', 'legacy/', 'playwright-report/', 'test-results/', '**/*.local.ts'] },
+  {
+    ignores: [
+      'dist/',
+      'node_modules/',
+      'legacy/',
+      'src/ui/design/identite/',
+      'playwright-report/',
+      'test-results/',
+      '**/*.local.ts',
+    ],
+  },
   js.configs.recommended,
   ...ts.configs.strict,
   ...svelte.configs.recommended,

@@ -701,7 +701,7 @@
     background: color-mix(in srgb, var(--cut) 12%, var(--sheet));
   }
   .alerts .err {
-    color: var(--thin);
+    color: var(--color-error);
     font-weight: 600;
   }
 </style>

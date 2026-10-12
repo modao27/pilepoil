@@ -256,7 +256,7 @@ export interface ModuleManifest<
   label: string;
   /** Une phrase pour l'accueil du projet. */
   description: string;
-  /** Tracé SVG 34 × 24, trait fin. */
+  /** Contenu SVG 34 × 24, trait 1,5 (icônes de module de l'identité). */
   icon: string;
   schemaVersion: number;
   /** Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). */

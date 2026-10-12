@@ -67,22 +67,31 @@ Encollage. Export PDF et partage.
 **Pièce** : plan de dessus avec les 4 murs dépliés autour du sol, chaque surface cliquable ; 3D maquette.
 
 ## Système de design
-Ambiance « plan de chantier » : papier bleu-gris, encre, bleu de cobalt pour l'action, jaune/vert/rouge
-réservés aux statuts de coupe. Une seule audace : le plan coté. Le reste reste sobre.
+Identité PilePoil 1.0 (« Vos travaux, au millimètre près. »), adoptée le 2026-10-12 : voir `docs/IDENTITE.md`
+et la référence `src/ui/design/identite/` (ne pas modifier). Variables dans `src/ui/design/tokens.css`,
+couleurs hors CSS (PDF, 3D, canvas) dans `src/ui/brand.ts`.
+
+Ivoire, pétrole pour l'action et la sélection, terracotta et ocre en aplats et repères. Une seule audace :
+le plan coté. Le reste reste sobre.
 ```
---paper   #E6EBEE   fond        (sombre #0E161B)
---sheet   #FFFFFF   plan        (sombre #1A262E)
---ink     #15232C   texte       (sombre #E4EBEF)
---muted   #5A6A74
---line    #CDD5DA
---accent  #2747C9   action, sélection (sombre #8299FF)
---cut     #F0BE45   coupé
---reuse   #7CC79A   taillé dans une chute
---thin    #D9472B   coupe fine / apparente / erreur
+--color-bg        ivoire #FAF1E9          fond         (sombre #182121)
+--color-surface   #FFFFFF                 plan, cartes (sombre charbon #252D2D)
+--color-text      charbon #252D2D         texte        (sombre ivoire)
+--color-text-muted #5C6666                texte secondaire, jamais sur sauge (4,49:1) ; sélection : --color-selected-bg
+--color-border    #C9D3CE                 séparateurs seulement ; champs : --color-field-border (≥ 3:1)
+--color-primary   pétrole #174F50         action, sélection (sombre #6FB0AB)
+--color-accent    terracotta #D17A59      aplats, jamais en texte → --color-accent-text #A4502F
+--color-highlight ocre #C7A45A            repères, badges, jamais en texte → --pp-ocre-texte #7E6020
+--status-cut      ocre                    coupé
+--status-reuse    #7CC4A0                 taillé dans une chute
+--status-thin     terracotta              coupe fine / apparente ; erreur en texte : --color-error
 ```
-Typo : Barlow (interface), Barlow Condensed (cotes, chiffres clés). Échelle 12/14/16/20/28.
+Typo : Manrope (titres, chiffres clés), Inter (interface, cotes en `tabular-nums`). Échelle 11/12/14/16/20/24/32.
+Champs de saisie en 16 px minimum (sinon Safari iOS zoome au focus). Contraste AA vérifié par
+`tests/unit/contrast.test.ts`, en clair et en sombre.
 Rayons : 8 px (champs, boutons), 12 px (panneaux). Pas d'ombres décoratives ; élévation seulement pour
-le panneau tiré et les menus. Icônes de motifs en trait fin.
+le panneau tiré et les menus. Icônes 24 × 24 en trait 1,75 (`src/ui/icons.ts`), icônes de module 34 × 24.
+Logo horizontal dans la coquille (couleur en clair, mono blanc en sombre) et en en-tête des PDF.
 
 Composants : Button, IconButton, Segmented, NumberField (unité, +/−, calcul), ColorSwatch, PhotoPicker
 (fichier + coller + glisser, message d'état), BottomSheet (3 crans, clavier accessible), Tabs, ListReorder,

@@ -180,7 +180,7 @@
     padding: 2px var(--space-2);
     border-radius: 6px;
     background: rgb(255 255 255 / 0.8);
-    color: #2a3640;
+    color: var(--pp-charbon);
     font-size: var(--fs-xs);
     text-align: right;
     pointer-events: none;

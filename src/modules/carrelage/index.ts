@@ -39,7 +39,8 @@ export const module: ModuleManifest<CarrelageData, ProjectSpec, ProjectResult, A
       edit: () => import('./ui/screens/TileEdit.svelte').then((m) => m.default),
     },
   },
-  icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M12 1v22M23 1v22M1 12h32"/>',
+  // identité : icones/modules/carrelage-34x24.svg
+  icon: '<rect x="2" y="2" width="30" height="20" rx="1.5"/><path d="M12 2v20M22 2v20M2 12h30"/><path fill="currentColor" fill-opacity=".18" stroke="none" d="M12 2h10v10H12z"/>',
   screens: {
     editor: () => import('./ui/screens/ToProject.svelte').then((m) => m.default),
     routes: [

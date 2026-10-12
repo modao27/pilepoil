@@ -123,6 +123,6 @@
   }
   .error {
     margin: 0;
-    color: var(--thin);
+    color: var(--color-error);
   }
 </style>
