@@ -107,6 +107,7 @@ Capacités des moteurs :
 | 2 | Nouveau projet : nom du projet et première pièce, sur le plan | `#/new` | [Existe] (N2) |
 | 3 | **Vue globale du projet** | `#/p/:id` | [Existe] (N3) |
 | 4 | Plan : dessin et cotes | `#/p/:id/plan` | [Existe] |
+| 4 bis | **Vue 3D du projet** : maquette de toutes les pièces | `#/p/:id/3d` | [Existe] (V3D) |
 | 5 | **Pièce** : surfaces, zones et poses sur le dessin | `#/p/:id/r/:pièce[/:surface]` | [Existe] (N3) ; remplace l'écran Carrelage |
 | 6 | **Calepinage d'une pose** | `#/p/:id/m/<module>/…` (adresse donnée par `poseHref`) | [Existe] : coquille commune `ui/calepinage` (N4) |
 | 7 | **Résultats** d'une pose, d'une pièce ou du projet, avec export | `#/p/:id/pose/:pose/resultats`, `#/p/:id/r/:pièce/resultats`, `#/p/:id/resultats` | [Existe] (N5) : écran commun `ui/screens/Results` |
@@ -128,6 +129,16 @@ Motif deviennent les étapes du calepinage.
 - Liste des pièces ; pour chacune ses surfaces revêtues, leurs poses et leur état ; chaque ligne ouvre la pose.
 - Actions : Ajouter une pièce (formes types), Modifier le plan, Résultats du projet (3D), Achats, Dossier du
   projet. État vide : « Ajoutez votre première pièce ».
+- Sous le plan, l'aperçu 3D (image fixe, murs coupés) ouvre la Vue 3D.
+
+### 4 bis. Vue 3D du projet
+- Maquette de toutes les pièces avec leurs revêtements, menuiseries (cadres, vitres) et terrain, à la façon
+  d'une maison de poupée. Murs : **Pleins** (volumes), **Bas** (tout coupé à 40 cm) ou **Coupés** (par défaut :
+  seuls les murs dont la face extérieure regarde la caméra sont coupés à 40 cm, ils changent en tournant). La
+  tranche des murs coupés est charbon.
+- Toucher une pièce : contour et sol pétrole, son nom et « Ouvrir » ; la toucher encore ouvre l'écran Pièce.
+  Liste des pièces sous la maquette (clavier, lecteur d'écran).
+- Le même choix des murs est dans l'onglet 3D des résultats (murs coupés par défaut).
 
 ### 5. Pièce
 - Dessin : sol au centre, murs dépliés le long de leur segment ; zones colorées et étiquetées par pose
@@ -160,6 +171,9 @@ Motif deviennent les étapes du calepinage.
 | Pose (décidé en N5 à la place de « surface » : les quantités n'ont de sens que pour une pose entière ; une surface à deux poses se lit dans la pièce) | pièces posées, coupes, découpe, à commander | les pièces de la pose | « PDF du calepinage — Cuisine, sol » |
 | Pièce | toutes les poses de la pièce, totaux par revêtement | la pièce, revêtements ensemble | « PDF de la pièce » |
 | Projet | tous les revêtements, achats consolidés | tout le logement | « Dossier du projet », achats PDF et CSV |
+
+3D : maquette commune (`ui/lib/model3d.ts`) : enveloppe en volumes, menuiseries, revêtements des modules,
+terrain ; les murs sont repérés par la scène (`render/scene3d/cutaway.ts`), pas par les modules.
 
 Honnêteté des chiffres : les chutes sont réutilisées sur toute une pose (parquet) ou tout le projet
 (carrelage). Les pièces posées et leurs coupes sont exactes par surface ; les quantités à commander sont

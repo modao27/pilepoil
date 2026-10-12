@@ -11,6 +11,7 @@
 ```
 Accueil (projets)
  └─ Projet
+     ├─ Vue 3D (maquette de toutes les pièces, murs pleins / bas / coupés)
      ├─ Pièce (vue de dessus + 3D)            ← si pièce complète
      ├─ Surface (éditeur)                      ← écran principal
      ├─ Résultats (commande, découpe, achats, encollage)
