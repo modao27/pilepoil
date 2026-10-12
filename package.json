@@ -10,7 +10,7 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc -p tsconfig.core.json",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "test": "vitest run",
+    "test": "vitest run --project unit --project browser && vitest run --project perf",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "parity:extract": "tsx scripts/extract-legacy.ts",
