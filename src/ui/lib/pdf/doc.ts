@@ -4,6 +4,7 @@
  */
 import { jsPDF } from 'jspdf';
 import { brandRgb, pdfRgb } from '../../brand';
+import logo from '../../design/identite/png/pilepoil-horizontal-couleur@4x.png?inline';
 
 /** Marge de page, mm. */
 export const M = 14;
@@ -21,6 +22,9 @@ export const STATUS: Record<'full' | 'cut' | 'reuse' | 'thin', RGB> = {
   thin: [237, 196, 180],
 };
 export type RGB = [number, number, number];
+/** Logo en tête de la première page : largeur en mm (1032 × 256 px). */
+const LOGO_W = 36,
+  LOGO_H = (LOGO_W * 256) / 1032;
 
 /** Les polices PDF standard (WinAnsi) ignorent certains caractères : on les remplace. */
 export function pdfText(s: string): string {
@@ -40,6 +44,11 @@ export const euro = (v: number) => pdfText(v.toLocaleString('fr-FR', { style: 'c
 export class Doc {
   readonly pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   y = M;
+
+  constructor() {
+    this.pdf.addImage(logo, 'PNG', M, M - 4, LOGO_W, LOGO_H);
+    this.y = M + LOGO_H + 4;
+  }
 
   get w() {
     return this.pdf.internal.pageSize.getWidth();
