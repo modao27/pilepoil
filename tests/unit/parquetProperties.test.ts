@@ -1,4 +1,4 @@
-/** Pose droite : invariants du §4.7 en tests de propriétés, et temps de calcul (docs/parquet/SPEC.md §6). */
+/** Pose droite : invariants du §4.7 en tests de propriétés (temps de calcul : tests/perf). */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import type { Polygon } from '../../src/core/geometry/types';
@@ -86,28 +86,5 @@ describe('pose droite : invariants', () => {
       ),
       { numRuns: 60 },
     );
-  });
-});
-
-describe('performances', () => {
-  it('30 m² en pose droite : moins de 300 ms', () => {
-    const s = spec(rect(6000, 5000), { angle: 0 });
-    computeParquet(s); // chauffe (compilation à la volée)
-    const times: number[] = [];
-    for (let i = 0; i < 5; i++) {
-      const t = performance.now();
-      computeParquet(s);
-      times.push(performance.now() - t);
-    }
-    times.sort((a, b) => a - b);
-    const median = times[2]!;
-    console.log(`parquet 30 m² : médiane ${median.toFixed(1)} ms (${times.map((x) => x.toFixed(0)).join(', ')})`);
-    expect(median).toBeLessThan(300);
-    // en diagonale, plus de pièces coupées : même exigence
-    const d = spec(rect(6000, 5000), { angle: 45 });
-    computeParquet(d);
-    const t = performance.now();
-    computeParquet(d);
-    expect(performance.now() - t).toBeLessThan(300);
-  });
+  }, 20000); // 60 tirages : large marge quand toute la suite tourne en parallèle
 });

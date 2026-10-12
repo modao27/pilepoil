@@ -183,6 +183,8 @@ projets existants : nouvelle version de la base, projets précédents retirés.
 - Même écran et mêmes étapes (Produit, Pose, Découpage, Finitions, Avancé) pour le carrelage et le parquet,
   sans retirer de réglage.
 - Fini quand : les deux revêtements se règlent de la même façon, e2e verts.
+- Ajouté : découpe d'un sol par un contour (reportée de N3) ; création et suppression des poses du parquet sur
+  l'écran Pièce seulement ; mesures de durée lancées seules (tests/perf).
 
 ### N5 — Résultats, export et 3D
 - Résultats et PDF par surface, pièce et projet ; 3D de la pièce et du projet (revêtements ensemble).

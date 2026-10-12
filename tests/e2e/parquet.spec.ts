@@ -1,11 +1,13 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
-  woodFloor,
   createProject,
   expectAccessible,
   expectNoHorizontalScroll,
   expectTouchTargets,
+  openRoom,
+  selectSurface,
   shot,
+  woodFloor,
 } from './helpers';
 
 async function check(page: Page) {
@@ -22,6 +24,9 @@ async function setNumber(scope: Locator, label: string, value: string) {
 
 const panel = (page: Page) =>
   page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
+
+/** Étape du calepinage (Produit, Pose, Découpage, Finitions, Avancé). */
+const step = (page: Page, name: string) => panel(page).getByRole('tab', { name, exact: true }).click();
 
 /** Projet parquet, une pièce de 4 × 3 m dans le plan, une pose : renvoie l'identifiant. */
 async function parquetProject(page: Page): Promise<string> {
@@ -46,6 +51,7 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
 
   // décalage ½ puis annulation
   const p = panel(page);
+  await step(page, 'Pose');
   await p.getByRole('radio', { name: '½' }).click();
   await expect(summary).not.toContainText('52 lames');
   await expect(p.getByRole('radio', { name: '½' })).toHaveAttribute('aria-checked', 'true');
@@ -72,6 +78,7 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await expect(firstPiece).toHaveAttribute('points', before!);
 
   // seuil tracé à la main : deux touchers sur le plan, prolongé jusqu'aux murs, puis retiré
+  await step(page, 'Découpage');
   await p.getByRole('button', { name: 'Tracer un seuil' }).click();
   const b2 = (await plan.boundingBox())!;
   await page.mouse.click(b2.x + b2.width / 2, b2.y + b2.height * 0.45);
@@ -82,6 +89,7 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await expect(page.locator('line.threshold')).toHaveCount(0);
 
   // diagonale
+  await step(page, 'Pose');
   await setNumber(p, 'Angle des lames', '45');
   await expect(summary).not.toContainText('52 lames');
   await shot(page, info, '92-parquet-45');
@@ -129,6 +137,7 @@ test('parquet : bâton rompu et point de Hongrie, axe du motif, lames A et B', a
 
   // lame à bâton rompu, puis le motif
   await p.getByRole('combobox', { name: 'Lame' }).selectOption({ label: 'Bâton rompu 600 × 100 (lames A/B)' });
+  await step(page, 'Pose');
   await p.getByRole('radio', { name: 'Bâton rompu' }).click();
   await expect(summary).not.toContainText('52 lames');
   await expect(p.getByRole('radio', { name: '½' })).toHaveCount(0);
@@ -146,7 +155,9 @@ test('parquet : bâton rompu et point de Hongrie, axe du motif, lames A et B', a
   await shot(page, info, '95-parquet-baton-rompu');
 
   // point de Hongrie à 60°
+  await step(page, 'Produit');
   await p.getByRole('combobox', { name: 'Lame' }).selectOption({ label: 'Point de Hongrie 60° 500 × 90 (lames A/B)' });
+  await step(page, 'Pose');
   await p.getByRole('radio', { name: 'Hongrie' }).click();
   await p.getByRole('radio', { name: '60°' }).click();
   await expect(p.getByRole('radio', { name: '60°' })).toHaveAttribute('aria-checked', 'true');
@@ -197,6 +208,7 @@ test('parquet : deux pièces reliées par une porte, seuil conseillé, poses sé
   const p = panel(page);
   const summary = page.getByRole('link', { name: /lames · \d+ paquets/ }).first();
   await expect(summary).toContainText('52 lames');
+  await step(page, 'Découpage');
   await p.getByRole('checkbox', { name: 'Bureau' }).check();
   await expect(summary).not.toContainText('52 lames');
   await expect(p.getByText(/^Passage de \d+ mm seulement/)).toBeVisible();
@@ -216,23 +228,29 @@ test('parquet : deux pièces reliées par une porte, seuil conseillé, poses sé
 
   // séparer en deux poses au passage : le Bureau passe dans la nouvelle pose, affichée, son angle est libre
   await p.getByRole('button', { name: 'Séparer en deux poses' }).click();
-  const which = p.getByRole('combobox', { name: 'Pose affichée' });
-  await expect(which).toHaveValue(/.+/);
-  await expect(which.locator('option:checked')).toHaveText('Pose 2');
+  await expect(page.getByRole('button', { name: /Pose 2 · Bureau/ })).toBeVisible();
   await expect(p.getByRole('checkbox', { name: 'Bureau' })).toBeChecked();
   await expect(p.getByRole('checkbox', { name: 'Séjour (Pose 1)' })).not.toBeChecked();
+  await step(page, 'Pose');
   await setNumber(p, 'Angle des lames', '90');
   await expect(page.locator('g.other polygon.piece').first()).toBeAttached();
-  await which.selectOption({ label: 'Pose 1' });
+  // la pose 1 depuis la liste des poses (titre)
+  await page.getByRole('button', { name: /Pose 2 · Bureau/ }).click();
+  const poses = page.getByRole('dialog', { name: 'Poses de parquet' });
+  await poses.getByRole('button', { name: /^Pose 1/ }).click();
+  await expect(page.getByRole('button', { name: /Pose 1 · Séjour/ })).toBeVisible();
+  await step(page, 'Découpage');
   await expect(p.getByRole('checkbox', { name: 'Bureau (Pose 2)' })).not.toBeChecked();
   await expect(p.getByText(/recouvre une autre pose/)).toHaveCount(0);
   await check(page);
   await shot(page, info, '98-parquet-poses-separees');
 
-  // supprimer la pose 2 (annulable) : le Bureau est libre, la pose 1 le reprend quand on le coche
-  await which.selectOption({ label: 'Pose 2' });
-  await p.getByRole('button', { name: 'Supprimer cette pose' }).click();
-  await expect(p.getByRole('combobox', { name: 'Pose affichée' })).toHaveCount(0);
+  // retirer la pose 2 sur l'écran Pièce : le Bureau est libre, la pose 1 le reprend quand on le coche
+  await openRoom(page, id, 'Bureau');
+  await selectSurface(page, 'Sol');
+  await page.getByRole('button', { name: 'Retirer' }).click();
+  await page.goto(`/#/p/${id}/m/parquet`);
+  await step(page, 'Découpage');
   await p.getByRole('checkbox', { name: 'Bureau' }).check();
   await expect(advice).toBeVisible();
 });
@@ -267,6 +285,7 @@ test('parquet : chantier rang par rang, hors ligne, gardé au rechargement', asy
 
   // calcul changé (décalage ½) : bandeau, garder ce qui existe encore
   await page.goto(`/#/p/${id}/m/parquet`);
+  await step(page, 'Pose');
   await panel(page).getByRole('radio', { name: '½' }).click();
   await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).not.toContainText('52 lames');
   await page.goto(`/#/p/${id}/m/parquet/chantier`);

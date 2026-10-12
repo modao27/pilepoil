@@ -324,3 +324,69 @@ describe('réducteur', () => {
     );
   });
 });
+
+describe('découpe par un contour', () => {
+  const entry = rectPoly(500, 500, 1200, 1000);
+  const tiled: Coverage = { zones: [zone('f', floor('a'), 'p')], poses: [pose('p', 'carrelage')] };
+
+  it('intérieur dans une nouvelle pose, reste avec le contour en trou ; aires complémentaires', () => {
+    const next = reduceCoverage(
+      plan,
+      tiled,
+      {
+        type: 'zone/contour',
+        zoneId: 'f',
+        outline: entry,
+        newZoneId: 'in',
+        pose: { pose: pose('q', 'parquet'), settings: {} },
+      },
+      rulesOf,
+    );
+    expect(next.poses.map((x) => x.id)).toEqual(['p', 'q']);
+    const [rest, inner] = next.zones;
+    expect(rest).toMatchObject({ id: 'f', holes: [entry] });
+    expect(inner).toMatchObject({ id: 'in', area: entry, pose: 'q' });
+    // le poteau de la pièce a (200 × 200 en 1000, 1000) est à moitié dans le contour
+    expect(zoneArea(plan, inner!) + zoneArea(plan, rest!)).toBeCloseTo(zoneArea(plan, tiled.zones[0]!), -1);
+    expect(regionArea(intersection(zoneRegion(plan, inner!)!, zoneRegion(plan, rest!)!))).toBeLessThan(1);
+  });
+
+  it('contour d’une zone qui a déjà un contour : l’intérieur reste dans le premier', () => {
+    const one = reduceCoverage(
+      plan,
+      tiled,
+      { type: 'zone/contour', zoneId: 'f', outline: entry, newZoneId: 'in' },
+      rulesOf,
+    );
+    const two = reduceCoverage(
+      plan,
+      one,
+      { type: 'zone/contour', zoneId: 'in', outline: rectPoly(1000, 0, 2000, 3000), newZoneId: 'in2' },
+      rulesOf,
+    );
+    const inner2 = two.zones.find((z) => z.id === 'in2')!;
+    expect(zoneArea(plan, inner2)).toBeCloseTo(700 * 1000 - 200 * 200, -1);
+  });
+
+  it('propriété : intérieur + reste = zone, pour tout rectangle dans la pièce', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 3000 }),
+        fc.integer({ min: 0, max: 2000 }),
+        fc.integer({ min: 100, max: 1000 }),
+        fc.integer({ min: 100, max: 1000 }),
+        (x, y, w, h) => {
+          const next = reduceCoverage(
+            plan,
+            tiled,
+            { type: 'zone/contour', zoneId: 'f', outline: rectPoly(x, y, w, h), newZoneId: 'in' },
+            rulesOf,
+          );
+          if (next === tiled) return;
+          const total = next.zones.reduce((t, z) => t + zoneArea(plan, z), 0);
+          expect(Math.abs(total - zoneArea(plan, tiled.zones[0]!))).toBeLessThan(50);
+        },
+      ),
+    );
+  });
+});

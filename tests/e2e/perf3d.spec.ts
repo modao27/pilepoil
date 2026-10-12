@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addPlanWindow, createProject, woodFloor } from './helpers';
+import { addPlanWindow, createProject, step, woodFloor } from './helpers';
 import { newRoom, sceneStats } from './room-helpers';
 
 // GPU réel si disponible (sinon Chromium rend en logiciel, sans rapport avec un téléphone).
@@ -13,7 +13,7 @@ test('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en r
   await addPlanWindow(page, id);
   const mobile = info.project.name === 'mobile';
   if (mobile) await page.getByRole('button', { name: /^Réglages :/ }).click();
-  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+  await page.getByRole('tab', { name: 'Découpage', exact: true }).click();
   await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   const depth = page.getByLabel('Profondeur du tableau', { exact: true });
   await depth.fill('20');
@@ -52,6 +52,7 @@ test('parquet : 30 m² en point de Hongrie, budget de dessin et images par secon
   await woodFloor(page, id, 'Salon');
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
   await p.getByRole('combobox', { name: 'Lame' }).selectOption({ label: 'Point de Hongrie 45° 600 × 90 (lames A/B)' });
+  await step(page, 'Pose');
   await p.getByRole('radio', { name: 'Hongrie' }).click();
   await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).toBeVisible();
 

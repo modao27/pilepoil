@@ -127,22 +127,40 @@ export function layableSurface(l: LayoutSpec): Polygon[] {
   for (const r of l.rooms) {
     const inner = offset([oriented(r.outline)], -gap);
     const holes = r.obstacles.flatMap((o) => offset([oriented(o)], gap));
-    all = union(all, bounded(holes.length ? difference(inner, holes) : inner, r.bounds, gap));
+    all = union(all, contoured(bounded(holes.length ? difference(inner, holes) : inner, r.bounds, gap), r, gap));
   }
   const room = (id: string) => l.rooms.find((r) => r.id === id);
-  const bands = l.passages.flatMap((p) =>
-    bounded(
-      [passageBand(p, room(p.a)?.outline, gap)],
-      [...(room(p.a)?.bounds ?? []), ...(room(p.b)?.bounds ?? [])],
-      gap,
-    ),
-  );
+  // une pièce limitée à un contour ne passe pas la porte (le contour est dans la pièce)
+  const bands = l.passages
+    .filter((p) => !room(p.a)?.area && !room(p.b)?.area)
+    .flatMap((p) =>
+      contoured(
+        bounded(
+          [passageBand(p, room(p.a)?.outline, gap)],
+          [...(room(p.a)?.bounds ?? []), ...(room(p.b)?.bounds ?? [])],
+          gap,
+        ),
+        { holes: [...(room(p.a)?.holes ?? []), ...(room(p.b)?.holes ?? [])] },
+        gap,
+      ),
+    );
   return bands.length && all.length ? union(all, bands) : all;
 }
 
 /** Région limitée par des demi-plans, en retrait d'un jeu sur chaque ligne. */
 function bounded(s: Polygon[], bounds: readonly ZoneBound[], gap: number): Polygon[] {
   for (const b of bounds) if (s.length) s = intersection(s, [halfPlane(b, gap)]);
+  return s;
+}
+
+/** Région limitée au contour de la zone et privée de ses trous, un jeu en retrait de chaque limite. */
+function contoured(s: Polygon[], r: { area?: Polygon; holes?: Polygon[] }, gap: number): Polygon[] {
+  if (r.area && s.length) s = intersection(s, offset([oriented(r.area)], -gap));
+  if (r.holes?.length && s.length)
+    s = difference(
+      s,
+      r.holes.flatMap((h) => offset([oriented(h)], gap)),
+    );
   return s;
 }
 

@@ -40,6 +40,11 @@ export default defineConfig({
         test: { name: 'unit', include: ['tests/unit/**/*.test.ts'], environment: 'node' },
       },
       {
+        // Mesures de durée : lancées seules après les autres (npm test), un fichier à la fois.
+        extends: true,
+        test: { name: 'perf', include: ['tests/perf/**/*.test.ts'], environment: 'node', fileParallelism: false },
+      },
+      {
         // Dans Chromium : parité (moteur où les références legacy ont été extraites, Math.sin/cos pouvant
         // différer d'un ulp entre moteurs JavaScript, voir tests/parity/README.md) et stockage (vrai IndexedDB).
         extends: true,

@@ -53,6 +53,15 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
   const zoneOf = (r: PlanRoom): Zone | undefined => l.zones.find((z) => z.surface.room === r.id);
   const bounds = (r: PlanRoom): ZoneBound[] =>
     (zoneOf(r)?.cuts ?? []).map((c) => ({ line: c.line.map((p) => at(r, p)) as Segment, side: c.side }));
+  /** Contour et trous de la zone, au repère du plan. */
+  const contour = (r: PlanRoom): { area?: Polygon; holes?: Polygon[] } => {
+    const z = zoneOf(r);
+    const move = (poly: Polygon): Polygon => poly.map((p) => at(r, p));
+    return {
+      ...(z?.area ? { area: move(z.area) } : {}),
+      ...(z?.holes?.length ? { holes: z.holes.map(move) } : {}),
+    };
+  };
   return {
     id: l.id,
     rooms: rooms.map((r) => ({
@@ -65,6 +74,7 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
         return [{ segment: openingSegment(r, i, o.offset, o.width).map((q) => at(r, q)) as Segment, kind: o.kind }];
       }),
       bounds: bounds(r),
+      ...contour(r),
     })),
     passages: plan.passages.flatMap((p) => {
       const ra = rooms.find((r) => r.id === p.a.room),

@@ -89,7 +89,7 @@ test('nouvelle version : message, mise à jour sans perdre le projet', async ({ 
     await expect(page.getByRole('link', { name: /\d+ carreaux/ }).first()).toBeVisible();
     // modification encore en attente d'enregistrement au moment de la mise à jour
     if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
-    await page.getByRole('tab', { name: 'Motif' }).click();
+    await page.getByRole('tab', { name: 'Pose', exact: true }).click();
     await page.getByRole('radio', { name: 'Droit' }).click();
 
     site.publishUpdate();
@@ -109,7 +109,7 @@ test('nouvelle version : message, mise à jour sans perdre le projet', async ({ 
     await expect(msg).toBeHidden();
     expect(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.waiting)).toBe(false);
     if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
-    await page.getByRole('tab', { name: 'Motif' }).click();
+    await page.getByRole('tab', { name: 'Pose', exact: true }).click();
     await expect(page.getByRole('radio', { name: 'Droit' })).toHaveAttribute('aria-checked', 'true');
 
     await page.goto(site.url + '#/settings');

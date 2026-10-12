@@ -32,7 +32,7 @@ test('éditeur : vue 3D d’un mur avec fenêtre, puis de toute la pièce', asyn
   const id = await newRoom(page);
   await addPlanWindow(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
-  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+  await page.getByRole('tab', { name: 'Découpage', exact: true }).click();
   await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   const depth = page.getByLabel('Profondeur du tableau', { exact: true });
   await depth.fill('20');

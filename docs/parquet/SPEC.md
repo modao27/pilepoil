@@ -173,6 +173,10 @@ export interface LayoutSpec {
     id: string; outline: Polygon; obstacles: Polygon[]; openings: WallOpeningSpec[];
     /** Lignes de la zone de la pose dans cette pièce (repère du plan) ; vide : pièce entière. */
     bounds: { line: Segment; side: 1 | -1 }[];
+    /** Contour de la zone (découpe par un contour) et contours retirés ; repère du plan. Un jeu de chaque côté ;
+     *  leurs côtés hors des murs sont des seuils posés. Une pièce limitée à un contour ne passe pas les portes. */
+    area?: Polygon;
+    holes?: Polygon[];
   }[];
   /** segment = ouverture côté a ; depth = épaisseur du mur traversé par le passage. */
   passages: { id: string; a: string; b: string; segment: Segment; width: number; depth: number }[];

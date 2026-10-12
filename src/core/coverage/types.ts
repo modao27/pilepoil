@@ -3,7 +3,7 @@
  * revêtement. Partagé par tous les modules ; chaque module garde seulement les réglages de ses poses.
  * Unités : mm.
  */
-import type { Segment } from '../geometry/types';
+import type { Polygon, Segment } from '../geometry/types';
 import type { Id } from '../plan/types';
 
 /** Le sol d'une pièce (wall null) ou un de ses murs. */
@@ -22,11 +22,19 @@ export interface Cut {
   side: 1 | -1;
 }
 
-/** Partie d'une surface qui reçoit un revêtement : la surface coupée par ses lignes (aucune : toute la surface). */
+/**
+ * Partie d'une surface qui reçoit un revêtement : la surface coupée par ses lignes (aucune : toute la surface),
+ * limitée au contour `area` s'il y en a un, privée des contours `holes` (découpe d'un sol par un contour : la zone
+ * intérieure a `area`, le reste a le même polygone en trou). Repère de la surface.
+ */
 export interface Zone {
   id: Id;
   surface: SurfaceRef;
   cuts: Cut[];
+  /** Contour dans lequel la zone reste (sens indifférent). */
+  area?: Polygon;
+  /** Contours retirés de la zone. */
+  holes?: Polygon[];
   /** Pose à laquelle la zone appartient. */
   pose: Id;
 }

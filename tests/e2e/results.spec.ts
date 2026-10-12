@@ -33,7 +33,7 @@ async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
   });
   await addPlanWindow(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
-  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+  await page.getByRole('tab', { name: 'Découpage', exact: true }).click();
   await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   const depth = page.getByLabel('Profondeur du tableau', { exact: true });
   await depth.fill('15');
@@ -85,7 +85,7 @@ test('comparer deux scénarios, charger puis annuler', async ({ page }, info) =>
   // modifier le projet : motif bâtons rompus à 45°
   await openWall(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
-  await page.getByRole('tab', { name: 'Motif' }).click();
+  await page.getByRole('tab', { name: 'Pose', exact: true }).click();
   await page.getByRole('radio', { name: 'Bâtons rompus' }).click();
   await page.getByRole('radio', { name: '45°' }).click();
   await page.waitForTimeout(400);
@@ -106,7 +106,7 @@ test('comparer deux scénarios, charger puis annuler', async ({ page }, info) =>
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
   await openWall(page, id);
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
-  await page.getByRole('tab', { name: 'Motif' }).click();
+  await page.getByRole('tab', { name: 'Pose', exact: true }).click();
   await expect(page.getByRole('radio', { name: 'Bâtons rompus' })).toHaveAttribute('aria-checked', 'true');
 });
 

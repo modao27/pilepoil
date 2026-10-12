@@ -37,7 +37,7 @@
           action:
             e.code === 'invalid-surface'
               ? { label: 'Régler la surface', run: onsurface }
-              : { label: 'Choisir un carreau', run: goTab('tile') },
+              : { label: 'Choisir un carreau', run: goTab('product') },
         },
       ];
     }
@@ -71,7 +71,7 @@
       if (w.code === 'zones-gap' || w.code === 'zones-overflow')
         out.push({ tone: 'warn', text, action: { label: 'Ajuster la dernière bande', run: lastToRest } });
       else if (w.code === 'reveal-pattern')
-        out.push({ tone: 'warn', text, action: { label: 'Ouvertures', run: goTab('openings') } });
+        out.push({ tone: 'warn', text, action: { label: 'Ouvertures', run: goTab('cut') } });
       else if (w.code === 'plinth-too-high') {
         const t = carrelage.tile(ed.band.tileId);
         out.push({

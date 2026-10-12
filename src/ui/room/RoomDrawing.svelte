@@ -19,6 +19,7 @@
     selected,
     cutting = false,
     cut = [],
+    contour = false,
     onselect,
     oncutpoint,
   }: {
@@ -26,8 +27,10 @@
     room: PlanRoom;
     selected: SurfaceRef | null;
     cutting?: boolean;
-    /** Points déjà touchés de la ligne de découpe (repère de la pièce). */
+    /** Points déjà touchés de la ligne ou du contour de découpe (repère de la pièce). */
     cut?: Point[];
+    /** Les points forment un contour en cours (tracé reliant les points). */
+    contour?: boolean;
     onselect: (s: SurfaceRef) => void;
     oncutpoint?: (p: Point) => void;
   } = $props();
@@ -169,7 +172,10 @@
   </g>
 
   {#if cut.length}
-    {#each cut as p, k (k)}<circle class="cutpt" cx={p[0]} cy={p[1]} r={font / 3} />{/each}
+    {#if contour && cut.length > 1}
+      <polyline class="cutline" points={cut.map((p) => p.join(',')).join(' ')} />
+    {/if}
+    {#each cut as p, k (k)}<circle class="cutpt" class:first={k === 0} cx={p[0]} cy={p[1]} r={font / 3} />{/each}
   {/if}
 </svg>
 
@@ -229,5 +235,19 @@
   }
   .cutpt {
     fill: var(--accent);
+    pointer-events: none;
+  }
+  .cutpt.first {
+    stroke: var(--ink);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+  .cutline {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-dasharray: 6 4;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
   }
 </style>

@@ -75,6 +75,15 @@ export async function cover(
   await expect(dialog).toBeHidden();
 }
 
+/** Étape du calepinage (Produit, Pose, Découpage, Finitions, Avancé), dans le panneau du parquet ou du carrelage. */
+export async function step(page: Page, name: string): Promise<void> {
+  await page
+    .getByRole('complementary', { name: /^Réglages/ })
+    .or(page.locator('.sheet'))
+    .getByRole('tab', { name, exact: true })
+    .click();
+}
+
 /** Parquet sur le sol d'une pièce (écran Pièce), puis son calepinage. */
 export async function woodFloor(page: Page, id: string, room: string): Promise<void> {
   await openRoom(page, id, room);

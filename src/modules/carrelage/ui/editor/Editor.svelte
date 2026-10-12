@@ -1,26 +1,26 @@
 <script lang="ts">
   /**
-   * Éditeur de surface. Téléphone : plan plein écran, outils flottants, panneau tiré (résumé permanent).
-   * Ordinateur : outils à gauche, plan au centre, inspecteur à droite, résumé sous le plan.
+   * Calepinage d'une pose de carrelage, dans la coquille commune (ui/calepinage) : plan, rendu ou 3D au centre ;
+   * étapes Produit (carreau), Pose (motif), Découpage (bandes, ouvertures), Finitions, Avancé (découpe et chutes).
    */
   import { onMount, untrack } from 'svelte';
   import type { Project } from '../../../../state/model';
   import { projectCost } from '../../state/pricing';
-  import BottomSheet from '../../../../ui/components/BottomSheet.svelte';
   import IconButton from '../../../../ui/components/IconButton.svelte';
   import Scene3DView from '../components/Scene3DView.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
   import { roomShape } from '../../state/surfaces';
   import { scenePhoto } from '../lib/photos';
-  import Tabs from '../../../../ui/components/Tabs.svelte';
   import Icon from '../../../../ui/icons/Icon.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
   import { euros } from '../../../../ui/lib/format';
   import { pwa } from '../../../../ui/lib/pwa.svelte';
+  import PoseEditorShell from '../../../../ui/calepinage/PoseEditorShell.svelte';
+  import AdvancedTab from './AdvancedTab.svelte';
   import Alerts from './Alerts.svelte';
-  import { EditorState, type Tab } from './editorState.svelte';
+  import { EditorState } from './editorState.svelte';
   import FinishTab from './FinishTab.svelte';
   import OpeningsTab from './OpeningsTab.svelte';
   import PatternTab from './PatternTab.svelte';
@@ -38,14 +38,6 @@
   let surfaceDialog = $state(false);
   let snap = $state<0 | 1 | 2>(0);
   let desktop = $state(false);
-
-  const TABS: { id: Tab; label: string }[] = [
-    { id: 'tile', label: 'Carreau' },
-    { id: 'pattern', label: 'Motif' },
-    { id: 'bands', label: 'Bandes' },
-    { id: 'openings', label: 'Ouvertures' },
-    { id: 'finish', label: 'Finitions' },
-  ];
 
   // Projet modifié ailleurs (chargement de scénario, annulation, import) : l'éditeur reprend la version la plus
   // récente. Ses propres enregistrements renvoient le même objet et ne déclenchent rien.
@@ -88,10 +80,6 @@
   );
 
   onMount(() => {
-    const mq = matchMedia('(min-width: 1024px)');
-    const upd = () => (desktop = mq.matches);
-    upd();
-    mq.addEventListener('change', upd);
     const flush = () => void ed.flush();
     window.addEventListener('pagehide', flush);
     const offUpdate = pwa.beforeUpdate(() => ed.flush());
@@ -109,7 +97,6 @@
     };
     window.addEventListener('keydown', keys);
     return () => {
-      mq.removeEventListener('change', upd);
       window.removeEventListener('pagehide', flush);
       window.removeEventListener('keydown', keys);
       offUpdate();
@@ -117,22 +104,6 @@
     };
   });
 </script>
-
-{#snippet panel()}
-  <div class="panel">
-    <Alerts {ed} onsurface={() => (surfaceDialog = true)} />
-    <PieceInfo {ed} />
-    <Tabs label="Réglages de la surface" tabs={TABS} bind:active={ed.tab}>
-      {#snippet panel(id)}
-        {#if id === 'tile'}<TileTab {ed} />
-        {:else if id === 'pattern'}<PatternTab {ed} />
-        {:else if id === 'bands'}<BandsTab {ed} />
-        {:else if id === 'openings'}<OpeningsTab {ed} />
-        {:else}<FinishTab {ed} />{/if}
-      {/snippet}
-    </Tabs>
-  </div>
-{/snippet}
 
 {#snippet tools()}
   <Segmented
@@ -162,149 +133,89 @@
   {/if}
 {/snippet}
 
-<div class="editor" class:desktop>
-  <header class="bar">
-    <IconButton
-      icon="back"
-      label="Pièce"
-      href="#/p/{ed.project.id}/r/{ed.surface.ref.room}/{ed.surface.ref.wall ?? 'sol'}"
-    />
-    <button type="button" class="surf" aria-haspopup="dialog" onclick={() => (surfaceDialog = true)}>
-      <span class="pname">{ed.project.name}</span>
-      <span class="sname">{ed.surface.name} <Icon name="down" size={16} /></span>
-    </button>
-    <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
-    <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
-    <IconButton
-      icon="room"
-      label="Vue 3D de la pièce"
-      href="#/p/{ed.project.id}/m/carrelage/room/{ed.surface.ref.room}"
-    />
-    <IconButton icon="list" label="Résultats" href="#/p/{ed.project.id}/m/carrelage/results" />
-  </header>
+{#snippet header()}
+  <IconButton
+    icon="room"
+    label="Vue 3D de la pièce"
+    href="#/p/{ed.project.id}/m/carrelage/room/{ed.surface.ref.room}"
+  />
+{/snippet}
 
-  <main class="body">
-    {#if desktop}<div class="tools">{@render tools()}</div>{/if}
-    <div class="planwrap" style={desktop ? '' : `bottom: ${snap === 0 ? '128px' : '50%'}`}>
-      {#if ed.mode === '3d' && ed.spec && ed.result && layout3d}
-        <Scene3DView
-          spec={ed.spec}
-          result={ed.result}
-          layout={layout3d}
-          shade={ed.project.settings.shadeVariation}
-          {photo}
-          label="Vue 3D de {ed.scope3d === 'room' ? 'la pièce' : ed.surface.name}"
-        />
-      {:else if ed.mode !== '3d'}
-        <PlanCanvas bind:this={canvas} {ed} label="Plan de {ed.surface.name}, {summary}" />
-      {/if}
-      {#if !desktop}<div class="float top">{@render tools()}</div>{/if}
-      {#if ed.mode === '3d'}
-        <!-- pas d'optimisation en 3D : la vue reste dégagée -->
-      {:else if !ed.optimizing}
-        <button
-          type="button"
-          class="optim"
-          aria-label="Optimiser le départ de toutes les bandes"
-          onclick={() => ed.optimize(ed.surface.bands.map((_, i) => i))}
-        >
-          <Icon name="sparkle" size={20} /> Optimiser
-        </button>
-      {:else}
-        <button type="button" class="optim" onclick={() => ed.cancelOptimize()}>
-          Recherche {ed.optimizing.percent} % — Arrêter
-        </button>
-      {/if}
-    </div>
-    {#if desktop}
-      <a class="summary bottom" href="#/p/{ed.project.id}/m/carrelage/results">{summary}</a>
-      <aside class="inspector" aria-label="Réglages">{@render panel()}</aside>
-    {:else}
-      <BottomSheet label="Réglages" bind:snap contained peek={128}>
-        {#snippet header()}
-          <a class="summary" href="#/p/{ed.project.id}/m/carrelage/results">{summary}</a>
-        {/snippet}
-        {@render panel()}
-      </BottomSheet>
-    {/if}
-  </main>
-</div>
+{#snippet drawing()}
+  {#if ed.mode === '3d' && ed.spec && ed.result && layout3d}
+    <Scene3DView
+      spec={ed.spec}
+      result={ed.result}
+      layout={layout3d}
+      shade={ed.project.settings.shadeVariation}
+      {photo}
+      label="Vue 3D de {ed.scope3d === 'room' ? 'la pièce' : ed.surface.name}"
+    />
+  {:else if ed.mode !== '3d'}
+    <PlanCanvas bind:this={canvas} {ed} label="Plan de {ed.surface.name}, {summary}" />
+  {/if}
+  {#if ed.mode === '3d'}
+    <!-- pas d'optimisation en 3D : la vue reste dégagée -->
+  {:else if !ed.optimizing}
+    <button
+      type="button"
+      class="optim"
+      aria-label="Optimiser le départ de toutes les bandes"
+      onclick={() => ed.optimize(ed.surface.bands.map((_, i) => i))}
+    >
+      <Icon name="sparkle" size={20} /> Optimiser
+    </button>
+  {:else}
+    <button type="button" class="optim" onclick={() => ed.cancelOptimize()}>
+      Recherche {ed.optimizing.percent} % — Arrêter
+    </button>
+  {/if}
+{/snippet}
+
+{#snippet top()}
+  <Alerts {ed} onsurface={() => (surfaceDialog = true)} />
+  <PieceInfo {ed} />
+{/snippet}
+
+{#snippet content(id: import('../../../../ui/calepinage/steps').StepId)}
+  {#if id === 'product'}<TileTab {ed} />
+  {:else if id === 'pose'}<PatternTab {ed} />
+  {:else if id === 'cut'}
+    <div class="steps"><BandsTab {ed} /><OpeningsTab {ed} /></div>
+  {:else if id === 'finish'}<FinishTab {ed} />
+  {:else}<AdvancedTab {ed} />{/if}
+{/snippet}
+
+<PoseEditorShell
+  title={ed.surface.name}
+  context={ed.project.name}
+  ontitle={() => (surfaceDialog = true)}
+  backHref="#/p/{ed.project.id}/r/{ed.surface.ref.room}/{ed.surface.ref.wall ?? 'sol'}"
+  canUndo={ed.canUndo}
+  canRedo={ed.canRedo}
+  onundo={() => ed.store.undo()}
+  onredo={() => ed.store.redo()}
+  resultsHref="#/p/{ed.project.id}/m/carrelage/results"
+  {summary}
+  bind:step={ed.tab}
+  bind:snap
+  bind:desktop
+  {header}
+  {tools}
+  canvas={drawing}
+  {top}
+  {content}
+/>
 
 <SurfaceDialog {ed} bind:open={surfaceDialog} />
 
 <style>
-  .editor {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    height: 100dvh;
-    background: var(--paper);
-  }
-  .bar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-height: 56px;
-    padding: env(safe-area-inset-top) 6px 0;
-    border-bottom: 1px solid var(--line);
-    background: var(--paper);
-  }
-  .surf {
-    flex: 1;
-    min-width: 0;
-    display: grid;
-    justify-items: start;
-    min-height: var(--touch);
-    padding: 0 var(--space-2);
-    border: 0;
-    border-radius: var(--r-field);
-    background: transparent;
-    color: var(--ink);
-    text-align: left;
-    cursor: pointer;
-  }
-  .surf:hover {
-    background: var(--accent-soft);
-  }
-  .pname {
-    font-size: var(--fs-xs);
-    color: var(--muted);
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .sname {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    font-weight: 600;
-    font-size: var(--fs-lg);
-  }
-  .body {
-    position: relative;
-    min-height: 0;
-  }
-  .planwrap {
-    position: absolute;
-    inset: 0;
-    background: var(--sheet);
-  }
-  .float.top {
-    position: absolute;
-    top: var(--space-2);
-    left: var(--space-2);
-    right: var(--space-2);
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2);
-    pointer-events: none;
-  }
-  .float.top > :global(*) {
-    pointer-events: auto;
-  }
   .zoom {
     display: flex;
     gap: var(--space-1);
+  }
+  :global(.desktop) .zoom {
+    flex-direction: column;
   }
   .optim {
     position: absolute;
@@ -323,70 +234,8 @@
     box-shadow: var(--shadow);
     cursor: pointer;
   }
-  .summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--touch);
-    font-family: var(--font-num);
-    font-size: var(--fs-lg);
-    font-weight: 600;
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .summary::after {
-    content: '›';
-    margin-left: auto;
-    color: var(--muted);
-    font-size: var(--fs-xl);
-  }
-  .panel {
+  .steps {
     display: grid;
-    gap: var(--space-3);
-    min-width: 0;
-  }
-  .panel > :global(*) {
-    min-width: 0;
-  }
-
-  /* ordinateur : outils | plan | inspecteur, résumé sous le plan */
-  .desktop .body {
-    display: grid;
-    grid-template-columns: 64px 1fr 420px;
-    grid-template-rows: 1fr auto;
-  }
-  .desktop .tools {
-    grid-row: 1 / span 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3) 0;
-    border-right: 1px solid var(--line);
-  }
-  .desktop .tools :global(.seg) {
-    flex-direction: column;
-  }
-  .desktop .tools .zoom {
-    flex-direction: column;
-  }
-  .desktop .planwrap {
-    position: relative;
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .desktop .summary.bottom {
-    grid-column: 2;
-    grid-row: 2;
-    padding: 0 var(--space-4);
-    border-top: 1px solid var(--line);
-    background: var(--paper);
-  }
-  .desktop .inspector {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    overflow: auto;
-    padding: var(--space-3) var(--space-4) var(--space-6);
-    border-left: 1px solid var(--line);
-    background: var(--sheet);
+    gap: var(--space-6);
   }
 </style>

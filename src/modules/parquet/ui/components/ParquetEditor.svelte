@@ -1,12 +1,16 @@
 <script lang="ts">
   /**
-   * Éditeur du parquet : plan des lames au centre ; réglages dans le panneau (téléphone) ou à droite
-   * (ordinateur) : pièces, lame, motif, angle, axe des motifs, règles ; résumé permanent vers les résultats.
+   * Calepinage d'une pose de parquet, dans la coquille commune (ui/calepinage) : plan des lames au centre ;
+   * étapes Produit (lame), Pose (motif, angle, axe, optimisation, mode de pose), Découpage (pièces, seuils,
+   * séparer en deux poses), Finitions (sous-couche, plinthes, barres de seuil), Avancé (règles).
    */
   import { onMount, untrack } from 'svelte';
   import type { Polygon } from '../../../../core/geometry/types';
   import type { Project } from '../../../../state/model';
-  import BottomSheet from '../../../../ui/components/BottomSheet.svelte';
+  import PoseEditorShell from '../../../../ui/calepinage/PoseEditorShell.svelte';
+  import type { StepId } from '../../../../ui/calepinage/steps';
+  import Dialog from '../../../../ui/components/Dialog.svelte';
+  import TextField from '../../../../ui/components/TextField.svelte';
   import Button from '../../../../ui/components/Button.svelte';
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import EmptyState from '../../../../ui/components/EmptyState.svelte';
@@ -157,453 +161,440 @@
   const piece = $derived(result?.pieces.find((p) => p.id === ed.selected));
   const CUT = { full: 'lame entière', straight: 'coupe droite', angled: 'coupe en biais', complex: 'découpe' };
 
+  /** Étape affichée, liste des poses (titre). */
+  let step = $state<StepId>('product');
+  let posesDialog = $state(false);
+  /** « Pose 2 · Séjour, Bureau ». */
+  const layoutTitle = (l: { name: string; rooms: string[] }) =>
+    l.rooms.length ? `${l.name} · ${l.rooms.map(roomName).join(', ')}` : l.name;
+
   onMount(() => {
-    const mq = matchMedia('(min-width: 1024px)');
-    const upd = () => (desktop = mq.matches);
-    upd();
-    mq.addEventListener('change', upd);
     const flush = () => void ed.flush();
     window.addEventListener('pagehide', flush);
     return () => {
-      mq.removeEventListener('change', upd);
       window.removeEventListener('pagehide', flush);
       flush();
     };
   });
 </script>
 
-{#snippet panel()}
-  <div class="panel">
-    {#if !ed.doc.plan.rooms.length}
-      <EmptyState icon="room" title="Aucune pièce dans le plan" text="Dessinez d’abord les pièces à couvrir.">
-        {#snippet action()}<Button variant="primary" href="#/p/{ed.doc.id}/plan">Dessiner les pièces</Button>{/snippet}
-      </EmptyState>
-    {:else if !layout}
-      <p>Aucune pose dans ce projet.</p>
-      <Button variant="primary" icon="plus" onclick={() => ed.addLayout()}>Créer une pose</Button>
-    {:else}
-      {#if piece}
-        <section class="info" aria-live="polite">
-          <h2>Lame {piece.id}</h2>
-          <p>
-            {Math.round(piece.length).toLocaleString('fr-FR')} mm · {CUT[piece.cutType]}{piece.ripped
-              ? ', recoupée en largeur'
-              : ''}
-            · {'offcut' in piece.source
-              ? `taillée dans la chute ${piece.source.offcut}`
-              : `lame neuve n° ${piece.source.board + 1}`}
-          </p>
-        </section>
-      {/if}
-
-      <section aria-labelledby="pq-layouts" class="layouts">
-        <h2 id="pq-layouts" class="visually-hidden">Poses</h2>
-        {#if ed.layouts.length > 1}
-          <Select
-            label="Pose affichée"
-            value={layout.id}
-            options={ed.layouts.map((l) => ({ value: l.id, label: l.name }))}
-            onchange={(id) => ((ed.current = String(id)), (ed.selected = null))}
-          />
-        {/if}
-        <div class="row">
-          <Button variant="ghost" icon="plus" onclick={() => ed.addLayout()}>Nouvelle pose</Button>
-          <Button variant="ghost" icon="trash" onclick={() => ed.removeLayout()}>Supprimer cette pose</Button>
-        </div>
-      </section>
-
-      {#if result?.errors.length || result?.warnings.length}
-        <section class="alerts" aria-label="Alertes">
-          <ul>
-            {#each result.errors as e, i (i)}<li class="err">{errorText(e)}</li>{/each}
-            {#each [...new Set(result.warnings.map(warningText))] as w (w)}<li>{w}</li>{/each}
-          </ul>
-        </section>
-      {/if}
-
-      <section aria-labelledby="pq-rooms">
-        <h2 id="pq-rooms">Pièces</h2>
-        <!-- refus : cases redessinées dans leur état réel -->
-        {#key refused}
-          {#each ed.doc.plan.rooms as r (r.id)}
-            <Checkbox
-              label={coveredBy(r.id) ? `${r.name} (${coveredBy(r.id)})` : r.name}
-              checked={layout.rooms.includes(r.id)}
-              onchange={(on) => ed.toggleRoom(r.id, on) || refused++}
-            />
-          {/each}
-        {/key}
-        <Button variant="ghost" href="#/p/{ed.doc.id}/plan">Modifier le plan</Button>
-        <h3>Seuils</h3>
-        {#if drawing}
-          <p class="muted" role="status">
-            Touchez le plan à deux endroits, de part et d’autre de la zone à séparer. Le seuil est prolongé jusqu’aux
-            murs.
-          </p>
-          <Button variant="secondary" onclick={() => (drawing = false)}>Annuler le tracé</Button>
-        {:else}
-          <Button variant="ghost" icon="edit" onclick={() => ((drawing = true), (ed.selected = null))}
-            >Tracer un seuil</Button
-          >
-        {/if}
-        {#if result?.thresholds.length}
-          <ul class="thresholds">
-            {#each result.thresholds as t, i (i)}
-              <li class:proposed={t.status === 'proposed'}>
-                <span>{thresholdTitle(t)}</span>
-                <div class="row">
-                  {#if t.status === 'proposed'}
-                    <Button variant="secondary" onclick={() => ed.addBreak(t.segment)}>Poser ce seuil</Button>
-                    <Button variant="ghost" onclick={() => ed.split(t.segment)}>Séparer en deux poses</Button>
-                  {:else if breakIndex(t) >= 0}
-                    <Button variant="ghost" onclick={() => ed.split(t.segment)}>Séparer en deux poses</Button>
-                    <Button variant="ghost" onclick={() => ed.removeBreak(breakIndex(t))}>Retirer</Button>
-                  {:else}
-                    <small class="muted">Limite avec une autre pose.</small>
-                  {/if}
-                </div>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </section>
-
-      <section aria-labelledby="pq-board">
-        <h2 id="pq-board">Lame</h2>
-        {#if ed.boards.length}
-          <Select
-            label="Lame"
-            value={layout.boardId}
-            options={[
-              ...(ed.board ? [] : [{ value: layout.boardId, label: 'Lame introuvable : choisissez-en une' }]),
-              ...ed.boards.map((b) => ({ value: b.id, label: b.name })),
-            ]}
-            onchange={(id) => ed.chooseBoard(String(id))}
-          />
-        {:else}
-          <p class="muted">La bibliothèque de lames est vide.</p>
-        {/if}
-        <Button variant="ghost" href="#/library/boards">Gérer les lames</Button>
-      </section>
-
-      <section aria-labelledby="pq-pose">
-        <h2 id="pq-pose">Pose</h2>
-        <Segmented
-          label="Motif"
-          value={family(layout.pattern)}
-          options={FAMILIES.map(({ value, label }) => ({ value, label }))}
-          onchange={(v) => {
-            if (v !== family(layout.pattern))
-              ed.updateLayout({ pattern: FAMILIES.find((f) => f.value === v)!.pattern });
-          }}
-        />
-        {#if layout.pattern.kind === 'chevron'}
-          <Segmented
-            label="Coupe des bouts"
-            value={layout.pattern.endAngle}
-            options={[
-              { value: 45, label: '45°' },
-              { value: 60, label: '60°' },
-            ]}
-            onchange={(endAngle) => ed.updateLayout({ pattern: { kind: 'chevron', endAngle } })}
-          />
-        {:else if !motif}
-          <Segmented
-            label="Décalage des rangs"
-            value={staggerValue(layout.pattern)}
-            options={STAGGERS.map(({ value, label }) => ({ value, label }))}
-            onchange={(v) => ed.updateLayout({ pattern: STAGGERS.find((p) => p.value === v)!.pattern })}
-          />
-        {/if}
-        {#if motif && ed.board && !ed.board.handed}
-          <p class="muted">
-            Cette lame n’a pas de lames A et B. Un motif demande en général des lames gauches et droites.
-          </p>
-        {/if}
-        <NumberField
-          label={motif ? 'Angle du motif' : 'Angle des lames'}
-          unit="°"
-          min={0}
-          max={179}
-          decimals={0}
-          value={layout.angle}
-          hint={motif ? '0° : axe du motif parallèle au plus long mur.' : '0° : parallèles au plus long mur.'}
-          onchange={(angle) => ed.updateLayout({ angle })}
-        />
-        {#if motif}
-          <fieldset class="axes">
-            <legend>Axe du motif</legend>
-            {#each result?.axisOptions ?? [] as o (o.kind)}
-              <label class="axis">
-                <input
-                  type="radio"
-                  name="pq-axis"
-                  value={o.kind}
-                  checked={layout.axis === o.kind}
-                  onchange={() => ed.updateLayout({ axis: o.kind })}
-                />
-                <span>
-                  <strong>{AXES[o.kind]}</strong>
-                  <small>plus petite coupe en bord : {o.minCutWidth.toLocaleString('fr-FR')} mm</small>
-                </span>
-              </label>
-            {:else}
-              <p class="muted">Calcul…</p>
-            {/each}
-          </fieldset>
-        {:else}
-          <Checkbox
-            label="Rangs de bord de même largeur"
-            checked={layout.rules.balanceEdgeRows === 'always'}
-            onchange={(on) =>
-              ed.updateLayout({ rules: { ...layout.rules, balanceEdgeRows: on ? 'always' : 'if-needed' } })}
-          />
-        {/if}
-        {#if ed.optimizing != null}
-          <div class="optim" role="status">
-            <label for="pq-optim">Recherche du meilleur départ…</label>
-            <progress id="pq-optim" max="100" value={ed.optimizing}>{ed.optimizing} %</progress>
-            <Button variant="secondary" onclick={() => ed.stopOptimize()}>Arrêter</Button>
-          </div>
-        {:else}
-          <Button
-            variant="secondary"
-            icon="sparkle"
-            disabled={!result || !!result.errors.length}
-            onclick={() => void ed.optimize()}>Optimiser le départ</Button
-          >
-        {/if}
-        <Select
-          label="Mode de pose"
-          value={layout.method}
-          options={METHODS}
-          onchange={(method) => ed.updateLayout({ method })}
-        />
-      </section>
-
-      <section aria-labelledby="pq-finish">
-        <h2 id="pq-finish">Finitions</h2>
-        <Checkbox
-          label="Sous-couche"
-          hint="Pose flottante seulement."
-          checked={acc.underlay.enabled}
-          onchange={(enabled) => ed.updateAccessories({ underlay: { ...acc.underlay, enabled } })}
-        />
-        {#if acc.underlay.enabled}
-          <NumberField
-            label="Rouleau de sous-couche"
-            unit="m²"
-            min={1}
-            decimals={1}
-            value={acc.underlay.m2PerRoll}
-            onchange={(m2PerRoll) => ed.updateAccessories({ underlay: { ...acc.underlay, m2PerRoll } })}
-          />
-        {/if}
-        <Checkbox
-          label="Pare-vapeur"
-          hint="Sur dalle béton ou chape : recouvrement et remontée en bord de mur."
-          checked={acc.vaporBarrier.enabled}
-          onchange={(enabled) => ed.updateAccessories({ vaporBarrier: { ...acc.vaporBarrier, enabled } })}
-        />
-        {#if acc.vaporBarrier.enabled}
-          <NumberField
-            label="Rouleau de pare-vapeur"
-            unit="m²"
-            min={1}
-            decimals={1}
-            value={acc.vaporBarrier.m2PerRoll}
-            onchange={(m2PerRoll) => ed.updateAccessories({ vaporBarrier: { ...acc.vaporBarrier, m2PerRoll } })}
-          />
-        {/if}
-        <Checkbox
-          label="Plinthes"
-          checked={acc.skirting.enabled}
-          onchange={(enabled) => ed.updateAccessories({ skirting: { ...acc.skirting, enabled } })}
-        />
-        {#if acc.skirting.enabled}
-          <div class="grid">
-            <NumberField
-              label="Barre de plinthe"
-              unit="mm"
-              min={100}
-              decimals={0}
-              value={acc.skirting.barLength}
-              onchange={(barLength) => ed.updateAccessories({ skirting: { ...acc.skirting, barLength } })}
-            />
-            <NumberField
-              label="Supplément par onglet"
-              unit="mm"
-              min={0}
-              decimals={0}
-              value={acc.skirting.mitreAllowance}
-              onchange={(mitreAllowance) => ed.updateAccessories({ skirting: { ...acc.skirting, mitreAllowance } })}
-            />
-          </div>
-          <Checkbox
-            label="Plinthes autour des obstacles"
-            checked={acc.skirting.aroundObstacles}
-            onchange={(aroundObstacles) => ed.updateAccessories({ skirting: { ...acc.skirting, aroundObstacles } })}
-          />
-        {/if}
-        <NumberField
-          label="Barre de seuil"
-          unit="mm"
-          min={100}
-          decimals={0}
-          value={acc.thresholds.barLength}
-          hint="Une barre par seuil posé, coupée à la largeur du passage."
-          onchange={(barLength) => ed.updateAccessories({ thresholds: { barLength } })}
-        />
-      </section>
-
-      <section aria-labelledby="pq-rules">
-        <h2 id="pq-rules">Règles</h2>
-        <p class="muted">Valeurs du type de lame. Vérifier la notice du fabricant.</p>
-        <div class="grid">
-          <NumberField
-            label="Jeu périphérique"
-            unit="mm"
-            min={0}
-            decimals={0}
-            value={layout.rules.expansionGap}
-            onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, expansionGap: v } })}
-          />
-          <NumberField
-            label="Coupe mini en bout"
-            unit="mm"
-            min={0}
-            decimals={0}
-            value={layout.rules.minCutLength}
-            onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minCutLength: v } })}
-          />
-          {#if !motif}
-            <NumberField
-              label="Décalage mini des joints"
-              unit="mm"
-              min={0}
-              decimals={0}
-              value={layout.rules.minJointOffset}
-              onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minJointOffset: v } })}
-            />
-            <NumberField
-              label="Rang de bord mini"
-              unit="mm"
-              min={0}
-              decimals={0}
-              value={layout.rules.minEdgeRowWidth}
-              onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minEdgeRowWidth: v } })}
-            />
-          {/if}
-        </div>
-        <Button variant="ghost" onclick={() => ed.resetRules()} disabled={!ed.board}
-          >Revenir aux valeurs du type de lame</Button
-        >
+{#snippet top()}
+  {#if layout}
+    {#if piece}
+      <section class="info" aria-live="polite">
+        <h2>Lame {piece.id}</h2>
+        <p>
+          {Math.round(piece.length).toLocaleString('fr-FR')} mm · {CUT[piece.cutType]}{piece.ripped
+            ? ', recoupée en largeur'
+            : ''}
+          · {'offcut' in piece.source
+            ? `taillée dans la chute ${piece.source.offcut}`
+            : `lame neuve n° ${piece.source.board + 1}`}
+        </p>
       </section>
     {/if}
-  </div>
+
+    {#if result?.errors.length || result?.warnings.length}
+      <section class="alerts" aria-label="Alertes">
+        <ul>
+          {#each result.errors as e, i (i)}<li class="err">{errorText(e)}</li>{/each}
+          {#each [...new Set(result.warnings.map(warningText))] as w (w)}<li>{w}</li>{/each}
+        </ul>
+      </section>
+    {/if}
+  {/if}
 {/snippet}
 
-<div class="editor" class:desktop>
-  <header class="bar">
-    <IconButton icon="back" label="Projet" href="#/p/{ed.doc.id}" />
-    <h1><span class="pname">{ed.doc.name}</span><span class="sub">Parquet</span></h1>
-    <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
-    <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
-    <IconButton icon="check" label="Chantier" href="#/p/{ed.doc.id}/m/parquet/chantier" />
-    <IconButton icon="list" label="Résultats" href="#/p/{ed.doc.id}/m/parquet/results" />
-  </header>
-  <main class="body">
-    <div class="planwrap" style={desktop ? '' : `bottom: ${snap === 0 ? '112px' : '50%'}`}>
-      <ParquetPlan
-        rooms={roomShapes}
-        pieces={result?.pieces ?? []}
-        color={ed.board?.color ?? '#c9a77c'}
-        variants={motif}
-        {others}
-        thresholds={result?.thresholds ?? []}
-        ondrag={layout && !drawing ? drag : undefined}
-        {drawing}
-        ondraw={(s) => {
-          ed.addBreak(s);
-          drawing = false;
-        }}
-        keyStep={snapStep}
-        bind:selected={ed.selected}
-        label="Plan des lames : {summary}"
-      />
+{#snippet content(id: StepId)}
+  {#if !ed.doc.plan.rooms.length}
+    <EmptyState icon="room" title="Aucune pièce dans le plan" text="Dessinez d’abord les pièces à couvrir.">
+      {#snippet action()}<Button variant="primary" href="#/p/{ed.doc.id}/plan">Dessiner les pièces</Button>{/snippet}
+    </EmptyState>
+  {:else if !layout}
+    <EmptyState icon="room" title="Aucune pose de parquet" text="Revêtez un sol en parquet depuis l’écran de la pièce.">
+      {#snippet action()}<Button variant="primary" href="#/p/{ed.doc.id}">Voir les pièces</Button>{/snippet}
+    </EmptyState>
+  {:else}
+    <div class="step">
+      {#if id === 'product'}
+        <section aria-labelledby="pq-board">
+          <h2 id="pq-board">Lame</h2>
+          {#if ed.boards.length}
+            <Select
+              label="Lame"
+              value={layout.boardId}
+              options={[
+                ...(ed.board ? [] : [{ value: layout.boardId, label: 'Lame introuvable : choisissez-en une' }]),
+                ...ed.boards.map((b) => ({ value: b.id, label: b.name })),
+              ]}
+              onchange={(id) => ed.chooseBoard(String(id))}
+            />
+          {:else}
+            <p class="muted">La bibliothèque de lames est vide.</p>
+          {/if}
+          <Button variant="ghost" href="#/library/boards">Gérer les lames</Button>
+        </section>
+      {:else if id === 'pose'}
+        <section aria-labelledby="pq-pose">
+          <h2 id="pq-pose">Pose</h2>
+          <Segmented
+            label="Motif"
+            value={family(layout.pattern)}
+            options={FAMILIES.map(({ value, label }) => ({ value, label }))}
+            onchange={(v) => {
+              if (v !== family(layout.pattern))
+                ed.updateLayout({ pattern: FAMILIES.find((f) => f.value === v)!.pattern });
+            }}
+          />
+          {#if layout.pattern.kind === 'chevron'}
+            <Segmented
+              label="Coupe des bouts"
+              value={layout.pattern.endAngle}
+              options={[
+                { value: 45, label: '45°' },
+                { value: 60, label: '60°' },
+              ]}
+              onchange={(endAngle) => ed.updateLayout({ pattern: { kind: 'chevron', endAngle } })}
+            />
+          {:else if !motif}
+            <Segmented
+              label="Décalage des rangs"
+              value={staggerValue(layout.pattern)}
+              options={STAGGERS.map(({ value, label }) => ({ value, label }))}
+              onchange={(v) => ed.updateLayout({ pattern: STAGGERS.find((p) => p.value === v)!.pattern })}
+            />
+          {/if}
+          {#if motif && ed.board && !ed.board.handed}
+            <p class="muted">
+              Cette lame n’a pas de lames A et B. Un motif demande en général des lames gauches et droites.
+            </p>
+          {/if}
+          <NumberField
+            label={motif ? 'Angle du motif' : 'Angle des lames'}
+            unit="°"
+            min={0}
+            max={179}
+            decimals={0}
+            value={layout.angle}
+            hint={motif ? '0° : axe du motif parallèle au plus long mur.' : '0° : parallèles au plus long mur.'}
+            onchange={(angle) => ed.updateLayout({ angle })}
+          />
+          {#if motif}
+            <fieldset class="axes">
+              <legend>Axe du motif</legend>
+              {#each result?.axisOptions ?? [] as o (o.kind)}
+                <label class="axis">
+                  <input
+                    type="radio"
+                    name="pq-axis"
+                    value={o.kind}
+                    checked={layout.axis === o.kind}
+                    onchange={() => ed.updateLayout({ axis: o.kind })}
+                  />
+                  <span>
+                    <strong>{AXES[o.kind]}</strong>
+                    <small>plus petite coupe en bord : {o.minCutWidth.toLocaleString('fr-FR')} mm</small>
+                  </span>
+                </label>
+              {:else}
+                <p class="muted">Calcul…</p>
+              {/each}
+            </fieldset>
+          {:else}
+            <Checkbox
+              label="Rangs de bord de même largeur"
+              checked={layout.rules.balanceEdgeRows === 'always'}
+              onchange={(on) =>
+                ed.updateLayout({ rules: { ...layout.rules, balanceEdgeRows: on ? 'always' : 'if-needed' } })}
+            />
+          {/if}
+          {#if ed.optimizing != null}
+            <div class="optim" role="status">
+              <label for="pq-optim">Recherche du meilleur départ…</label>
+              <progress id="pq-optim" max="100" value={ed.optimizing}>{ed.optimizing} %</progress>
+              <Button variant="secondary" onclick={() => ed.stopOptimize()}>Arrêter</Button>
+            </div>
+          {:else}
+            <Button
+              variant="secondary"
+              icon="sparkle"
+              disabled={!result || !!result.errors.length}
+              onclick={() => void ed.optimize()}>Optimiser le départ</Button
+            >
+          {/if}
+          <Select
+            label="Mode de pose"
+            value={layout.method}
+            options={METHODS}
+            onchange={(method) => ed.updateLayout({ method })}
+          />
+        </section>
+      {:else if id === 'cut'}
+        <section aria-labelledby="pq-rooms">
+          <h2 id="pq-rooms">Pièces de la pose</h2>
+          <!-- refus : cases redessinées dans leur état réel -->
+          {#key refused}
+            {#each ed.doc.plan.rooms as r (r.id)}
+              <Checkbox
+                label={coveredBy(r.id) ? `${r.name} (${coveredBy(r.id)})` : r.name}
+                checked={layout.rooms.includes(r.id)}
+                onchange={(on) => ed.toggleRoom(r.id, on) || refused++}
+              />
+            {/each}
+          {/key}
+          <Button variant="ghost" href="#/p/{ed.doc.id}/plan">Modifier le plan</Button>
+          <h3>Seuils</h3>
+          {#if drawing}
+            <p class="muted" role="status">
+              Touchez le plan à deux endroits, de part et d’autre de la zone à séparer. Le seuil est prolongé jusqu’aux
+              murs.
+            </p>
+            <Button variant="secondary" onclick={() => (drawing = false)}>Annuler le tracé</Button>
+          {:else}
+            <Button variant="ghost" icon="edit" onclick={() => ((drawing = true), (ed.selected = null))}
+              >Tracer un seuil</Button
+            >
+          {/if}
+          {#if result?.thresholds.length}
+            <ul class="thresholds">
+              {#each result.thresholds as t, i (i)}
+                <li class:proposed={t.status === 'proposed'}>
+                  <span>{thresholdTitle(t)}</span>
+                  <div class="row">
+                    {#if t.status === 'proposed'}
+                      <Button variant="secondary" onclick={() => ed.addBreak(t.segment)}>Poser ce seuil</Button>
+                      <Button variant="ghost" onclick={() => ed.split(t.segment)}>Séparer en deux poses</Button>
+                    {:else if breakIndex(t) >= 0}
+                      <Button variant="ghost" onclick={() => ed.split(t.segment)}>Séparer en deux poses</Button>
+                      <Button variant="ghost" onclick={() => ed.removeBreak(breakIndex(t))}>Retirer</Button>
+                    {:else}
+                      <small class="muted">Limite avec une autre pose.</small>
+                    {/if}
+                  </div>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </section>
+      {:else if id === 'finish'}
+        <section aria-labelledby="pq-finish">
+          <h2 id="pq-finish">Finitions</h2>
+          <Checkbox
+            label="Sous-couche"
+            hint="Pose flottante seulement."
+            checked={acc.underlay.enabled}
+            onchange={(enabled) => ed.updateAccessories({ underlay: { ...acc.underlay, enabled } })}
+          />
+          {#if acc.underlay.enabled}
+            <NumberField
+              label="Rouleau de sous-couche"
+              unit="m²"
+              min={1}
+              decimals={1}
+              value={acc.underlay.m2PerRoll}
+              onchange={(m2PerRoll) => ed.updateAccessories({ underlay: { ...acc.underlay, m2PerRoll } })}
+            />
+          {/if}
+          <Checkbox
+            label="Pare-vapeur"
+            hint="Sur dalle béton ou chape : recouvrement et remontée en bord de mur."
+            checked={acc.vaporBarrier.enabled}
+            onchange={(enabled) => ed.updateAccessories({ vaporBarrier: { ...acc.vaporBarrier, enabled } })}
+          />
+          {#if acc.vaporBarrier.enabled}
+            <NumberField
+              label="Rouleau de pare-vapeur"
+              unit="m²"
+              min={1}
+              decimals={1}
+              value={acc.vaporBarrier.m2PerRoll}
+              onchange={(m2PerRoll) => ed.updateAccessories({ vaporBarrier: { ...acc.vaporBarrier, m2PerRoll } })}
+            />
+          {/if}
+          <Checkbox
+            label="Plinthes"
+            checked={acc.skirting.enabled}
+            onchange={(enabled) => ed.updateAccessories({ skirting: { ...acc.skirting, enabled } })}
+          />
+          {#if acc.skirting.enabled}
+            <div class="grid">
+              <NumberField
+                label="Barre de plinthe"
+                unit="mm"
+                min={100}
+                decimals={0}
+                value={acc.skirting.barLength}
+                onchange={(barLength) => ed.updateAccessories({ skirting: { ...acc.skirting, barLength } })}
+              />
+              <NumberField
+                label="Supplément par onglet"
+                unit="mm"
+                min={0}
+                decimals={0}
+                value={acc.skirting.mitreAllowance}
+                onchange={(mitreAllowance) => ed.updateAccessories({ skirting: { ...acc.skirting, mitreAllowance } })}
+              />
+            </div>
+            <Checkbox
+              label="Plinthes autour des obstacles"
+              checked={acc.skirting.aroundObstacles}
+              onchange={(aroundObstacles) => ed.updateAccessories({ skirting: { ...acc.skirting, aroundObstacles } })}
+            />
+          {/if}
+          <NumberField
+            label="Barre de seuil"
+            unit="mm"
+            min={100}
+            decimals={0}
+            value={acc.thresholds.barLength}
+            hint="Une barre par seuil posé, coupée à la largeur du passage."
+            onchange={(barLength) => ed.updateAccessories({ thresholds: { barLength } })}
+          />
+        </section>
+      {:else}
+        <section aria-labelledby="pq-rules">
+          <h2 id="pq-rules">Règles de pose</h2>
+          <p class="muted">Valeurs du type de lame. Vérifier la notice du fabricant.</p>
+          <div class="grid">
+            <NumberField
+              label="Jeu périphérique"
+              unit="mm"
+              min={0}
+              decimals={0}
+              value={layout.rules.expansionGap}
+              onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, expansionGap: v } })}
+            />
+            <NumberField
+              label="Coupe mini en bout"
+              unit="mm"
+              min={0}
+              decimals={0}
+              value={layout.rules.minCutLength}
+              onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minCutLength: v } })}
+            />
+            {#if !motif}
+              <NumberField
+                label="Décalage mini des joints"
+                unit="mm"
+                min={0}
+                decimals={0}
+                value={layout.rules.minJointOffset}
+                onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minJointOffset: v } })}
+              />
+              <NumberField
+                label="Rang de bord mini"
+                unit="mm"
+                min={0}
+                decimals={0}
+                value={layout.rules.minEdgeRowWidth}
+                onchange={(v) => ed.updateLayout({ rules: { ...layout.rules, minEdgeRowWidth: v } })}
+              />
+            {/if}
+          </div>
+          <Button variant="ghost" onclick={() => ed.resetRules()} disabled={!ed.board}
+            >Revenir aux valeurs du type de lame</Button
+          >
+        </section>
+      {/if}
     </div>
-    {#if desktop}
-      <a class="summary bottom" href="#/p/{ed.doc.id}/m/parquet/results">{summary}</a>
-      <aside class="inspector" aria-label="Réglages du parquet">{@render panel()}</aside>
-    {:else}
-      <BottomSheet label="Réglages du parquet" bind:snap contained peek={112}>
-        {#snippet header()}<a class="summary" href="#/p/{ed.doc.id}/m/parquet/results">{summary}</a>{/snippet}
-        {@render panel()}
-      </BottomSheet>
+  {/if}
+{/snippet}
+
+{#snippet header()}
+  <IconButton icon="check" label="Chantier" href="#/p/{ed.doc.id}/m/parquet/chantier" />
+{/snippet}
+
+{#snippet drawingArea()}
+  <ParquetPlan
+    rooms={roomShapes}
+    pieces={result?.pieces ?? []}
+    color={ed.board?.color ?? '#c9a77c'}
+    variants={motif}
+    {others}
+    thresholds={result?.thresholds ?? []}
+    ondrag={layout && !drawing ? drag : undefined}
+    {drawing}
+    ondraw={(s) => {
+      ed.addBreak(s);
+      drawing = false;
+    }}
+    keyStep={snapStep}
+    bind:selected={ed.selected}
+    label="Plan des lames : {summary}"
+  />
+{/snippet}
+
+<PoseEditorShell
+  title={layout ? layoutTitle(layout) : 'Parquet'}
+  context={ed.doc.name}
+  ontitle={() => (posesDialog = true)}
+  backHref={layout?.rooms[0] ? `#/p/${ed.doc.id}/r/${layout.rooms[0]}/sol` : `#/p/${ed.doc.id}`}
+  canUndo={ed.canUndo}
+  canRedo={ed.canRedo}
+  onundo={() => ed.store.undo()}
+  onredo={() => ed.store.redo()}
+  resultsHref="#/p/{ed.doc.id}/m/parquet/results"
+  {summary}
+  panelLabel="Réglages du parquet"
+  bind:step
+  bind:snap
+  bind:desktop
+  peek={112}
+  {header}
+  canvas={drawingArea}
+  {top}
+  {content}
+/>
+
+<Dialog bind:open={posesDialog} title="Poses de parquet">
+  <div class="poses">
+    {#each ed.layouts as l (l.id)}
+      <button
+        type="button"
+        aria-current={l.id === layout?.id ? 'true' : undefined}
+        onclick={() => ((ed.current = l.id), (ed.selected = null), (posesDialog = false))}
+      >
+        <strong>{l.name}</strong><span class="muted">{l.rooms.map(roomName).join(', ')}</span>
+      </button>
+    {/each}
+    {#if layout}
+      <TextField
+        label="Nom de la pose"
+        value={layout.name}
+        onchange={(e) => {
+          const name = e.currentTarget.value.trim();
+          if (name && layout) ed.dispatch({ type: 'pose/rename', poseId: layout.id, name });
+        }}
+      />
     {/if}
-  </main>
-</div>
+    <p class="muted">Créer, étendre ou retirer une pose se fait sur l’écran de la pièce.</p>
+  </div>
+</Dialog>
 
 <style>
-  .editor {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    height: 100dvh;
-    background: var(--paper);
-  }
-  .bar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-height: 56px;
-    padding: env(safe-area-inset-top) 6px 0;
-    border-bottom: 1px solid var(--line);
-  }
-  h1 {
-    flex: 1;
-    min-width: 0;
-    display: grid;
-    margin: 0 var(--space-2);
-    font-size: var(--fs-md);
-  }
-  .pname {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .sub {
-    font-size: var(--fs-sm);
-    font-weight: 400;
-    color: var(--muted);
-  }
-  .body {
-    position: relative;
-    min-height: 0;
-  }
-  .planwrap {
-    position: absolute;
-    inset: 0;
-  }
-  .summary {
-    display: flex;
-    align-items: center;
-    min-height: var(--touch);
-    font-family: var(--font-num);
-    font-size: var(--fs-lg);
-    font-weight: 600;
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .summary::after {
-    content: '›';
-    margin-left: auto;
-    color: var(--muted);
-    font-size: var(--fs-xl);
-  }
-  .panel {
+  .step {
     display: grid;
     gap: var(--space-4);
-    min-width: 0;
+  }
+  .poses {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .poses button {
+    display: grid;
+    justify-items: start;
+    min-height: var(--touch);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-field);
+    background: var(--sheet);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+  .poses button[aria-current='true'] {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
   }
   section {
     display: grid;
@@ -712,29 +703,5 @@
   .alerts .err {
     color: var(--thin);
     font-weight: 600;
-  }
-  .desktop .body {
-    display: grid;
-    grid-template-columns: 1fr 420px;
-    grid-template-rows: 1fr auto;
-  }
-  .desktop .planwrap {
-    position: relative;
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .desktop .summary.bottom {
-    grid-column: 1;
-    grid-row: 2;
-    padding: 0 var(--space-4);
-    border-top: 1px solid var(--line);
-  }
-  .desktop .inspector {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    overflow: auto;
-    padding: var(--space-3) var(--space-4) var(--space-6);
-    border-left: 1px solid var(--line);
-    background: var(--sheet);
   }
 </style>

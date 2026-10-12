@@ -15,6 +15,7 @@ import {
   openRoom,
   selectSurface,
   shot,
+  step,
 } from './helpers';
 
 async function check(page: Page) {
@@ -77,6 +78,7 @@ test('deux pièces collées, porte vers la voisine, carrelage puis parquet conti
   await expect(floorButton(page, /^Sol : Pose 2$/)).toBeVisible();
   await openPose(page, 'Sol');
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
+  await step(page, 'Découpage');
   await expect(p.getByRole('checkbox', { name: 'Séjour' })).toBeChecked();
   await expect(p.getByRole('checkbox', { name: 'Bureau' })).toBeChecked();
 

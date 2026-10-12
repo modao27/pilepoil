@@ -2,6 +2,7 @@
  * État de l'éditeur de surface : projet (store + historique), surface et sélection courantes, résultat du
  * calcul (worker), optimisation. Toutes les modifications passent par des actions du store.
  */
+import type { StepId } from '../../../../ui/calepinage/steps';
 import type { OptimizerGoal, ProjectResult, ProjectSpec, SurfaceBuild } from '../../core';
 import { createReservation, createBand } from '../../state/factories';
 import type { Id, Project } from '../../../../state/model';
@@ -19,7 +20,8 @@ import { app } from '../../../../ui/lib/app.svelte';
 import { toast } from '../../../../ui/lib/toasts.svelte';
 import { undoAction } from '../../../../ui/lib/undoToast';
 
-export type Tab = 'tile' | 'pattern' | 'bands' | 'openings' | 'finish';
+/** Étape du calepinage affichée (étapes communes à tous les revêtements). */
+export type Tab = StepId;
 
 export interface Selection {
   /** Bande sélectionnée (indice). */
@@ -45,7 +47,7 @@ export class EditorState {
   /** Pose affichée (une surface par pose). */
   surfaceId = $state<Id>('');
   sel = $state<Selection>({ band: 0, opening: -1, piece: -1 });
-  tab = $state<Tab>('tile');
+  tab = $state<Tab>('product');
   mode = $state<'plan' | 'render' | '3d'>('plan');
   /** Vue 3D : surface seule ou toute la pièce du plan. */
   scope3d = $state<'surface' | 'room'>('surface');

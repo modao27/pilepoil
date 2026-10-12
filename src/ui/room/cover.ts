@@ -19,7 +19,9 @@ import {
   type SurfaceRef,
   type Zone,
 } from '../../core/coverage';
-import type { Segment } from '../../core/geometry/types';
+import { signedArea } from '../../core/geometry/polygon';
+import type { Polygon, Segment } from '../../core/geometry/types';
+import { selfIntersecting } from '../../core/plan/validate';
 import { modules } from '../../modules/registry';
 import type { Libraries, ToolModule } from '../../modules/types';
 import type { Id, Project } from '../../state/model';
@@ -47,8 +49,9 @@ function withModule(p: Project, m: ToolModule): { project: Project; actions: Pro
 }
 
 /**
- * Nouvelle pose du module sur une zone (toute la surface si `cuts` est vide). Ses réglages reprennent la dernière
- * pose du module dans la pièce, sinon les réglages par défaut. Erreur si la zone n'est pas permise.
+ * Nouvelle pose du module sur une zone (`shape` : lignes, contour, trous ; vide : toute la surface). Ses réglages
+ * reprennent la dernière pose du module dans la pièce, sinon les réglages par défaut. Erreur si la zone n'est pas
+ * permise.
  */
 export function newPoseAction(
   p: Project,
@@ -56,10 +59,10 @@ export function newPoseAction(
   m: ToolModule,
   surface: SurfaceRef,
   newId: () => Id,
-  cuts: Cut[] = [],
+  shape: Pick<Zone, 'cuts' | 'area' | 'holes'> = { cuts: [] },
 ): { action: ProjectAction; poseId: Id } | { error: CoverageError } {
   const pose: Pose = { id: newId(), module: m.id, name: nextPoseName(p.poses) };
-  const zone: Zone = { id: newId(), surface, cuts, pose: pose.id };
+  const zone: Zone = { ...shape, id: newId(), surface, pose: pose.id };
   const error = checkZone(p.plan, p, zone, m.coverage);
   if (error) return { error };
   const inRoom = new Set(p.zones.filter((z) => z.surface.room === surface.room).map((z) => z.pose));
@@ -102,7 +105,12 @@ export function switchAction(
   newId: () => Id,
 ): { action: ProjectAction; poseId: Id } | { error: CoverageError } {
   const without: Project = { ...p, zones: p.zones.filter((z) => z.id !== zone.id) };
-  const r = newPoseAction(without, libraries, m, zone.surface, newId, zone.cuts);
+  const { cuts, area, holes } = zone;
+  const r = newPoseAction(without, libraries, m, zone.surface, newId, {
+    cuts,
+    ...(area ? { area } : {}),
+    ...(holes ? { holes } : {}),
+  });
   if ('error' in r) return r;
   return { action: { type: 'batch', actions: [{ type: 'zone/remove', zoneId: zone.id }, r.action] }, poseId: r.poseId };
 }
@@ -152,4 +160,33 @@ export function removeZoneAction(p: Project, libraries: Libraries, zone: Zone, n
     });
   }
   return { type: 'batch', actions };
+}
+
+/**
+ * Découpe une zone de sol par un contour (repère de la pièce) : l'intérieur devient une nouvelle pose du même
+ * module, aux réglages repris ; le reste de la zone garde sa pose, le contour en trou. null si le contour n'est pas
+ * un polygone valide (moins de 3 points, côtés qui se croisent, aire nulle).
+ */
+export function contourAction(
+  p: Project,
+  libraries: Libraries,
+  zone: Zone,
+  outline: Polygon,
+  newId: () => Id,
+): { action: ProjectAction; poseId: Id } | null {
+  if (outline.length < 3 || selfIntersecting(outline) || Math.abs(signedArea(outline)) < 1) return null;
+  const pose = p.poses.find((x) => x.id === zone.pose);
+  const m = pose && modules.find((x) => x.id === pose.module);
+  if (!m) return null;
+  const added: Pose = { id: newId(), module: m.id, name: nextPoseName(p.poses) };
+  return {
+    action: {
+      type: 'zone/contour',
+      zoneId: zone.id,
+      outline,
+      newZoneId: newId(),
+      pose: { pose: added, settings: m.createPose(p, libraries, zone.pose) },
+    },
+    poseId: added.id,
+  };
 }

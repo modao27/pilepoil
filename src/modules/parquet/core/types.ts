@@ -123,6 +123,10 @@ export interface RoomSpec {
   openings: WallOpeningSpec[];
   /** Zone de la pose dans cette pièce : demi-plans qui la limitent (poses séparées). Vide : pièce entière. */
   bounds: ZoneBound[];
+  /** Contour dans lequel la zone reste (découpe par un contour) ; absent : pas de contour. */
+  area?: Polygon;
+  /** Contours retirés de la zone (autre revêtement dessiné dans la pièce). */
+  holes?: Polygon[];
 }
 
 export interface LayoutSpec {

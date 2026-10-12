@@ -16,6 +16,7 @@ import { reduceProject } from '../../src/state/project';
 import {
   continuable,
   continueAction,
+  contourAction,
   cutAction,
   modulesFor,
   newPoseAction,
@@ -25,6 +26,10 @@ import {
   zonesOn,
 } from '../../src/ui/room/cover';
 import { ids, planProject, rect, view } from './planFixtures';
+import { rectPoly } from '../../src/core/geometry/polygon';
+import { regionArea } from '../../src/core/geometry/boolean';
+import { computeParquet } from '../../src/modules/parquet/core/compute';
+import type { ParquetSpec } from '../../src/modules/parquet/core/types';
 
 const tile = createTile({ length: 300, width: 300 });
 const libraries = { tiles: [tile], boards: BOARD_TEMPLATES };
@@ -143,5 +148,47 @@ describe('zones', () => {
     expect(view(q).surfaces[0]).toMatchObject({ width: 3000, height: 600, origin: [0, 900] });
     // jusqu'au plafond et depuis le sol : plus de ligne
     expect(reduceProject(q, spanAction(q, q.zones[0]!, null, null)).zones[0]!.cuts).toEqual([]);
+  });
+});
+
+describe('contour sur un sol', () => {
+  it('entrée carrelée dans un séjour en parquet : trou et jeu dans le parquet, seuils sur les 4 côtés', () => {
+    const p0 = project();
+    const wood = apply(p0, newPoseAction(p0, libraries, parquet, floor, ids('w')));
+    const entry = rectPoly(500, 500, 1200, 1000);
+    const c = contourAction(wood, libraries, wood.zones[0]!, entry, ids('c'));
+    if (!c) throw new Error('contour');
+    const p1 = reduceProject(wood, c.action);
+    expect(p1.poses.map((x) => [x.module, x.name])).toEqual([
+      ['parquet', 'Pose 1'],
+      ['parquet', 'Pose 2'],
+    ]);
+    const inner = p1.zones.find((z) => z.area)!;
+    const r = switchAction(p1, libraries, inner, carrelage, ids('s'));
+    if ('error' in r) throw new Error(r.error.code);
+    const p2 = reduceProject(p1, r.action);
+    expect(p2.poses.map((x) => x.module)).toEqual(['parquet', 'carrelage']);
+    // carrelage : l'entrée seule
+    const [tiles] = view(p2).surfaces;
+    expect([tiles!.width, tiles!.height]).toEqual([1200, 1000]);
+    // parquet : la pièce moins l'entrée, un jeu de 8 mm autour de chacun
+    const spec = parquet.toSpec(p2, libraries);
+    if (!('spec' in spec)) throw new Error('spec');
+    const l = computeParquet(spec.spec as ParquetSpec).layouts[0]!;
+    expect(regionArea(l.layable)).toBeCloseTo(2984 * 1984 - 1216 * 1016, -3);
+    expect(l.thresholds.filter((t) => t.status === 'applied')).toHaveLength(4);
+  });
+
+  it('contour invalide (côtés qui se croisent, moins de 3 points) : refusé', () => {
+    const p = project({ A: [{ ref: floor }] });
+    const z = p.zones[0]!;
+    const bow: [number, number][] = [
+      [0, 0],
+      [1000, 1000],
+      [1000, 0],
+      [0, 1000],
+    ];
+    expect(contourAction(p, libraries, z, bow, ids('x'))).toBeNull();
+    expect(contourAction(p, libraries, z, bow.slice(0, 2), ids('y'))).toBeNull();
   });
 });
