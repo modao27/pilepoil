@@ -5,11 +5,11 @@
  * Repère three.js : x = x du plan, z = y du plan, y vers le haut ; mètres. Lit le plan, n'écrit rien.
  */
 import { Color, ShapeUtils, Vector2 } from 'three';
-import { difference } from '../../core/geometry/boolean';
+import { difference, offset } from '../../core/geometry/boolean';
 import { components } from '../../core/geometry/rings';
 import type { Point } from '../../core/geometry/types';
 import type { Id, Plan, PlanRoom } from '../../core/plan/types';
-import { outwardNormal, wallBands, wallDirection, wallLength } from '../../core/plan/walls';
+import { outwardNormal, PASSAGE_TOLERANCE, wallBands, wallDirection, wallLength } from '../../core/plan/walls';
 import type { MeshData, SceneFrame, Vec3 } from './types';
 
 const PLASTER = '#ebe7e0',
@@ -127,14 +127,19 @@ export function exposed(
   const u = wallDirection(room, i);
   const out = outwardNormal(u);
   const at = (x: number, d: number): Point => [a[0] + u[0] * x + out[0] * d, a[1] + u[1] * x + out[1] * d];
-  // les autres pièces avec leurs murs : un bout d'angle peut tomber dans l'épaisseur d'un mur voisin
-  const others = plan.rooms
-    .filter((r) => r.id !== room.id && rooms.includes(r.id) && r.outline.length >= 3)
-    .flatMap((r) => [r.outline, ...wallBands(r)].map((ring) => ring.map((q) => abs(r, q))));
-  if (!others.length) return [[xa, xb]];
+  // les autres pièces, agrandies de la tolérance du plan (deux pièces à moins d'un centimètre sont collées, comme
+  // pour un passage), et leurs murs tels quels (un bout d'angle peut tomber dans l'épaisseur d'un mur voisin)
+  const near = plan.rooms.filter((r) => r.id !== room.id && rooms.includes(r.id) && r.outline.length >= 3);
+  if (!near.length) return [[xa, xb]];
+  const inside = offset(
+    near.map((r) => r.outline.map((q) => abs(r, q))),
+    PASSAGE_TOLERANCE,
+  );
+  const walls = near.flatMap((r) => wallBands(r).map((ring) => ring.map((q) => abs(r, q))));
   const strip = [at(xa, t + 1), at(xb, t + 1), at(xb, t + 3), at(xa, t + 3)];
   const along = (q: Point) => (q[0] - a[0]) * u[0] + (q[1] - a[1]) * u[1];
-  return components(difference([strip], others))
+  // l'une après l'autre : les bandes des murs ne tournent pas dans le sens des contours (elles s'annuleraient)
+  return components(difference(difference([strip], inside), walls))
     .map((c): [number, number] => {
       const xs = c.outer.map(along);
       return [Math.max(xa, Math.min(...xs)), Math.min(xb, Math.max(...xs))];

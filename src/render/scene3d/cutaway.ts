@@ -16,6 +16,11 @@ import { brand } from '../../ui/brand';
 export const CUT_HEIGHT = 0.4;
 /** Épaisseur de revêtement comptée dans un mur côté pièce (carreau, colle, plinthe), mm. */
 const LINING = 60;
+/**
+ * Profondeur comptée derrière la face extérieure, mm : un module dessine ses embrasures et tableaux à sa propre
+ * profondeur (120 mm par défaut au carrelage, plus pour un tableau profond), parfois plus que le mur.
+ */
+const BEYOND = 300;
 
 const m = (v: number) => v / 1000;
 const abs = (r: PlanRoom, p: Point): Point => [r.origin[0] + p[0], r.origin[1] + p[1]];
@@ -67,7 +72,7 @@ function wallZones(plan: Plan, rooms: readonly Id[]): WallZone[] {
         s0: Math.min(...xs) - 1,
         s1: Math.max(...xs) + 1,
         d0: -LINING,
-        d1: wall.thickness + 5,
+        d1: wall.thickness + BEYOND,
       });
     });
   }
