@@ -37,6 +37,8 @@ interface WallZone {
   d1: number;
   /** Parties contre une pièce voisine (cloison), abscisses le long du mur : toujours coupées en mode « coupés ». */
   shared: [number, number][];
+  /** Bouts de cloison à l'intérieur du mur (abscisses) : les triangles y sont coupés. */
+  ends: number[];
 }
 
 function wallZones(plan: Plan, rooms: readonly Id[]): WallZone[] {
@@ -64,8 +66,10 @@ function wallZones(plan: Plan, rooms: readonly Id[]): WallZone[] {
         from = e1;
       }
       if (xb - from > 1) shared.push([from, xb]);
+      const ends = shared.flat().filter((e) => e > Math.min(...xs) + 1 && e < Math.max(...xs) - 1);
       zones.push({
         shared,
+        ends,
         a,
         u,
         out,
@@ -79,51 +83,119 @@ function wallZones(plan: Plan, rooms: readonly Id[]): WallZone[] {
   return zones;
 }
 
+/** Sommet d'un triangle : position (m), normale, couleur, UV. */
+interface Vert {
+  p: Vec3;
+  n: Vec3;
+  c: Vec3;
+  uv: [number, number];
+}
+
+const lerp = (a: number[], b: number[], t: number) => a.map((v, i) => v + (b[i]! - v) * t);
+function mix(a: Vert, b: Vert, t: number): Vert {
+  return {
+    p: lerp(a.p, b.p, t) as Vec3,
+    n: a.n,
+    c: lerp(a.c, b.c, t) as Vec3,
+    uv: lerp(a.uv, b.uv, t) as [number, number],
+  };
+}
+
+/** Polygone coupé par la droite f = 0 : les parties f ≤ 0 et f ≥ 0 (Sutherland–Hodgman). */
+function split(poly: Vert[], f: (v: Vert) => number): Vert[][] {
+  const side = (keep: (x: number) => boolean) => {
+    const out: Vert[] = [];
+    poly.forEach((a, i) => {
+      const b = poly[(i + 1) % poly.length]!;
+      const fa = f(a),
+        fb = f(b);
+      if (keep(fa)) out.push(a);
+      if (keep(fa) !== keep(fb) && fa !== fb) out.push(mix(a, b, fa / (fa - fb)));
+    });
+    return out;
+  };
+  return [side((x) => x <= 0), side((x) => x > 0)].filter((q) => q.length >= 3);
+}
+
+/** Le mur auquel revient un point (repère du plan, mm) d'une face de normale n, et son abscisse le long du mur. */
+function zoneOf(zones: readonly WallZone[], cx: number, cz: number, n: Vec3): { w: WallZone; s: number } | null {
+  // le mur dont le point est côté pièce (revêtement) passe avant celui dont il traverse l'épaisseur : contre
+  // une cloison, le carreau d'une pièce est aussi dans l'épaisseur du mur de la voisine
+  let best: { w: WallZone; s: number } | null = null,
+    bestScore = Infinity;
+  for (const w of zones) {
+    const dx = cx - w.a[0],
+      dz = cz - w.a[1];
+    const s = dx * w.u[0] + dz * w.u[1],
+      dd = dx * w.out[0] + dz * w.out[1];
+    if (s < w.s0 || s > w.s1 || dd < w.d0 || dd > w.d1) continue;
+    // une face parallèle au mur (parement, face extérieure, bout d'angle) lui revient avant un mur voisin
+    const facing = Math.abs(n[0] * w.out[0] + n[2] * w.out[1]) > 0.9;
+    const score = (dd <= 0.5 ? -dd : 1000 + dd) + (facing ? 0 : 500);
+    if (score < bestScore) {
+      best = { w, s };
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 /**
  * Normale extérieure (x, z) du mur auquel appartient chaque triangle, d'après son centre au sol ; (0, 0) hors
  * des murs, doublée pour une cloison entre deux pièces. Deux valeurs par sommet, pour l'attribut `wallNormal`.
+ * Un triangle à cheval sur le bout d'une cloison (pièce voisine plus courte) est coupé à cet endroit : le
+ * carreau est tranché net au bout de la cloison au lieu d'être masqué en entier ou de travers.
  */
 export function tagWalls(meshes: readonly MeshData[], plan: Plan, rooms: readonly Id[]): MeshData[] {
   const zones = wallZones(plan, rooms);
   return meshes.map((d) => {
-    const n = d.positions.length / 9;
-    const tags = new Array<number>(n * 6).fill(0);
-    for (let t = 0; t < n; t++) {
-      const p = d.positions;
-      const k = t * 9;
-      const cx = ((p[k]! + p[k + 3]! + p[k + 6]!) / 3) * 1000,
-        cz = ((p[k + 2]! + p[k + 5]! + p[k + 8]!) / 3) * 1000;
-      const nx = d.normals[k]!,
-        nz = d.normals[k + 2]!;
-      // le mur dont le point est côté pièce (revêtement) passe avant celui dont il traverse l'épaisseur : contre
-      // une cloison, le carreau d'une pièce est aussi dans l'épaisseur du mur de la voisine
-      let best: WallZone | null = null,
-        bestScore = Infinity,
-        bestS = 0;
-      for (const w of zones) {
-        const dx = cx - w.a[0],
-          dz = cz - w.a[1];
-        const s = dx * w.u[0] + dz * w.u[1],
-          dd = dx * w.out[0] + dz * w.out[1];
-        if (s < w.s0 || s > w.s1 || dd < w.d0 || dd > w.d1) continue;
-        // une face parallèle au mur (parement, face extérieure, bout d'angle) lui revient avant un mur voisin
-        const facing = Math.abs(nx * w.out[0] + nz * w.out[1]) > 0.9;
-        const score = (dd <= 0.5 ? -dd : 1000 + dd) + (facing ? 0 : 500);
-        if (score < bestScore) {
-          best = w;
-          bestScore = score;
-          bestS = s;
-        }
+    const out: MeshData = { ...d, positions: [], normals: [], colors: [], uvs: [], wallNormals: [] };
+    const hasUv = d.uvs.length > 0;
+    const vert = (i: number): Vert => ({
+      p: [d.positions[i * 3]!, d.positions[i * 3 + 1]!, d.positions[i * 3 + 2]!],
+      n: [d.normals[i * 3]!, d.normals[i * 3 + 1]!, d.normals[i * 3 + 2]!],
+      c: [d.colors[i * 3]!, d.colors[i * 3 + 1]!, d.colors[i * 3 + 2]!],
+      uv: hasUv ? [d.uvs[i * 2]!, d.uvs[i * 2 + 1]!] : [0, 0],
+    });
+    const emit = (tri: Vert[], tag: [number, number]) => {
+      for (const v of tri) {
+        out.positions.push(...v.p);
+        out.normals.push(...v.n);
+        out.colors.push(...v.c);
+        if (hasUv) out.uvs.push(...v.uv);
+        out.wallNormals!.push(...tag);
       }
-      if (!best) continue;
+    };
+    const tagOf = (tri: Vert[]): [number, number] => {
+      const cx = ((tri[0]!.p[0] + tri[1]!.p[0] + tri[2]!.p[0]) / 3) * 1000,
+        cz = ((tri[0]!.p[2] + tri[1]!.p[2] + tri[2]!.p[2]) / 3) * 1000;
+      const z = zoneOf(zones, cx, cz, tri[0]!.n);
+      if (!z) return [0, 0];
       // cloison : normale doublée, la scène la coupe quel que soit le côté de la caméra
-      const f = best.shared.some(([a, b]) => bestS >= a && bestS <= b) ? 2 : 1;
-      for (let v = 0; v < 3; v++) {
-        tags[t * 6 + v * 2] = best.out[0] * f;
-        tags[t * 6 + v * 2 + 1] = best.out[1] * f;
+      const f = z.w.shared.some(([a, b]) => z.s >= a && z.s <= b) ? 2 : 1;
+      return [z.w.out[0] * f, z.w.out[1] * f];
+    };
+    for (let t = 0; t < d.positions.length / 9; t++) {
+      const tri = [vert(t * 3), vert(t * 3 + 1), vert(t * 3 + 2)];
+      const cx = ((tri[0]!.p[0] + tri[1]!.p[0] + tri[2]!.p[0]) / 3) * 1000,
+        cz = ((tri[0]!.p[2] + tri[1]!.p[2] + tri[2]!.p[2]) / 3) * 1000;
+      const z = zoneOf(zones, cx, cz, tri[0]!.n);
+      const ends = z ? z.w.ends : [];
+      if (!z || !ends.length) {
+        emit(tri, tagOf(tri));
+        continue;
       }
+      // abscisse le long du mur de ce triangle, mm ; coupe aux bouts de cloison qu'il chevauche
+      const along = (v: Vert) => (v.p[0] * 1000 - z.w.a[0]) * z.w.u[0] + (v.p[2] * 1000 - z.w.a[1]) * z.w.u[1];
+      let polys: Vert[][] = [tri];
+      for (const e of ends) polys = polys.flatMap((q) => split(q, (v) => along(v) - e));
+      for (const q of polys)
+        for (let i = 1; i < q.length - 1; i++) {
+          const part = [q[0]!, q[i]!, q[i + 1]!];
+          emit(part, tagOf(part));
+        }
     }
-    return { ...d, wallNormals: tags };
+    return out;
   });
 }
 

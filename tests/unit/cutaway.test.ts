@@ -224,3 +224,49 @@ describe('cloison entre deux pièces', () => {
     expect(tris(tagWalls([tile(2.998, -1)], p, ['a'])[0]!)[0]!.tag).toEqual([1, 0]);
   });
 });
+
+describe('pièce voisine plus courte', () => {
+  // A : 4 × 3 m ; B : 2 × 2 m contre le mur 2 de A (x = 4 m, z de 0 à 3 m) : cloison de z = 0 à 2,072 m (le mur du
+  // fond de B, épaisseur comprise, bute contre A)
+  const plan: Plan = {
+    rooms: [
+      { ...rect('a', 4000, 3000, { height: 2500 }), origin: [0, 0] },
+      { ...rect('b', 2000, 2000, { height: 2500 }), origin: [4072, 0] },
+    ],
+    passages: [],
+  };
+
+  it('un carreau à cheval sur le bout de la cloison est tranché net : cloison d’un côté, mur extérieur de l’autre', () => {
+    // carreau de A sur son mur 2, de z = 1,8 à 2,2 m, couleur et UV différents à chaque sommet
+    const tile: MeshData = {
+      key: 'tiles',
+      photo: null,
+      positions: [3.998, 0.5, 1.8, 3.998, 0.5, 2.2, 3.998, 0.9, 2.2],
+      normals: [-1, 0, 0, -1, 0, 0, -1, 0, 0],
+      colors: [0, 0, 0, 1, 1, 1, 1, 1, 1],
+      uvs: [0, 0, 1, 0, 1, 1],
+      castShadow: false,
+      receiveShadow: true,
+    };
+    const [m] = tagWalls([tile], plan, ['a', 'b']);
+    const parts = tris(m!);
+    expect(parts.length).toBeGreaterThan(1);
+    expect(m!.uvs.length).toBe((m!.positions.length / 3) * 2);
+    for (const t of parts) {
+      const zs = t.p.map((q) => q[2]);
+      // aucun morceau ne chevauche plus le bout de la cloison (z = 2,072 m)
+      expect(Math.min(...zs) >= 2.072 - 1e-9 || Math.max(...zs) <= 2.072 + 1e-9).toBe(true);
+      expect(t.tag).toEqual(Math.max(...zs) <= 2.072 + 1e-9 ? [2, 0] : [1, 0]);
+    }
+    // même surface au total : rien n'est perdu
+    const area = (ts: Tri[]) =>
+      ts.reduce((sum, t) => {
+        const [a, b, c] = t.p;
+        return sum + Math.abs((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1])) / 2;
+      }, 0);
+    expect(area(parts)).toBeCloseTo(area(tris(tile)), 9);
+    // la couleur est interpolée au point de coupe (ni noir ni blanc pur)
+    const cut = m!.colors.filter((_, i) => i % 3 === 0).filter((v) => v > 0 && v < 1);
+    expect(cut.length).toBeGreaterThan(0);
+  });
+});
