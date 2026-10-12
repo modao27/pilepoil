@@ -16,11 +16,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Ubuntu figée : ubuntu-latest passe à Ubuntu 26 le 2026-10-19 ; on y passera quand Playwright le prendra en
+  # charge (dépendances de Chromium installées par playwright install --with-deps).
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -29,16 +31,16 @@ jobs:
       - run: npm run check
       - run: npm run build
       - run: npm run test:e2e
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
