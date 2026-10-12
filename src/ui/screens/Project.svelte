@@ -9,6 +9,7 @@
   import type { ModuleSummary } from '../../modules/types';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
+  import ProjectModel from '../components/ProjectModel.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
   import { euros } from '../lib/format';
@@ -91,6 +92,15 @@
         {#if rooms}
           <div class="map"><PlanMap {project} /></div>
           <p class="muted">Touchez une pièce pour choisir ses revêtements.</p>
+          <a class="card model" href="#/p/{project.id}/3d">
+            <span class="preview" aria-hidden="true"
+              ><ProjectModel {project} label="Aperçu 3D du projet" preview /></span
+            >
+            <span class="text">
+              <span class="title">Vue 3D</span>
+              <span class="muted">Toutes les pièces en maquette, murs coupés</span>
+            </span>
+          </a>
         {:else}
           <a class="card plan" href="#/p/{project.id}/plan">
             <span class="thumb"><span class="empty">Aucune pièce dessinée</span></span>
@@ -251,6 +261,18 @@
   }
   .shop {
     margin-top: var(--space-2);
+  }
+  .model {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+  .preview {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--r-field);
+    overflow: hidden;
+    pointer-events: none;
   }
   .map {
     aspect-ratio: 4 / 3;

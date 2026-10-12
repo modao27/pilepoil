@@ -15,6 +15,8 @@ export type Route =
   | { name: 'project'; id: string }
   /** Éditeur du plan commun. */
   | { name: 'plan'; id: string }
+  /** Vue 3D du projet : maquette de toutes les pièces (docs/NAVIGATION.md §3). */
+  | { name: 'model3d'; id: string }
   /** Écran Pièce : sol et murs, zones et poses ; `surface` : 'sol' ou identifiant d'un mur sélectionné. */
   | { name: 'room'; id: string; room: string; surface?: string }
   /** Résultats d'une pose, d'une pièce ou du projet, avec export (docs/NAVIGATION.md §7). */
@@ -63,6 +65,7 @@ export function parseRoute(hash: string): Route {
     return results(b, { kind: 'pose', pose: d });
   if (a === 'p' && b && !c) return { name: 'project', id: b };
   if (a === 'p' && b && c === 'plan' && !d) return { name: 'plan', id: b };
+  if (a === 'p' && b && c === '3d' && !d) return { name: 'model3d', id: b };
   if (a === 'p' && b && c === 'r' && d && parts.length <= 5)
     return parts[4] ? { name: 'room', id: b, room: d, surface: parts[4] } : { name: 'room', id: b, room: d };
   if (a === 'p' && b && c === 'achats' && !d) return { name: 'shopping', id: b };
@@ -87,6 +90,8 @@ export function href(r: Route): string {
       return '#/p/' + encodeURIComponent(r.id);
     case 'plan':
       return '#/p/' + encodeURIComponent(r.id) + '/plan';
+    case 'model3d':
+      return '#/p/' + encodeURIComponent(r.id) + '/3d';
     case 'shopping':
       return '#/p/' + encodeURIComponent(r.id) + '/achats';
     case 'results': {
