@@ -1,92 +1,225 @@
-/*
- * Système de design « plan de chantier » (docs/UX.md).
- * Papier bleu-gris, encre, cobalt pour l'action ; jaune / vert / rouge réservés aux statuts de coupe.
- * Contrastes vérifiés AA : texte ≥ 4,5:1, bordures de champs et focus ≥ 3:1.
- */
+/* PilePoil — design tokens. Importer une fois dans src/ui (ex. src/ui/styles/tokens.css). */
 :root {
-  color-scheme: light;
-  --paper: #e6ebee;
-  --sheet: #ffffff;
-  --ink: #15232c;
-  --muted: #5a6a74;
-  --line: #cdd5da;
-  /* bordure de champ : ≥ 3:1 sur --sheet et --paper (WCAG 1.4.11) */
-  --field-border: #7d8d97;
-  --accent: #2747c9;
-  --on-accent: #ffffff;
-  --accent-soft: #e3e8fb;
-  --cut: #f0be45;
-  --reuse: #7cc79a;
-  --thin: #d9472b;
-  /* texte d'erreur : --thin est trop clair pour du texte (4,4:1) */
-  --thin-ink: #b5361d;
-  --thin-soft: #fbe5e0;
-  /* écart favorable dans une comparaison (texte, ≥ 4,5:1) */
-  --better: #1d6e3f;
-  --scrim: rgb(14 22 27 / 0.45);
-  --shadow: 0 8px 28px rgb(21 35 44 / 0.18), 0 1px 3px rgb(21 35 44 / 0.12);
+  /* Palette officielle (ne pas modifier) */
+  --pp-petrole: #174f50;
+  --pp-terracotta: #d17a59;
+  --pp-ocre: #c7a45a;
+  --pp-sauge: #d8e3dc;
+  --pp-ivoire: #faf1e9;
+  --pp-charbon: #252d2d;
 
-  --font: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-num: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
-  --fs-xs: 12px;
-  --fs-sm: 14px;
-  --fs-md: 16px;
-  --fs-lg: 20px;
-  --fs-xl: 28px;
+  /* Teintes dérivées pour le texte : terracotta et ocre purs échouent au contraste AA sur ivoire
+     (2,8:1 et 2,1:1). À utiliser pour tout texte, bordure de champ en erreur ou icône seule. */
+  --pp-terracotta-texte: #a4502f; /* 5,0:1 sur ivoire */
+  --pp-ocre-texte: #7e6020; /* 5,4:1 sur ivoire */
+  --pp-petrole-clair: #2e6b6b; /* survol du bouton principal */
+  --pp-petrole-fonce: #0f3b3c; /* appui */
+  --pp-charbon-doux: #5c6666; /* texte secondaire, 5,3:1 */
 
-  --r-field: 8px;
-  --r-panel: 12px;
-  --touch: 44px;
-  --gutter: 16px;
+  /* Rôles */
+  --color-bg: var(--pp-ivoire);
+  --color-surface: #ffffff;
+  --color-surface-2: var(--pp-sauge);
+  --color-text: var(--pp-charbon);
+  --color-text-muted: var(--pp-charbon-doux);
+  --color-border: #c9d3ce;
+  --color-border-strong: var(--pp-charbon);
+  --color-primary: var(--pp-petrole);
+  --color-primary-hover: var(--pp-petrole-clair);
+  --color-primary-active: var(--pp-petrole-fonce);
+  --color-on-primary: var(--pp-ivoire);
+  --color-accent: var(--pp-terracotta); /* aplats, repères, jamais en texte fin */
+  --color-accent-text: var(--pp-terracotta-texte);
+  --color-highlight: var(--pp-ocre); /* repères de calepinage, badges */
+  --color-focus: var(--pp-terracotta-texte);
+
+  --color-success: #2f6b4f;
+  --color-success-bg: #e2efe6;
+  --color-info: var(--pp-petrole);
+  --color-info-bg: var(--pp-sauge);
+  --color-warning: var(--pp-ocre-texte);
+  --color-warning-bg: #f5ead2;
+  --color-error: var(--pp-terracotta-texte);
+  --color-error-bg: #f8e3da;
+
+  /* Plan et calepinage */
+  --plan-wall: var(--pp-charbon);
+  --plan-grid: rgba(23, 79, 80, 0.1);
+  --plan-cut: var(--pp-terracotta);
+  --plan-start: var(--pp-ocre);
+  --plan-selection: var(--pp-petrole);
+
+  /* Typographie */
+  --font-display: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  --font-ui: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-num: var(--font-ui); /* + font-variant-numeric: tabular-nums pour les cotes */
+
+  --text-h1: 700 2rem/2.5rem var(--font-display); /* 32/40 */
+  --text-h2: 600 1.5rem/2rem var(--font-display); /* 24/32 */
+  --text-h3: 600 1.25rem/1.75rem var(--font-display); /* 20/28 */
+  --text-body: 400 0.875rem/1.25rem var(--font-ui); /* 14/20 */
+  --text-body-lg: 400 1rem/1.5rem var(--font-ui); /* 16/24, lecture sur téléphone */
+  --text-label: 500 0.875rem/1.25rem var(--font-ui);
+  --text-small: 400 0.75rem/1rem var(--font-ui); /* 12/16 */
+  --text-caption: 400 0.6875rem/0.875rem var(--font-ui); /* 11/14, cotes */
+  --text-metric: 600 1.25rem/1.75rem var(--font-display);
+  --text-input: 400 1rem/1.5rem var(--font-ui); /* 16 px mini : évite le zoom auto d'iOS */
+
+  /* Espacements (base 4) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
-  --dur: 160ms;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Formes */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+  --border-width: 1px;
+  --border-width-strong: 1.5px;
+  --shadow-1: 0 1px 2px rgba(37, 45, 45, 0.08);
+  --shadow-2: 0 4px 16px rgba(37, 45, 45, 0.12);
+  --shadow-sheet: 0 -6px 24px rgba(37, 45, 45, 0.16);
+
+  /* Interaction */
+  --target-min: 44px;
+  --focus-ring: 0 0 0 3px var(--color-bg), 0 0 0 5px var(--color-focus);
+  --icon-stroke: 1.75;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color-scheme: light;
 }
 
+/* Mode sombre : fond charbon, pétrole éclairci pour garder le contraste */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
+    --color-bg: #182121;
+    --color-surface: var(--pp-charbon);
+    --color-surface-2: #2f3a3a;
+    --color-text: var(--pp-ivoire);
+    --color-text-muted: #a9b5b2;
+    --color-border: #3b4747;
+    --color-border-strong: #a9b5b2;
+    --color-primary: #6fb0ab;
+    --color-primary-hover: #8ac2bd;
+    --color-primary-active: #5a9c97;
+    --color-on-primary: #102020;
+    --color-accent: #e59a7c;
+    --color-accent-text: #e59a7c;
+    --color-highlight: #d9b970;
+    --color-focus: #e59a7c;
+    --color-success: #7cc4a0;
+    --color-success-bg: #1f3329;
+    --color-info: #6fb0ab;
+    --color-info-bg: #1f3232;
+    --color-warning: #d9b970;
+    --color-warning-bg: #33301f;
+    --color-error: #e59a7c;
+    --color-error-bg: #3a2620;
+    --plan-wall: var(--pp-ivoire);
+    --plan-grid: rgba(250, 241, 233, 0.08);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
     color-scheme: dark;
-    --paper: #0e161b;
-    --sheet: #1a262e;
-    --ink: #e4ebef;
-    --muted: #93a4ae;
-    --line: #2e3d47;
-    --field-border: #6b7e89;
-    --accent: #8299ff;
-    --on-accent: #0e161b;
-    --accent-soft: #24305a;
-    --thin-ink: #ff8a70;
-    --thin-soft: #3a1f1a;
-    --better: #8fd6aa;
-    --scrim: rgb(0 0 0 / 0.6);
-    --shadow: 0 8px 28px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
   }
 }
-
 :root[data-theme='dark'] {
+  --color-bg: #182121;
+  --color-surface: var(--pp-charbon);
+  --color-surface-2: #2f3a3a;
+  --color-text: var(--pp-ivoire);
+  --color-text-muted: #a9b5b2;
+  --color-border: #3b4747;
+  --color-border-strong: #a9b5b2;
+  --color-primary: #6fb0ab;
+  --color-primary-hover: #8ac2bd;
+  --color-primary-active: #5a9c97;
+  --color-on-primary: #102020;
+  --color-accent: #e59a7c;
+  --color-accent-text: #e59a7c;
+  --color-highlight: #d9b970;
+  --color-focus: #e59a7c;
+  --color-success: #7cc4a0;
+  --color-success-bg: #1f3329;
+  --color-info: #6fb0ab;
+  --color-info-bg: #1f3232;
+  --color-warning: #d9b970;
+  --color-warning-bg: #33301f;
+  --color-error: #e59a7c;
+  --color-error-bg: #3a2620;
+  --plan-wall: var(--pp-ivoire);
+  --plan-grid: rgba(250, 241, 233, 0.08);
   color-scheme: dark;
-  --paper: #0e161b;
-  --sheet: #1a262e;
-  --ink: #e4ebef;
-  --muted: #93a4ae;
-  --line: #2e3d47;
-  --field-border: #6b7e89;
-  --accent: #8299ff;
-  --on-accent: #0e161b;
-  --accent-soft: #24305a;
-  --thin-ink: #ff8a70;
-  --thin-soft: #3a1f1a;
-  --better: #8fd6aa;
-  --scrim: rgb(0 0 0 / 0.6);
-  --shadow: 0 8px 28px rgb(0 0 0 / 0.5), 0 1px 3px rgb(0 0 0 / 0.4);
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --dur: 0ms;
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
   }
+}
+
+/* ————————————————————————————————————————————————————————————————————————
+   Ajouts de l'application (au-dessus de l'identité, qui reste intacte ci-dessus).
+   ———————————————————————————————————————————————————————————————————————— */
+:root {
+  /* Bordure de champ : --color-border (1,5:1) ne sert qu'aux séparateurs ; ≥ 3:1 sur blanc, ivoire, sauge. */
+  --color-field-border: #6e7c7a;
+  /* Statuts de coupe (aplats du plan, de la 3D et des légendes ; jamais en texte). */
+  --status-cut: var(--pp-ocre);
+  --status-reuse: #7cc4a0;
+  --status-thin: var(--pp-terracotta);
+  --scrim: rgb(37 45 45 / 0.45);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-field-border: #7f8c88;
+    --scrim: rgb(0 0 0 / 0.6);
+  }
+}
+:root[data-theme='dark'] {
+  --color-field-border: #7f8c88;
+  --scrim: rgb(0 0 0 / 0.6);
+}
+
+/* Anciens noms (système « plan de chantier »), gardés comme alias le temps de la transition.
+   Ne plus les utiliser dans le nouveau code. */
+:root {
+  --paper: var(--color-bg);
+  --sheet: var(--color-surface);
+  --ink: var(--color-text);
+  --muted: var(--color-text-muted);
+  --line: var(--color-border);
+  --field-border: var(--color-field-border);
+  --accent: var(--color-primary);
+  --on-accent: var(--color-on-primary);
+  --accent-soft: var(--color-info-bg);
+  --cut: var(--status-cut);
+  --reuse: var(--status-reuse);
+  --thin: var(--status-thin);
+  --thin-ink: var(--color-error);
+  --thin-soft: var(--color-error-bg);
+  --better: var(--color-success);
+  --shadow: var(--shadow-2);
+  --font: var(--font-ui);
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;
+  --fs-lg: 20px;
+  --fs-xl: 28px;
+  --r-field: var(--radius-md);
+  --r-panel: var(--radius-lg);
+  --touch: var(--target-min);
+  --gutter: var(--space-4);
+  --dur: var(--duration-base);
 }

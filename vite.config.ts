@@ -45,8 +45,16 @@ export default defineConfig({
       includeManifestIcons: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
-        // Polices vietnamiennes et modules facultatifs de jsPDF (export HTML, SVG) que l'application n'utilise pas.
-        globIgnores: ['**/*-vietnamese-*', '**/html2canvas-*.js', '**/purify.es-*.js', '**/index.es-*.js'],
+        // Polices cyrilliques, grecques et vietnamiennes, modules facultatifs de jsPDF (export HTML, SVG) :
+        // l'application ne s'en sert pas.
+        globIgnores: [
+          '**/*-vietnamese-*',
+          '**/*-cyrillic*',
+          '**/*-greek*',
+          '**/html2canvas-*.js',
+          '**/purify.es-*.js',
+          '**/index.es-*.js',
+        ],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
       },

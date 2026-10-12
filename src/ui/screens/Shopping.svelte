@@ -205,7 +205,8 @@
     border-radius: var(--r-field);
     background: var(--sheet);
     color: var(--ink);
-    font: inherit;
+    font: var(--text-input);
+    font-variant-numeric: tabular-nums;
     text-align: right;
   }
   .u {

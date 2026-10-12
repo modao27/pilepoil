@@ -1,5 +1,5 @@
 <script lang="ts">
-  /** Chiffre clé (Barlow Condensed) avec libellé ; `status` colore le liseré (coupe, réemploi, alerte). */
+  /** Chiffre clé (Manrope) avec libellé ; `status` colore le liseré (coupe, réemploi, alerte). */
   let {
     label,
     value,

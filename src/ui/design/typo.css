@@ -1,0 +1,53 @@
+/* PilePoil — polices.
+   Installation (auto-hébergées, fonctionnent hors ligne, mises en cache par Workbox) :
+     npm i @fontsource-variable/manrope @fontsource-variable/inter
+   Licence : SIL Open Font License 1.1 pour les deux familles (usage commercial libre). */
+@import '@fontsource-variable/manrope/wght.css';
+@import '@fontsource-variable/inter/wght.css';
+
+html {
+  font: var(--text-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv11', 'ss01'; /* Inter : a simple, chiffres plus lisibles */
+}
+h1,
+.h1 {
+  font: var(--text-h1);
+  letter-spacing: -0.01em;
+}
+h2,
+.h2 {
+  font: var(--text-h2);
+  letter-spacing: -0.005em;
+}
+h3,
+.h3 {
+  font: var(--text-h3);
+}
+.small {
+  font: var(--text-small);
+}
+.caption {
+  font: var(--text-caption);
+}
+.metric {
+  font: var(--text-metric);
+  font-variant-numeric: tabular-nums;
+}
+/* Cotes, quantités, tableaux : chiffres de même largeur pour l'alignement */
+.num,
+td.num,
+.cote {
+  font-variant-numeric: tabular-nums;
+}
+input,
+select,
+textarea {
+  font: var(--text-input);
+} /* jamais sous 16 px sur téléphone */
+label {
+  font: var(--text-label);
+}

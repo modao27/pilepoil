@@ -158,6 +158,7 @@
     background: transparent;
     font-family: var(--font-num);
     font-size: var(--fs-lg);
+    font-variant-numeric: tabular-nums;
     text-align: right;
   }
   input:focus-visible {
