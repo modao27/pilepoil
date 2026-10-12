@@ -3,6 +3,7 @@
  * L'état propre à chaque module vit dans le module (carrelage : bibliothèque, calculs, scénarios).
  * L'interface lit cet état et appelle ses méthodes ; aucun calcul métier ici (tout passe par le worker).
  */
+import { DEFAULT_WALL_THICKNESS } from '../../core/plan/walls';
 import type { Id, Palette, Photo, Project } from '../../state/model';
 import { openDb, type Db } from '../../storage/db';
 import * as repo from '../../storage/repo';
@@ -31,6 +32,8 @@ export class AppState {
   theme = $state<Theme>('auto');
   palette = $state.raw<Palette>(DEFAULT_PALETTE);
   showCutNumbers = $state(true);
+  /** Épaisseur des murs des nouvelles pièces, mm (cloison placo 72/48 par défaut). */
+  wallThickness = $state(DEFAULT_WALL_THICKNESS);
   /** URL d'affichage des photos chargées (object URL). */
   photoUrls = $state.raw<Record<Id, string>>({});
 
@@ -57,6 +60,7 @@ export class AppState {
       this.theme = (await repo.getPref(this.db, 'theme')) ?? 'auto';
       this.palette = (await repo.getPref(this.db, 'palette')) ?? DEFAULT_PALETTE;
       this.showCutNumbers = (await repo.getPref(this.db, 'showCutNumbers')) ?? true;
+      this.wallThickness = (await repo.getPref(this.db, 'wallThickness')) ?? DEFAULT_WALL_THICKNESS;
       applyTheme(this.theme);
       this.ready = true;
     } catch (e) {
@@ -204,6 +208,12 @@ export class AppState {
   async setPalette(p: Palette): Promise<void> {
     this.palette = p;
     await repo.setPref(this.db, 'palette', p);
+  }
+
+  async setWallThickness(v: number): Promise<void> {
+    if (!(v > 0)) return;
+    this.wallThickness = v;
+    await repo.setPref(this.db, 'wallThickness', v);
   }
 
   async setShowCutNumbers(v: boolean): Promise<void> {

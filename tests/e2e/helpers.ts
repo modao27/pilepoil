@@ -31,21 +31,41 @@ export async function createProject(page: Page, room: NewRoom, base = '/'): Prom
   return /#\/p\/([^/]+)/.exec(page.url())![1]!;
 }
 
-/** Ajoute un revêtement au projet depuis l'écran Projet (« Ajouter parquet ») : son écran s'ouvre. */
-export async function addTool(page: Page, id: string, tool: string, base = '/'): Promise<void> {
+const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Ouvre l'écran Pièce depuis la vue globale (liste des pièces). */
+export async function openRoom(page: Page, id: string, room = 'Pièce', base = '/'): Promise<void> {
   await page.goto(`${base}#/p/${id}`);
-  await page.getByRole('button', { name: `Ajouter ${tool}` }).click();
-  await expect(page).toHaveURL(new RegExp(`#/p/${id}/m/`));
+  await page
+    .getByRole('link', { name: new RegExp(`^${esc(room)}( |$)`) })
+    .first()
+    .click();
+  await expect(page.getByRole('heading', { name: room, exact: true })).toBeVisible();
+}
+
+/** Sélectionne une surface sur l'écran Pièce (liste sous le dessin) : « Sol », « Mur 1 »… */
+export async function selectSurface(page: Page, surface: string): Promise<void> {
+  await page
+    .getByRole('button', { name: new RegExp(`^${esc(surface)}( \\(| :)`) })
+    .first()
+    .click();
+  await expect(page.getByRole('heading', { name: surface, exact: true })).toBeVisible();
 }
 
 /**
- * Coche une surface sur l'écran Carrelage. À côté d'une pose qu'elle peut continuer, une fenêtre demande quoi
- * faire : `choice` y répond (« Nouvelle pose », ou continuer la première pose proposée).
+ * Sur l'écran Pièce, revêt une surface (« Sol », « Mur 2 ») avec un outil. À côté d'une pose qu'elle peut
+ * continuer, une fenêtre demande quoi faire : `choice` y répond (« Nouvelle pose », ou la première pose proposée).
  */
-export async function tick(page: Page, box: Locator, choice?: 'new' | 'continue'): Promise<void> {
-  await box.click();
+export async function cover(
+  page: Page,
+  surface: string,
+  tool = 'carrelage',
+  choice?: 'new' | 'continue',
+): Promise<void> {
+  await selectSurface(page, surface);
+  await page.getByRole('button', { name: `Revêtir : ${tool}` }).click();
   if (!choice) return;
-  const dialog = page.getByRole('dialog', { name: /^Carreler / });
+  const dialog = page.getByRole('dialog', { name: new RegExp(`^${esc(tool)} :`, 'i') });
   if (choice === 'new') await dialog.getByRole('button', { name: 'Nouvelle pose' }).click();
   else
     await dialog
@@ -53,6 +73,20 @@ export async function tick(page: Page, box: Locator, choice?: 'new' | 'continue'
       .first()
       .click();
   await expect(dialog).toBeHidden();
+}
+
+/** Parquet sur le sol d'une pièce (écran Pièce), puis son calepinage. */
+export async function woodFloor(page: Page, id: string, room: string): Promise<void> {
+  await openRoom(page, id, room);
+  await cover(page, 'Sol', 'parquet');
+  await openPose(page, 'Sol');
+  await expect(page.getByRole('application', { name: /^Plan des lames/ })).toBeVisible();
+}
+
+/** Ouvre le calepinage de la (première) pose d'une surface depuis l'écran Pièce. */
+export async function openPose(page: Page, surface: string): Promise<void> {
+  await selectSurface(page, surface);
+  await page.getByRole('link', { name: 'Calepinage' }).first().click();
 }
 
 /** Saisit un nombre (ou un texte) et le valide (Entrée). */
@@ -75,24 +109,23 @@ export async function addTile(page: Page, fill?: () => Promise<void>, base = '/'
 
 /**
  * Projet carrelage « Pièce 300 × 240 » créé par le parcours normal : nouveau projet, pièce « Pièce » de
- * 300 × 240 cm dessinée sur le plan, 240 cm sous plafond, mur 1 coché sur l'écran Carrelage, puis son éditeur.
+ * 300 × 240 cm dessinée sur le plan, 240 cm sous plafond, mur 1 revêtu sur l'écran Pièce, puis son calepinage.
  * `tile` : saisie du carreau ajouté d'abord à la bibliothèque (undefined : le carreau proposé ; null : aucun
  * ajout, le premier de la bibliothèque sert). Renvoie l'identifiant du projet.
  */
 export async function newWall(page: Page, tile?: (() => Promise<void>) | null, base = '/'): Promise<string> {
   if (tile !== null) await addTile(page, tile, base);
   const id = await planRoom(page, 'Pièce 300 × 240', [300, 240], 240, base);
-  await page.goto(`${base}#/p/${id}/m/carrelage`);
-  await expect(page.getByRole('heading', { name: /^Carrelage — / })).toBeVisible();
-  await page.getByRole('checkbox', { name: /^Mur 1 / }).check();
-  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
+  await openRoom(page, id, 'Pièce', base);
+  await cover(page, 'Mur 1');
+  await openPose(page, 'Mur 1');
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   return id;
 }
 
 /**
  * Nouveau projet nommé `name`, avec une pièce « Pièce » de `size` cm (longueur × largeur) et `height` cm sous
- * plafond, puis le carrelage ajouté. Renvoie l'identifiant du projet.
+ * plafond. Renvoie l'identifiant du projet.
  */
 export async function planRoom(
   page: Page,
@@ -105,13 +138,12 @@ export async function planRoom(
   const panel = page.getByRole('complementary', { name: 'Réglages du plan' }).or(page.locator('.sheet'));
   await expect(panel.getByRole('heading', { name: 'Pièce' })).toBeVisible();
   await fillNumber(panel, 'Hauteur sous plafond', String(height));
-  await addTool(page, id, 'carrelage', base);
   return id;
 }
 
 /**
  * Ajoute une fenêtre (valeurs par défaut) sur le premier mur de la pièce `room` dans l'éditeur de plan, puis
- * ouvre l'éditeur du carrelage sur ce mur.
+ * ouvre le calepinage de ce mur (déjà revêtu).
  */
 export async function addPlanWindow(page: Page, id: string, room = 'Pièce'): Promise<void> {
   await page.goto(`/#/p/${id}/plan`);
@@ -123,8 +155,8 @@ export async function addPlanWindow(page: Page, id: string, room = 'Pièce'): Pr
     .click();
   await p.getByRole('button', { name: 'Ajouter une fenêtre' }).click();
   await expect(p.getByRole('heading', { name: `Fenêtre — ${room}` })).toBeVisible();
-  await page.goto(`/#/p/${id}/m/carrelage`);
-  await page.getByRole('link', { name: `Ouvrir ${room}, mur 1` }).click();
+  await openRoom(page, id, room);
+  await openPose(page, 'Mur 1');
   await expect(page.getByRole('application', { name: new RegExp(`^Plan de ${room}, mur 1`) })).toBeVisible();
 }
 

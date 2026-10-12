@@ -74,7 +74,7 @@
     </EmptyState>
   </Screen>
 {:else}
-  <Screen title="Résultats — {project.name}" backHref="#/p/{project.id}/m/carrelage" backLabel="Carrelage">
+  <Screen title="Résultats — {project.name}" backHref="#/p/{project.id}" backLabel="Projet">
     {#snippet actions()}
       <Button variant="ghost" href="#/p/{project.id}/m/carrelage/compare">Comparer</Button>
       <Button icon="download" disabled={!result} onclick={() => (exporting = true)}>PDF</Button>
@@ -106,7 +106,8 @@
               {#each g.surfaces as s, k (s.id)}{k ? ', ' : ''}<a href="#/p/{project.id}/m/carrelage/s/{s.id}"
                   >{nameIn(s, g.room)}</a
                 >{/each}
-              · <a href="#/p/{project.id}/m/carrelage/room/{g.room.id}">vue de la pièce</a>
+              · <a href="#/p/{project.id}/r/{g.room.id}">pièce</a> ·
+              <a href="#/p/{project.id}/m/carrelage/room/{g.room.id}">vue 3D</a>
             </p>
           {/each}
         </section>

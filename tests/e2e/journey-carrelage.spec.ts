@@ -3,7 +3,7 @@
  * et deux murs → poser du parquet dans une autre pièce du même projet → acheter. Téléphone et ordinateur.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot, tick } from './helpers';
+import { cover, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, openPose, shot } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -44,13 +44,16 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await expect(page.getByRole('application', { name: /2 pièces/ })).toBeVisible();
   await shot(page, info, 'C1-parcours-plan');
 
-  // 2. le carrelage : on coche le sol de la salle de bain, puis on choisit le carreau
+  // 2. vue globale, puis la salle de bain : son sol en carrelage, puis on choisit le carreau
   await page.getByRole('link', { name: 'Projet' }).click();
-  await page.getByRole('button', { name: 'Ajouter carrelage' }).click();
-  await expect(page.getByRole('heading', { name: 'Carrelage — Appartement' })).toBeVisible();
-  const bath = page.getByRole('region', { name: 'Salle de bain' });
-  await bath.getByRole('checkbox', { name: 'Sol', exact: true }).check();
-  await bath.getByRole('link', { name: 'Ouvrir Salle de bain, sol' }).click();
+  await expect(page.getByRole('heading', { name: 'Appartement' })).toBeVisible();
+  await check(page);
+  await shot(page, info, 'C1b-vue-globale');
+  await page.getByRole('link', { name: /^Ouvrir Salle de bain/ }).click();
+  await cover(page, 'Sol');
+  await check(page);
+  await shot(page, info, 'C1c-piece');
+  await openPose(page, 'Sol');
   await expect(page.getByRole('application', { name: /^Plan de Salle de bain, sol/ })).toBeVisible();
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
   await page.getByRole('tab', { name: 'Carreau' }).click();
@@ -59,25 +62,26 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await page.getByRole('button', { name: 'Ajouter et utiliser' }).click();
   await expect(page.getByRole('link', { name: /\d+ carreaux/ })).toBeVisible();
 
-  // 3. deux murs de la salle de bain, avec le même carreau ; cotes reprises du plan
-  await page.getByRole('link', { name: 'Carrelage', exact: true }).click();
-  await bath.getByRole('checkbox', { name: /^Mur 1 / }).check();
-  await tick(page, bath.getByRole('checkbox', { name: /^Mur 6 / }), 'new');
-  await expect(bath.getByRole('link', { name: /^Ouvrir Salle de bain, / })).toHaveCount(3);
-  await expect(bath.getByRole('link', { name: 'Ouvrir Salle de bain, mur 1' })).toContainText(/\d+ pièces/);
-  await expect(bath.getByRole('link', { name: 'Ouvrir Salle de bain, mur 6' })).toContainText(/\d+ pièces/);
+  // 3. deux murs de la salle de bain, avec le même carreau (repris de la pose du sol) ; cotes reprises du plan
+  await page.getByRole('link', { name: 'Pièce', exact: true }).click();
+  await cover(page, 'Mur 1');
+  await cover(page, 'Mur 6', 'carrelage', 'new');
+  const list = page.getByRole('region', { name: 'Sol et murs' });
+  await expect(list.getByRole('button', { name: /: Pose \d$/ })).toHaveCount(3);
   await check(page);
   await shot(page, info, 'C2-parcours-carrelage');
-  await bath.getByRole('link', { name: 'Vue de la pièce' }).click();
+  const roomId = new URL(page.url()).hash.split('/')[4];
+  await page.goto(`/#/p/${new URL(page.url()).hash.split('/')[2]}/m/carrelage/room/${roomId}`);
   await expect(page.getByRole('link', { name: /^Ouvrir Salle de bain, / })).toHaveCount(3);
   await shot(page, info, 'C3-parcours-piece');
 
-  // 4. le parquet dans la chambre
-  await page.goto(page.url().replace(/\/m\/carrelage\/room\/.*$/, ''));
-  await page.getByRole('button', { name: 'Ajouter parquet' }).click();
+  // 4. le parquet dans la chambre ; la salle de bain est déjà carrelée
+  await page.getByRole('link', { name: 'Pièce', exact: true }).click();
+  await page.getByRole('link', { name: 'Projet', exact: true }).click();
+  await page.getByRole('link', { name: /^Ouvrir Chambre/ }).click();
+  await cover(page, 'Sol', 'parquet');
+  await openPose(page, 'Sol');
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
-  // la pose naît sur la première pièce dont le sol est libre ; la salle de bain est déjà carrelée
-  await p.getByRole('button', { name: 'Créer une pose' }).click();
   await expect(p.getByRole('checkbox', { name: 'Chambre' })).toBeChecked();
   await expect(p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' })).not.toBeChecked();
   await p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' }).click();
@@ -86,7 +90,7 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).toBeVisible();
 
   // 5. acheter : carrelage et parquet sur la même liste
-  await page.goto(page.url().replace(/\/m\/parquet$/, ''));
+  await page.goto(page.url().replace(/\/m\/parquet.*$/, ''));
   await page.getByRole('link', { name: /^Achats/ }).click();
   await expect(page.getByRole('heading', { name: 'Achats — Appartement' })).toBeVisible();
   await expect(page.getByText(/^Carrelage : /)).toBeVisible();

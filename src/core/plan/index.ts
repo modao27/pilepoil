@@ -4,3 +4,4 @@ export * from './walls';
 export * from './validate';
 export * from './reduce';
 export * from './factories';
+export * from './neighbors';

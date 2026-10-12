@@ -164,14 +164,22 @@
 
 <div class="editor" class:desktop>
   <header class="bar">
-    <IconButton icon="back" label="Carrelage" href="#/p/{ed.project.id}/m/carrelage" />
+    <IconButton
+      icon="back"
+      label="Pièce"
+      href="#/p/{ed.project.id}/r/{ed.surface.ref.room}/{ed.surface.ref.wall ?? 'sol'}"
+    />
     <button type="button" class="surf" aria-haspopup="dialog" onclick={() => (surfaceDialog = true)}>
       <span class="pname">{ed.project.name}</span>
       <span class="sname">{ed.surface.name} <Icon name="down" size={16} /></span>
     </button>
     <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
-    <IconButton icon="room" label="Pièce" href="#/p/{ed.project.id}/m/carrelage/room/{ed.surface.ref.room}" />
+    <IconButton
+      icon="room"
+      label="Vue 3D de la pièce"
+      href="#/p/{ed.project.id}/m/carrelage/room/{ed.surface.ref.room}"
+    />
     <IconButton icon="list" label="Résultats" href="#/p/{ed.project.id}/m/carrelage/results" />
   </header>
 

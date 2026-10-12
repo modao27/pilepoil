@@ -116,8 +116,8 @@ describe('mur d’une pièce du plan', () => {
       ['window', 2000, 1000, 1000, 1000],
       ['socket', 3500, 300, 80, 80],
     ]);
-    // finitions : par défaut pour la porte, saisies pour la fenêtre
-    expect(s.openings[0]).toMatchObject({ covered: true, revealDepth: 0 });
+    // finitions : par défaut pour la porte (tableaux à l'épaisseur du mur, 72 mm), saisies pour la fenêtre
+    expect(s.openings[0]).toMatchObject({ covered: true, revealDepth: 72 });
     expect(s.openings[1]).toMatchObject({ covered: false, revealDepth: 120, reveals: { B: true } });
     expect(computeProject(spec(doorWall())).surfaces[0]!.ok).toBe(true);
   });

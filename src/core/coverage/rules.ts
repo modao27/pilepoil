@@ -6,7 +6,7 @@
 import { intersection, regionArea } from '../geometry/boolean';
 import type { Plan, PlanRoom } from '../plan/types';
 import { sameSurface, surfaceKey, surfacePolygon, zoneRegion } from './geometry';
-import type { CoverageRules, Pose, Zone } from './types';
+import type { CoverageRules, Pose, SurfaceRef, Zone } from './types';
 import type { Id } from '../plan/types';
 
 /** Aire en dessous de laquelle un contact n'est pas un recouvrement (arrondis des booléens), mm². */
@@ -137,4 +137,24 @@ export function checkZone(plan: Plan, cov: Coverage, z: Zone, rules: CoverageRul
 /** Zones dont la pièce ou le mur n'existe plus (plan modifié) : ignorées par les calculs, signalées. */
 export function orphanZones(plan: Plan, zones: readonly Zone[]): Zone[] {
   return zones.filter((z) => !surfacePolygon(plan, z.surface));
+}
+
+/**
+ * Poses du module `module` que la surface peut continuer : même type de surface (sol ou mur), pas déjà dessus,
+ * et la zone entière de la surface y serait permise (mur voisin, pièce reliée, sans recouvrement). Ordre du projet.
+ */
+export function continuablePoses(
+  plan: Plan,
+  cov: Coverage,
+  surface: SurfaceRef,
+  module: string,
+  rules: CoverageRules,
+): Pose[] {
+  return cov.poses.filter((p) => {
+    if (p.module !== module) return false;
+    const mine = cov.zones.filter((z) => z.pose === p.id);
+    if (!mine.length || mine.some((z) => (z.surface.wall == null) !== (surface.wall == null))) return false;
+    if (mine.some((z) => sameSurface(z.surface, surface))) return false;
+    return !checkZone(plan, cov, { id: '', surface, cuts: [], pose: p.id }, rules);
+  });
 }

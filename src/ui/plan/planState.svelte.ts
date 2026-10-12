@@ -5,6 +5,7 @@
 import type { Point, Polygon } from '../../core/geometry/types';
 import { lRoom, rectRoom, roomFromOutline, uRoom } from '../../core/plan/factories';
 import type { PlanAction } from '../../core/plan/reduce';
+import { doorBetween, facingWalls, placeAgainst, type FacingWalls } from '../../core/plan/neighbors';
 import { clockwise, placeNewRoom } from '../../core/plan/snap';
 import type { Id, Obstacle, Plan, PlanRoom, WallOpening } from '../../core/plan/types';
 import { alignForPassage, validatePlan, validateRoom, type PlanError } from '../../core/plan/validate';
@@ -141,16 +142,62 @@ export class PlanEditorState {
 
   /* ---------- pièces ---------- */
 
-  addRoom(shape: Shape, name: string): void {
-    const opts = { name, origin: placeNewRoom(this.plan) };
-    const room =
+  /**
+   * Ajoute une pièce : à côté du plan, ou contre le mur `against` d'une pièce (de l'autre côté de sa cloison,
+   * alignée sur le début du mur ; à côté du plan si la pièce n'a pas de mur dans ce sens).
+   */
+  addRoom(shape: Shape, name: string, against?: { room: Id; wall: Id }): void {
+    const opts = { name, origin: placeNewRoom(this.plan), thickness: app.wallThickness };
+    let room =
       shape.kind === 'rect'
         ? rectRoom(shape.length, shape.width, opts, newId)
         : shape.kind === 'l'
           ? lRoom(shape.length, shape.width, shape.cutLength, shape.cutWidth, opts, newId)
           : uRoom(shape.length, shape.width, shape.arm, shape.depth, opts, newId);
+    if (against) {
+      const origin = placeAgainst(this.plan, against, room.outline);
+      if (origin) room = { ...room, origin };
+      else toast('Ce mur est en biais : la pièce est placée à côté du plan.');
+    }
     this.dispatch({ type: 'plan/room/add', room });
     this.sel = { kind: 'room', room: room.id };
+  }
+
+  /** Murs d'autres pièces en vis-à-vis de la pièce, de l'autre côté d'une cloison. */
+  neighbors(roomId: Id): FacingWalls[] {
+    return facingWalls(this.plan, roomId);
+  }
+
+  /** Un passage relie déjà ces deux murs en vis-à-vis. */
+  linked(f: FacingWalls): boolean {
+    const wallOf = (d: { room: Id; opening: Id }) => this.room(d.room)?.openings.find((o) => o.id === d.opening)?.wall;
+    const on = (d: { room: Id; opening: Id }, w: { room: Id; wall: Id }) => d.room === w.room && wallOf(d) === w.wall;
+    return this.plan.passages.some((p) => (on(p.a, f.a) && on(p.b, f.b)) || (on(p.a, f.b) && on(p.b, f.a)));
+  }
+
+  /** Porte et passage vers la pièce voisine, en une étape d'annulation ; le passage est sélectionné. */
+  doorTo(f: FacingWalls): boolean {
+    const actions = doorBetween(this.plan, f, newId);
+    if (!actions) {
+      toast('Le mur commun est trop étroit pour une porte de 83 cm.', { tone: 'error' });
+      return false;
+    }
+    this.dispatch({ type: 'batch', actions });
+    const passage = actions.at(-1)!;
+    if (passage.type === 'plan/passage/add') this.sel = { kind: 'passage', passage: passage.passage.id };
+    return true;
+  }
+
+  /** Même épaisseur pour tous les murs d'une pièce (une seule étape d'annulation). */
+  setRoomThickness(roomId: Id, thickness: number): void {
+    const room = this.room(roomId);
+    if (!room || !(thickness > 0)) return;
+    this.dispatch({
+      type: 'batch',
+      actions: room.walls
+        .filter((w) => w.thickness !== thickness)
+        .map((w): ProjectAction => ({ type: 'plan/wall/update', roomId, wallId: w.id, patch: { thickness } })),
+    });
   }
 
   /** Poses touchées si la pièce est supprimée (confirmation) : « Carrelage : « Pose 1 » est supprimée. » */
@@ -210,7 +257,7 @@ export class PlanEditorState {
     }
     const [ox, oy] = pts.reduce<Point>((m, p) => [Math.min(m[0], p[0]), Math.min(m[1], p[1])], [Infinity, Infinity]);
     const outline: Polygon = clockwise(pts.map(([x, y]) => [x - ox, y - oy]));
-    const room = roomFromOutline(outline, { name, origin: [ox, oy] }, newId);
+    const room = roomFromOutline(outline, { name, origin: [ox, oy], thickness: app.wallThickness }, newId);
     if (validateRoom(room).length) {
       toast('Les murs se croisent : déplacez un point ou recommencez.', { tone: 'error' });
       return null;

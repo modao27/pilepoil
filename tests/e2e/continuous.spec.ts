@@ -1,18 +1,20 @@
 /**
- * Pose de carrelage continue (PLAN N2) : deux murs qui se suivent posés en une seule pose, hauteur carrelée mur
- * par mur, séparés en retirant un mur. Téléphone et ordinateur.
+ * Pose de carrelage continue (PLAN N2, écran Pièce N3) : deux murs qui se suivent posés en une seule pose, hauteur
+ * carrelée mur par mur, séparés en retirant un mur. Téléphone et ordinateur.
  */
 import { expect, test, type Page } from '@playwright/test';
 import {
   addTile,
-  addTool,
+  cover,
   createProject,
   expectAccessible,
   expectNoHorizontalScroll,
   expectTouchTargets,
   fillNumber,
+  openPose,
+  openRoom,
+  selectSurface,
   shot,
-  tick,
 } from './helpers';
 
 async function check(page: Page) {
@@ -24,23 +26,22 @@ async function check(page: Page) {
 test('murs 1 et 2 en une pose, hauteur par mur, puis séparés', async ({ page }, info) => {
   await addTile(page);
   const id = await createProject(page, { project: 'Cuisine', name: 'Cuisine', size: [300, 200] });
-  await addTool(page, id, 'carrelage');
-  const box = (n: number) => page.getByRole('checkbox', { name: new RegExp(`^Mur ${n} `) });
+  await openRoom(page, id, 'Cuisine');
 
   // mur 1, puis mur 2 : la fenêtre propose de continuer la pose du mur 1
-  await tick(page, box(1));
-  await box(2).click();
-  const dialog = page.getByRole('dialog', { name: 'Carreler Cuisine, mur 2' });
-  await expect(dialog.getByRole('button', { name: 'Continuer « Cuisine, mur 1 »' })).toBeVisible();
+  await cover(page, 'Mur 1');
+  await selectSurface(page, 'Mur 2');
+  await page.getByRole('button', { name: 'Revêtir : carrelage' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Carrelage : mur 2' });
+  await expect(dialog.getByRole('button', { name: 'Continuer « Pose 1 »' })).toBeVisible();
   await check(page);
   await shot(page, info, 'N2-continuer');
-  await dialog.getByRole('button', { name: 'Continuer « Cuisine, mur 1 »' }).click();
-  const link = page.getByRole('link', { name: 'Ouvrir Cuisine, murs 1 et 2' });
-  await expect(link).toContainText(/\d+ pièces/);
-  await expect(page.getByRole('link', { name: /^Ouvrir Cuisine, / })).toHaveCount(1);
+  await dialog.getByRole('button', { name: 'Continuer « Pose 1 »' }).click();
+  await expect(page.getByRole('button', { name: /^Mur 2 \(.*: Pose 1$/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Mur 1 \(.*: Pose 1$/ })).toBeVisible();
 
-  // éditeur : une surface de 5 m, hauteur carrelée réglable mur par mur
-  await link.click();
+  // calepinage : une surface de 5 m, hauteur carrelée réglable mur par mur
+  await openPose(page, 'Mur 1');
   await expect(page.getByRole('application', { name: /^Plan de Cuisine, murs 1 et 2/ })).toBeVisible();
   await page
     .getByRole('button', { name: /^Cuisine/ })
@@ -54,15 +55,17 @@ test('murs 1 et 2 en une pose, hauteur par mur, puis séparés', async ({ page }
   await shot(page, info, 'N2-hauteurs');
   await page.keyboard.press('Escape');
 
-  // vue de la pièce : les deux murs dépliés, une seule pose
-  await page.goto(`/#/p/${id}/m/carrelage`);
-  await expect(page.getByText('300 cm, carrelé sur 120 cm')).toBeVisible();
-  await page.getByRole('link', { name: 'Vue de la pièce' }).click();
+  // écran Pièce : la hauteur du mur 1, la vue de dessus du carrelage montre les deux murs d'une pose
+  await openRoom(page, id, 'Cuisine');
+  await selectSurface(page, 'Mur 1');
+  await expect(page.getByLabel('Jusqu’à', { exact: true })).toHaveValue('120');
+  await page.goto(`/#/p/${id}/m/carrelage/room/${new URL(page.url()).hash.split('/')[4]}`);
   await expect(page.getByRole('link', { name: 'Ouvrir Cuisine, murs 1 et 2' })).toHaveCount(2);
-  await page.goBack();
 
   // retirer le mur 1 : la pose reste sur le mur 2
-  await box(1).click();
-  await expect(page.getByRole('link', { name: /^Ouvrir Cuisine, mur 2/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Ouvrir Cuisine, / })).toHaveCount(1);
+  await openRoom(page, id, 'Cuisine');
+  await selectSurface(page, 'Mur 1');
+  await page.getByRole('button', { name: 'Retirer' }).click();
+  await expect(page.getByRole('button', { name: /^Mur 1 \(.*: sans revêtement$/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Mur 2 \(.*: Pose 1$/ })).toBeVisible();
 });

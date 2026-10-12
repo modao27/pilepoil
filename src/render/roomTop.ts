@@ -2,7 +2,7 @@
  * Vue de dessus d'une pièce du plan : chaque mur carrelé est déplié vers l'extérieur, posé à plat contre son
  * segment du contour (bas du mur sur le segment, haut vers l'extérieur). Pur ; mm, repère de la pièce.
  */
-import type { Point, Polygon } from '../core';
+import type { Point, Polygon } from '../core/geometry/types';
 
 /** Matrice SVG (a, b, c, d, e, f) : (x, y) → (a x + c y + e, b x + d y + f). */
 export type Matrix = [number, number, number, number, number, number];

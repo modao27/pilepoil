@@ -174,6 +174,9 @@ projets existants : nouvelle version de la base, projets précédents retirés.
 ### N3 — Vue globale et écran Pièce
 - Vue globale : plan cliquable, pièces, poses et états. Écran Pièce : sélection du sol et des murs sur le
   dessin, découpe en zones (ligne, contour, crédence), poses (nouvelle, continuer, retirer). Fil de navigation.
+- Ajouté (2026-10-09) : épaisseur des murs (réglage par défaut 72 mm, par pièce, tableaux, 3D) ; pièce posée
+  contre une autre et porte vers la voisine ; écran Carrelage remplacé par l'écran Pièce.
+- Reporté en N4 : découpe d'un sol par un contour (seule la ligne existe).
 - Fini quand : parcours e2e « pièce → zones → poses carrelage et parquet » sur téléphone et ordinateur.
 
 ### N4 — Coquille commune du calepinage

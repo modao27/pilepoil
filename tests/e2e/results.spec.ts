@@ -4,10 +4,12 @@ import { dirname, join } from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import {
   addPlanWindow,
-  newWall,
   expectAccessible,
   expectNoHorizontalScroll,
   expectTouchTargets,
+  newWall,
+  openPose,
+  openRoom,
   shot,
 } from './helpers';
 
@@ -17,10 +19,10 @@ async function check(page: Page) {
   await expectNoHorizontalScroll(page);
 }
 
-/** Éditeur du mur 1 depuis l'écran Carrelage. */
+/** Calepinage du mur 1 depuis l'écran Pièce. */
 async function openWall(page: Page, id: string) {
-  await page.goto(`/#/p/${id}/m/carrelage`);
-  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 1' }).click();
+  await openRoom(page, id);
+  await openPose(page, 'Mur 1');
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
 }
 

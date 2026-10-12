@@ -11,7 +11,7 @@ import { union } from '../../../core/geometry/boolean';
 import { signedArea } from '../../../core/geometry/polygon';
 import type { Point, Polygon } from '../../../core/geometry/types';
 import type { Plan, PlanRoom, WallOpening } from '../../../core/plan/types';
-import { passageBand, wallDirection, wallIndex, wallLength } from '../../../core/plan/walls';
+import { passageBand, wallBands, wallDirection, wallIndex, wallLength } from '../../../core/plan/walls';
 import type { RoomJointsSpec } from '../core';
 import type { RoomShape } from '../render/scene3d/placement';
 import type { Id } from '../../../state/model';
@@ -110,9 +110,18 @@ export function reservationOffset(plan: Plan, s: Surface, ref: SurfaceRef = s.re
   return offsetOf(room, s.kind === 'floor', part.x, part.y, part.y + s.height);
 }
 
-/** Porte ou fenêtre du plan dans le repère d'une surface de mur (coin bas gauche de la pose en x0, y0). */
-function planOpening(o: WallOpening, finish: OpeningFinish | undefined, x0: number, y0: number): SurfaceOpening {
-  const f = finish ?? DEFAULT_FINISH;
+/**
+ * Porte ou fenêtre du plan dans le repère d'une surface de mur (coin bas gauche de la pose en x0, y0). Sans
+ * finition réglée, ses tableaux ont la profondeur du mur (`depth`).
+ */
+function planOpening(
+  o: WallOpening,
+  finish: OpeningFinish | undefined,
+  x0: number,
+  y0: number,
+  depth: number,
+): SurfaceOpening {
+  const f = finish ?? { ...DEFAULT_FINISH, revealDepth: depth };
   return {
     id: o.id,
     source: 'plan',
@@ -186,7 +195,9 @@ function wallsShape(plan: Plan, room: PlanRoom, zones: readonly Zone[], t: Carre
     const dx = x0 - off.get(wall)!;
     const ref = { room: room.id, wall };
     return [
-      ...room.openings.filter((o) => o.wall === wall).map((o) => planOpening(o, t.openings[o.id], dx, y0)),
+      ...room.openings
+        .filter((o) => o.wall === wall)
+        .map((o) => planOpening(o, t.openings[o.id], dx, y0, room.walls[wallIndex(room, wall)]!.thickness)),
       ...reservationsOn(t, ref, dx, y0),
     ];
   });
@@ -365,5 +376,6 @@ export function roomShape(plan: Plan, surfaces: readonly Surface[], roomId: Id):
     }),
     floor: floor?.i ?? null,
     floorOrigin: floor ? [floor.part.x, floor.part.y] : [0, 0],
+    caps: wallBands(room),
   };
 }

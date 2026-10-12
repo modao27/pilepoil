@@ -1,6 +1,7 @@
 <script lang="ts">
   import Button from '../components/Button.svelte';
   import Screen from '../components/Screen.svelte';
+  import NumberField from '../components/NumberField.svelte';
   import Segmented from '../components/Segmented.svelte';
   import { app, type Theme } from '../lib/app.svelte';
   import { libraries, modules } from '../../modules/registry';
@@ -33,6 +34,19 @@
         ]}
       />
       <p class="muted">Automatique suit le réglage du téléphone ou de l’ordinateur.</p>
+    </section>
+
+    <section aria-labelledby="s-plan">
+      <h2 id="s-plan">Plan</h2>
+      <NumberField
+        label="Épaisseur des murs"
+        unit="mm"
+        min={1}
+        max={1000}
+        value={app.wallThickness}
+        hint="Pour les nouvelles pièces. 72 mm : cloison placo 72/48. Modifiable ensuite pièce par pièce et mur par mur."
+        onchange={(v) => void app.setWallThickness(v)}
+      />
     </section>
 
     <section aria-labelledby="s-data">

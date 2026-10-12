@@ -14,6 +14,8 @@ export type Route =
   | { name: 'project'; id: string }
   /** Éditeur du plan commun. */
   | { name: 'plan'; id: string }
+  /** Écran Pièce : sol et murs, zones et poses ; `surface` : 'sol' ou identifiant d'un mur sélectionné. */
+  | { name: 'room'; id: string; room: string; surface?: string }
   /** Liste d'achat consolidée du projet. */
   | { name: 'shopping'; id: string }
   /** Écran d'un module : #/p/:id/m/:module/…path ; path vide = éditeur du module. */
@@ -48,6 +50,8 @@ export function parseRoute(hash: string): Route {
   if (a === 'p' && b && c === 'm' && d) return { name: 'module', id: b, module: d, path: parts.slice(4).join('/') };
   if (a === 'p' && b && !c) return { name: 'project', id: b };
   if (a === 'p' && b && c === 'plan' && !d) return { name: 'plan', id: b };
+  if (a === 'p' && b && c === 'r' && d && parts.length <= 5)
+    return parts[4] ? { name: 'room', id: b, room: d, surface: parts[4] } : { name: 'room', id: b, room: d };
   if (a === 'p' && b && c === 'achats' && !d) return { name: 'shopping', id: b };
   return { name: 'notFound', path };
 }
@@ -72,6 +76,14 @@ export function href(r: Route): string {
       return '#/p/' + encodeURIComponent(r.id) + '/plan';
     case 'shopping':
       return '#/p/' + encodeURIComponent(r.id) + '/achats';
+    case 'room':
+      return (
+        '#/p/' +
+        encodeURIComponent(r.id) +
+        '/r/' +
+        encodeURIComponent(r.room) +
+        (r.surface ? '/' + encodeURIComponent(r.surface) : '')
+      );
     case 'module':
       return (
         '#/p/' +

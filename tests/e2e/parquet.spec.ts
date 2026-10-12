@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
-  addTool,
+  woodFloor,
   createProject,
   expectAccessible,
   expectNoHorizontalScroll,
@@ -27,9 +27,8 @@ const panel = (page: Page) =>
 async function parquetProject(page: Page): Promise<string> {
   const id = await createProject(page, { name: 'Séjour', size: [400, 300] });
 
-  // parquet : première pose sur la pièce
-  await addTool(page, id, 'parquet');
-  await page.getByRole('button', { name: 'Créer une pose' }).click();
+  // parquet : première pose sur le sol de la pièce
+  await woodFloor(page, id, 'Séjour');
   return id;
 }
 

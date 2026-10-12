@@ -166,6 +166,8 @@ export interface ToolModule<
   create(plan: Plan): Data;
   /** Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). */
   coverage: CoverageRules;
+  /** Adresse de l'éditeur (calepinage) d'une pose du module : la coquille y mène sans connaître ses écrans. */
+  poseHref(projectId: Id, poseId: Id): string;
   /** Réglages d'une nouvelle pose ; `like` : pose dont on reprend les réglages. */
   createPose(project: Project, libraries: Libraries, like?: Id): unknown;
   /**

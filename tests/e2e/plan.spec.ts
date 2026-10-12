@@ -103,13 +103,14 @@ test('plan : pièce en L avec poteau et porte, seconde pièce reliée par un pas
   // enregistré : retour au projet, puis réouverture
   await page.getByRole('link', { name: 'Projet' }).click();
   await expect(page).toHaveURL(new RegExp(`#/p/${id}$`));
-  await expect(page.getByRole('heading', { name: 'Outils' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /2 pièces/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pièces' })).toBeVisible();
+  // vue globale : les deux pièces sur le plan et dans la liste
+  await expect(page.getByRole('link', { name: /^Ouvrir Séjour/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Ouvrir Cuisine/ })).toBeVisible();
   await check(page);
   await shot(page, info, '60-projet');
-  await shot(page, info, '65-projet-plan');
   await page.reload();
-  await page.getByRole('link', { name: /2 pièces/ }).click();
+  await page.getByRole('link', { name: 'Modifier le plan' }).click();
   await expect(page.locator('line.passage')).toHaveCount(1);
   await expect(page.locator('.obstacle')).toHaveCount(1);
 });
@@ -150,4 +151,36 @@ test('plan : dessin libre point par point, aimanté', async ({ page }, info) => 
   await expect(page.getByRole('heading', { name: /^Studio/ })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: /^Studio/ })).toBeVisible();
+});
+
+test('plan : pièce posée contre une autre, porte vers la voisine en une action', async ({ page }, info) => {
+  await page.goto('/#/new');
+  const first = page.getByRole('dialog', { name: 'Nouveau projet' });
+  await setNumber(first, 'Nom', 'Séjour');
+  await setNumber(first, 'Longueur', '400');
+  await setNumber(first, 'Largeur', '300');
+  await first.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  const p = panel(page);
+  await expect(p.getByLabel('Épaisseur des murs', { exact: true })).toHaveValue('72');
+
+  // seconde pièce contre le mur 2 du séjour
+  await page.getByRole('button', { name: 'Ajouter une pièce' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  await setNumber(dialog, 'Nom', 'Bureau');
+  await setNumber(dialog, 'Longueur', '300');
+  await setNumber(dialog, 'Largeur', '300');
+  await dialog.getByLabel('Emplacement').selectOption({ label: 'Contre Séjour, mur 2' });
+  await check(page);
+  await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
+  await expect(p.getByRole('heading', { name: 'Bureau' })).toBeVisible();
+  await expect(p.getByText('Séjour, de l’autre côté du mur 4')).toBeVisible();
+
+  // porte vers le séjour : deux portes face à face et le passage
+  await p.getByRole('button', { name: 'Porte vers Séjour' }).click();
+  await expect(p.getByRole('heading', { name: 'Passage' })).toBeVisible();
+  await expect(p.getByText('Entre Séjour et Bureau.')).toBeVisible();
+  await expect(page.locator('line.passage')).toHaveCount(1);
+  await expect(page.getByRole('region', { name: 'Problèmes à corriger' })).toHaveCount(0);
+  await check(page);
+  await shot(page, info, '67-plan-voisines');
 });

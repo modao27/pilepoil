@@ -290,6 +290,18 @@
       value={room.height}
       onchange={(height) => st.dispatch({ type: 'plan/room/update', roomId: room.id, patch: { height } })}
     />
+    {@const mixed = room.walls.some((w) => w.thickness !== room.walls[0]!.thickness)}
+    <NumberField
+      label="Épaisseur des murs"
+      unit="mm"
+      min={1}
+      max={1000}
+      value={room.walls[0]?.thickness ?? 0}
+      hint={mixed
+        ? 'Épaisseurs différentes selon les murs : une valeur ici les remplace toutes.'
+        : 'Tous les murs ; un mur à part se règle dans « Ouvertures et épaisseur ».'}
+      onchange={(v) => st.setRoomThickness(room.id, v)}
+    />
     <h3>Murs</h3>
     <ul class="walls">
       {#each room.walls as w, i (w.id)}
@@ -309,6 +321,27 @@
       {/each}
     </ul>
     {@render items(room.openings, room.obstacles)}
+    {@const neighbors = st.neighbors(room.id)}
+    {#if neighbors.length}
+      <h3>Pièces voisines</h3>
+      <ul class="walls">
+        {#each neighbors as f (f.a.wall + f.b.wall)}
+          {@const mine = f.a.room === room.id ? f.a : f.b}
+          {@const other = st.room(f.a.room === room.id ? f.b.room : f.a.room)}
+          {@const linked = st.linked(f)}
+          <li>
+            <span
+              >{other?.name}, de l’autre côté du mur {room.walls.findIndex((w) => w.id === mine.wall) + 1}{linked
+                ? ' : reliée par une porte'
+                : ''}</span
+            >
+            {#if !linked}
+              <Button icon="plus" onclick={() => st.doorTo(f)}>Porte vers {other?.name}</Button>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
     <div class="row">
       <Button icon="plus" onclick={() => st.addObstacle(room.id)}>Ajouter un obstacle</Button>
       <Button variant="danger" icon="trash" onclick={() => askRemove(room)}>Supprimer la pièce</Button>

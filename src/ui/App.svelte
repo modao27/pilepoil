@@ -73,6 +73,12 @@
   <Settings />
 {:else if route.name === 'demo'}
   <Demo />
+{:else if route.name === 'room'}
+  {#key route.id + '/' + route.room}{#await import('./screens/Room.svelte') then { default: Room }}<Room
+        id={route.id}
+        roomId={route.room}
+        surface={route.surface}
+      />{/await}{/key}
 {:else if route.name === 'project'}
   {#key route.id}<Project id={route.id} />{/key}
 {:else if route.name === 'shopping'}
