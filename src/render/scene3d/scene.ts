@@ -323,7 +323,9 @@ export class Scene3D {
             '#include <clipping_planes_fragment>',
             'if (uCutMode > 0 && vCutPos.y > uCutY) {',
             '  bool wall = dot(vCutN, vCutN) > 0.25;',
-            '  if (uCutMode == 1 || (wall && dot(vCutN, uCam.xz - vCutPos.xz) > 0.0)) discard;',
+            // cloison (normale doublée) : toujours coupée ; mur extérieur : coupé s'il regarde la caméra
+            '  bool shared = dot(vCutN, vCutN) > 2.0;',
+            '  if (uCutMode == 1 || (wall && (shared || dot(vCutN, uCam.xz - vCutPos.xz) > 0.0))) discard;',
             '}',
             // hors des murs repérés, faces arrière masquées comme avant (vues d'un mur, d'un sol)
             ...(cap ? ['if (!gl_FrontFacing && dot(vCutN, vCutN) <= 0.25) discard;'] : []),

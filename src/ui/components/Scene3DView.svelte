@@ -201,9 +201,12 @@
     top: var(--space-2);
     left: var(--space-2);
   }
+  /* sous le choix des murs : les outils du bas passent sur deux lignes sur téléphone */
   .hint.low {
-    top: auto;
-    bottom: calc(var(--touch) + var(--space-4));
+    top: calc(var(--touch) + var(--space-4));
+    left: var(--space-2);
+    right: auto;
+    text-align: left;
   }
   .tools {
     position: absolute;

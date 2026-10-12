@@ -8,6 +8,7 @@ import { pointInPolygon } from '../../core/geometry/polygon';
 import type { Point } from '../../core/geometry/types';
 import type { Id, Plan, PlanRoom } from '../../core/plan/types';
 import { outwardNormal, wallBands, wallDirection, wallLength } from '../../core/plan/walls';
+import { exposed } from './envelope';
 import type { MeshData, SceneFrame, Vec3 } from './types';
 import { brand } from '../../ui/brand';
 
@@ -29,6 +30,8 @@ interface WallZone {
   s1: number;
   d0: number;
   d1: number;
+  /** Parties contre une pièce voisine (cloison), abscisses le long du mur : toujours coupées en mode « coupés ». */
+  shared: [number, number][];
 }
 
 function wallZones(plan: Plan, rooms: readonly Id[]): WallZone[] {
@@ -45,8 +48,19 @@ function wallZones(plan: Plan, rooms: readonly Id[]): WallZone[] {
         const q = abs(room, p);
         return (q[0] - a[0]) * u[0] + (q[1] - a[1]) * u[1];
       };
-      const xs = [0, len, along(bands[i]![2]!), along(bands[i]![3]!)];
+      const xa = along(bands[i]![3]!),
+        xb = along(bands[i]![2]!);
+      const xs = [0, len, xa, xb];
+      // parties de la face extérieure qui touchent une autre pièce : complément des parties exposées
+      const shared: [number, number][] = [];
+      let from = xa;
+      for (const [e0, e1] of exposed(plan, rooms, room, i, xa, xb)) {
+        if (e0 - from > 1) shared.push([from, e0]);
+        from = e1;
+      }
+      if (xb - from > 1) shared.push([from, xb]);
       zones.push({
+        shared,
         a,
         u,
         out,
@@ -62,7 +76,7 @@ function wallZones(plan: Plan, rooms: readonly Id[]): WallZone[] {
 
 /**
  * Normale extérieure (x, z) du mur auquel appartient chaque triangle, d'après son centre au sol ; (0, 0) hors
- * des murs. Deux valeurs par sommet, prêtes pour l'attribut `wallNormal` de la scène.
+ * des murs, doublée pour une cloison entre deux pièces. Deux valeurs par sommet, pour l'attribut `wallNormal`.
  */
 export function tagWalls(meshes: readonly MeshData[], plan: Plan, rooms: readonly Id[]): MeshData[] {
   const zones = wallZones(plan, rooms);
@@ -74,17 +88,34 @@ export function tagWalls(meshes: readonly MeshData[], plan: Plan, rooms: readonl
       const k = t * 9;
       const cx = ((p[k]! + p[k + 3]! + p[k + 6]!) / 3) * 1000,
         cz = ((p[k + 2]! + p[k + 5]! + p[k + 8]!) / 3) * 1000;
-      const z = zones.find((w) => {
+      const nx = d.normals[k]!,
+        nz = d.normals[k + 2]!;
+      // le mur dont le point est côté pièce (revêtement) passe avant celui dont il traverse l'épaisseur : contre
+      // une cloison, le carreau d'une pièce est aussi dans l'épaisseur du mur de la voisine
+      let best: WallZone | null = null,
+        bestScore = Infinity,
+        bestS = 0;
+      for (const w of zones) {
         const dx = cx - w.a[0],
           dz = cz - w.a[1];
         const s = dx * w.u[0] + dz * w.u[1],
           dd = dx * w.out[0] + dz * w.out[1];
-        return s >= w.s0 && s <= w.s1 && dd >= w.d0 && dd <= w.d1;
-      });
-      if (!z) continue;
+        if (s < w.s0 || s > w.s1 || dd < w.d0 || dd > w.d1) continue;
+        // une face parallèle au mur (parement, face extérieure, bout d'angle) lui revient avant un mur voisin
+        const facing = Math.abs(nx * w.out[0] + nz * w.out[1]) > 0.9;
+        const score = (dd <= 0.5 ? -dd : 1000 + dd) + (facing ? 0 : 500);
+        if (score < bestScore) {
+          best = w;
+          bestScore = score;
+          bestS = s;
+        }
+      }
+      if (!best) continue;
+      // cloison : normale doublée, la scène la coupe quel que soit le côté de la caméra
+      const f = best.shared.some(([a, b]) => bestS >= a && bestS <= b) ? 2 : 1;
       for (let v = 0; v < 3; v++) {
-        tags[t * 6 + v * 2] = z.out[0];
-        tags[t * 6 + v * 2 + 1] = z.out[1];
+        tags[t * 6 + v * 2] = best.out[0] * f;
+        tags[t * 6 + v * 2 + 1] = best.out[1] * f;
       }
     }
     return { ...d, wallNormals: tags };

@@ -152,3 +152,65 @@ describe('menuiseries et terrain', () => {
     for (const t of tris(site)) expect(facesItsNormal(t)).toBe(true);
   });
 });
+
+describe('cloison entre deux pièces', () => {
+  /** A : 3 × 2 m en (0, 0) ; B : 2 × 2 m contre le mur 2 de A, de l'autre côté de sa cloison (72 mm). */
+  const twin = (): Plan => ({
+    rooms: [
+      { ...rect('a', 3000, 2000, { height: 2500 }), origin: [0, 0] },
+      { ...rect('b', 2000, 2000, { height: 2500 }), origin: [3072, 0] },
+    ],
+    passages: [],
+  });
+  const tile = (x: number, nx: number): MeshData => ({
+    key: 'tile',
+    photo: null,
+    positions: [x, 0.5, 0.5, x, 2, 0.5, x, 2, 1],
+    normals: [nx, 0, 0, nx, 0, 0, nx, 0, 0],
+    colors: new Array(9).fill(1),
+    uvs: [],
+    castShadow: false,
+    receiveShadow: true,
+  });
+
+  it('une seule face sur la cloison côté B : celle de B, pas la face extérieure de A par-dessus', () => {
+    // surface des triangles sur le plan x = 3,072 m tournés vers +x, en face de B (z entre 0 et 2 m)
+    const area = (m: MeshData) =>
+      tris(m)
+        .filter((t) => {
+          const cz = t.p.reduce((v, q) => v + q[2], 0) / 3;
+          return t.p.every((q) => Math.abs(q[0] - 3.072) < 1e-9) && t.n[0] === 1 && cz > 0 && cz < 2;
+        })
+        .reduce((sum, t) => {
+          const [a, b, c] = t.p;
+          return sum + Math.abs((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1])) / 2;
+        }, 0);
+    // B présente : sa face intérieure seule (2 m × 2,5 m) ; A seule : sa face extérieure entière, angles compris
+    // (2,144 m × 2,5 m, en deux triangles dont le centre est en face de B)
+    expect(area(buildEnvelope(twin(), ['a', 'b']).find((m) => m.key === 'plaster')!)).toBeCloseTo(5, 6);
+    expect(area(buildEnvelope(twin(), ['a']).find((m) => m.key === 'plaster')!)).toBeCloseTo(2.144 * 2.5, 6);
+    // bout de la cloison de A à l'angle de façade (z entre -72 mm et 0) : dans l'épaisseur du mur de façade de B
+    const end = tris(buildEnvelope(twin(), ['a', 'b']).find((m) => m.key === 'plaster')!).filter(
+      (t) => t.p.every((q) => Math.abs(q[0] - 3.072) < 1e-9 && q[2] <= 0 && q[2] >= -0.072) && t.n[0] === 1,
+    );
+    expect(end).toEqual([]);
+  });
+
+  it('chaque carreau va au mur de sa pièce, marqué cloison (normale doublée)', () => {
+    const p = twin();
+    // carreau de A à 2 mm de sa face (x = 2,998, tourné vers A) ; carreau de B à 2 mm de la sienne (x = 3,074)
+    const [inA, inB] = tagWalls([tile(2.998, -1), tile(3.074, 1)], p, ['a', 'b']);
+    expect(tris(inA!)[0]!.tag).toEqual([2, 0]);
+    expect(tris(inB!)[0]!.tag).toEqual([-2, 0]);
+    // bout d'angle de la façade de A (z = -72 mm, entre x = 3 et 3,072 m, tourné vers -z) : à la façade, pas à la
+    // cloison qu'il touche
+    const corner: MeshData = {
+      ...tile(0, 0),
+      positions: [3.01, 0.5, -0.072, 3.06, 0.5, -0.072, 3.06, 2, -0.072],
+      normals: [0, 0, -1, 0, 0, -1, 0, 0, -1],
+    };
+    expect(tris(tagWalls([corner], p, ['a', 'b'])[0]!)[0]!.tag).toEqual([0, -1]);
+    // pièce seule : mur extérieur ordinaire
+    expect(tris(tagWalls([tile(2.998, -1)], p, ['a'])[0]!)[0]!.tag).toEqual([1, 0]);
+  });
+});
