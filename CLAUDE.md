@@ -4,9 +4,10 @@ Application web progressive (installable, hors ligne) qui regroupe des outils de
 projet : un plan de pièces commun, des modules de calcul (carrelage, parquet, puis d'autres), une liste d'achat
 consolidée. Utilisateur principal : un artisan / bricoleur averti, surtout sur téléphone, parfois sur ordinateur.
 
-Nom de l'application : **Pilepoil** (identifiant technique `pilepoil`, base IndexedDB `pilepoil`), depuis
-la phase S3 ; avant, « Calepinage ». « Calepinage » reste le terme du métier dans le module carrelage.
-Décisions prises : `docs/BOITE.md` §11.
+Nom de l'application : **PilePoil**, accroche « Vos travaux, au millimètre près. » (identifiant technique
+`pilepoil`, base IndexedDB `pilepoil`), depuis la phase S3 ; avant, « Calepinage ». « Calepinage » reste le
+terme du métier dans le module carrelage. Identité visuelle : `docs/IDENTITE.md`, référence dans
+`src/ui/design/identite/` (ne pas modifier). Décisions prises : `docs/BOITE.md` §11.
 
 ## Documents
 | Fichier | Contenu |
@@ -15,6 +16,7 @@ Décisions prises : `docs/BOITE.md` §11.
 | `docs/PLAN.md` | Phases en cours (socle puis parquet), critères de fin |
 | `docs/PROMPTS.md` | Consignes à coller par phase |
 | `docs/UX.md` | Système de design et principes d'interface (communs à tous les modules) |
+| `docs/IDENTITE.md` | Identité visuelle PilePoil : logo, palette, typo, icônes, points d'attention |
 | `docs/NAVIGATION.md` | Parcours cible : projet → pièce → surface → zone → pose, écrans et transitions |
 | `docs/MODEL.md` | Modèle persisté et stockage |
 | `docs/carrelage/` | Module carrelage : règles métier (`DOMAIN.md`), historique des phases |

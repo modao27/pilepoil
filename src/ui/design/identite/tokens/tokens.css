@@ -1,0 +1,129 @@
+/* PilePoil — design tokens. Importer une fois dans src/ui (ex. src/ui/styles/tokens.css). */
+:root {
+  /* Palette officielle (ne pas modifier) */
+  --pp-petrole: #174F50;
+  --pp-terracotta: #D17A59;
+  --pp-ocre: #C7A45A;
+  --pp-sauge: #D8E3DC;
+  --pp-ivoire: #FAF1E9;
+  --pp-charbon: #252D2D;
+
+  /* Teintes dérivées pour le texte : terracotta et ocre purs échouent au contraste AA sur ivoire
+     (2,8:1 et 2,1:1). À utiliser pour tout texte, bordure de champ en erreur ou icône seule. */
+  --pp-terracotta-texte: #A4502F;   /* 5,0:1 sur ivoire */
+  --pp-ocre-texte: #7E6020;         /* 5,4:1 sur ivoire */
+  --pp-petrole-clair: #2E6B6B;      /* survol du bouton principal */
+  --pp-petrole-fonce: #0F3B3C;      /* appui */
+  --pp-charbon-doux: #5C6666;       /* texte secondaire, 5,3:1 */
+
+  /* Rôles */
+  --color-bg: var(--pp-ivoire);
+  --color-surface: #FFFFFF;
+  --color-surface-2: var(--pp-sauge);
+  --color-text: var(--pp-charbon);
+  --color-text-muted: var(--pp-charbon-doux);
+  --color-border: #C9D3CE;
+  --color-border-strong: var(--pp-charbon);
+  --color-primary: var(--pp-petrole);
+  --color-primary-hover: var(--pp-petrole-clair);
+  --color-primary-active: var(--pp-petrole-fonce);
+  --color-on-primary: var(--pp-ivoire);
+  --color-accent: var(--pp-terracotta);        /* aplats, repères, jamais en texte fin */
+  --color-accent-text: var(--pp-terracotta-texte);
+  --color-highlight: var(--pp-ocre);           /* repères de calepinage, badges */
+  --color-focus: var(--pp-terracotta-texte);
+
+  --color-success: #2F6B4F;  --color-success-bg: #E2EFE6;
+  --color-info: var(--pp-petrole); --color-info-bg: var(--pp-sauge);
+  --color-warning: var(--pp-ocre-texte); --color-warning-bg: #F5EAD2;
+  --color-error: var(--pp-terracotta-texte); --color-error-bg: #F8E3DA;
+
+  /* Plan et calepinage */
+  --plan-wall: var(--pp-charbon);
+  --plan-grid: rgba(23, 79, 80, .10);
+  --plan-cut: var(--pp-terracotta);
+  --plan-start: var(--pp-ocre);
+  --plan-selection: var(--pp-petrole);
+
+  /* Typographie */
+  --font-display: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  --font-ui: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-num: var(--font-ui);  /* + font-variant-numeric: tabular-nums pour les cotes */
+
+  --text-h1: 700 2rem/2.5rem var(--font-display);       /* 32/40 */
+  --text-h2: 600 1.5rem/2rem var(--font-display);       /* 24/32 */
+  --text-h3: 600 1.25rem/1.75rem var(--font-display);   /* 20/28 */
+  --text-body: 400 .875rem/1.25rem var(--font-ui);      /* 14/20 */
+  --text-body-lg: 400 1rem/1.5rem var(--font-ui);       /* 16/24, lecture sur téléphone */
+  --text-label: 500 .875rem/1.25rem var(--font-ui);
+  --text-small: 400 .75rem/1rem var(--font-ui);         /* 12/16 */
+  --text-caption: 400 .6875rem/.875rem var(--font-ui);  /* 11/14, cotes */
+  --text-metric: 600 1.25rem/1.75rem var(--font-display);
+  --text-input: 400 1rem/1.5rem var(--font-ui);         /* 16 px mini : évite le zoom auto d'iOS */
+
+  /* Espacements (base 4) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+
+  /* Formes */
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 20px; --radius-full: 999px;
+  --border-width: 1px; --border-width-strong: 1.5px;
+  --shadow-1: 0 1px 2px rgba(37, 45, 45, .08);
+  --shadow-2: 0 4px 16px rgba(37, 45, 45, .12);
+  --shadow-sheet: 0 -6px 24px rgba(37, 45, 45, .16);
+
+  /* Interaction */
+  --target-min: 44px;
+  --focus-ring: 0 0 0 3px var(--color-bg), 0 0 0 5px var(--color-focus);
+  --icon-stroke: 1.75;
+  --duration-fast: 120ms; --duration-base: 200ms; --duration-slow: 320ms;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+
+  color-scheme: light;
+}
+
+/* Mode sombre : fond charbon, pétrole éclairci pour garder le contraste */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #182121;
+    --color-surface: var(--pp-charbon);
+    --color-surface-2: #2F3A3A;
+    --color-text: var(--pp-ivoire);
+    --color-text-muted: #A9B5B2;
+    --color-border: #3B4747;
+    --color-border-strong: #A9B5B2;
+    --color-primary: #6FB0AB;
+    --color-primary-hover: #8AC2BD;
+    --color-primary-active: #5A9C97;
+    --color-on-primary: #102020;
+    --color-accent: #E59A7C;
+    --color-accent-text: #E59A7C;
+    --color-highlight: #D9B970;
+    --color-focus: #E59A7C;
+    --color-success: #7CC4A0; --color-success-bg: #1F3329;
+    --color-info: #6FB0AB; --color-info-bg: #1F3232;
+    --color-warning: #D9B970; --color-warning-bg: #33301F;
+    --color-error: #E59A7C; --color-error-bg: #3A2620;
+    --plan-wall: var(--pp-ivoire);
+    --plan-grid: rgba(250, 241, 233, .08);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .4);
+    --shadow-2: 0 4px 16px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-bg: #182121; --color-surface: var(--pp-charbon); --color-surface-2: #2F3A3A;
+  --color-text: var(--pp-ivoire); --color-text-muted: #A9B5B2;
+  --color-border: #3B4747; --color-border-strong: #A9B5B2;
+  --color-primary: #6FB0AB; --color-primary-hover: #8AC2BD; --color-primary-active: #5A9C97;
+  --color-on-primary: #102020; --color-accent: #E59A7C; --color-accent-text: #E59A7C;
+  --color-highlight: #D9B970; --color-focus: #E59A7C;
+  --color-success: #7CC4A0; --color-success-bg: #1F3329; --color-info: #6FB0AB; --color-info-bg: #1F3232;
+  --color-warning: #D9B970; --color-warning-bg: #33301F; --color-error: #E59A7C; --color-error-bg: #3A2620;
+  --plan-wall: var(--pp-ivoire); --plan-grid: rgba(250, 241, 233, .08);
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration-fast: 0ms; --duration-base: 0ms; --duration-slow: 0ms; }
+}

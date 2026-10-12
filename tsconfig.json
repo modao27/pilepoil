@@ -20,5 +20,5 @@
     "allowImportingTsExtensions": true
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "tests/**/*.ts", "scripts/**/*.ts", "*.config.ts"],
-  "exclude": ["**/*.local.ts"]
+  "exclude": ["**/*.local.ts", "src/ui/design/identite/**"]
 }
