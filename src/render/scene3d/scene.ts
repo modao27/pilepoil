@@ -1,6 +1,6 @@
 /**
  * Scène three.js partagée (carrelage, parquet) : maillages prêts (MeshData), lumière avec ombres, caméra
- * orbitale (préréglages legacy).
+ * orbitale (préréglages legacy), murs pleins, bas ou coupés côté caméra (façon maison de poupée).
  * Rendu à la demande : une image seulement quand la caméra ou les données changent (batterie).
  */
 import {
@@ -8,23 +8,37 @@ import {
   BufferGeometry,
   Color,
   DirectionalLight,
+  DoubleSide,
   Float32BufferAttribute,
   Mesh,
+  MeshBasicMaterial,
+  MeshDepthMaterial,
   MeshLambertMaterial,
   PCFSoftShadowMap,
   PerspectiveCamera,
+  Plane,
+  Raycaster,
+  RGBADepthPacking,
   Scene,
+  ShapeUtils,
   SRGBColorSpace,
   Texture,
   TextureLoader,
+  Vector2,
   Vector3,
   WebGLRenderer,
   type Material,
+  type WebGLProgramParametersWithUniforms,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { cameraFor, FOV, type CameraPreset } from './camera';
+import { CUT_HEIGHT } from './cutaway';
 import type { MeshData, SceneFrame } from './types';
 import { brand } from '../../ui/brand';
+
+/** Murs : pleins, coupés à hauteur d'appui partout (« bas ») ou seulement côté caméra (« coupés »). */
+export type WallMode = 'full' | 'low' | 'cut';
+const MODES: Record<WallMode, number> = { full: 0, low: 1, cut: 2 };
 
 /** Direction de la lumière (legacy LDIR), normalisée. */
 const LDIR = new Vector3(-0.45, 0.75, 0.55).normalize();
@@ -45,13 +59,21 @@ export class Scene3D {
   private readonly textures = new Map<string, Texture>();
   private readonly loader = new TextureLoader();
   private meshes: Mesh[] = [];
+  private highlight: Mesh[] = [];
+  /** Uniformes partagés par tous les matériaux : mode des murs, hauteur de coupe, caméra, tranche. */
+  private readonly cut = {
+    uCutMode: { value: 0 },
+    uCutY: { value: CUT_HEIGHT },
+    uCam: { value: new Vector3() },
+    uCap: { value: new Color(brand.charbon) },
+  };
   private layout: SceneFrame | null = null;
   private frame = 0;
   private times: number[] = [];
   stats: SceneStats = { drawCalls: 0, triangles: 0, fps: 0 };
   onStats?: (s: SceneStats) => void;
 
-  constructor(canvas: HTMLCanvasElement, opts: { shadowSize?: number } = {}) {
+  constructor(canvas: HTMLCanvasElement, opts: { shadowSize?: number; interactive?: boolean } = {}) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = SRGBColorSpace;
@@ -67,6 +89,8 @@ export class Scene3D {
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
+    // aperçu : image fixe, la page défile normalement par-dessus
+    this.controls.enabled = opts.interactive ?? true;
     this.controls.addEventListener('change', () => this.requestRender());
   }
 
@@ -90,6 +114,57 @@ export class Scene3D {
     this.placeSun(layout);
     this.applyLimits(layout);
     if (reframe) this.setPreset(reframe);
+    this.requestRender();
+  }
+
+  setWallMode(mode: WallMode): void {
+    this.cut.uCutMode.value = MODES[mode];
+    this.requestRender();
+  }
+
+  /** Point du sol (x, z en m) sous un point de l'écran, ou null. */
+  pickGround(clientX: number, clientY: number): [number, number] | null {
+    const r = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    const ray = new Raycaster();
+    ray.setFromCamera(ndc, this.camera);
+    const hit = ray.ray.intersectPlane(new Plane(new Vector3(0, 1, 0), 0), new Vector3());
+    return hit ? [hit.x, hit.z] : null;
+  }
+
+  /** Surbrillance pétrole d'un contour au sol (x, z en m), ou rien. */
+  setHighlight(ring: readonly [number, number][] | null): void {
+    for (const m of this.highlight) {
+      this.scene.remove(m);
+      m.geometry.dispose();
+      (m.material as Material).dispose();
+    }
+    this.highlight = [];
+    if (ring && ring.length >= 3) {
+      const y = 0.03;
+      const pts = ring.map(([x, z]) => new Vector2(x, z));
+      const fill = new BufferGeometry();
+      const pos = ShapeUtils.triangulateShape(pts, []).flatMap((t) => t.flatMap((i) => [pts[i]!.x, y, pts[i]!.y]));
+      fill.setAttribute('position', new Float32BufferAttribute(pos, 3));
+      const band: number[] = [];
+      const w = 0.05;
+      for (let i = 0; i < ring.length; i++) {
+        const [ax, az] = ring[i]!,
+          [bx, bz] = ring[(i + 1) % ring.length]!;
+        const l = Math.hypot(bx - ax, bz - az) || 1;
+        const nx = (-(bz - az) / l) * w,
+          nz = ((bx - ax) / l) * w;
+        band.push(ax - nx, y, az - nz, bx - nx, y, bz - nz, bx + nx, y, bz + nz);
+        band.push(ax - nx, y, az - nz, bx + nx, y, bz + nz, ax + nx, y, az + nz);
+      }
+      const edge = new BufferGeometry();
+      edge.setAttribute('position', new Float32BufferAttribute(band, 3));
+      const mat = (opacity: number) =>
+        new MeshBasicMaterial({ color: brand.petrole, transparent: true, opacity, depthTest: false, side: DoubleSide });
+      this.highlight = [new Mesh(fill, mat(0.18)), new Mesh(edge, mat(0.9))];
+      for (const h of this.highlight) h.renderOrder = 10;
+      this.scene.add(...this.highlight);
+    }
     this.requestRender();
   }
 
@@ -143,6 +218,7 @@ export class Scene3D {
     this.frame = requestAnimationFrame((t) => {
       this.frame = 0;
       const moving = this.controls.update();
+      this.cut.uCam.value.copy(this.camera.position);
       this.renderer.render(this.scene, this.camera);
       this.measure(t, moving);
       if (moving) this.requestRender();
@@ -156,6 +232,7 @@ export class Scene3D {
       m.geometry.dispose();
       (m.material as Material).dispose();
     }
+    this.setHighlight(null);
     for (const t of this.textures.values()) t.dispose();
     this.renderer.dispose();
   }
@@ -177,11 +254,66 @@ export class Scene3D {
     g.setAttribute('normal', new Float32BufferAttribute(d.normals, 3));
     g.setAttribute('color', new Float32BufferAttribute(d.colors, 3));
     if (d.photo) g.setAttribute('uv', new Float32BufferAttribute(d.uvs, 2));
-    const mat = new MeshLambertMaterial({ vertexColors: true, map: d.photo ? this.texture(d.photo) : null });
+    const walls = d.wallNormals ?? new Array<number>((d.positions.length / 3) * 2).fill(0);
+    g.setAttribute('wallNormal', new Float32BufferAttribute(walls, 2));
+    const glass = (d.opacity ?? 1) < 1;
+    const mat = new MeshLambertMaterial({
+      vertexColors: true,
+      map: d.photo ? this.texture(d.photo) : null,
+      // faces arrière visibles : la tranche d'un mur coupé se dessine en charbon
+      side: DoubleSide,
+      transparent: glass,
+      opacity: d.opacity ?? 1,
+      depthWrite: !glass,
+    });
+    this.cutaway(mat, !glass);
     const m = new Mesh(g, mat);
     m.castShadow = d.castShadow;
     m.receiveShadow = d.receiveShadow;
+    // ombres cohérentes avec la coupe : un mur coupé n'ombre plus la pièce
+    const depth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
+    this.cutaway(depth, false);
+    m.customDepthMaterial = depth;
     return m;
+  }
+
+  /** Coupe des murs dans le shader : position monde et normale de mur par sommet ; fragments au-dessus jetés. */
+  private cutaway(mat: Material, cap: boolean) {
+    mat.customProgramCacheKey = () => `cutaway-${cap}`;
+    mat.onBeforeCompile = (s: WebGLProgramParametersWithUniforms) => {
+      Object.assign(s.uniforms, this.cut);
+      s.vertexShader = s.vertexShader
+        .replace(
+          '#include <common>',
+          '#include <common>\nattribute vec2 wallNormal;\nvarying vec3 vCutPos;\nvarying vec2 vCutN;',
+        )
+        .replace(
+          '#include <project_vertex>',
+          '#include <project_vertex>\nvCutPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvCutN = wallNormal;',
+        );
+      s.fragmentShader = s.fragmentShader
+        .replace(
+          '#include <common>',
+          '#include <common>\nuniform int uCutMode;\nuniform float uCutY;\nuniform vec3 uCam;\nuniform vec3 uCap;\nvarying vec3 vCutPos;\nvarying vec2 vCutN;',
+        )
+        .replace(
+          '#include <clipping_planes_fragment>',
+          [
+            '#include <clipping_planes_fragment>',
+            'if (uCutMode > 0 && vCutPos.y > uCutY) {',
+            '  bool wall = dot(vCutN, vCutN) > 0.25;',
+            '  if (uCutMode == 1 || (wall && dot(vCutN, uCam.xz - vCutPos.xz) > 0.0)) discard;',
+            '}',
+            // hors des murs repérés, faces arrière masquées comme avant (vues d'un mur, d'un sol)
+            ...(cap ? ['if (!gl_FrontFacing && dot(vCutN, vCutN) <= 0.25) discard;'] : []),
+          ].join('\n'),
+        );
+      if (cap)
+        s.fragmentShader = s.fragmentShader.replace(
+          '#include <opaque_fragment>',
+          '#include <opaque_fragment>\nif (!gl_FrontFacing) gl_FragColor = vec4(uCap, 1.0);',
+        );
+    };
   }
 
   private texture(url: string): Texture {

@@ -131,6 +131,7 @@ export function buildEnvelope(
     const n = room.outline.length;
     if (n < 3) continue;
     const h = room.height;
+    const bands = wallBands(room);
     shape(
       ground,
       room.outline.map((p) => abs(room, p)),
@@ -160,6 +161,22 @@ export function buildEnvelope(
       // embrasures : les côtés de chaque baie sur l'épaisseur du mur
       const t = wall.thickness;
       if (t <= 0) continue;
+      // face extérieure, d'un angle à l'autre : le mur devient un volume (sa tranche se voit à la coupe)
+      const rel = room.outline[i]!;
+      const alongOf = (p: Point) => (p[0] - rel[0]) * u[0] + (p[1] - rel[1]) * u[1];
+      const xa = alongOf(bands[i]![3]!),
+        xb = alongOf(bands[i]![2]!);
+      if (xb - xa > 1) {
+        const inside = holes.filter(([x0, x1]) => x0 > xa && x1 < xb);
+        shape(
+          plaster,
+          rect(xa, 0, xb, h),
+          inside.map(([x0, x1, y0, y1]) => rect(x0, y0, x1, y1).reverse()),
+          (p) => W(p[0], p[1], t),
+          [out[0], 0, out[1]],
+          P,
+        );
+      }
       const along: Vec3 = [u[0], 0, u[1]];
       for (const [x0, x1, y0, y1] of holes) {
         if (drawnBy(spans, x0, x1)) continue;
@@ -215,7 +232,7 @@ export function mergeMeshes(meshes: readonly MeshData[]): MeshData[] {
   const out = new Map<string, MeshData>();
   for (const d of meshes) {
     if (!d.positions.length) continue;
-    const id = `${d.key}|${d.photo ?? ''}|${d.castShadow}|${d.receiveShadow}`;
+    const id = `${d.key}|${d.photo ?? ''}|${d.castShadow}|${d.receiveShadow}|${d.opacity ?? 1}`;
     const into = out.get(id);
     if (!into) {
       out.set(id, {

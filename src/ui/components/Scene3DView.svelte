@@ -2,11 +2,12 @@
   /**
    * Vue 3D partagée (three.js chargé à la demande) : le module fournit ses maillages (`build`) et le cadre de
    * la scène. Glisser pour tourner, pincer ou molette pour zoomer, deux doigts pour déplacer. Clavier : flèches
-   * pour tourner, + / − pour zoomer.
+   * pour tourner, + / − pour zoomer. Avec `walls` : murs pleins, bas ou coupés côté caméra (maison de poupée) ;
+   * avec `onpick` : un toucher sans glisser donne le point du sol (x, z en m). `preview` : image fixe, sans outils.
    */
   import { onMount } from 'svelte';
   import type { CameraPreset } from '../../render/scene3d/camera';
-  import type { Scene3D, SceneStats } from '../../render/scene3d/scene';
+  import type { Scene3D, SceneStats, WallMode } from '../../render/scene3d/scene';
   import type { MeshData, SceneFrame } from '../../render/scene3d/types';
   import IconButton from './IconButton.svelte';
   import Segmented from './Segmented.svelte';
@@ -16,6 +17,10 @@
     frame,
     frameKey,
     label,
+    walls = $bindable(),
+    highlight = null,
+    onpick,
+    preview = false,
   }: {
     /** Maillages de la scène ; null tant que le module n'a pas chargé son constructeur. */
     build: (() => MeshData[]) | null;
@@ -23,10 +28,17 @@
     /** La caméra n'est recadrée que quand cette clé change (autre scène). */
     frameKey: string;
     label: string;
+    /** Mode des murs ; le choix s'affiche s'il est fourni (maillages repérés par `tagWalls`). */
+    walls?: WallMode;
+    /** Contour au sol en surbrillance (x, z en m). */
+    highlight?: readonly [number, number][] | null;
+    onpick?: (p: [number, number]) => void;
+    preview?: boolean;
   } = $props();
 
-  let box: HTMLDivElement;
-  let canvas: HTMLCanvasElement;
+  // deux gabarits (vue, aperçu) lient les mêmes éléments
+  let box = $state<HTMLDivElement>();
+  let canvas = $state<HTMLCanvasElement>();
   let scene = $state.raw<Scene3D | null>(null);
   let preset = $state<CameraPreset>('biais');
   let stats = $state<SceneStats>({ drawCalls: 0, triangles: 0, fps: 0 });
@@ -40,10 +52,13 @@
     void import('../../render/scene3d/scene')
       .then((sc) => {
         if (disposed) return;
-        const s = new sc.Scene3D(canvas, { shadowSize: matchMedia('(max-width: 700px)').matches ? 1024 : 2048 });
+        const s = new sc.Scene3D(canvas!, {
+          shadowSize: matchMedia('(max-width: 700px)').matches || preview ? 1024 : 2048,
+          interactive: !preview,
+        });
         s.onStats = (st) => (stats = st);
         ro = new ResizeObserver(([e]) => s.setSize(e!.contentRect.width, e!.contentRect.height));
-        ro.observe(box);
+        ro.observe(box!);
         scene = s;
       })
       .catch(() => (error = 'La vue 3D n’est pas disponible sur cet appareil (WebGL désactivé).'));
@@ -62,6 +77,23 @@
     framedFor = frameKey;
   });
 
+  $effect(() => scene?.setWallMode(walls ?? 'full'));
+  $effect(() => scene?.setHighlight(highlight));
+
+  /** Toucher sans glisser : le point du sol sous le doigt. */
+  let down: { x: number; y: number; t: number } | null = null;
+  function onpointerdown(e: PointerEvent) {
+    down = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+  }
+  function onpointerup(e: PointerEvent) {
+    const d = down;
+    down = null;
+    if (!d || !onpick || !scene) return;
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || e.timeStamp - d.t > 500) return;
+    const p = scene.pickGround(e.clientX, e.clientY);
+    if (p) onpick(p);
+  }
+
   function onkeydown(e: KeyboardEvent) {
     if (!scene) return;
     const k = e.key;
@@ -76,51 +108,75 @@
   }
 </script>
 
-<div class="v3d">
-  <!-- role="application" : vue manipulée directement (souris, doigts) et au clavier (flèches, +, −). -->
-  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-  <div
-    class="box"
-    bind:this={box}
-    role="application"
-    tabindex="0"
-    aria-label={label}
-    aria-describedby="v3d-help"
-    data-fps={stats.fps}
-    data-draw-calls={stats.drawCalls}
-    data-triangles={stats.triangles}
-    {onkeydown}
-  >
+{#if preview}
+  <div class="v3d" bind:this={box} role="img" aria-label={label} data-draw-calls={stats.drawCalls}>
     <canvas bind:this={canvas} aria-hidden="true"></canvas>
+    {#if error}<p class="err">{error}</p>{/if}
   </div>
-  {#if error}<p class="err" role="alert">{error}</p>{/if}
-  <div class="tools">
-    <Segmented
-      label="Point de vue"
-      bind:value={preset}
-      onchange={(p) => scene?.setPreset(p)}
-      options={[
-        { value: 'face', label: 'Face' },
-        { value: 'biais', label: 'Biais' },
-        { value: 'haut', label: 'Plongée' },
-      ]}
-    />
-    <div class="zoom">
-      <button
-        type="button"
-        class="spin"
-        aria-pressed={spinning}
-        onclick={() => {
-          spinning = !spinning;
-          scene?.setAutoRotate(spinning);
-        }}>{spinning ? 'Arrêter' : 'Faire tourner'}</button
-      >
-      <IconButton icon="plus" variant="outline" label="Rapprocher" onclick={() => scene?.zoom(0.85)} />
-      <IconButton icon="minus" variant="outline" label="Éloigner" onclick={() => scene?.zoom(1.18)} />
+{:else}
+  <div class="v3d">
+    <!-- role="application" : vue manipulée directement (souris, doigts) et au clavier (flèches, +, −). -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+    <div
+      class="box"
+      bind:this={box}
+      role="application"
+      tabindex="0"
+      aria-label={label}
+      aria-describedby="v3d-help"
+      data-fps={stats.fps}
+      data-draw-calls={stats.drawCalls}
+      data-triangles={stats.triangles}
+      {onkeydown}
+      {onpointerdown}
+      {onpointerup}
+    >
+      <canvas bind:this={canvas} aria-hidden="true"></canvas>
     </div>
+    {#if error}<p class="err" role="alert">{error}</p>{/if}
+    {#if walls}
+      <div class="walls">
+        <Segmented
+          label="Murs"
+          bind:value={walls}
+          options={[
+            { value: 'full', label: 'Pleins' },
+            { value: 'low', label: 'Bas' },
+            { value: 'cut', label: 'Coupés' },
+          ]}
+        />
+      </div>
+    {/if}
+    <div class="tools">
+      <Segmented
+        label="Point de vue"
+        bind:value={preset}
+        onchange={(p) => scene?.setPreset(p)}
+        options={[
+          { value: 'face', label: 'Face' },
+          { value: 'biais', label: 'Biais' },
+          { value: 'haut', label: 'Plongée' },
+        ]}
+      />
+      <div class="zoom">
+        <button
+          type="button"
+          class="spin"
+          aria-pressed={spinning}
+          onclick={() => {
+            spinning = !spinning;
+            scene?.setAutoRotate(spinning);
+          }}>{spinning ? 'Arrêter' : 'Faire tourner'}</button
+        >
+        <IconButton icon="plus" variant="outline" label="Rapprocher" onclick={() => scene?.zoom(0.85)} />
+        <IconButton icon="minus" variant="outline" label="Éloigner" onclick={() => scene?.zoom(1.18)} />
+      </div>
+    </div>
+    <p id="v3d-help" class="hint" class:low={!!walls}>
+      Glisser pour tourner, pincer ou molette pour zoomer. Au clavier : flèches et + / −.
+    </p>
   </div>
-  <p id="v3d-help" class="hint">Glisser pour tourner, pincer ou molette pour zoomer. Au clavier : flèches et + / −.</p>
-</div>
+{/if}
 
 <style>
   .v3d {
@@ -140,12 +196,22 @@
     width: 100%;
     height: 100%;
   }
+  .walls {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+  }
+  .hint.low {
+    top: auto;
+    bottom: calc(var(--touch) + var(--space-4));
+  }
   .tools {
     position: absolute;
     left: var(--space-2);
     right: var(--space-2);
     bottom: var(--space-2);
     display: flex;
+    flex-wrap: wrap-reverse;
     justify-content: space-between;
     gap: var(--space-2);
     pointer-events: none;

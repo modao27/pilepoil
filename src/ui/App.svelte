@@ -58,6 +58,7 @@
     else if (n === 'project') void import('./screens/Project.svelte');
     else if (n === 'room') void import('./screens/Room.svelte');
     else if (n === 'results') void import('./screens/Results.svelte');
+    else if (n === 'model3d') void import('./screens/Project3D.svelte');
     else if (n === 'shopping') void import('./screens/Shopping.svelte');
     else void load?.();
   }
@@ -111,6 +112,10 @@
   {#key route.id + JSON.stringify(route.scope)}{#await import('./screens/Results.svelte') then { default: Results }}<Results
         id={route.id}
         scope={route.scope}
+      />{/await}{/key}
+{:else if route.name === 'model3d'}
+  {#key route.id}{#await import('./screens/Project3D.svelte') then { default: Project3D }}<Project3D
+        id={route.id}
       />{/await}{/key}
 {:else if route.name === 'project'}
   {#key route.id}{#await import('./screens/Project.svelte') then { default: Project }}<Project

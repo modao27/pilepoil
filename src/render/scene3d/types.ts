@@ -15,6 +15,13 @@ export interface MeshData {
   uvs: number[];
   castShadow: boolean;
   receiveShadow: boolean;
+  /** Opacité (vitrages) ; 1 si absent. */
+  opacity?: number;
+  /**
+   * Normale extérieure (x, z) du mur de chaque sommet, (0, 0) hors des murs : coupe des murs côté caméra.
+   * Calculée par la scène (`tagWalls`), jamais par les modules.
+   */
+  wallNormals?: number[];
 }
 
 /**
