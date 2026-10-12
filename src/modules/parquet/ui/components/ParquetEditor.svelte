@@ -533,7 +533,7 @@
   canRedo={ed.canRedo}
   onundo={() => ed.store.undo()}
   onredo={() => ed.store.redo()}
-  resultsHref="#/p/{ed.doc.id}/m/parquet/results"
+  resultsHref={layout ? `#/p/${ed.doc.id}/pose/${layout.id}/resultats` : `#/p/${ed.doc.id}/resultats`}
   {summary}
   panelLabel="Réglages du parquet"
   bind:step

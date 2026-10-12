@@ -224,6 +224,11 @@
 {:else}
   <Screen title={room.name} backHref="#/p/{id}" backLabel="Projet">
     {#snippet actions()}<Button variant="ghost" href="#/p/{id}/plan">Modifier le plan</Button>{/snippet}
+    {#if project.zones.some((z) => z.surface.room === room.id)}
+      <div class="results">
+        <Button icon="list" href="#/p/{id}/r/{room.id}/resultats">Résultats de la pièce (3D, PDF)</Button>
+      </div>
+    {/if}
     <div class="layout">
       <div class="drawing" bind:this={drawingEl}>
         <RoomDrawing
@@ -372,6 +377,9 @@
 {/if}
 
 <style>
+  .results {
+    margin-bottom: var(--space-3);
+  }
   .layout {
     display: grid;
     gap: var(--space-4);

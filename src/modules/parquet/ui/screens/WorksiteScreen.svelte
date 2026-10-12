@@ -125,7 +125,7 @@
 
 <Screen
   title="Chantier — {ed?.doc.name ?? 'Parquet'}"
-  backHref="#/p/{projectId}/m/parquet/results"
+  backHref="#/p/{projectId}/resultats"
   backLabel="Retour aux résultats"
 >
   {#if !ed || !data}

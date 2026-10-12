@@ -134,11 +134,7 @@
 {/snippet}
 
 {#snippet header()}
-  <IconButton
-    icon="room"
-    label="Vue 3D de la pièce"
-    href="#/p/{ed.project.id}/m/carrelage/room/{ed.surface.ref.room}"
-  />
+  <IconButton icon="room" label="Résultats de la pièce" href="#/p/{ed.project.id}/r/{ed.surface.ref.room}/resultats" />
 {/snippet}
 
 {#snippet drawing()}
@@ -195,7 +191,7 @@
   canRedo={ed.canRedo}
   onundo={() => ed.store.undo()}
   onredo={() => ed.store.redo()}
-  resultsHref="#/p/{ed.project.id}/m/carrelage/results"
+  resultsHref="#/p/{ed.project.id}/pose/{ed.surface.id}/resultats"
   {summary}
   bind:step={ed.tab}
   bind:snap

@@ -83,18 +83,19 @@ test('parcours : deux pièces, point de Hongrie, achats, chantier', async ({ pag
 
   // 4. acheter : lames A et B, sous-couche, plinthes, barre de seuil
   await summary.click();
-  await page.getByRole('tab', { name: 'Achats' }).click();
-  await expect(page.getByText(/\(lames A\) : \d+ paquets?/)).toBeVisible();
-  await expect(page.getByText(/\(lames B\) : \d+ paquets?/)).toBeVisible();
-  await expect(page.getByText(/Barres de seuil : 1 barre/)).toBeVisible();
-  await page.getByRole('link', { name: 'Liste d’achat du projet et prix' }).click();
+  await expect(page.getByText(/\(lames A\) : \d+ lames/)).toBeVisible();
+  await expect(page.getByText(/\(lames B\) : \d+ lames/)).toBeVisible();
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  await expect(page.getByText(/Seuils : 1 barre de seuil/)).toBeVisible();
+  await page.goto(`/#/p/${id}/achats`);
   await expect(page.getByText('Sous-couche', { exact: true }).first()).toBeVisible();
   await check(page);
   await shot(page, info, 'P3-parcours-achats');
 
   // 5. suivre la pose ligne par ligne
   await page.goBack();
-  await page.getByRole('link', { name: 'Suivre le chantier' }).click();
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  await page.getByRole('link', { name: 'Suivre le chantier du parquet' }).click();
   await expect(page.getByRole('heading', { name: /— ligne 1 \(1 \/ \d+\)/ })).toBeVisible();
   await page.getByRole('button', { name: 'Toute cette ligne est posée' }).click();
   await expect(page.getByText(/^[1-9]\d* \/ \d+ pièces posées/)).toBeVisible();

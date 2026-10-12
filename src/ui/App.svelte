@@ -79,6 +79,11 @@
         roomId={route.room}
         surface={route.surface}
       />{/await}{/key}
+{:else if route.name === 'results'}
+  {#key route.id + JSON.stringify(route.scope)}{#await import('./screens/Results.svelte') then { default: Results }}<Results
+        id={route.id}
+        scope={route.scope}
+      />{/await}{/key}
 {:else if route.name === 'project'}
   {#key route.id}<Project id={route.id} />{/key}
 {:else if route.name === 'shopping'}

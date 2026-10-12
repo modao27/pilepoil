@@ -41,10 +41,10 @@ export const module: ToolModule<ParquetData, ParquetSpec, ParquetResult, Action>
   shopping,
   summary,
   priceAction,
+  results: () => import('./ui/lib/resultsModule').then((m) => m.results),
   migrations: {},
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
-    results: () => import('./ui/screens/ResultsScreen.svelte').then((m) => m.default),
     worksite: () => import('./ui/screens/WorksiteScreen.svelte').then((m) => m.default),
     // éditeur ouvert sur une pose (#/p/:id/m/parquet/pose/:poseId)
     routes: [{ path: 'pose/:poseId', load: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default) }],

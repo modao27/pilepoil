@@ -109,7 +109,7 @@ Capacités des moteurs :
 | 4 | Plan : dessin et cotes | `#/p/:id/plan` | [Existe] |
 | 5 | **Pièce** : surfaces, zones et poses sur le dessin | `#/p/:id/r/:pièce[/:surface]` | [Existe] (N3) ; remplace l'écran Carrelage |
 | 6 | **Calepinage d'une pose** | `#/p/:id/m/<module>/…` (adresse donnée par `poseHref`) | [Existe] : coquille commune `ui/calepinage` (N4) |
-| 7 | **Résultats** surface, pièce ou projet, avec export | `…/resultats` à chaque niveau | [À créer] par surface et par pièce |
+| 7 | **Résultats** d'une pose, d'une pièce ou du projet, avec export | `#/p/:id/pose/:pose/resultats`, `#/p/:id/r/:pièce/resultats`, `#/p/:id/resultats` | [Existe] (N5) : écran commun `ui/screens/Results` |
 | 8 | Achats du projet | `#/p/:id/achats` | [Existe] |
 | 9 | Chantier (parquet) | `#/p/:id/pose/:pose/chantier` | [Existe] sous une autre adresse |
 | 10 | Bibliothèques, Réglages | `#/library`, `#/settings` | [Existe] |
@@ -157,7 +157,7 @@ Motif deviennent les étapes du calepinage.
 
 | Niveau | Contenu | 3D | Export |
 |---|---|---|---|
-| Surface (ou zone) | aperçu, pièces posées, découpe | la surface | « PDF du calepinage — Cuisine, sol » |
+| Pose (décidé en N5 à la place de « surface » : les quantités n'ont de sens que pour une pose entière ; une surface à deux poses se lit dans la pièce) | pièces posées, coupes, découpe, à commander | les pièces de la pose | « PDF du calepinage — Cuisine, sol » |
 | Pièce | toutes les poses de la pièce, totaux par revêtement | la pièce, revêtements ensemble | « PDF de la pièce » |
 | Projet | tous les revêtements, achats consolidés | tout le logement | « Dossier du projet », achats PDF et CSV |
 

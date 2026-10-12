@@ -1,18 +1,36 @@
 /**
  * Export PDF A4 du parquet : résumé et liste d'achat, plan coté de chaque pose à une échelle normalisée,
- * fiche de coupe dans l'ordre de pose, découpe des plinthes. Lit les résultats, n'écrit rien.
+ * fiche de coupe dans l'ordre de pose, découpe des plinthes. Les mêmes pages servent aux résultats d'une pose,
+ * d'une pièce ou du projet (`writeParquetResults`). Lit les résultats, n'écrit rien.
  */
 import { pointInPolygon } from '../../../../core/geometry/polygon';
 import type { Polygon } from '../../../../core/geometry/types';
 import type { ShoppingLine } from '../../../../core/shopping/types';
 import type { Project } from '../../../../state/model';
-import { Doc, euro, fr, INK, LINE, M, MUTED, pdfText, poly, STATUS, THIN } from '../../../../ui/lib/pdf/doc';
+import type { BarCut } from '../../../../core/cutting/bars';
+import {
+  Doc,
+  euro,
+  figures,
+  footers,
+  fr,
+  INK,
+  M,
+  MUTED,
+  pdfText,
+  poly,
+  STATUS,
+  THIN,
+} from '../../../../ui/lib/pdf/doc';
+import type { ResultInput } from '../../../types';
+import type { Board } from '../../core/board';
 import { thresholdCuts } from '../../core/accessories';
 import { cuttingSheet } from '../../core/sheet';
 import type { LaidPiece, ParquetResult } from '../../core/types';
-import type { ParquetData } from '../../state/model';
-import { layoutsOf } from '../../state/poses';
+import type { Layout, ParquetData } from '../../state/model';
+import { layoutsOf, parquetData } from '../../state/poses';
 import { errorText, warningText } from './messages';
+import { scopedResult } from './results';
 import { groupTitle, itemText, quantityText, skirtingCutText } from './sheetText';
 
 export interface ParquetPdfInput {
@@ -82,19 +100,41 @@ function sketch(d: Doc, shape: Polygon, angles: number[]) {
   d.y = y0 + H * k + 4;
 }
 
+/** Ce que les pages partagent : noms des pièces et des poses, réglages, lames. */
+interface Ctx {
+  project: Project;
+  data: ParquetData;
+  boards: readonly { id: string; name: string }[];
+  roomName: (id: string) => string;
+  passageName: (id: string | null) => string;
+  layouts: Layout[];
+  layoutOf: (id: string) => Layout | undefined;
+  multi: boolean;
+}
+
+function context(project: Project, data: ParquetData, boards: Ctx['boards'], result: ParquetResult): Ctx {
+  const roomName = (id: string) => project.plan.rooms.find((r) => r.id === id)?.name ?? 'Pièce';
+  const layouts = layoutsOf(project);
+  return {
+    project,
+    data,
+    boards,
+    roomName,
+    /** « entre Séjour et Bureau » pour un seuil dans un passage. */
+    passageName: (id) => {
+      const p = id ? project.plan.passages.find((x) => x.id === id) : undefined;
+      return p ? ` entre ${roomName(p.a.room)} et ${roomName(p.b.room)}` : '';
+    },
+    layouts,
+    layoutOf: (id) => layouts.find((l) => l.id === id),
+    multi: result.layouts.length > 1,
+  };
+}
+
 export function buildParquetPdf(input: ParquetPdfInput): Blob {
   const { project, data, result, lines, date } = input;
   const d = new Doc();
-  const pdf = d.pdf;
-  const roomName = (id: string) => project.plan.rooms.find((r) => r.id === id)?.name ?? 'Pièce';
-  /** « entre Séjour et Bureau » pour un seuil dans un passage. */
-  const passageName = (id: string | null) => {
-    const p = id ? project.plan.passages.find((x) => x.id === id) : undefined;
-    return p ? ` entre ${roomName(p.a.room)} et ${roomName(p.b.room)}` : '';
-  };
-  const layouts = layoutsOf(project);
-  const layoutOf = (id: string) => layouts.find((l) => l.id === id);
-  const multi = result.layouts.length > 1;
+  const ctx = context(project, data, input.boards, result);
   const cost = lines.reduce((t, l) => t + (l.unitPrice != null ? l.unitPrice * l.quantity : 0), 0);
   const packs = lines.reduce((t, l) => t + (l.unit === 'pack' ? l.quantity : 0), 0);
 
@@ -105,51 +145,15 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
     10,
     { color: MUTED, gap: 5 },
   );
-  const figs: [string, string][] = [
+  figures(d, [
     ['Lames utilisées', fr(result.totals.boards)],
     ['Paquets', fr(packs)],
     ['Perte', `${fr(result.totals.wastePct, 1)} %`],
     ['Lames coupées', fr(result.totals.cuts)],
     ['Coût estimé', cost > 0 ? euro(cost) : '–'],
-  ];
-  const fw = (d.w - 2 * M) / figs.length;
-  figs.forEach(([l, v], i) => {
-    const x = M + i * fw;
-    pdf.setDrawColor(...LINE);
-    pdf.setLineWidth(0.3);
-    pdf.roundedRect(x + 0.5, d.y, fw - 1, 15, 1.5, 1.5, 'S');
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    d.color(MUTED);
-    pdf.text(pdfText(l), x + 3, d.y + 5);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(12);
-    d.color(INK);
-    pdf.text(pdfText(v), x + 3, d.y + 11.5);
-  });
-  d.y += 21;
+  ]);
 
-  d.text(multi ? 'Poses' : 'Pose', 13, { bold: true, gap: 2 });
-  for (const lr of result.layouts) {
-    const l = layoutOf(lr.id);
-    if (!l) continue;
-    const board = input.boards.find((b) => b.id === l.boardId);
-    const kind = PATTERN[l.pattern.kind] ?? l.pattern.kind;
-    const extra =
-      l.pattern.kind === 'chevron'
-        ? ` à ${l.pattern.endAngle}°`
-        : l.pattern.kind === 'regular-stagger'
-          ? ` (1/${Math.round(1 / l.pattern.step)})`
-          : '';
-    d.text(
-      `${multi ? `${l.name} : ` : ''}${l.rooms.map(roomName).join(', ')} · ${kind}${extra} · angle ${fr(l.angle)}° · pose ${METHOD[l.method]}${board ? ` · ${board.name}` : ''}`,
-      10,
-      { gap: 1 },
-    );
-    const alerts = [...lr.errors.map(errorText), ...new Set(lr.warnings.map(warningText))];
-    for (const a of alerts) d.text(`• ${a}`, 9, { color: lr.errors.length ? THIN : MUTED, gap: 0.5 });
-  }
-  d.y += 4;
+  writePoses(d, ctx, result);
 
   d.text('Liste d’achat', 13, { bold: true, gap: 2 });
   d.table(
@@ -169,21 +173,79 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
   );
   d.text('Règles de pose : valeurs du type de lame. Vérifier la notice du fabricant.', 8, { color: MUTED });
 
+  writeDetails(d, ctx, result, null);
+  footers(d, `Pilepoil · ${project.name} · parquet`);
+  return d.pdf.output('blob');
+}
+
+/**
+ * Pages du parquet dans un PDF de résultats (pose, pièce ou projet) : poses touchées, plan coté de chacune,
+ * fiche de coupe des lames de la portée, plinthes et seuils. Rien si la portée n'a pas de parquet.
+ */
+export function writeParquetResults(d: Doc, input: ResultInput<ParquetResult>): void {
+  const data = parquetData(input.project);
+  if (!data) return;
+  const r = scopedResult(input.result, input);
+  if (!r.layouts.length) return;
+  const boards = (input.libraries.boards ?? []) as readonly Board[];
+  const ctx = context(input.project, data, boards, input.result);
+  const rooms = input.scope.kind === 'room' ? new Set([input.scope.room]) : null;
+  d.page();
+  d.text('Parquet', 16, { bold: true, gap: 2 });
+  writePoses(d, ctx, r);
+  writeDetails(d, ctx, r, rooms);
+}
+
+/** Description de chaque pose (pièces, motif, angle, lame) et ses alertes. */
+function writePoses(d: Doc, ctx: Ctx, result: ParquetResult) {
+  const { multi, layoutOf, roomName } = ctx;
+  d.text(result.layouts.length > 1 ? 'Poses' : 'Pose', 13, { bold: true, gap: 2 });
+  for (const lr of result.layouts) {
+    const l = layoutOf(lr.id);
+    if (!l) continue;
+    const board = ctx.boards.find((b) => b.id === l.boardId);
+    const kind = PATTERN[l.pattern.kind] ?? l.pattern.kind;
+    const extra =
+      l.pattern.kind === 'chevron'
+        ? ` à ${l.pattern.endAngle}°`
+        : l.pattern.kind === 'regular-stagger'
+          ? ` (1/${Math.round(1 / l.pattern.step)})`
+          : '';
+    d.text(
+      `${multi ? `${l.name} : ` : ''}${l.rooms.map(roomName).join(', ')} · ${kind}${extra} · angle ${fr(l.angle)}° · pose ${METHOD[l.method]}${board ? ` · ${board.name}` : ''}`,
+      10,
+      { gap: 1 },
+    );
+    const alerts = [...lr.errors.map(errorText), ...new Set(lr.warnings.map(warningText))];
+    for (const a of alerts) d.text(`• ${a}`, 9, { color: lr.errors.length ? THIN : MUTED, gap: 0.5 });
+  }
+  d.y += 4;
+}
+
+/**
+ * Plan coté de chaque pose, fiche de coupe, plinthes, seuils. `rooms` : pièces de la portée (barres de plinthe
+ * qui y servent) ; null : toutes.
+ */
+function writeDetails(d: Doc, ctx: Ctx, result: ParquetResult, rooms: ReadonlySet<string> | null) {
+  const { project, data, multi, layoutOf, roomName, passageName } = ctx;
+  const pdf = d.pdf;
+
   /* ---------- plan coté de chaque pose ---------- */
   for (const lr of result.layouts) {
     const l = layoutOf(lr.id);
-    const rooms: Polygon[] = (l?.rooms ?? []).flatMap((id) => {
+    const shown = (l?.rooms ?? []).filter((id) => !rooms || rooms.has(id));
+    const polys: Polygon[] = shown.flatMap((id) => {
       const r = project.plan.rooms.find((x) => x.id === id);
       return r ? [r.outline.map(([x, y]): [number, number] => [r.origin[0] + x, r.origin[1] + y])] : [];
     });
-    const pts = rooms.flat();
+    const pts = polys.flat();
     if (!pts.length) continue;
     const xs = pts.map((p) => p[0]),
       ys = pts.map((p) => p[1]);
     const W = Math.max(...xs) - Math.min(...xs),
       H = Math.max(...ys) - Math.min(...ys);
     d.page(W > H ? 'landscape' : 'portrait');
-    d.text(`Plan coté${multi && l ? ` — ${l.name}` : ''} — ${(l?.rooms ?? []).map(roomName).join(', ')}`, 13, {
+    d.text(`Plan coté${multi && l ? ` — ${l.name}` : ''} — ${shown.map(roomName).join(', ')}`, 13, {
       bold: true,
       gap: 1,
     });
@@ -207,7 +269,7 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
     }
     pdf.setLineWidth(0.5);
     pdf.setDrawColor(...INK);
-    for (const r of rooms) poly(pdf, r.map(P), 'S');
+    for (const r of polys) poly(pdf, r.map(P), 'S');
     // seuils
     pdf.setDrawColor(...THIN);
     for (const t of lr.thresholds) {
@@ -221,7 +283,7 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(7.5);
     d.color(INK);
-    for (const r of rooms) {
+    for (const r of polys) {
       const ccw = r.reduce((t, p, i) => t + p[0] * r[(i + 1) % r.length]![1] - r[(i + 1) % r.length]![0] * p[1], 0);
       r.forEach((a, i) => {
         const b = r[(i + 1) % r.length]!;
@@ -234,7 +296,7 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
           (a[0] + b[0]) / 2 + n[0]! * 3.5 * scale,
           (a[1] + b[1]) / 2 + n[1]! * 3.5 * scale,
         ];
-        if (rooms.some((o) => o !== r && pointInPolygon(outside, o))) return;
+        if (polys.some((o) => o !== r && pointInPolygon(outside, o))) return;
         const [mx, my] = P([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]);
         // texte lisible de gauche à droite ou de bas en haut
         let angle = (-Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
@@ -251,8 +313,8 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
     // noms des pièces, sur fond blanc au centre de chacune
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(9);
-    (l?.rooms ?? []).forEach((id, i) => {
-      const r = rooms[i];
+    shown.forEach((id, i) => {
+      const r = polys[i];
       if (!r) return;
       const rx = r.map((p) => p[0]),
         ry = r.map((p) => p[1]);
@@ -293,7 +355,7 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
   }
 
   /* ---------- fiche de coupe ---------- */
-  const sheet = cuttingSheet(result, Object.fromEntries(layouts.map((l) => [l.id, l.rooms])));
+  const sheet = cuttingSheet(result, Object.fromEntries(ctx.layouts.map((l) => [l.id, l.rooms])));
   d.page();
   d.text('Fiche de coupe, dans l’ordre de pose', 13, { bold: true, gap: 1 });
   d.text(
@@ -314,21 +376,28 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
     }
     d.y += 2;
   }
-  if (result.skirting.bars) {
+
+  // barres de plinthe qui servent à la portée (une barre peut aussi servir ailleurs : elle est donnée entière)
+  const inScope = (c: BarCut) => !rooms || [...rooms].some((id) => c.id.startsWith(`${id}-`));
+  const bars = result.skirting.plan.map((b, i) => ({ b, i })).filter(({ b }) => b.cuts.some(inScope));
+  if (bars.length) {
     d.room(20);
     d.y += 2;
-    d.text(`Plinthes : ${result.skirting.bars} barre${result.skirting.bars > 1 ? 's' : ''} de plinthe`, 11, {
+    d.text(`Plinthes : ${bars.length} barre${bars.length > 1 ? 's' : ''} de plinthe`, 11, {
       bold: true,
       gap: 1,
     });
-    d.text('Longueurs à couper, suppléments d’onglet compris.', 8, { color: MUTED, gap: 1.5 });
-    result.skirting.plan.forEach((b, i) =>
+    d.text(
+      `Longueurs à couper, suppléments d’onglet compris.${rooms ? ' Les barres partagées avec d’autres pièces sont données entières.' : ''}`,
+      8,
+      { color: MUTED, gap: 1.5 },
+    );
+    for (const { b, i } of bars)
       d.text(
         `Barre de plinthe ${i + 1} : ${b.cuts.map((c) => skirtingCutText(c, roomName)).join(' + ')}${b.rest > 0 ? ` · reste ${fr(b.rest)} mm` : ''}`,
         8.5,
         { x: M + 4, gap: 0.4 },
-      ),
-    );
+      );
   }
 
   const seuils = thresholdCuts(result, data.accessories.thresholds.barLength);
@@ -346,18 +415,4 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
           { x: M + 4, gap: 0.4 },
         );
   }
-
-  /* ---------- pieds de page ---------- */
-  const n = pdf.getNumberOfPages();
-  for (let i = 1; i <= n; i++) {
-    pdf.setPage(i);
-    const w = pdf.internal.pageSize.getWidth(),
-      h = pdf.internal.pageSize.getHeight();
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(...MUTED);
-    pdf.text(pdfText(`Pilepoil · ${project.name} · parquet`), M, h - 7);
-    pdf.text(`${i} / ${n}`, w - M, h - 7, { align: 'right' });
-  }
-  return pdf.output('blob');
 }

@@ -1,3 +1,4 @@
+import type { ResultScope } from '../../core/coverage/scope';
 import { libraries, modules } from '../../modules/registry';
 
 /** Routes de l'application, par hash (#/…) : le bouton retour du téléphone fonctionne naturellement. */
@@ -16,6 +17,8 @@ export type Route =
   | { name: 'plan'; id: string }
   /** Écran Pièce : sol et murs, zones et poses ; `surface` : 'sol' ou identifiant d'un mur sélectionné. */
   | { name: 'room'; id: string; room: string; surface?: string }
+  /** Résultats d'une pose, d'une pièce ou du projet, avec export (docs/NAVIGATION.md §7). */
+  | { name: 'results'; id: string; scope: ResultScope }
   /** Liste d'achat consolidée du projet. */
   | { name: 'shopping'; id: string }
   /** Écran d'un module : #/p/:id/m/:module/…path ; path vide = éditeur du module. */
@@ -27,6 +30,7 @@ export type Route =
 const libraryIds = libraries.map((l) => l.id);
 const moduleIds = modules.map((m) => m.id);
 const DEFAULT_LIBRARY = libraryIds[0]!;
+const results = (id: string, scope: ResultScope): Route => ({ name: 'results', id, scope });
 const item = (lib: string, id: string): Route => ({ name: 'libraryItem', lib, id: id === 'new' ? null : id });
 
 export function parseRoute(hash: string): Route {
@@ -47,7 +51,16 @@ export function parseRoute(hash: string): Route {
   }
   if (a === 'settings' && !b) return { name: 'settings' };
   if (a === 'demo' && !b) return { name: 'demo' };
-  if (a === 'p' && b && c === 'm' && d) return { name: 'module', id: b, module: d, path: parts.slice(4).join('/') };
+  if (a === 'p' && b && c === 'm' && d) {
+    // ancienne adresse des résultats d'un outil : ceux du projet
+    if (parts[4] === 'results' && parts.length === 5) return { name: 'redirect', to: results(b, { kind: 'project' }) };
+    return { name: 'module', id: b, module: d, path: parts.slice(4).join('/') };
+  }
+  if (a === 'p' && b && c === 'resultats' && !d) return results(b, { kind: 'project' });
+  if (a === 'p' && b && c === 'r' && d && parts[4] === 'resultats' && parts.length === 5)
+    return results(b, { kind: 'room', room: d });
+  if (a === 'p' && b && c === 'pose' && d && parts[4] === 'resultats' && parts.length === 5)
+    return results(b, { kind: 'pose', pose: d });
   if (a === 'p' && b && !c) return { name: 'project', id: b };
   if (a === 'p' && b && c === 'plan' && !d) return { name: 'plan', id: b };
   if (a === 'p' && b && c === 'r' && d && parts.length <= 5)
@@ -76,6 +89,13 @@ export function href(r: Route): string {
       return '#/p/' + encodeURIComponent(r.id) + '/plan';
     case 'shopping':
       return '#/p/' + encodeURIComponent(r.id) + '/achats';
+    case 'results': {
+      const p = '#/p/' + encodeURIComponent(r.id);
+      const s = r.scope;
+      if (s.kind === 'project') return p + '/resultats';
+      if (s.kind === 'room') return p + '/r/' + encodeURIComponent(s.room) + '/resultats';
+      return p + '/pose/' + encodeURIComponent(s.pose) + '/resultats';
+    }
     case 'room':
       return (
         '#/p/' +

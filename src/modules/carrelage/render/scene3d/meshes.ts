@@ -28,6 +28,8 @@ export interface MeshInput {
   shade: number;
   /** Photo du carreau d'une zone, et retournements aléatoires permis. */
   photo: (surface: number, zone: number) => { url: string; flip: boolean } | null;
+  /** false : pas de sol de contexte (l'enveloppe commune des pièces le dessine). Défaut : true. */
+  context?: boolean;
 }
 
 /** Hauteurs et couleurs reprises de legacy. */
@@ -157,7 +159,9 @@ export function buildMeshes(input: MeshInput): MeshData[] {
 
   /* sol de contexte */
   const hasFloor = layout.instances.some((i) => i.kind === 'floor');
-  if (room && !hasFloor) {
+  if (input.context === false) {
+    // sol brut, murs nus et dessus des murs : enveloppe commune (render/scene3d/envelope)
+  } else if (room && !hasFloor) {
     B.shape(B.mesh('ground'), room.outline, [], (p) => [p[0], 0, p[1]], [0, 1, 0], B.rgb(GROUND));
   } else if (!room && !hasFloor) {
     const { x, z } = layout.bounds;

@@ -5,11 +5,16 @@
  */
 import type { Component, Snippet } from 'svelte';
 
+import type { ResultScope } from '../core/coverage/scope';
 import type { CoverageRules } from '../core/coverage/types';
 import type { Plan } from '../core/plan/types';
+import type { MeshData } from '../render/scene3d/types';
 import type { ShoppingLine } from '../core/shopping/types';
 import type { Id, Project } from '../state/model';
 import type { Db } from '../storage/db';
+import type { Doc } from '../ui/lib/pdf/doc';
+
+export type { ResultScope };
 
 /** 'carrelage', 'parquet'… Liste ouverte : ajouter un module ne touche pas aux types communs. */
 export type ModuleId = string;
@@ -124,7 +129,7 @@ export interface ModuleRoute {
   /**
    * Chemin sous #/p/:id/m/<module>/, sans barre initiale ni finale.
    * Segments fixes ou paramètres `:nom` : 'room', 's/:surfaceId'.
-   * Réservés : '' (éditeur), 'results', 'chantier'.
+   * Réservés : '' (éditeur), 'results' (ancienne adresse des résultats), 'chantier'.
    */
   path: string;
   load: ScreenLoader;
@@ -133,8 +138,6 @@ export interface ModuleRoute {
 export interface ModuleScreens {
   /** #/p/:id/m/<module> */
   editor: ScreenLoader;
-  /** #/p/:id/m/<module>/results */
-  results: ScreenLoader;
   /** #/p/:id/m/<module>/chantier — mode chantier. */
   worksite?: ScreenLoader;
   /** Autres écrans du module (pièce 3D, comparaison…). */
@@ -145,6 +148,71 @@ export interface ModuleScreens {
   card?: ScreenLoader<{ project: Project }>;
   /** Section du module dans les Réglages (données, import…). */
   settings?: ScreenLoader<Record<string, never>>;
+}
+
+/* -------------------------------------------------------------- résultats */
+
+/** Ce que reçoit un module pour parler d'une portée : le projet, ses bibliothèques, son dernier résultat. */
+export interface ResultInput<Result = unknown> {
+  project: Project;
+  libraries: Libraries;
+  result: Result;
+  scope: ResultScope;
+}
+
+/** Chiffre d'une pose sur une portée : « Carreaux posés : 46 ». */
+export interface ReportFigure {
+  label: string;
+  value: string;
+  /** Teinte de la carte (statuts de coupe du design system). */
+  status?: 'cut' | 'reuse' | 'thin';
+}
+
+/**
+ * Ce qu'un module dit d'une de ses poses sur une portée (docs/NAVIGATION.md §7). Les pièces posées et leurs
+ * coupes sont exactes sur la portée ; les quantités à commander sont celles du calcul (`orderNote` dit lesquelles
+ * quand elles dépassent la portée), jamais inventées pour une partie.
+ */
+export interface PoseReport {
+  pose: Id;
+  figures: ReportFigure[];
+  /** Quantités à commander : « 52 carreaux 60 × 30 cm (3 cartons) ». */
+  order: string[];
+  /** « Pour toute la pose » ou « pour tout le projet (chutes partagées) » ; null : celles de la portée. */
+  orderNote: string | null;
+  /** Alertes, texte produit par l'interface du module. */
+  alerts: string[];
+  /** false : la pose ne se calcule pas (erreur dans `alerts`). */
+  ok: boolean;
+}
+
+/** Props de la section d'un module sur l'écran Résultats commun. */
+export interface ResultSectionProps {
+  project: Project;
+  scope: ResultScope;
+  /** Résultat du module (son type à lui). */
+  result: unknown;
+}
+
+/** Fonctions lourdes des résultats, chargées à la demande (PDF, 3D). */
+export interface ResultExports<Result = unknown> {
+  /** Ajoute au document les pages du module pour la portée : plans cotés, découpe… (pas la liste d'achat). */
+  pdf(doc: Doc, input: ResultInput<Result>): void;
+  /**
+   * Maillages des revêtements du module dans la portée (repère du plan, mètres), sans l'enveloppe des pièces
+   * (sol brut, murs nus : `render/scene3d/envelope`). Les murs revêtus, plâtre compris, sont dessinés par le
+   * module.
+   */
+  meshes(input: ResultInput<Result>): MeshData[];
+}
+
+/** Résultats d'un module aux trois niveaux : pose, pièce, projet (docs/NAVIGATION.md §7). */
+export interface ModuleResults<Result = unknown> {
+  /** Un rapport par pose du module touchée par la portée, dans l'ordre du projet. Léger, sans DOM. */
+  report(input: ResultInput<Result>): PoseReport[];
+  /** Détail du module sur l'écran Résultats (commande, plan, découpe…). */
+  section: ScreenLoader<ResultSectionProps>;
+  exports(): Promise<ResultExports<Result>>;
 }
 
 /** Face application : état, sélecteurs, écrans. */
@@ -183,6 +251,8 @@ export interface ToolModule<
   priceAction(key: string, value: number | null): Action;
   /** Résumé court pour la carte du module (« 46 carreaux, 312 € »). */
   summary(result: Result): ModuleSummary;
+  /** Résultats par pose, pièce et projet : chiffres, détail, PDF, 3D (chargés à la demande). */
+  results(): Promise<ModuleResults<Result>>;
   /** Migrations des données du module : migrations[n] passe de la version n - 1 à n. */
   migrations: Record<number, (doc: unknown) => unknown>;
   /** Écrans, chargés à la demande. */

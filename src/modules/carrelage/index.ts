@@ -31,6 +31,7 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
   summary,
   shopping,
   priceAction,
+  results: () => import('./ui/lib/resultsModule').then((m) => m.results),
   migrations: {},
   start: async (db) => (await state()).start(db),
   usedPhotos: (db) => import('./storage/scenarios').then((m) => m.scenarioPhotos(db)),
@@ -48,10 +49,8 @@ export const module: ToolModule<CarrelageData, ProjectSpec, ProjectResult, Actio
   icon: '<rect x="1" y="1" width="32" height="22" rx="1"/><path d="M12 1v22M23 1v22M1 12h32"/>',
   screens: {
     editor: () => import('./ui/screens/ToProject.svelte').then((m) => m.default),
-    results: () => import('./ui/screens/Results.svelte').then((m) => m.default),
     routes: [
       { path: 's/:surfaceId', load: editor },
-      { path: 'room/:roomId', load: () => import('./ui/screens/Room.svelte').then((m) => m.default) },
       { path: 'compare', load: () => import('./ui/screens/Compare.svelte').then((m) => m.default) },
     ],
     card: () => import('./ui/components/ProjectCard.svelte').then((m) => m.default),
