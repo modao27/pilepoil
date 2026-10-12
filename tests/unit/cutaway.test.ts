@@ -210,6 +210,16 @@ describe('cloison entre deux pièces', () => {
       normals: [0, 0, -1, 0, 0, -1, 0, 0, -1],
     };
     expect(tris(tagWalls([corner], p, ['a', 'b'])[0]!)[0]!.tag).toEqual([0, -1]);
+    // côté d'un tableau carrelé plus profond que le mur (à 150 mm de la face, tourné le long du mur) : coupé avec lui
+    const reveal: MeshData = {
+      ...tile(0, 0),
+      positions: [3.15, 0.5, 0.8, 3.15, 2, 0.8, 3.15, 2, 1],
+      normals: [0, 0, 1, 0, 0, 1, 0, 0, 1],
+    };
+    expect(Math.abs(tris(tagWalls([reveal], p, ['a', 'b'])[0]!)[0]!.tag[0])).toBe(2);
+    // B posée à 5 mm de la cloison (moins que la tolérance du plan) : toujours une cloison
+    const gap: Plan = { ...p, rooms: [p.rooms[0]!, { ...p.rooms[1]!, origin: [3077, 0] }] };
+    expect(tris(tagWalls([tile(2.998, -1)], gap, ['a', 'b'])[0]!)[0]!.tag).toEqual([2, 0]);
     // pièce seule : mur extérieur ordinaire
     expect(tris(tagWalls([tile(2.998, -1)], p, ['a'])[0]!)[0]!.tag).toEqual([1, 0]);
   });

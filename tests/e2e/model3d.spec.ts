@@ -11,6 +11,7 @@ import {
   expectNoHorizontalScroll,
   expectTouchTargets,
   fillNumber,
+  openPose,
   openRoom,
   shot,
 } from './helpers';
@@ -41,6 +42,16 @@ test('vue 3D : aperçu, murs pleins, bas et coupés, pièce touchée puis ouvert
   await openRoom(page, id, 'Séjour');
   await cover(page, 'Sol', 'parquet');
   await cover(page, 'Mur 2');
+  // tableau carrelé de 20 cm à la porte de la cloison : plus profond que le mur, coupé avec lui
+  await openPose(page, 'Mur 2');
+  if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
+  await page.getByRole('tab', { name: 'Découpage', exact: true }).click();
+  await page
+    .getByRole('button', { name: /^Porte/ })
+    .first()
+    .click();
+  await fillNumber(page, 'Profondeur du tableau', '20');
+  for (const c of ['Gauche', 'Droite', 'Linteau (haut)']) await page.getByLabel(c, { exact: true }).check();
   await openRoom(page, id, 'Bureau');
   await cover(page, 'Sol');
   await cover(page, 'Mur 1');
