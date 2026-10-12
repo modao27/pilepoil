@@ -3,8 +3,10 @@
  * pièce sous un point, sol extérieur, menuiseries. Repère three.js : x = x du plan, z = y du plan ; mètres.
  * Lit le plan, n'écrit rien ; aucun module n'a à étiqueter ses maillages.
  */
-import { Color } from 'three';
-import { pointInPolygon } from '../../core/geometry/polygon';
+import { Color, ShapeUtils, Vector2 } from 'three';
+import { difference } from '../../core/geometry/boolean';
+import { pointInPolygon, signedArea } from '../../core/geometry/polygon';
+import { components } from '../../core/geometry/rings';
 import type { Point } from '../../core/geometry/types';
 import type { Id, Plan, PlanRoom } from '../../core/plan/types';
 import { outwardNormal, wallBands, wallDirection, wallLength } from '../../core/plan/walls';
@@ -331,6 +333,54 @@ export function buildJoinery(plan: Plan, rooms: readonly Id[]): MeshData[] {
     });
   }
   return [frame, glass].filter((d) => d.positions.length);
+}
+
+/**
+ * Dessus de coupe des murs de `rooms`, à la hauteur de coupe : l'épaisseur de chaque mur en charbon, moins les
+ * baies qui traversent cette hauteur (portes). La scène ne le montre que là où le mur est coupé.
+ */
+export function buildSections(plan: Plan, rooms: readonly Id[]): MeshData {
+  const sec = mesh('section', { section: true, receiveShadow: false });
+  const C = linear(brand.charbon);
+  const y = CUT_HEIGHT;
+  const cutMm = CUT_HEIGHT * 1000;
+  for (const room of plan.rooms.filter((r) => rooms.includes(r.id))) {
+    const bands = wallBands(room);
+    room.walls.forEach((wall, i) => {
+      const band = bands[i];
+      if (!band || wall.thickness <= 0 || room.height <= cutMm) return;
+      const a = abs(room, room.outline[i]!);
+      const u = wallDirection(room, i);
+      const out = outwardNormal(u);
+      const at = (x: number, d: number): Point => [a[0] + u[0] * x + out[0] * d, a[1] + u[1] * x + out[1] * d];
+      const holes = room.openings
+        .filter((o) => o.wall === wall.id && o.sill <= cutMm && o.sill + o.height > cutMm)
+        .map((o) => [
+          at(o.offset, -1),
+          at(o.offset + o.width, -1),
+          at(o.offset + o.width, wall.thickness + 1),
+          at(o.offset, wall.thickness + 1),
+        ]);
+      // bande dans le sens des contours (aire > 0), sinon elle passerait pour un trou
+      const raw = band.map((q) => abs(room, q));
+      const ring = signedArea(raw) < 0 ? raw.reverse() : raw;
+      for (const c of components(holes.length ? difference([ring], holes) : [ring])) {
+        const v = (p: Point) => new Vector2(p[0], p[1]);
+        const all = [...c.outer, ...c.holes.flat()];
+        for (const t of ShapeUtils.triangulateShape(
+          c.outer.map(v),
+          c.holes.map((h) => h.map(v)),
+        ))
+          for (const k of t) {
+            sec.positions.push(m(all[k]![0]), y, m(all[k]![1]));
+            sec.normals.push(0, 1, 0);
+            sec.colors.push(...C);
+            sec.uvs.push(0, 0);
+          }
+      }
+    });
+  }
+  return sec;
 }
 
 /** Sol extérieur sauge : la boîte du plan élargie de `margin` m, juste sous le sol brut. */

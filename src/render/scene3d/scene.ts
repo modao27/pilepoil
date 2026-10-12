@@ -268,6 +268,12 @@ export class Scene3D {
     if (d.photo) g.setAttribute('uv', new Float32BufferAttribute(d.uvs, 2));
     const walls = d.wallNormals ?? new Array<number>((d.positions.length / 3) * 2).fill(0);
     g.setAttribute('wallNormal', new Float32BufferAttribute(walls, 2));
+    if (d.section) {
+      // dessus de coupe : aplat charbon, sans lumière ni ombre, visible seulement où le mur est coupé
+      const sec = new MeshBasicMaterial({ color: brand.charbon, side: DoubleSide });
+      this.cutaway(sec, { back: false, section: true });
+      return new Mesh(g, sec);
+    }
     const glass = (d.opacity ?? 1) < 1;
     const mat = new MeshLambertMaterial({
       vertexColors: true,
@@ -279,13 +285,13 @@ export class Scene3D {
       opacity: d.opacity ?? 1,
       depthWrite: !glass,
     });
-    this.cutaway(mat, !glass);
+    this.cutaway(mat, { back: !glass, section: false });
     const m = new Mesh(g, mat);
     m.castShadow = d.castShadow;
     m.receiveShadow = d.receiveShadow;
     // ombres cohérentes avec la coupe : un mur coupé n'ombre plus la pièce
     const depth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking });
-    this.cutaway(depth, false);
+    this.cutaway(depth, { back: false, section: false });
     m.customDepthMaterial = depth;
     return m;
   }
@@ -298,9 +304,13 @@ export class Scene3D {
     return this.wallMode === 'full' ? FrontSide : DoubleSide;
   }
 
-  /** Coupe des murs dans le shader : position monde et normale de mur par sommet ; fragments au-dessus jetés. */
-  private cutaway(mat: Material, cap: boolean) {
-    mat.customProgramCacheKey = () => `cutaway-${cap}`;
+  /**
+   * Coupe des murs dans le shader : position monde et normale de mur par sommet ; fragments au-dessus jetés.
+   * `back` : faces arrière des murs en charbon ; `section` : dessus de coupe, gardé seulement où le mur est coupé.
+   */
+  private cutaway(mat: Material, o: { back: boolean; section: boolean }) {
+    const cap = o.back;
+    mat.customProgramCacheKey = () => `cutaway-${o.back}-${o.section}`;
     mat.onBeforeCompile = (s: WebGLProgramParametersWithUniforms) => {
       Object.assign(s.uniforms, this.cut);
       s.vertexShader = s.vertexShader
@@ -321,12 +331,11 @@ export class Scene3D {
           '#include <clipping_planes_fragment>',
           [
             '#include <clipping_planes_fragment>',
-            'if (uCutMode > 0 && vCutPos.y > uCutY) {',
-            '  bool wall = dot(vCutN, vCutN) > 0.25;',
+            'bool cutWall = dot(vCutN, vCutN) > 0.25;',
             // cloison (normale doublée) : toujours coupée ; mur extérieur : coupé s'il regarde la caméra
-            '  bool shared = dot(vCutN, vCutN) > 2.0;',
-            '  if (uCutMode == 1 || (wall && (shared || dot(vCutN, uCam.xz - vCutPos.xz) > 0.0))) discard;',
-            '}',
+            'bool cutShared = dot(vCutN, vCutN) > 2.0;',
+            'bool cut = uCutMode == 1 || (uCutMode == 2 && cutWall && (cutShared || dot(vCutN, uCam.xz - vCutPos.xz) > 0.0));',
+            o.section ? 'if (!cut) discard;' : 'if (cut && vCutPos.y > uCutY) discard;',
             // hors des murs repérés, faces arrière masquées comme avant (vues d'un mur, d'un sol)
             ...(cap ? ['if (!gl_FrontFacing && dot(vCutN, vCutN) <= 0.25) discard;'] : []),
           ].join('\n'),

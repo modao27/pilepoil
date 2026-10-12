@@ -22,6 +22,8 @@ export interface MeshData {
    * Calculée par la scène (`tagWalls`), jamais par les modules.
    */
   wallNormals?: number[];
+  /** Dessus de coupe des murs (charbon) : dessiné seulement là où le mur est coupé. */
+  section?: boolean;
 }
 
 /**
