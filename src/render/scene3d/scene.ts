@@ -24,6 +24,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { cameraFor, FOV, type CameraPreset } from './camera';
 import type { MeshData, SceneFrame } from './types';
+import { brand } from '../../ui/brand';
 
 /** Direction de la lumière (legacy LDIR), normalisée. */
 const LDIR = new Vector3(-0.45, 0.75, 0.55).normalize();
@@ -56,7 +57,7 @@ export class Scene3D {
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
-    this.scene.background = new Color('#e6eaec');
+    this.scene.background = new Color(brand.ivoire);
     this.scene.add(new AmbientLight('#ffffff', 1.25));
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(opts.shadowSize ?? 2048, opts.shadowSize ?? 2048);

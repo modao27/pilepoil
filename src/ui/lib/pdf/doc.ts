@@ -3,20 +3,22 @@
  * caractères des polices standard. Extraite du PDF du carrelage (même rendu), partagée par les modules.
  */
 import { jsPDF } from 'jspdf';
+import { brandRgb, pdfRgb } from '../../brand';
 
 /** Marge de page, mm. */
 export const M = 14;
-export const INK: RGB = [21, 35, 44];
-export const MUTED: RGB = [90, 106, 116];
-export const LINE: RGB = [205, 213, 218];
-export const ACCENT: RGB = [39, 71, 201];
-export const THIN: RGB = [217, 71, 43];
-/** Statuts de coupe en teintes claires pour l'impression. */
+export const INK: RGB = [...brandRgb.charbon];
+export const MUTED: RGB = [...pdfRgb.charbonDoux];
+export const LINE: RGB = [...pdfRgb.border];
+export const ACCENT: RGB = [...brandRgb.petrole];
+/** Coupe fine, alerte : terracotta foncé (le terracotta pur ne se lit pas en texte). */
+export const THIN: RGB = [...brandRgb.terracottaTexte];
+/** Statuts de coupe (ocre, vert, terracotta) en teintes claires pour l'impression. */
 export const STATUS: Record<'full' | 'cut' | 'reuse' | 'thin', RGB> = {
   full: [255, 255, 255],
-  cut: [248, 225, 160],
-  reuse: [193, 229, 206],
-  thin: [244, 180, 166],
+  cut: [233, 216, 179],
+  reuse: [196, 228, 212],
+  thin: [237, 196, 180],
 };
 export type RGB = [number, number, number];
 
@@ -95,7 +97,7 @@ export class Doc {
           );
       }
       if (header) {
-        this.pdf.setFillColor(230, 235, 238);
+        this.pdf.setFillColor(...brandRgb.sauge);
         this.pdf.rect(
           x0,
           this.y,
