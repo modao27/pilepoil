@@ -216,7 +216,7 @@
     const f = await makePdf();
     if (!f || !project) return;
     try {
-      await navigator.share({ files: [f], title: pdfTitle, text: `Pilepoil : ${project.name}` });
+      await navigator.share({ files: [f], title: pdfTitle, text: `PilePoil : ${project.name}` });
       status = 'shared';
     } catch (e) {
       status = e instanceof DOMException && e.name === 'AbortError' ? 'idle' : 'error';

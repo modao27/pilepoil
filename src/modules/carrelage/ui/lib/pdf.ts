@@ -116,7 +116,7 @@ export function buildPdf(input: PdfInput): Blob {
   writePlans(d, all);
   writeCuts(d, all);
   writeGlue(d, all);
-  footers(d, `Pilepoil · ${project.name}`);
+  footers(d, `PilePoil · ${project.name}`);
   return d.pdf.output('blob');
 }
 

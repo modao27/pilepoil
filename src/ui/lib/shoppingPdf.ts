@@ -37,6 +37,6 @@ export function shoppingPdf(c: Consolidated, title: string, date: number, module
   d.text(`Liste d’achat — ${title}`, 16, { bold: true, gap: 1 });
   d.text(new Date(date).toLocaleDateString('fr-FR'), 9, { color: MUTED, gap: 4 });
   writeShopping(d, c, moduleLabel);
-  footers(d, `Pilepoil · ${title} · achats`);
+  footers(d, `PilePoil · ${title} · achats`);
   return d.pdf.output('blob');
 }

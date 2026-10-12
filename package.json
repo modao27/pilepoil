@@ -15,7 +15,6 @@
     "test:e2e": "playwright test",
     "parity:extract": "tsx scripts/extract-legacy.ts",
     "check": "npm run typecheck && npm run lint && npm run test",
-    "icons": "tsx scripts/make-icons.ts",
     "lighthouse": "tsx scripts/lighthouse.ts",
     "release": "npm run check && npm run build && npm run test:e2e && npm run lighthouse"
   },

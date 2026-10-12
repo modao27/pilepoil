@@ -60,7 +60,7 @@ export function buildResultsPdf(input: ResultsPdfInput): Blob {
     d.text('Liste d’achat du projet', 15, { bold: true, gap: 3 });
     writeShopping(d, input.shopping, (id) => input.entries.find((e) => e.module.id === id)?.module.label ?? id);
   }
-  footers(d, `Pilepoil · ${project.name}`);
+  footers(d, `PilePoil · ${project.name}`);
   return d.pdf.output('blob');
 }
 

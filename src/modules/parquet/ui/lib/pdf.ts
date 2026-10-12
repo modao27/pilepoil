@@ -174,7 +174,7 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
   d.text('Règles de pose : valeurs du type de lame. Vérifier la notice du fabricant.', 8, { color: MUTED });
 
   writeDetails(d, ctx, result, null);
-  footers(d, `Pilepoil · ${project.name} · parquet`);
+  footers(d, `PilePoil · ${project.name} · parquet`);
   return d.pdf.output('blob');
 }
 
