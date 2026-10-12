@@ -7,7 +7,7 @@
    */
   import { untrack } from 'svelte';
   import { poseWhere, type Pose } from '../../core/coverage';
-  import { poseArea, scopePoses, scopeRooms, scopeWallSpans, type ResultScope } from '../../core/coverage/scope';
+  import { poseArea, scopePoses, type ResultScope } from '../../core/coverage/scope';
   import { moduleById, modules } from '../../modules/registry';
   import type { ModuleResults, PoseReport, ResultExports, ToolModule } from '../../modules/types';
   import type { Project } from '../../state/model';
@@ -19,6 +19,7 @@
   import Tabs from '../components/Tabs.svelte';
   import { app } from '../lib/app.svelte';
   import { canShareFiles, fileSlug, saveBlob } from '../lib/files';
+  import { EMPTY_FRAME, loadModel3D, modelFrame, modelMeshes, type Model3DLibs } from '../lib/model3d';
   import { projectOutputs } from '../lib/moduleOutputs';
   import { consolidate } from '../lib/shopping';
   import { poseColor } from '../room/colors';
@@ -116,45 +117,30 @@
     return exportsBy;
   }
 
-  let envelope = $state.raw<typeof import('../../render/scene3d/envelope') | null>(null);
+  let libs3d = $state.raw<Model3DLibs | null>(null);
   let failed3d = $state(false);
+  let walls = $state<'full' | 'low' | 'cut'>('cut');
   $effect(() => {
-    if (tab !== '3d' || envelope) return;
-    void Promise.all([import('../../render/scene3d/envelope'), untrack(loadExports)]).then(
-      ([e]) => (envelope = e),
+    if (tab !== '3d' || libs3d) return;
+    void Promise.all([loadModel3D(), untrack(loadExports)]).then(
+      ([l]) => (libs3d = l),
       () => (failed3d = true),
     );
   });
-  const rooms3d = $derived(project ? scopeRooms(project.plan, project, scope) : []);
   const build = $derived.by(() => {
-    const env = envelope,
+    const libs = libs3d,
       p = project,
       ex = exportsBy;
-    if (!env || !p) return null;
+    if (!libs || !p) return null;
     const entries = mods.flatMap((m) => {
       const c = results[m.id];
       const x = ex[m.id];
-      return c && x ? [{ m, c, x }] : [];
+      return c && x ? [{ module: m.id, project: c.project, result: c.result, exports: x }] : [];
     });
-    // parties de murs revêtues par un module calculé : il les dessine (plâtre compris) ; le reste est dans l'enveloppe
-    const drawn = new Set(entries.map((e) => e.m.id));
-    const covered = {
-      zones: p.zones.filter((z) => drawn.has(p.poses.find((x) => x.id === z.pose)?.module ?? '')),
-      poses: p.poses,
-    };
-    const skip = scopeWallSpans(p.plan, covered, scope);
     const libraries = app.libraries;
-    return () =>
-      env.mergeMeshes([
-        ...env.buildEnvelope(p.plan, rooms3d, skip),
-        ...entries.flatMap((e) => e.x.meshes({ project: e.c.project, libraries, result: e.c.result, scope })),
-      ]);
+    return () => modelMeshes(libs, p, scope, entries, libraries);
   });
-  const frame = $derived(
-    envelope && project
-      ? envelope.planFrame(project.plan, rooms3d)
-      : { kind: 'room' as const, bounds: { x: [0, 1] as [number, number], z: [0, 1] as [number, number], h: 2.5 } },
-  );
+  const frame = $derived(libs3d && project ? modelFrame(libs3d, project, scope) : EMPTY_FRAME);
   const frameKey = $derived(JSON.stringify(scope));
 
   /* ---------- export ---------- */
@@ -372,6 +358,7 @@
                   {build}
                   {frame}
                   {frameKey}
+                  bind:walls
                   label={scope.kind === 'project'
                     ? 'Maquette 3D du logement'
                     : scope.kind === 'room'
