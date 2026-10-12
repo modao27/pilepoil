@@ -4,7 +4,6 @@
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
   import Select from '../../../../ui/components/Select.svelte';
-  import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
   import { cm } from '../../../../ui/lib/format';
   import type { EditorState } from './editorState.svelte';
@@ -15,7 +14,6 @@
   const pl = $derived(s.plinth);
   const plinthPieces = $derived(ed.build?.pieces.map((p, i) => [p, i] as const).filter(([p]) => p.plinth) ?? []);
   const plinthReused = $derived(plinthPieces.filter(([, i]) => ed.result?.plan.reused[ed.offset + i]).length);
-  const settings = $derived(ed.project.settings);
   /** Pourtour du sol (contour de la pièce, sans les obstacles). */
   const perimeter = $derived.by(() => {
     const r = s.outline?.[0];
@@ -108,51 +106,6 @@
       </p>
     </section>
   {/if}
-
-  <section aria-labelledby="f-cut">
-    <h3 id="f-cut">Découpe et chutes</h3>
-    <Checkbox
-      label="Réutiliser les chutes de coupe"
-      hint="Les pièces de même numéro sortent du même carreau."
-      checked={settings.reuseOffcuts}
-      onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { reuseOffcuts: v } })}
-    />
-    <Checkbox
-      label="Numéros de coupe sur le plan"
-      checked={app.showCutNumbers}
-      onchange={(v) => app.setShowCutNumbers(v)}
-    />
-    <div class="two">
-      <NumberField
-        label="Perte par coupe"
-        value={settings.kerf}
-        unit="mm"
-        min={0}
-        step={0.5}
-        onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { kerf: v } })}
-      />
-      <NumberField
-        label="Chute minimale gardée"
-        value={settings.minOffcut}
-        unit="mm"
-        min={1}
-        step={5}
-        onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { minOffcut: v } })}
-      />
-      <NumberField
-        label="Marge de casse"
-        value={settings.margin}
-        unit="%"
-        min={0}
-        max={50}
-        onchange={(v) => ed.dispatch({ type: 'carrelage/settings', patch: { margin: v } })}
-      />
-    </div>
-    <p class="muted">
-      Les pièces restent face émaillée dessus, jamais retournées. Le sens de rotation des chutes se règle sur le carreau
-      (onglet Carreau, « Modifier ce carreau »).
-    </p>
-  </section>
 </div>
 
 <style>

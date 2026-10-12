@@ -13,7 +13,7 @@ test('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en r
   await addPlanWindow(page, id);
   const mobile = info.project.name === 'mobile';
   if (mobile) await page.getByRole('button', { name: /^Réglages :/ }).click();
-  await page.getByRole('tab', { name: 'Ouvertures' }).click();
+  await page.getByRole('tab', { name: 'Découpage', exact: true }).click();
   await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   const depth = page.getByLabel('Profondeur du tableau', { exact: true });
   await depth.fill('20');

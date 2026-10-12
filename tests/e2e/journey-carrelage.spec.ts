@@ -56,7 +56,7 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await openPose(page, 'Sol');
   await expect(page.getByRole('application', { name: /^Plan de Salle de bain, sol/ })).toBeVisible();
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
-  await page.getByRole('tab', { name: 'Carreau' }).click();
+  await page.getByRole('tab', { name: 'Produit', exact: true }).click();
   await page.getByRole('button', { name: 'Nouveau carreau' }).click();
   await page.getByRole('dialog', { name: 'Nouveau carreau' }).getByLabel('Prix', { exact: true }).fill('29,9');
   await page.getByRole('button', { name: 'Ajouter et utiliser' }).click();

@@ -55,7 +55,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
   // 3. carreau : bibliothèque vide → nouveau carreau, utilisé par la bande
   if (info.project.name === 'mobile') await page.getByRole('button', { name: /^Réglages :/ }).click();
-  await page.getByRole('tab', { name: 'Carreau' }).click();
+  await page.getByRole('tab', { name: 'Produit', exact: true }).click();
   await page.getByRole('button', { name: 'Nouveau carreau' }).click();
   const tileDialog = page.getByRole('dialog', { name: 'Nouveau carreau' });
   await tileDialog.getByLabel('Largeur', { exact: true }).fill('200');
@@ -65,7 +65,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await expect(page.getByRole('radio', { name: /60 × 20 cm/ })).toHaveAttribute('aria-checked', 'true');
 
   // 4. motif
-  await page.getByRole('tab', { name: 'Motif' }).click();
+  await page.getByRole('tab', { name: 'Pose', exact: true }).click();
   await page.getByRole('radio', { name: 'Bâtons rompus' }).click();
   await page.getByRole('radio', { name: '45°' }).click();
   await check(page);

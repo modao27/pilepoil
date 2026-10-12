@@ -240,7 +240,7 @@
     const g = st.drag;
     if (g?.kind === 'opening') {
       ed.select({ opening: g.index });
-      ed.tab = 'openings';
+      ed.tab = 'cut';
     } else {
       const i = pieceAt(ed.build.pieces, st.pt);
       if (i >= 0) ed.select({ band: ed.build.pieces[i]!.zone, piece: i === ed.sel.piece ? -1 : i });

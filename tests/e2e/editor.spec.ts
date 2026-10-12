@@ -25,7 +25,7 @@ async function tab(page: Page, info: TestInfo, name: string): Promise<void> {
     const handle = page.getByRole('button', { name: /^Réglages :/ });
     if ((await handle.getAttribute('aria-expanded')) !== 'true') await handle.click();
   }
-  await page.getByRole('tab', { name }).click();
+  await page.getByRole('tab', { name, exact: true }).click();
 }
 
 async function check(page: Page) {
@@ -51,7 +51,7 @@ test('plan : glisser le motif, annuler, rétablir, toucher une pièce', async ({
   await shot(page, info, '60-editeur');
 
   await dragPlan(page, 0.5, 0.4, 37, 23);
-  await tab(page, info, 'Motif');
+  await tab(page, info, 'Pose');
   const offX = page.getByLabel('Décalage horizontal', { exact: true });
   await expect(offX).not.toHaveValue('0');
   const moved = await offX.inputValue();
@@ -79,13 +79,13 @@ test('plan : glisser le motif, annuler, rétablir, toucher une pièce', async ({
   await dragPlan(page, 0.5, 0.4, 60, 0);
   await page.waitForTimeout(400);
   await page.reload();
-  await tab(page, info, 'Motif');
+  await tab(page, info, 'Pose');
   await expect(page.getByLabel('Décalage horizontal', { exact: true })).not.toHaveValue('0');
 });
 
 test('carreau : nouveau carreau, mélange, rendu', async ({ page }, info) => {
   await newWall(page);
-  await tab(page, info, 'Carreau');
+  await tab(page, info, 'Produit');
   await page.getByRole('button', { name: 'Nouveau carreau' }).click();
   const dlg = page.getByRole('dialog', { name: 'Nouveau carreau' });
   await dlg.getByRole('button', { name: '20 × 20' }).click();
@@ -103,7 +103,7 @@ test('carreau : nouveau carreau, mélange, rendu', async ({ page }, info) => {
 
 test('photo du carreau appliquée dans le rendu, retournements aléatoires', async ({ page }, info) => {
   await newWall(page);
-  await tab(page, info, 'Carreau');
+  await tab(page, info, 'Produit');
   await page.getByRole('button', { name: 'Modifier ce carreau' }).click();
   const dlg = page.getByRole('dialog', { name: 'Modifier le carreau' });
   // photo 4 × 2 px : moitié claire, moitié foncée, pour voir les retournements
@@ -129,7 +129,7 @@ test('photo du carreau appliquée dans le rendu, retournements aléatoires', asy
 
 test('bandes : ajouter, taille, modèle frise, supprimer et annuler', async ({ page }, info) => {
   await newWall(page);
-  await tab(page, info, 'Bandes');
+  await tab(page, info, 'Découpage');
   await page.getByRole('button', { name: 'Ajouter une bande' }).click();
   const list = page.getByRole('list', { name: 'Bandes' });
   await expect(list.getByRole('listitem')).toHaveCount(2);
@@ -151,7 +151,7 @@ test('bandes : ajouter, taille, modèle frise, supprimer et annuler', async ({ p
 test('ouvertures : fenêtre du plan avec tableaux, prise déplacée au clavier', async ({ page }, info) => {
   const id = await newWall(page);
   await addPlanWindow(page, id);
-  await tab(page, info, 'Ouvertures');
+  await tab(page, info, 'Découpage');
   await page.getByRole('button', { name: /^Fenêtre 1/ }).click();
   await expect(page.getByRole('heading', { name: 'Fenêtre 1' })).toBeVisible();
   await expect(page.getByText(/Les cotes viennent du plan\./)).toBeVisible();
@@ -207,7 +207,7 @@ test('optimisation : progression, résultat, annulation', async ({ page }, info)
   await expect(page.getByText(/^Départ optimisé\./)).toBeVisible({ timeout: 20000 });
   await shot(page, info, '68-optimise');
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
-  await tab(page, info, 'Motif');
+  await tab(page, info, 'Pose');
   await expect(page.getByRole('button', { name: 'Optimiser le départ', exact: true })).toBeVisible();
 });
 
