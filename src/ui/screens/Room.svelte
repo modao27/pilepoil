@@ -7,6 +7,7 @@
    */
   import { sameSurface, zoneBox, type Pose, type SurfaceRef, type Zone } from '../../core/coverage';
   import type { Point } from '../../core/geometry/types';
+  import { snapPoint } from '../../core/plan/snap';
   import { wallLength } from '../../core/plan/walls';
   import { moduleById } from '../../modules/registry';
   import type { ToolModule } from '../../modules/types';
@@ -25,6 +26,7 @@
   import {
     continuable,
     continueAction,
+    contourAction,
     cutAction,
     modulesFor,
     newPoseAction,
@@ -137,18 +139,26 @@
     void dispatch(spanAction(project, z, from > 0 ? from : null, to < room.height ? Math.min(to, room.height) : null));
   }
 
-  /** Découpe d'une zone de sol : points touchés sur le dessin. */
-  let cutting = $state.raw<{ zone: Zone; points: Point[] } | null>(null);
+  /** Découpe d'une zone de sol : par une ligne (deux points) ou par un contour (points aimantés, refermé). */
+  let cutting = $state.raw<{ zone: Zone; mode: 'line' | 'contour'; points: Point[] } | null>(null);
   let drawingEl = $state<HTMLDivElement>();
+  /** Aimantation et fermeture du contour, mm : à l'échelle de la pièce. */
+  const tolerance = $derived.by(() => {
+    if (!room) return 100;
+    const xs = room.outline.map((p) => p[0]),
+      ys = room.outline.map((p) => p[1]);
+    return Math.max(50, Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / 25);
+  });
   /** Début de la découpe : le dessin revient en vue (sur téléphone, le panneau est dessous). */
-  function startCut(zone: Zone) {
-    cutting = { zone, points: [] };
+  function startCut(zone: Zone, mode: 'line' | 'contour' = 'line') {
+    cutting = { zone, mode, points: [] };
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     drawingEl?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
   }
-  function cutPoint(p: Point) {
+  function cutPoint(raw: Point) {
     if (!cutting) return;
-    const points = [...cutting.points, p];
+    if (cutting.mode === 'contour') return contourPoint(raw);
+    const points = [...cutting.points, raw];
     if (points.length < 2) {
       cutting = { ...cutting, points };
       return;
@@ -164,8 +174,42 @@
     );
   }
 
+  /** Contour : point aimanté aux angles droits des points voisins et à la grille ; près du premier, il se referme. */
+  function contourPoint(raw: Point) {
+    if (!cutting) return;
+    const pts = cutting.points;
+    const first = pts[0];
+    if (first && pts.length >= 3 && Math.hypot(raw[0] - first[0], raw[1] - first[1]) <= tolerance) {
+      closeContour();
+      return;
+    }
+    const p = snapPoint(
+      raw,
+      [pts.at(-1), first].filter((q): q is Point => !!q),
+      tolerance,
+    );
+    const last = pts.at(-1);
+    if (last && last[0] === p[0] && last[1] === p[1]) return;
+    cutting = { ...cutting, points: [...pts, p] };
+  }
+
+  function closeContour() {
+    if (!cutting || !project) return;
+    const { zone, points } = cutting;
+    const r = contourAction(project, app.libraries, zone, points, newId);
+    if (!r) {
+      toast('Ce contour n’est pas valide : au moins 3 points, sans côtés qui se croisent.', { tone: 'error' });
+      return;
+    }
+    cutting = null;
+    void dispatch(r.action, 'Contour découpé : l’intérieur est une nouvelle pose.').then(
+      (ok) => ok || toast('Ce contour ne découpe pas la zone.', { tone: 'error' }),
+    );
+  }
+
   const describe = (z: Zone): string => {
-    if (z.surface.wall == null) return z.cuts.length ? 'partie du sol' : 'tout le sol';
+    if (z.surface.wall == null)
+      return z.area ? 'contour dessiné' : z.cuts.length || z.holes?.length ? 'partie du sol' : 'tout le sol';
     const [a, b] = span(z);
     return `de ${cm(a)} à ${cm(b)}`;
   };
@@ -188,13 +232,34 @@
           {selected}
           cutting={!!cutting}
           cut={cutting?.points ?? []}
+          contour={cutting?.mode === 'contour'}
           onselect={select}
           oncutpoint={cutPoint}
         />
       </div>
 
       <div class="panel">
-        {#if cutting}
+        {#if cutting?.mode === 'contour'}
+          {@const n = cutting.points.length}
+          <section class="card" aria-live="polite">
+            <h2>Contour sur le sol</h2>
+            <p>
+              Touchez chaque coin sur le sol, puis le premier point pour fermer. Les points s’alignent sur les angles
+              droits et sur une grille de 1 cm.
+            </p>
+            <p class="muted">{n} point{n > 1 ? 's' : ''}</p>
+            <div class="row">
+              <Button variant="primary" disabled={n < 3} onclick={closeContour}>Fermer le contour</Button>
+              <Button
+                icon="undo"
+                disabled={!n}
+                onclick={() => cutting && (cutting = { ...cutting, points: cutting.points.slice(0, -1) })}
+                >Retirer le dernier point</Button
+              >
+              <Button variant="ghost" onclick={() => (cutting = null)}>Annuler</Button>
+            </div>
+          </section>
+        {:else if cutting}
           <section class="card" aria-live="polite">
             <h2>Découper le sol</h2>
             <p>Touchez deux points sur le sol : la ligne qui les relie coupe la zone en deux, d’un mur à l’autre.</p>
@@ -242,6 +307,7 @@
                       {#if m}<Button variant="primary" href={m.poseHref(id, z.pose)}>Calepinage</Button>{/if}
                       {#if kind === 'floor'}
                         <Button onclick={() => startCut(z)}>Découper par une ligne</Button>
+                        <Button onclick={() => startCut(z, 'contour')}>Découper par un contour</Button>
                       {/if}
                       {#each modulesFor(selected).filter((x) => x.id !== m?.id) as other (other.id)}
                         <Button onclick={() => switchTo(z, other)}>Passer en {other.label.toLowerCase()}</Button>

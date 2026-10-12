@@ -4,7 +4,9 @@
  * Une pose sans zone disparaît.
  */
 import type { Plan, Id } from '../plan/types';
-import type { Segment } from '../geometry/types';
+import type { Polygon, Segment } from '../geometry/types';
+import { intersection } from '../geometry/boolean';
+import { signedArea } from '../geometry/polygon';
 import { checkZone, orphanZones, type Coverage } from './rules';
 import type { CoverageRules, Cut, Pose, Zone } from './types';
 
@@ -20,6 +22,11 @@ export type CoverageAction =
    * `pose` (nouvelle pose, avec ses réglages).
    */
   | { type: 'zone/cut'; zoneId: Id; line: Segment; newZoneId: Id; pose?: { pose: Pose; settings: unknown } }
+  /**
+   * Découpe une zone par un contour (repère de la surface) : la nouvelle zone est l'intérieur, dans la même pose ou
+   * dans `pose` (nouvelle pose, avec ses réglages) ; la zone d'origine garde le reste (le contour en trou).
+   */
+  | { type: 'zone/contour'; zoneId: Id; outline: Polygon; newZoneId: Id; pose?: { pose: Pose; settings: unknown } }
   | { type: 'zone/remove'; zoneId: Id }
   /** Retire les zones dont la pièce ou le mur n'existe plus. */
   | { type: 'zone/prune' };
@@ -85,6 +92,28 @@ export function reduceCoverage(plan: Plan, cov: Coverage, a: CoverageAction, rul
       const poses = a.pose ? [...cov.poses, a.pose.pose] : cov.poses;
       return place(plan, cov, [kept, added], poses, rulesOf);
     }
+    case 'zone/contour': {
+      const z = cov.zones.find((x) => x.id === a.zoneId);
+      if (!z || a.outline.length < 3 || cov.zones.some((x) => x.id === a.newZoneId)) return cov;
+      // la zone a déjà un contour : l'intérieur est la partie commune des deux (un seul polygone)
+      let area = a.outline;
+      if (z.area) {
+        const common = intersection([oriented(a.outline)], [oriented(z.area)]);
+        if (common.length !== 1) return cov;
+        area = common[0]!;
+      }
+      const inner: Zone = {
+        id: a.newZoneId,
+        surface: z.surface,
+        cuts: z.cuts,
+        area,
+        holes: z.holes ?? [],
+        pose: a.pose?.pose.id ?? z.pose,
+      };
+      const kept: Zone = { ...z, holes: [...(z.holes ?? []), a.outline] };
+      const poses = a.pose ? [...cov.poses, a.pose.pose] : cov.poses;
+      return place(plan, cov, [kept, inner], poses, rulesOf);
+    }
     case 'zone/remove': {
       if (!cov.zones.some((z) => z.id === a.zoneId)) return cov;
       return withoutEmptyPoses(
@@ -117,3 +146,6 @@ export function posesInRoom(cov: Coverage, roomId: Id): Pose[] {
   const ids = new Set(cov.zones.filter((z) => z.surface.room === roomId).map((z) => z.pose));
   return cov.poses.filter((p) => ids.has(p.id));
 }
+
+/** Contour en sens positif (aire signée > 0). */
+const oriented = (p: Polygon): Polygon => (signedArea(p) < 0 ? [...p].reverse() : p);

@@ -156,6 +156,15 @@ export function appliedThresholds(l: LayoutSpec, base: Polygon[]): Threshold[] {
       const seg = clipLine(b.line[0], unit(sub(b.line[1], b.line[0])), inRoom);
       if (seg) out.push({ segment: seg, passage: passageAt(seg)?.id ?? null, status: 'applied' });
     }
+    // limites d'un contour (zone intérieure ou trou) : chaque côté qui n'est pas le long d'un mur
+    const inner = offset([oriented(r.outline)], -(l.rules.expansionGap + 1));
+    for (const poly of [...(r.area ? [r.area] : []), ...(r.holes ?? [])])
+      poly.forEach((a, i) => {
+        const b = poly[(i + 1) % poly.length]!;
+        const mid: Point = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 1 || !inner.some((ring) => pointInPolygon(mid, ring))) return;
+        out.push({ segment: [a, b], passage: null, status: 'applied' });
+      });
   }
   return out;
 }

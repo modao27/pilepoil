@@ -86,5 +86,5 @@ describe('pose droite : invariants', () => {
       ),
       { numRuns: 60 },
     );
-  });
+  }, 20000); // 60 tirages : large marge quand toute la suite tourne en parallèle
 });

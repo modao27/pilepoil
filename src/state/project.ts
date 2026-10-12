@@ -43,7 +43,7 @@ export function reduceProject(p: Project, a: ProjectAction, find: Find = moduleB
     const added =
       c.type === 'pose/add'
         ? { id: c.pose.id, settings: c.settings }
-        : c.type === 'zone/cut' && c.pose
+        : (c.type === 'zone/cut' || c.type === 'zone/contour') && c.pose
           ? { id: c.pose.pose.id, settings: c.pose.settings }
           : null;
     return withCoverage(p, cov, added, find);

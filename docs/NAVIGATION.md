@@ -62,11 +62,13 @@ interface Project {
   /** Réglages de chaque module, par pose : modules[module].data.poses[poseId]. */
   modules: Record<ModuleId, ModuleDoc>;
 }
-interface Zone {
+interface Zone {                            // tel que fait en N1–N4 (core/coverage/types.ts)
   id: Id;
   surface: { room: Id; wall: Id | null };   // wall null : le sol
-  /** Contour : repère du plan pour un sol, repère du mur (x le long du mur, y depuis le sol) pour un mur. */
-  region: Polygon[];                        // contours > 0, trous < 0 (obstacles)
+  /** Repère de la pièce pour un sol, du mur (x le long du mur, y depuis le sol) pour un mur. */
+  cuts: { line: Segment; side: 1 | -1 }[];  // demi-plans gardés (ligne de découpe, hauteur d'un mur)
+  area?: Polygon;                           // contour dans lequel la zone reste (découpe par un contour)
+  holes?: Polygon[];                        // contours retirés (l'intérieur d'un contour)
   pose: Id;
 }
 interface Pose {
@@ -106,7 +108,7 @@ Capacités des moteurs :
 | 3 | **Vue globale du projet** | `#/p/:id` | [Existe] (N3) |
 | 4 | Plan : dessin et cotes | `#/p/:id/plan` | [Existe] |
 | 5 | **Pièce** : surfaces, zones et poses sur le dessin | `#/p/:id/r/:pièce[/:surface]` | [Existe] (N3) ; remplace l'écran Carrelage |
-| 6 | **Calepinage d'une pose** | `#/p/:id/pose/:pose` | [Existe] dans chaque module ; coquille commune [À créer] |
+| 6 | **Calepinage d'une pose** | `#/p/:id/m/<module>/…` (adresse donnée par `poseHref`) | [Existe] : coquille commune `ui/calepinage` (N4) |
 | 7 | **Résultats** surface, pièce ou projet, avec export | `…/resultats` à chaque niveau | [À créer] par surface et par pièce |
 | 8 | Achats du projet | `#/p/:id/achats` | [Existe] |
 | 9 | Chantier (parquet) | `#/p/:id/pose/:pose/chantier` | [Existe] sous une autre adresse |
@@ -178,7 +180,7 @@ sont pas gardés, l'application ne peut pas savoir s'ils sont à jour).
 | Vue globale | Toucher une pose dans la liste | Calepinage de la pose | — |
 | Pièce | Toucher le sol ou un mur | Même écran, surface sélectionnée | Sélection dans l'adresse |
 | Pièce | « Revêtir : carrelage » (ou parquet) | Même écran, surface revêtue ; « Calepinage » ouvre la pose | Si une pose du même revêtement touche la surface : « Continuer « Pose 1 » / Nouvelle pose » ; l'outil est ajouté au projet s'il n'y est pas |
-| Pièce | Sol → « Découper en zones », tracer une ligne | Même écran, deux zones | Annuler ; aucune pose perdue |
+| Pièce | Sol → « Découper par une ligne » ou « par un contour » (points aimantés, refermé sur le premier) | Même écran, deux zones ; l'intérieur d'un contour est une nouvelle pose | Annuler ; aucune pose perdue |
 | Pièce | Mur → « Crédence », 90 → 150 cm | Zone de mur | Bornée par la hauteur de la pièce, message clair |
 | Pièce | Zone du mur 2 → « Ajouter à la pose du mur 1 » | La pose fait l'angle | Seulement des murs qui se suivent, sinon grisé avec la raison |
 | Pièce (salon) | Zone du sol → « Continuer la pose de l'entrée » | Calepinage, deux pièces | Seulement si un passage relie les pièces |

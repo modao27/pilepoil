@@ -1,5 +1,5 @@
 /** Géométrie des zones : contour d'une surface du plan, contour d'une zone (surface coupée par ses lignes). Pur. */
-import { intersection, regionArea } from '../geometry/boolean';
+import { difference, intersection, regionArea } from '../geometry/boolean';
 import { signedArea } from '../geometry/polygon';
 import type { Point, Polygon } from '../geometry/types';
 import type { Plan, PlanRoom } from '../plan/types';
@@ -48,15 +48,25 @@ export function surfacePolygon(plan: Plan, s: SurfaceRef): Polygon[] | null {
   ];
 }
 
-/** Contour d'une zone ; null si sa surface n'existe plus. Vide si les lignes ne laissent rien. */
-export function zoneRegion(plan: Plan, z: Pick<Zone, 'surface' | 'cuts'>): Polygon[] | null {
+/**
+ * Contour d'une zone : la surface coupée par ses lignes, limitée à son contour `area`, privée de ses `holes` ;
+ * null si sa surface n'existe plus. Vide si rien ne reste.
+ */
+export function zoneRegion(plan: Plan, z: Pick<Zone, 'surface' | 'cuts' | 'area' | 'holes'>): Polygon[] | null {
   const base = surfacePolygon(plan, z.surface);
   if (!base) return null;
-  return z.cuts.reduce<Polygon[]>((r, c) => (r.length ? intersection(r, [halfPlane(c)]) : r), base);
+  let r = z.cuts.reduce<Polygon[]>((acc, c) => (acc.length ? intersection(acc, [halfPlane(c)]) : acc), base);
+  if (z.area && r.length) r = intersection(r, [ring(z.area, 1)]);
+  if (z.holes?.length && r.length)
+    r = difference(
+      r,
+      z.holes.map((h) => ring(h, 1)),
+    );
+  return r;
 }
 
 /** Aire d'une zone, mm² (0 si elle n'existe plus). */
-export function zoneArea(plan: Plan, z: Pick<Zone, 'surface' | 'cuts'>): number {
+export function zoneArea(plan: Plan, z: Pick<Zone, 'surface' | 'cuts' | 'area' | 'holes'>): number {
   const r = zoneRegion(plan, z);
   return r ? regionArea(r) : 0;
 }
@@ -87,7 +97,10 @@ export function wallSpanCuts(plan: Plan, s: SurfaceRef, from: number | null, to:
 }
 
 /** Boîte d'une zone dans le repère de sa surface [xmin, xmax, ymin, ymax] ; null si elle n'existe plus ou est vide. */
-export function zoneBox(plan: Plan, z: Pick<Zone, 'surface' | 'cuts'>): [number, number, number, number] | null {
+export function zoneBox(
+  plan: Plan,
+  z: Pick<Zone, 'surface' | 'cuts' | 'area' | 'holes'>,
+): [number, number, number, number] | null {
   const pts = (zoneRegion(plan, z) ?? []).flat();
   if (!pts.length) return null;
   const xs = pts.map((p) => p[0]),
