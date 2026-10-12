@@ -22,8 +22,8 @@ test('pièce de 15 m² en 10 × 10 : budget de dessin et images par seconde en r
   await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
   await page.waitForTimeout(500);
 
-  await page.getByRole('link', { name: 'Vue 3D de la pièce' }).click();
-  await page.getByRole('radio', { name: '3D' }).click();
+  await page.getByRole('link', { name: 'Résultats de la pièce' }).click();
+  await page.getByRole('tab', { name: '3D' }).click();
   await sceneStats(page);
   await page.getByRole('button', { name: 'Faire tourner' }).click();
   await page.waitForTimeout(3000);
@@ -56,7 +56,7 @@ test('parquet : 30 m² en point de Hongrie, budget de dessin et images par secon
   await p.getByRole('radio', { name: 'Hongrie' }).click();
   await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).toBeVisible();
 
-  await page.goto(`/#/p/${id}/m/parquet/results`);
+  await page.goto(`/#/p/${id}/resultats`);
   await page.getByRole('tab', { name: '3D' }).click();
   await sceneStats(page);
   await page.getByRole('button', { name: 'Faire tourner' }).click();

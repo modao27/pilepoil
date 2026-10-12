@@ -15,6 +15,25 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(version),
     __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        advancedChunks: {
+          // jsPDF et ses dépendances à part : sinon Rolldown y range ses aides (__export…), et tout import à la
+          // demande télécharge jsPDF (130 ko) dès le démarrage.
+          // L'aide de préchargement de Vite, utilisée aussi par jsPDF, reste hors de son morceau.
+          groups: [
+            { name: 'preload-helper', test: /vite\/preload-helper/, priority: 2 },
+            {
+              name: 'jspdf',
+              test: /node_modules\/(jspdf|fflate|fast-png|iobuffer|pako|@babel\/runtime)\//,
+              priority: 1,
+            },
+          ],
+        },
+      },
+    },
+  },
   plugins: [
     svelte(),
     VitePWA({
@@ -37,12 +56,23 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        test: { name: 'unit', include: ['tests/unit/**/*.test.ts'], environment: 'node' },
+        test: {
+          name: 'unit',
+          include: ['tests/unit/**/*.test.ts'],
+          environment: 'node',
+          setupFiles: ['tests/setup.ts'],
+        },
       },
       {
         // Mesures de durée : lancées seules après les autres (npm test), un fichier à la fois.
         extends: true,
-        test: { name: 'perf', include: ['tests/perf/**/*.test.ts'], environment: 'node', fileParallelism: false },
+        test: {
+          name: 'perf',
+          include: ['tests/perf/**/*.test.ts'],
+          environment: 'node',
+          fileParallelism: false,
+          setupFiles: ['tests/setup.ts'],
+        },
       },
       {
         // Dans Chromium : parité (moteur où les références legacy ont été extraites, Math.sin/cos pouvant

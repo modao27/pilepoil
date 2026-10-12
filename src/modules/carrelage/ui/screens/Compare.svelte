@@ -117,11 +117,7 @@
     </EmptyState>
   </Screen>
 {:else}
-  <Screen
-    title="Comparer — {project.name}"
-    backHref="#/p/{project.id}/m/carrelage/results"
-    backLabel="Retour aux résultats"
-  >
+  <Screen title="Comparer — {project.name}" backHref="#/p/{project.id}/resultats" backLabel="Retour aux résultats">
     <p class="muted intro">
       Enregistrez l’état actuel dans A, modifiez le projet (motif, carreau, départ…), puis comparez avec B ou avec
       l’état actuel.

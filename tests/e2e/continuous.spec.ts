@@ -55,12 +55,14 @@ test('murs 1 et 2 en une pose, hauteur par mur, puis séparés', async ({ page }
   await shot(page, info, 'N2-hauteurs');
   await page.keyboard.press('Escape');
 
-  // écran Pièce : la hauteur du mur 1, la vue de dessus du carrelage montre les deux murs d'une pose
+  // écran Pièce : la hauteur du mur 1 ; les résultats de la pièce montrent une pose sur les deux murs
   await openRoom(page, id, 'Cuisine');
   await selectSurface(page, 'Mur 1');
   await expect(page.getByLabel('Jusqu’à', { exact: true })).toHaveValue('120');
-  await page.goto(`/#/p/${id}/m/carrelage/room/${new URL(page.url()).hash.split('/')[4]}`);
-  await expect(page.getByRole('link', { name: 'Ouvrir Cuisine, murs 1 et 2' })).toHaveCount(2);
+  await page.goto(`/#/p/${id}/r/${new URL(page.url()).hash.split('/')[4]}/resultats`);
+  const poses = page.getByRole('article', { name: /^Carrelage · / });
+  await expect(poses).toHaveCount(1);
+  await expect(poses).toContainText('Cuisine, murs 1 et 2');
 
   // retirer le mur 1 : la pose reste sur le mur 2
   await openRoom(page, id, 'Cuisine');

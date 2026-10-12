@@ -190,6 +190,10 @@ projets existants : nouvelle version de la base, projets précédents retirés.
 - Résultats et PDF par surface, pièce et projet ; 3D de la pièce et du projet (revêtements ensemble).
 - Fini quand : parcours complet « nouveau projet → pièce → zones → poses → résultats → PDF → vue globale »
   sur téléphone et ordinateur, budgets 3D tenus, `npm run release` vert.
+- Décidé (2026-10-12) : premier niveau = la pose (pas la surface) ; prix sur l'écran Achats seulement ; enveloppe 3D
+  commune ; dossier du projet complet. Parcours e2e : `tests/e2e/journey-results.spec.ts`.
+- Ajouté : premier chargement allégé (Lighthouse ≥ 90 sur téléphone, premier passage) ; 3D : mur revêtu en partie
+  complété par l'enveloppe, sol continu rogné à la pièce dans ses résultats.
 
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.

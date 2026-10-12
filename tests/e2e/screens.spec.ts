@@ -81,13 +81,13 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await expect(page.getByText('Pièce 288 × 240')).toBeVisible();
   await page.getByRole('link', { name: /\d+ carreaux/ }).click();
-  await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'À commander' })).toBeVisible();
   await check(page);
   await shot(page, info, '20-resultats-mur');
 
   // persistance
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Résultats — Pièce 288 × 240' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Résultats — Carrelage · Pose 1' })).toBeVisible();
 
   // résultats → vue globale → accueil, carte, menu
   await page.getByRole('link', { name: 'Projet', exact: true }).click();

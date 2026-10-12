@@ -48,59 +48,64 @@ try {
     locale: 'fr-FR',
   });
   const page = ctx.pages()[0] ?? (await ctx.newPage());
-  // projet de démonstration : sol d'une pièce de 300 × 240, carreau 60 × 30
-  await page.goto(BASE + '#/new/carrelage');
-  const next = () => page.getByRole('button', { name: 'Suivant' }).click();
-  await next();
-  await next();
-  await page.getByRole('button', { name: 'Ajouter ce carreau' }).click();
-  await next();
-  await page.getByRole('button', { name: 'Créer le projet' }).click();
-  await page.getByRole('link', { name: 'Ouvrir Pièce, sol' }).click();
-  await page
-    .getByRole('link', { name: /\d+ carreaux/ })
-    .first()
-    .waitFor();
-  const [, id, surface] = /#\/p\/([^/]+)\/m\/carrelage\/s\/([^/]+)/.exec(page.url())!;
-  const room = surface!.split('~')[0]!;
-  await page.waitForTimeout(500);
-
-  // projet de parquet : pièce 400 × 300, une pose de stratifié
+  // projet de démonstration (parcours normal) : carreau 60 × 30 dans la bibliothèque, pièce « Cuisine » de
+  // 300 × 240, carrelage sur le mur 1, parquet au sol
+  await page.goto(BASE + '#/library/tiles/new');
+  await page.getByRole('button', { name: 'Ajouter le carreau' }).click();
+  await page.waitForURL(/#\/library\/tiles$/);
   await page.goto(BASE + '#/new');
-  await page.getByRole('button', { name: 'Commencer : parquet' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Ajouter une pièce' });
+  const dialog = page.getByRole('dialog', { name: 'Nouveau projet' });
   for (const [label, value] of [
-    ['Longueur', '400'],
-    ['Largeur', '300'],
+    ['Nom du projet', 'Maison'],
+    ['Nom', 'Cuisine'],
+    ['Longueur', '300'],
+    ['Largeur', '240'],
   ] as const) {
     const f = dialog.getByLabel(label, { exact: true });
     await f.fill(value);
     await f.press('Enter');
   }
   await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
-  const pid = /#\/p\/([^/]+)/.exec(page.url())![1]!;
-  await page.goto(BASE + `#/p/${pid}/m/parquet`);
-  await page.getByRole('button', { name: 'Créer une pose' }).first().click();
+  await page.waitForURL(/#\/p\/[^/]+\/plan$/);
+  const id = /#\/p\/([^/]+)/.exec(page.url())![1]!;
+  await page.goto(BASE + `#/p/${id}`);
   await page
-    .getByRole('link', { name: /\d+ lames · \d+ paquets/ })
+    .getByRole('link', { name: /^Cuisine/ })
     .first()
-    .waitFor();
+    .click();
+  await page.waitForURL(/#\/p\/[^/]+\/r\/[^/]+$/);
+  const room = /#\/p\/[^/]+\/r\/([^/]+)/.exec(page.url())![1]!;
+  const cover = async (surface: string, tool: string) => {
+    await page
+      .getByRole('button', { name: new RegExp(`^${surface}( \\(| :)`) })
+      .first()
+      .click();
+    await page.getByRole('button', { name: `Revêtir : ${tool}` }).click();
+  };
+  await cover('Mur 1', 'carrelage');
+  await cover('Sol', 'parquet');
+  await page.goto(BASE + `#/p/${id}`);
+  const href = async (name: RegExp) =>
+    (await page.getByRole('link', { name }).first().getAttribute('href'))!.replace(/^#/, '');
+  const tiling = await href(/^Carrelage · /);
+  const wood = await href(/^Parquet · /);
+  const tilePose = tiling.split('/').at(-1)!;
   await page.waitForTimeout(500);
 
   // [nom, adresse, premier chargement]
   const pages: [string, string, boolean][] = [
     ['projet', `#/p/${id}`, false],
-    ['carrelage', `#/p/${id}/m/carrelage`, false],
-    ['editeur', `#/p/${id}/m/carrelage/s/${surface}`, false],
-    ['piece', `#/p/${id}/m/carrelage/room/${room}`, false],
-    ['resultats', `#/p/${id}/m/carrelage/results`, false],
+    ['piece', `#/p/${id}/r/${room}`, false],
+    ['carrelage', `#${tiling}`, false],
+    ['parquet', `#${wood}`, false],
+    ['resultats-pose', `#/p/${id}/pose/${tilePose}/resultats`, false],
+    ['resultats-piece', `#/p/${id}/r/${room}/resultats`, false],
+    ['resultats-projet', `#/p/${id}/resultats`, false],
     ['comparer', `#/p/${id}/m/carrelage/compare`, false],
-    ['parquet', `#/p/${pid}/m/parquet`, false],
-    ['parquet-resultats', `#/p/${pid}/m/parquet/results`, false],
-    ['parquet-chantier', `#/p/${pid}/m/parquet/chantier`, false],
+    ['parquet-chantier', `#/p/${id}/m/parquet/chantier`, false],
+    ['achats', `#/p/${id}/achats`, false],
     ['accueil', '#/', true],
     ['nouveau', '#/new', true],
-    ['assistant', '#/new/carrelage', true],
     ['bibliotheque', '#/library', true],
     ['reglages', '#/settings', true],
   ];

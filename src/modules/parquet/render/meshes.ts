@@ -1,11 +1,11 @@
 /**
  * Maillages 3D du parquet (docs/parquet/SPEC.md §5) : sol des pièces avec chaque lame (teinte légèrement
- * variée, joint fin sur un fond sombre, photo de la lame orientée lame par lame), murs bas ouverts aux portes,
- * plinthes. Repère three.js : x = x du plan, z = y du plan, y vers le haut ; mètres. Lit le résultat du
- * moteur, n'écrit rien.
+ * variée, joint fin sur un fond sombre, photo de la lame orientée lame par lame), plinthes ouvertes aux portes.
+ * Les murs sont ceux de l'enveloppe commune (render/scene3d/envelope). Repère three.js : x = x du plan, z = y du
+ * plan, y vers le haut ; mètres. Lit le résultat du moteur, n'écrit rien.
  */
 import { Color, ShapeUtils, Vector2 } from 'three';
-import { offset } from '../../../core/geometry/boolean';
+import { intersection, offset } from '../../../core/geometry/boolean';
 import { signedArea } from '../../../core/geometry/polygon';
 import type { Point, Polygon } from '../../../core/geometry/types';
 import type { MeshData, SceneFrame, Vec3 } from '../../../render/scene3d/types';
@@ -26,11 +26,12 @@ export interface ParquetMeshInput {
   result: ParquetResult;
   /** Aspect de chaque pose, par identifiant. */
   looks: Record<string, ParquetLook>;
+  /** Pièces à dessiner (résultats d'une pièce) ; absent : toutes. */
+  rooms?: ReadonlySet<string>;
 }
 
-/** Hauteur des murs bas, épaisseur des murs, joint entre lames, mm. */
-const WALL_H = 300;
-const WALL_T = 72;
+/** Hauteur des murs du cadre par défaut, joint entre lames, mm. */
+const WALL_H = 2500;
 const SEAM = 0.8;
 /** Le dessus des lames, au-dessus du fond sombre des joints, m. */
 const FLOOR_Y = 0.003;
@@ -50,6 +51,9 @@ export function parquetFrame(spec: ParquetSpec): SceneFrame {
     bounds: { x: [m(Math.min(...xs)), m(Math.max(...xs))], z: [m(Math.min(...ys)), m(Math.max(...ys))], h: m(WALL_H) },
   };
 }
+
+/** Contour en sens positif (aire > 0), pour les opérations booléennes. */
+const upright = (p: Polygon): Polygon => (signedArea(p) < 0 ? [...p].reverse() : p);
 
 class Builder {
   private readonly tmp = new Color();
@@ -149,18 +153,33 @@ function boardAxis(poly: Polygon): { u: Point; v: Point } {
 }
 
 export function buildParquetMeshes(input: ParquetMeshInput): MeshData[] {
-  const { spec, result, looks } = input;
+  const { spec, result, looks, rooms } = input;
   const B = new Builder();
+  const shown = (id: string) => !rooms || rooms.has(id);
+  // contours des pièces dessinées : le fond des joints d'une pose sur plusieurs pièces y est rogné
+  const clip = rooms
+    ? spec.layouts
+        .flatMap((l) => l.rooms)
+        .filter((r, i, all) => shown(r.id) && all.findIndex((x) => x.id === r.id) === i)
+    : null;
 
   /* ---------- sol : fond sombre (joints), puis chaque lame ---------- */
   const base = B.mesh('seams');
-  for (const l of result.layouts)
-    for (const ring of l.layable) if (signedArea(ring) > 0) B.floor(base, ring, 0, B.rgb('#2b2119'));
+  for (const l of result.layouts) {
+    const rings = clip
+      ? intersection(
+          l.layable,
+          clip.map((r) => upright(r.outline)),
+        )
+      : l.layable;
+    for (const ring of rings) if (signedArea(ring) > 0) B.floor(base, ring, 0, B.rgb('#2b2119'));
+  }
 
   for (const l of result.layouts) {
     const look = looks[l.id] ?? { color: '#c9a77c', photo: null, length: 1000, width: 100 };
     const d = B.mesh(`floor:${l.id}`, look.photo);
     for (const p of l.pieces) {
+      if (!shown(p.room)) continue;
       const k = 0.88 + 0.18 * hash01(p.id) - (p.variant === 'B' ? 0.03 : 0);
       const col = look.photo ? B.rgb('#ffffff', k) : B.rgb(look.color, k);
       const rings = offset([signedArea(p.polygon) < 0 ? [...p.polygon].reverse() : p.polygon], -SEAM).filter(
@@ -179,13 +198,12 @@ export function buildParquetMeshes(input: ParquetMeshInput): MeshData[] {
     }
   }
 
-  /* ---------- murs bas et plinthes, ouverts aux portes et baies ---------- */
-  const walls = B.mesh('walls', null, { cast: true, receive: true });
+  /* ---------- plinthes, ouvertes aux portes et baies ---------- */
   const plinths = B.mesh('plinths', null, { cast: true, receive: true });
   const skirting = spec.accessories.skirting;
   const seen = new Set<string>();
   for (const room of spec.layouts.flatMap((l) => l.rooms)) {
-    if (seen.has(room.id)) continue;
+    if (seen.has(room.id) || !shown(room.id) || !skirting.enabled) continue;
     seen.add(room.id);
     const o = room.outline;
     const s = signedArea(o) > 0 ? 1 : -1;
@@ -195,7 +213,7 @@ export function buildParquetMeshes(input: ParquetMeshInput): MeshData[] {
       if (len < 1) return;
       const u: Point = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
       const n: Point = [u[1] * s, -u[0] * s]; // vers l'extérieur de la pièce
-      // portes et baies sur ce mur (leurs deux bouts sur sa droite) : intervalles sans mur ni plinthe
+      // portes et baies sur ce mur (leurs deux bouts sur sa droite) : intervalles sans plinthe
       const along = (p: Point) => (p[0] - a[0]) * u[0] + (p[1] - a[1]) * u[1];
       const across = (p: Point) => Math.abs((p[0] - a[0]) * u[1] - (p[1] - a[1]) * u[0]);
       const realGaps = room.openings
@@ -215,12 +233,9 @@ export function buildParquetMeshes(input: ParquetMeshInput): MeshData[] {
       for (const [t0, t1] of pieces) {
         const p0: Point = [a[0] + u[0] * t0, a[1] + u[1] * t0],
           p1: Point = [a[0] + u[0] * t1, a[1] + u[1] * t1];
-        B.slab(walls, p0, p1, n, WALL_T, m(WALL_H), B.rgb('#d9dde0'));
-        if (skirting.enabled) {
-          const inward: Point = [-n[0], -n[1]];
-          // plinthe contre le mur, côté pièce : du mur vers l'intérieur
-          B.slab(plinths, p1, p0, inward, PLINTH_T, m(skirting.height), B.rgb('#f3f1ec'));
-        }
+        const inward: Point = [-n[0], -n[1]];
+        // plinthe contre le mur, côté pièce : du mur vers l'intérieur
+        B.slab(plinths, p1, p0, inward, PLINTH_T, m(skirting.height), B.rgb('#f3f1ec'));
       }
     });
   }

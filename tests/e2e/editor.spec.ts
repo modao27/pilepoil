@@ -234,12 +234,12 @@ test('surfaces : sol et murs revêtus sur l’écran Pièce, puis résultats et 
     .getByRole('link', { name: /\d+ carreaux/ })
     .first()
     .click();
-  await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
-  await page.getByRole('tab', { name: 'Découpe' }).click();
-  await expect(page.getByText('n° 1', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'À commander' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  await expect(page.getByRole('heading', { name: 'Plan de découpe' })).toBeVisible();
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);
   await shot(page, info, '70-resultats');
   await page.getByRole('link', { name: 'Projet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Pièces' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pièces', exact: true })).toBeVisible();
 });

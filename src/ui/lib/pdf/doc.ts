@@ -127,6 +127,45 @@ export class Doc {
   }
 }
 
+/** Pieds de page de toutes les pages : `label` à gauche, numéro de page à droite. */
+export function footers(d: Doc, label: string) {
+  const pdf = d.pdf;
+  const n = pdf.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    pdf.setPage(i);
+    const w = pdf.internal.pageSize.getWidth(),
+      h = pdf.internal.pageSize.getHeight();
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(...MUTED);
+    pdf.text(pdfText(label), M, h - 7);
+    pdf.text(`${i} / ${n}`, w - M, h - 7, { align: 'right' });
+  }
+}
+
+/** Rangée de chiffres encadrés (résumé en tête de page). */
+export function figures(d: Doc, figs: [string, string][]) {
+  if (!figs.length) return;
+  const pdf = d.pdf;
+  d.room(21);
+  const fw = (d.w - 2 * M) / figs.length;
+  figs.forEach(([l, v], i) => {
+    const x = M + i * fw;
+    pdf.setDrawColor(...LINE);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(x + 0.5, d.y, fw - 1, 15, 1.5, 1.5, 'S');
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8);
+    d.color(MUTED);
+    pdf.text(pdfText(l), x + 3, d.y + 5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(12);
+    d.color(INK);
+    pdf.text(pdfText(v), x + 3, d.y + 11.5);
+  });
+  d.y += 21;
+}
+
 /** Polygone fermé (coordonnées absolues, mm papier). */
 export function poly(pdf: jsPDF, pts: [number, number][], style: 'F' | 'S' | 'FD') {
   if (pts.length < 3) return;

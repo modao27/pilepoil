@@ -3,17 +3,14 @@
   import EmptyState from './components/EmptyState.svelte';
   import Screen from './components/Screen.svelte';
   import ToastHost from './components/ToastHost.svelte';
-  import { libraryById, moduleById } from '../modules/registry';
+  import { libraryById, loadModules, moduleById, modulesLoaded } from '../modules/registry';
   import LibraryNav from './components/LibraryNav.svelte';
   import { app } from './lib/app.svelte';
   import { matchScreen } from './lib/moduleRoutes';
   import { newProject } from './lib/newProject';
   import { router } from './lib/router.svelte';
   import type { Project as ProjectDoc } from '../state/model';
-  import Demo from './screens/Demo.svelte';
   import Home from './screens/Home.svelte';
-  import Project from './screens/Project.svelte';
-  import Settings from './screens/Settings.svelte';
 
   const route = $derived(router.route);
   /** Assistant de création d'un outil (#/new/<module>). */
@@ -41,6 +38,37 @@
     return p ? { project: p, isNew: false } : null;
   });
   const params = $derived(screen?.params ?? {});
+
+  /**
+   * Logique des modules (réducteurs, entrée moteur, achats) : hors du premier chargement. Les écrans d'un projet
+   * l'attendent ; l'accueil, les bibliothèques et les réglages s'affichent sans elle. Elle est chargée dès que
+   * l'écran affiché en a besoin, sinon quand le navigateur est libre.
+   */
+  let logicReady = $state(modulesLoaded());
+  const needsLogic = $derived(!['home', 'library', 'libraryItem', 'settings', 'notFound'].includes(route.name));
+  const loadLogic = () =>
+    void loadModules().then(
+      () => (logicReady = true),
+      () => (app.fatal = 'Une partie de l’application n’a pas pu se charger. Rechargez la page.'),
+    );
+  /** Écran de la route, chargé en même temps que la logique (pas l'un après l'autre). */
+  function prefetchScreen() {
+    const n = route.name;
+    if (n === 'plan' || (n === 'new' && !route.module)) void import('./plan/PlanEditor.svelte');
+    else if (n === 'project') void import('./screens/Project.svelte');
+    else if (n === 'room') void import('./screens/Room.svelte');
+    else if (n === 'results') void import('./screens/Results.svelte');
+    else if (n === 'shopping') void import('./screens/Shopping.svelte');
+    else void load?.();
+  }
+  $effect(() => {
+    if (!app.ready || logicReady) return;
+    if (needsLogic) {
+      prefetchScreen();
+      loadLogic();
+    } else if ('requestIdleCallback' in window) requestIdleCallback(loadLogic, { timeout: 4000 });
+    else setTimeout(loadLogic, 2000);
+  });
 </script>
 
 {#snippet libraryNav()}<LibraryNav current={route.name === 'library' ? route.lib : ''} />{/snippet}
@@ -49,7 +77,7 @@
   <Screen title="Pilepoil">
     <EmptyState icon="warn" title="Impossible d’ouvrir vos données" text={app.fatal} />
   </Screen>
-{:else if !app.ready}
+{:else if !app.ready || (needsLogic && !logicReady)}
   <p class="loading" role="status">Chargement…</p>
 {:else if route.name === 'home'}
   <Home />
@@ -70,17 +98,24 @@
           itemId={route.id}
         />{/if}{/await}{/key}
 {:else if route.name === 'settings'}
-  <Settings />
+  {#await import('./screens/Settings.svelte') then { default: Settings }}<Settings />{/await}
 {:else if route.name === 'demo'}
-  <Demo />
+  {#await import('./screens/Demo.svelte') then { default: Demo }}<Demo />{/await}
 {:else if route.name === 'room'}
   {#key route.id + '/' + route.room}{#await import('./screens/Room.svelte') then { default: Room }}<Room
         id={route.id}
         roomId={route.room}
         surface={route.surface}
       />{/await}{/key}
+{:else if route.name === 'results'}
+  {#key route.id + JSON.stringify(route.scope)}{#await import('./screens/Results.svelte') then { default: Results }}<Results
+        id={route.id}
+        scope={route.scope}
+      />{/await}{/key}
 {:else if route.name === 'project'}
-  {#key route.id}<Project id={route.id} />{/key}
+  {#key route.id}{#await import('./screens/Project.svelte') then { default: Project }}<Project
+        id={route.id}
+      />{/await}{/key}
 {:else if route.name === 'shopping'}
   {#key route.id}{#await import('./screens/Shopping.svelte') then { default: Shopping }}<Shopping
         id={route.id}

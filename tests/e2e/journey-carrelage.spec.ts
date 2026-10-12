@@ -71,12 +71,11 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await check(page);
   await shot(page, info, 'C2-parcours-carrelage');
   const roomId = new URL(page.url()).hash.split('/')[4];
-  await page.goto(`/#/p/${new URL(page.url()).hash.split('/')[2]}/m/carrelage/room/${roomId}`);
-  await expect(page.getByRole('link', { name: /^Ouvrir Salle de bain, / })).toHaveCount(3);
+  await page.goto(`/#/p/${new URL(page.url()).hash.split('/')[2]}/r/${roomId}/resultats`);
+  await expect(page.getByRole('article', { name: /^Carrelage · / })).toHaveCount(3);
   await shot(page, info, 'C3-parcours-piece');
 
   // 4. le parquet dans la chambre ; la salle de bain est déjà carrelée
-  await page.getByRole('link', { name: 'Pièce', exact: true }).click();
   await page.getByRole('link', { name: 'Projet', exact: true }).click();
   await page.getByRole('link', { name: /^Ouvrir Chambre/ }).click();
   await cover(page, 'Sol', 'parquet');

@@ -3,7 +3,8 @@
  * liste de l'écran Résultats (mêmes articles, quantités, prix unitaires et coûts).
  */
 import { describe, expect, it } from 'vitest';
-import { module as carrelage } from '../../src/modules/carrelage';
+import { module as carrelageManifest } from '../../src/modules/carrelage';
+import { logic as carrelageLogic } from '../../src/modules/carrelage/logic';
 import { computeProject, type ProjectResult } from '../../src/modules/carrelage/core';
 import { carrelageData, withCarrelage, type CarrelageData } from '../../src/modules/carrelage/state/data';
 import { createBand, createPoseSettings, createTile } from '../../src/modules/carrelage/state/factories';
@@ -15,6 +16,9 @@ import type { Tile } from '../../src/modules/carrelage/state/model';
 import type { Project } from '../../src/state/model';
 import { consolidate, parsePrice, toCsv } from '../../src/ui/lib/shopping';
 import { floorOnly, rect, tiledProject, tilePose, view, wallOnly, withOpening } from './planFixtures';
+
+/** Le module tel que le registre le donne une fois sa logique chargée. */
+const carrelage = { ...carrelageManifest, ...carrelageLogic };
 
 const priced = createTile({ name: 'Grès 60 × 30', pricePerM2: 32.5 });
 const unpriced = createTile({ name: 'Faïence 20 × 20', length: 200, width: 200, m2PerBox: 1, pricePerM2: null });

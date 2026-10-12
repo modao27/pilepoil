@@ -2,20 +2,20 @@ import { expect, test } from '@playwright/test';
 import { newRoom, sceneStats } from './room-helpers';
 import { addPlanWindow, expectAccessible, expectNoHorizontalScroll, openPose, shot } from './helpers';
 
-test('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => {
+test('pièce : résultats de toutes ses poses, maquette 3D', async ({ page }, info) => {
   await newRoom(page);
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);
   await shot(page, info, '79-ecran-piece');
   await openPose(page, 'Mur 1');
-  await page.getByRole('link', { name: 'Vue 3D de la pièce' }).click();
-  await expect(page.getByRole('group', { name: /Pièce vue de dessus/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Ouvrir Pièce, / })).toHaveCount(5);
+  await page.getByRole('link', { name: 'Résultats de la pièce' }).click();
+  await expect(page.getByRole('heading', { name: 'Résultats — Pièce' })).toBeVisible();
+  await expect(page.getByRole('article', { name: /^Carrelage · / }).first()).toBeVisible();
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);
-  await shot(page, info, '80-piece-dessus');
+  await shot(page, info, '80-piece-resultats');
 
-  await page.getByRole('radio', { name: '3D' }).click();
+  await page.getByRole('tab', { name: '3D' }).click();
   const st = await sceneStats(page);
   expect(st.drawCalls).toBeGreaterThan(3);
   await shot(page, info, '81-piece-3d-biais');
@@ -23,9 +23,9 @@ test('pièce : vue de dessus cliquable, maquette 3D', async ({ page }, info) => 
   await page.waitForTimeout(500);
   await shot(page, info, '82-piece-3d-plongee');
 
-  await page.getByRole('radio', { name: 'Dessus' }).click();
-  await page.getByRole('link', { name: 'Ouvrir Pièce, mur 2' }).click();
-  await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 2/ })).toBeVisible();
+  await page.getByRole('tab', { name: 'Résumé' }).click();
+  await page.getByRole('link', { name: 'Calepinage' }).first().click();
+  await expect(page.getByRole('application', { name: /^Plan de Pièce, / })).toBeVisible();
 });
 
 test('éditeur : vue 3D d’un mur avec fenêtre, puis de toute la pièce', async ({ page }, info) => {

@@ -26,7 +26,7 @@ async function openWall(page: Page, id: string) {
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
 }
 
-/** Mur 300 × 240 avec une fenêtre à tableaux, puis page Résultats. */
+/** Mur 300 × 240 avec une fenêtre à tableaux, puis résultats de la pose (bouton Résultats du calepinage). */
 async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
   const id = await newWall(page, async () => {
     await page.getByLabel('Prix', { exact: true }).fill('32,5');
@@ -39,44 +39,45 @@ async function wallWithResults(page: Page, info: TestInfo): Promise<string> {
   await depth.fill('15');
   await depth.press('Enter');
   await page.waitForTimeout(400);
-  await page.goto(`/#/p/${id}/m/carrelage/results`);
-  await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
+  await page.getByRole('link', { name: 'Résultats', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /^Résultats — Carrelage · / })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'À commander' })).toBeVisible();
   return id;
 }
 
-test('résultats : commande, découpe, achats avec prix, encollage', async ({ page }, info) => {
-  await wallWithResults(page, info);
+test('résultats d’une pose : chiffres, commande, découpe, encollage ; fil vers la pièce et le projet', async ({
+  page,
+}, info) => {
+  const id = await wallWithResults(page, info);
+  const pose = page.getByRole('article', { name: /^Carrelage · / });
+  await expect(pose.getByText('Carreaux posés')).toBeVisible();
+  await expect(pose.getByText(/carreaux 60 × 30 cm/)).toBeVisible();
   await check(page);
-  await shot(page, info, '90-resultats-commande');
+  await shot(page, info, '90-resultats-pose');
 
-  await page.getByRole('tab', { name: 'Découpe' }).click();
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  await expect(page.getByRole('heading', { name: 'Commande des carreaux' })).toBeVisible();
   await expect(page.getByText('n° 1', { exact: true })).toBeVisible();
   await expect(page.getByText(/\(F1 (tableau gauche|tableau droit|linteau)\)/).first()).toBeVisible();
-  await check(page);
-  await shot(page, info, '91-resultats-decoupe');
-
-  await page.getByRole('tab', { name: 'Achats' }).click();
-  const tilePrice = page.getByRole('textbox', { name: /^Prix 60 × 30 cm/ });
-  await expect(tilePrice).toHaveAttribute('placeholder', '32,5');
-  const total = page.locator('tfoot td').last();
-  const before = await total.innerText();
-  const glue = page.getByRole('textbox', { name: /^Prix Mortier-colle/ });
-  await glue.fill('18,90');
-  await glue.press('Tab');
-  await expect(total).not.toHaveText(before);
-  await expect(glue).toHaveValue('18,9');
-  await check(page);
-  await shot(page, info, '92-resultats-achats');
-
-  await page.getByRole('tab', { name: 'Encollage' }).click();
   await expect(page.getByText(/U9 \(9 mm\)/).first()).toBeVisible();
   await check(page);
-  await shot(page, info, '93-resultats-encollage');
+  await shot(page, info, '91-resultats-detail');
+
+  // fil : la pièce, puis le projet
+  const crumbs = page.getByRole('navigation', { name: 'Fil de navigation' });
+  await crumbs.getByRole('link', { name: 'Pièce' }).click();
+  await expect(page).toHaveURL(new RegExp(`#/p/${id}/r/`));
+  await page.getByRole('link', { name: 'Résultats de la pièce (3D, PDF)' }).click();
+  await expect(page.getByRole('heading', { name: 'Résultats — Pièce' })).toBeVisible();
+  await page.getByRole('navigation', { name: 'Fil de navigation' }).getByRole('link', { name: 'Projet' }).click();
+  await expect(page).toHaveURL(new RegExp(`#/p/${id}$`));
 });
 
 test('comparer deux scénarios, charger puis annuler', async ({ page }, info) => {
   const id = await wallWithResults(page, info);
-  await page.getByRole('link', { name: 'Comparer' }).click();
+  await page.goto(`/#/p/${id}/resultats`);
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  await page.getByRole('link', { name: 'Comparer deux versions du carrelage' }).click();
   await page.getByRole('button', { name: 'Enregistrer l’état actuel' }).first().click();
   await expect(page.getByRole('heading', { name: /^A\s*Scénario A/ })).toBeVisible();
   // tableau A contre l'état actuel : aucun écart
@@ -110,18 +111,16 @@ test('comparer deux scénarios, charger puis annuler', async ({ page }, info) =>
   await expect(page.getByRole('radio', { name: 'Bâtons rompus' })).toHaveAttribute('aria-checked', 'true');
 });
 
-test('export PDF A4 : téléchargement et rendu des pages', async ({ page, browser }, info) => {
+test('export PDF A4 du calepinage : téléchargement et rendu des pages', async ({ page, browser }, info) => {
   test.setTimeout(90_000);
   await wallWithResults(page, info);
-  await page.getByRole('button', { name: 'PDF' }).click();
-  const dlg = page.getByRole('dialog', { name: 'Exporter en PDF' });
   await expectAccessible(page);
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    dlg.getByRole('button', { name: 'Télécharger le PDF' }).click(),
+    page.getByRole('button', { name: 'PDF du calepinage' }).click(),
   ]);
-  expect(download.suggestedFilename()).toMatch(/^calepinage-piece-300-240\.pdf$/);
-  await expect(dlg.getByRole('status')).toHaveText('PDF enregistré dans vos téléchargements.');
+  expect(download.suggestedFilename()).toBe('calepinage-piece-300-240-piece-mur-1.pdf');
+  await expect(page.getByText('PDF enregistré dans vos téléchargements.')).toBeVisible();
   const bytes = readFileSync((await download.path())!);
   expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
 

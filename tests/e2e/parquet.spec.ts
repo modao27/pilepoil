@@ -101,32 +101,30 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await expect(page.getByText(/Départ optimisé : 52 → (5[0-2]|4\d) lames|déjà le meilleur/)).toBeVisible();
   await expect(p.getByRole('button', { name: 'Optimiser le départ' })).toBeEnabled();
 
-  // résultats et liste d'achat du projet
+  // résultats de la pose et liste d'achat du projet
   await summary.click();
-  await expect(page.getByRole('heading', { name: /^Résultats — / })).toBeVisible();
-  // plan coté, fiche de coupe, achats
-  await expect(page.getByRole('img', { name: 'Plan coté' })).toBeVisible();
-  await expect(page.locator('text.dim').first()).toHaveText('400');
+  await expect(page.getByRole('heading', { name: /^Résultats — Parquet · / })).toBeVisible();
+  await expect(page.getByText(/^\d+ paquets Stratifié 1285 × 192 : \d+ lames \+ 5 %$/)).toBeVisible();
   await check(page);
-  await shot(page, info, '99-parquet-resultats-plan');
-  await page.getByRole('tab', { name: 'Coupes' }).click();
+  await shot(page, info, '98-parquet-resultats-resume');
+  // plan coté, fiche de coupe, plinthes
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  await expect(page.getByRole('img', { name: /^Plan coté/ })).toBeVisible();
+  await expect(page.locator('text.dim').first()).toHaveText('400');
   await expect(page.getByRole('heading', { name: 'Séjour — rang 1', exact: true })).toBeVisible();
   await expect(page.getByText(/^1\. lame neuve → couper à/).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Plinthes : \d+ barres/ })).toBeVisible();
   await check(page);
-  await shot(page, info, '99-parquet-resultats-coupes');
-  await page.getByRole('tab', { name: 'Achats' }).click();
-  await expect(page.getByText(/Stratifié 1285 × 192 : 7 paquets/)).toBeVisible();
-  await expect(page.getByText(/Sous-couche : 1 rouleau/)).toBeVisible();
-  await expect(page.getByText(/Plinthes : 6 barres/)).toBeVisible();
+  await shot(page, info, '99-parquet-resultats-detail');
   // export PDF
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Exporter en PDF' }).click();
-  expect((await download).suggestedFilename()).toMatch(/parquet\.pdf$/);
+  await page.getByRole('button', { name: 'PDF du calepinage' }).click();
+  expect((await download).suggestedFilename()).toMatch(/^calepinage-.+\.pdf$/);
   await check(page);
   await page.goto(`/#/p/${id}/achats`);
   await expect(page.getByText('Stratifié 1285 × 192', { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/52 lames \+ 5 %/)).toBeVisible();
+  await expect(page.getByText('Sous-couche', { exact: true }).first()).toBeVisible();
 });
 
 test('parquet : bâton rompu et point de Hongrie, axe du motif, lames A et B', async ({ page }, info) => {
@@ -167,9 +165,8 @@ test('parquet : bâton rompu et point de Hongrie, axe du motif, lames A et B', a
 
   // achats : lames A et B
   await summary.click();
-  await page.getByRole('tab', { name: 'Achats' }).click();
-  await expect(page.getByText(/Point de Hongrie 60° 500 × 90 \(lames A\/B\) \(lames A\) : \d+ paquets?/)).toBeVisible();
-  await expect(page.getByText(/\(lames B\) : \d+ paquets?/)).toBeVisible();
+  await expect(page.getByText(/Point de Hongrie 60° 500 × 90 \(lames A\/B\) \(lames A\) : \d+ lames/)).toBeVisible();
+  await expect(page.getByText(/\(lames B\) : \d+ lames/)).toBeVisible();
   await page.goto(`/#/p/${id}/m/parquet`);
 });
 
@@ -258,8 +255,9 @@ test('parquet : deux pièces reliées par une porte, seuil conseillé, poses sé
 test('parquet : chantier rang par rang, hors ligne, gardé au rechargement', async ({ page, context }, info) => {
   const id = await parquetProject(page);
   await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).toContainText('52 lames');
-  await page.goto(`/#/p/${id}/m/parquet/results`);
-  await page.getByRole('link', { name: 'Suivre le chantier' }).click();
+  await page.goto(`/#/p/${id}/resultats`);
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  await page.getByRole('link', { name: 'Suivre le chantier du parquet' }).click();
   await expect(page.getByRole('heading', { name: /^Chantier — / })).toBeVisible();
   await expect(page.getByRole('heading', { name: /Séjour — rang 1 \(1 \/ 16\)/ })).toBeVisible();
   await expect(page.getByText('0 / 64 pièces posées')).toBeVisible();

@@ -63,8 +63,8 @@ describe('3D du parquet', () => {
   const r = computeParquet(s);
   const meshes = buildParquetMeshes({ spec: s, result: r, looks });
 
-  it('quatre maillages : joints, sol de la pose, murs, plinthes (peu d’appels de dessin)', () => {
-    expect(meshes.map((m) => m.key)).toEqual(['seams', 'floor:L1', 'walls', 'plinths']);
+  it('trois maillages : joints, sol de la pose, plinthes (les murs sont dans l’enveloppe commune)', () => {
+    expect(meshes.map((m) => m.key)).toEqual(['seams', 'floor:L1', 'plinths']);
     for (const m of meshes) {
       expect(m.positions.length % 9).toBe(0);
       expect(m.normals.length).toBe(m.positions.length);
@@ -92,18 +92,31 @@ describe('3D du parquet', () => {
     }
   });
 
-  it('mur ouvert à la porte : aucun mur entre z = 1,0 et 1,83 m sur la cloison x = 4 m', () => {
-    const w = meshes.find((m) => m.key === 'walls')!;
+  it('plinthe ouverte à la porte : aucune plinthe entre z = 1,0 et 1,83 m sur la cloison x = 4 m', () => {
+    const w = meshes.find((m) => m.key === 'plinths')!;
     for (let i = 0; i < w.positions.length; i += 3) {
       const [x, , z] = [w.positions[i]!, w.positions[i + 1]!, w.positions[i + 2]!];
-      if (x > 4.0005 && x < 4.0715) expect(z <= 1.0 + 1e-6 || z >= 1.83 - 1e-6).toBe(true);
+      if (Math.abs(x - 4) < 0.013) expect(z <= 1.0 + 1e-6 || z >= 1.83 - 1e-6).toBe(true);
     }
   });
 
   it('plinthes décochées : pas de maillage de plinthes ; cadre de la scène sur les deux pièces', () => {
     const t = { ...s, accessories: { ...s.accessories, skirting: { ...s.accessories.skirting, enabled: false } } };
     expect(buildParquetMeshes({ spec: t, result: r, looks }).map((m) => m.key)).not.toContain('plinths');
-    expect(parquetFrame(s).bounds).toEqual({ x: [0, 8.072], z: [0, 3], h: 0.3 });
+    expect(parquetFrame(s).bounds).toEqual({ x: [0, 8.072], z: [0, 3], h: 2.5 });
+  });
+
+  it('une seule pièce : ses lames (celles qui passent la porte comprises), ses plinthes, le fond rogné', () => {
+    const room = s.layouts[0]!.rooms[0]!;
+    const only = buildParquetMeshes({ spec: s, result: r, looks, rooms: new Set([room.id]) });
+    const xs = (key: string) => only.find((m) => m.key === key)!.positions.filter((_, i) => i % 3 === 0);
+    const maxX = Math.max(...room.outline.map((p) => p[0])) / 1000;
+    for (const key of ['seams', 'plinths']) expect(Math.max(...xs(key))).toBeLessThanOrEqual(maxX + 1e-6);
+    const all = meshes.find((m) => m.key === 'floor:L1')!.positions.length;
+    const mine = only.find((m) => m.key === 'floor:L1')!.positions.length;
+    expect(mine).toBeGreaterThan(0);
+    expect(mine).toBeLessThan(all);
+    expect(r.layouts[0]!.pieces.some((p) => p.room !== room.id)).toBe(true);
   });
 
   it('photo de la lame : UV dans la lame, de 0 à 1', () => {

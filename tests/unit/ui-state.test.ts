@@ -83,12 +83,21 @@ describe('routes', () => {
     ['#/p/x1/achats', { name: 'shopping', id: 'x1' }],
     ['#/p/x1/m/carrelage', { name: 'module', id: 'x1', module: 'carrelage', path: '' }],
     ['#/p/x1/m/carrelage/s/s2', { name: 'module', id: 'x1', module: 'carrelage', path: 's/s2' }],
-    ['#/p/x1/m/carrelage/results', { name: 'module', id: 'x1', module: 'carrelage', path: 'results' }],
+    ['#/p/x1/resultats', { name: 'results', id: 'x1', scope: { kind: 'project' } }],
+    ['#/p/x1/r/r2/resultats', { name: 'results', id: 'x1', scope: { kind: 'room', room: 'r2' } }],
+    ['#/p/x1/pose/p3/resultats', { name: 'results', id: 'x1', scope: { kind: 'pose', pose: 'p3' } }],
+    ['#/p/x1/r/r2/sol', { name: 'room', id: 'x1', room: 'r2', surface: 'sol' }],
     ['#/p/x%2F1/m/carrelage/s/a%20b', { name: 'module', id: 'x/1', module: 'carrelage', path: 's/a b' }],
     ['#/p/x1/z', { name: 'notFound', path: '/p/x1/z' }],
   ])('%s', (h, r) => {
     expect(parseRoute(h)).toEqual(r);
     if (r.name !== 'notFound' && h.length > 2) expect(parseRoute(href(r))).toEqual(r);
+  });
+
+  it('anciens résultats d’un outil : ceux du projet', () => {
+    const r = parseRoute('#/p/x1/m/parquet/results');
+    expect(r).toEqual({ name: 'redirect', to: { name: 'results', id: 'x1', scope: { kind: 'project' } } });
+    expect(href(r)).toBe('#/p/x1/resultats');
   });
 
   it('#/library : la première bibliothèque ; plus d’anciennes adresses', () => {
@@ -103,11 +112,11 @@ describe('routes', () => {
 describe('écrans des modules', () => {
   const Fake = (() => {}) as unknown as Component<ModuleScreenProps>;
   const editor = async () => Fake;
-  const results = async () => Fake;
+  const worksite = async () => Fake;
   const room = async () => Fake;
   const screens = {
     editor,
-    results,
+    worksite,
     routes: [
       { path: 's/:surfaceId', load: editor },
       { path: 'room', load: room },
@@ -116,19 +125,20 @@ describe('écrans des modules', () => {
 
   it.each<[string, ScreenMatch | null]>([
     ['', { load: editor, params: {} }],
-    ['results', { load: results, params: {} }],
+    ['chantier', { load: worksite, params: {} }],
+    ['results', null],
     ['s/s2', { load: editor, params: { surfaceId: 's2' } }],
     ['room', { load: room, params: {} }],
-    ['chantier', null],
     ['s', null],
     ['s/s2/x', null],
   ])('%s', (path, m) => {
     expect(matchScreen(screens, path)).toEqual(m);
   });
 
-  it('carrelage : éditeur, résultats, surface, comparaison', () => {
+  it('carrelage : éditeur, surface, comparaison (résultats sur l’écran commun)', () => {
     const s = moduleById('carrelage')!.screens;
-    for (const path of ['', 'results', 's/a', 'compare']) expect(matchScreen(s, path)).not.toBeNull();
+    for (const path of ['', 's/a', 'compare']) expect(matchScreen(s, path)).not.toBeNull();
+    for (const path of ['results', 'room/r1']) expect(matchScreen(s, path)).toBeNull();
     expect(matchScreen(s, '')!.load).toBe(s.editor);
     expect(matchScreen(s, 's/a')!.load).not.toBe(s.editor);
     expect(matchScreen(s, 's/pose-1')!.params).toEqual({ surfaceId: 'pose-1' });

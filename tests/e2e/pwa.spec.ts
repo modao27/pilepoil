@@ -58,15 +58,13 @@ test('hors ligne : ouvrir, créer, calculer, 3D, résultats et PDF sans réseau'
   await page.getByRole('radio', { name: '3D' }).click();
   await sceneStats(page);
 
-  await page.goto(`/#/p/${id}/m/carrelage/results`);
-  await expect(page.getByRole('heading', { name: 'Commande' })).toBeVisible();
-  await page.getByRole('button', { name: 'PDF' }).click();
+  await page.goto(`/#/p/${id}/resultats`);
+  await expect(page.getByRole('heading', { name: 'À commander' })).toBeVisible();
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Télécharger le PDF' }).click(),
+    page.getByRole('button', { name: 'Dossier du projet (PDF)' }).click(),
   ]);
-  expect(download.suggestedFilename()).toMatch(/\.pdf$/);
-  await page.keyboard.press('Escape');
+  expect(download.suggestedFilename()).toMatch(/^dossier-.+\.pdf$/);
 
   await page.goto('/#/settings');
   await expect(page.getByText('Vous êtes hors ligne.', { exact: false })).toBeVisible();

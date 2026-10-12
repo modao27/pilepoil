@@ -7,7 +7,7 @@ async function check(page: Page) {
   await expectNoHorizontalScroll(page);
 }
 
-test('achats du projet : même total que le carrelage, prix modifiable et annulable, exports', async ({
+test('achats du projet : même total que la vue globale, prix modifiable et annulable, exports', async ({
   page,
 }, info) => {
   // mur avec un carreau à 32,50 €/m²
@@ -15,19 +15,11 @@ test('achats du projet : même total que le carrelage, prix modifiable et annula
     await page.getByLabel('Prix', { exact: true }).fill('32,5');
   });
 
-  // total de l'écran Résultats du carrelage
-  await page.goto(`/#/p/${id}/m/carrelage/results`);
-  await page.getByRole('tab', { name: 'Achats' }).click();
-  const carrelageTotal = (await page
-    .getByRole('row', { name: /Total estimé/ })
-    .locator('td')
-    .last()
-    .textContent())!;
-  expect(carrelageTotal).toMatch(/\d/);
-
-  // écran Projet : carte Achats, puis écran Achats
+  // écran Projet : carte Achats (total estimé), puis écran Achats
   await page.goto(`/#/p/${id}`);
-  await expect(page.getByRole('link', { name: /Achats/ })).toContainText(carrelageTotal.trim());
+  const card = page.getByRole('link', { name: /^Achats/ });
+  await expect(card).toContainText(/Total estimé \d/);
+  const carrelageTotal = /Total estimé (.+?€)/.exec((await card.textContent())!)![1]!;
   await page.getByRole('link', { name: /Achats/ }).click();
   await expect(page.getByRole('heading', { name: /^Achats — / })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Revêtements' })).toBeVisible();

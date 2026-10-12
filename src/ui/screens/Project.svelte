@@ -78,6 +78,13 @@
 {:else}
   <Screen title={project.name} backHref="#/" backLabel="Mes projets">
     {#snippet actions()}<Button variant="ghost" href="#/p/{project.id}/plan">Modifier le plan</Button>{/snippet}
+    {#if project.poses.length}
+      <div class="row top">
+        <Button variant="primary" icon="list" href="#/p/{project.id}/resultats"
+          >Résultats du projet (3D, dossier PDF)</Button
+        >
+      </div>
+    {/if}
     <div class="layout">
       <section aria-labelledby="h-plan">
         <h2 id="h-plan">Plan</h2>
@@ -116,6 +123,7 @@
                     </li>
                   {/each}
                 </ul>
+                <a class="more" href="#/p/{project.id}/r/{r.id}/resultats">Résultats de {r.name}</a>
               {/if}
             </li>
           {/each}
@@ -130,7 +138,7 @@
             {#each active as m (m.id)}
               {@const s = summaries[m.id]}
               <li>
-                <a class="card tool" href="#/p/{project.id}/m/{m.id}/results">
+                <a class="card tool" href="#/p/{project.id}/resultats">
                   <!-- eslint-disable-next-line svelte/no-at-html-tags -- tracé de l'icône du module, fourni par le code -->
                   <svg class="icon" viewBox="0 0 34 24" aria-hidden="true">{@html m.icon}</svg>
                   <span class="text">
@@ -285,5 +293,13 @@
   }
   .row {
     margin-top: var(--space-3);
+  }
+  .row.top {
+    margin: 0 0 var(--space-4);
+  }
+  .more {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
   }
 </style>

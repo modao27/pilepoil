@@ -8,6 +8,7 @@
   import EmptyState from '../components/EmptyState.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
+  import { fileSlug, saveBlob } from '../lib/files';
   import { euros } from '../lib/format';
   import { projectOutputs } from '../lib/moduleOutputs';
   import { consolidate, GROUP_LABEL, lineCost, parsePrice, PRICE_LABEL, toCsv } from '../lib/shopping';
@@ -45,25 +46,8 @@
     });
   }
 
-  const fileBase = (p: Project) =>
-    'achats-' +
-    (p.name
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || 'projet');
-
-  function save(blob: Blob, name: string) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-  }
+  const fileBase = (p: Project) => 'achats-' + fileSlug(p.name);
+  const save = saveBlob;
 
   function exportCsv() {
     if (!c || !project) return;

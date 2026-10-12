@@ -1,11 +1,15 @@
 /**
- * Export PDF A4 : résumé et liste d'achat, plan coté de chaque surface, plan de découpe, encollage.
+ * Export PDF A4 du carrelage : résumé et liste d'achat, plan coté de chaque surface, plan de découpe, encollage.
+ * Les mêmes pages servent aux résultats d'une pose, d'une pièce ou du projet (`writeTilingResults`).
  * Dessin vectoriel (lisible à l'impression, zoomable à l'écran). Lit les résultats, n'écrit rien.
  */
 import { bbox, type Polygon, type ProjectResult, type ProjectSpec, type SurfaceBuild } from '../../core';
 import { itemPrice, projectArea, projectCost } from '../../state/pricing';
 import type { Tile } from '../../state/model';
-import type { CarrelageProject } from '../../state/data';
+import { carrelageView, type CarrelageProject } from '../../state/data';
+import { scopePieces, scopeSurfaces } from '../../state/results';
+import { toProjectSpec } from '../../state/selectors';
+import type { ResultInput } from '../../../types';
 import { glueRows, pieceCutText, projectDescription, shoppingLabel } from './labels';
 import { productName } from './messages';
 import { signedArea } from '../../../../core/geometry/polygon';
@@ -14,9 +18,10 @@ import {
   cm,
   Doc,
   euro,
+  figures,
+  footers,
   fr,
   INK,
-  LINE,
   M,
   MUTED,
   pdfText,
@@ -36,13 +41,31 @@ export interface PdfInput {
   date: number;
 }
 
+/** Ce qu'une partie du PDF montre : surfaces du moteur (poses) et pièces posées de la portée. */
+interface Part {
+  project: CarrelageProject;
+  spec: ProjectSpec;
+  result: ProjectResult;
+  surfaces: number[];
+  /** Indices dans `result.pieces`. */
+  pieces: ReadonlySet<number>;
+}
+
+const everything = (project: CarrelageProject, spec: ProjectSpec, result: ProjectResult): Part => ({
+  project,
+  spec,
+  result,
+  surfaces: project.surfaces.map((_, i) => i),
+  pieces: new Set(result.pieces.map((_, i) => i)),
+});
+
+/** Tout le carrelage du projet, seul : résumé, achats, plans, découpe, encollage. */
 export function buildPdf(input: PdfInput): Blob {
   const { project, spec, result, tiles, date } = input;
   const d = new Doc();
-  const pdf = d.pdf;
   const cost = projectCost(project, tiles, result);
   const tilesById = new Map(tiles.map((t) => [t.id, t]));
-  const multi = project.surfaces.length > 1;
+  const all = everything(project, spec, result);
 
   /* ---------- page 1 : résumé, commande, achats ---------- */
   d.text(project.name, 18, { bold: true, gap: 1 });
@@ -52,46 +75,15 @@ export function buildPdf(input: PdfInput): Blob {
     { color: MUTED, gap: 5 },
   );
   const m = result.metrics;
-  const figs: [string, string][] = [
+  figures(d, [
     ['À commander', `${fr(m.order)} carreaux`],
     ['Coupes', fr(m.cuts)],
     ['Dans les chutes', fr(m.reused)],
     ['Coupes fines', fr(m.thin)],
     ['Coût estimé', cost.total > 0 ? euro(cost.total) : '–'],
-  ];
-  const fw = (d.w - 2 * M) / figs.length;
-  figs.forEach(([l, v], i) => {
-    const x = M + i * fw;
-    pdf.setDrawColor(...LINE);
-    pdf.setLineWidth(0.3);
-    pdf.roundedRect(x + 0.5, d.y, fw - 1, 15, 1.5, 1.5, 'S');
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    d.color(MUTED);
-    pdf.text(pdfText(l), x + 3, d.y + 5);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(12);
-    d.color(INK);
-    pdf.text(pdfText(v), x + 3, d.y + 11.5);
-  });
-  d.y += 21;
+  ]);
 
-  d.text('Commande' + (multi ? ', toutes surfaces' : ''), 13, { bold: true, gap: 2 });
-  d.table(
-    [
-      { label: 'Carreau', w: 62 },
-      { label: 'Posés', w: 22, align: 'right' },
-      { label: 'Nécessaires', w: 26, align: 'right' },
-      { label: 'À commander', w: 28, align: 'right' },
-      { label: 'm²', w: 22, align: 'right' },
-      { label: 'Cartons', w: 22, align: 'right' },
-    ],
-    result.plan.groups.map((g, i) => {
-      const o = result.orders[i]!;
-      return [productName(g.label), fr(o.posed), fr(o.needed), fr(o.order), fr(o.m2, 2), o.boxes ? fr(o.boxes) : '–'];
-    }),
-  );
-  d.text(`Marge de casse ${fr(project.settings.margin)} % comprise.`, 8, { color: MUTED, gap: 5 });
+  writeOrder(d, all);
 
   d.text('Liste d’achat', 13, { bold: true, gap: 2 });
   d.table(
@@ -121,13 +113,84 @@ export function buildPdf(input: PdfInput): Blob {
     { color: MUTED },
   );
 
-  /* ---------- un plan coté par surface ---------- */
+  writePlans(d, all);
+  writeCuts(d, all);
+  writeGlue(d, all);
+  footers(d, `Pilepoil · ${project.name}`);
+  return d.pdf.output('blob');
+}
+
+/**
+ * Pages du carrelage dans un PDF de résultats (pose, pièce ou projet) : commande, plan coté de chaque pose
+ * touchée, découpe des pièces de la portée, encollage. Rien si la portée n'a pas de carrelage.
+ */
+export function writeTilingResults(d: Doc, input: ResultInput<ProjectResult>): void {
+  const project = carrelageView(input.project);
+  if (!project) return;
+  const surfaces = scopeSurfaces(project, input.scope);
+  if (!surfaces.length) return;
+  const tiles = (input.libraries.tiles ?? []) as readonly Tile[];
+  const part: Part = {
+    project,
+    spec: toProjectSpec(project, tiles).spec,
+    result: input.result,
+    surfaces,
+    pieces: scopePieces(project, input.result, input.scope),
+  };
+  d.page();
+  d.text('Carrelage', 16, { bold: true, gap: 2 });
+  writeOrder(d, part);
+  writePlans(d, part);
+  writeCuts(d, part);
+  writeGlue(d, part);
+}
+
+/** Commande des carreaux des poses de la partie (quantités du projet : les chutes sont partagées). */
+function writeOrder(d: Doc, part: Part) {
+  const { project, result } = part;
+  const own = new Set(part.surfaces);
+  const rows = result.plan.groups
+    .map((g, i) => ({ g, o: result.orders[i]! }))
+    .filter(({ g }) => g.zones.some((z) => own.has(z.surface)));
+  const shared = rows.some(({ g }) => g.zones.some((z) => !own.has(z.surface)));
+  d.text('Commande' + (own.size > 1 ? ', toutes surfaces' : ''), 13, { bold: true, gap: 2 });
+  d.table(
+    [
+      { label: 'Carreau', w: 62 },
+      { label: 'Posés', w: 22, align: 'right' },
+      { label: 'Nécessaires', w: 26, align: 'right' },
+      { label: 'À commander', w: 28, align: 'right' },
+      { label: 'm²', w: 22, align: 'right' },
+      { label: 'Cartons', w: 22, align: 'right' },
+    ],
+    rows.map(({ g, o }) => [
+      productName(g.label),
+      fr(o.posed),
+      fr(o.needed),
+      fr(o.order),
+      fr(o.m2, 2),
+      o.boxes ? fr(o.boxes) : '–',
+    ]),
+  );
+  d.text(
+    `Marge de casse ${fr(project.settings.margin)} % comprise.${shared ? ' Quantités pour tout le projet : les chutes passent d’une pose à l’autre.' : ''}`,
+    8,
+    { color: MUTED, gap: 5 },
+  );
+}
+
+/** Un plan coté par surface de la partie. */
+function writePlans(d: Doc, part: Part) {
+  const { project, spec, result } = part;
   let offset = 0;
-  result.surfaces.forEach((sr, si) => {
+  const starts = result.surfaces.map((sr) => {
+    const at = offset;
+    offset += sr.ok ? sr.value.pieces.length : 0;
+    return at;
+  });
+  for (const si of part.surfaces) {
+    const sr = result.surfaces[si]!;
     const s = spec.surfaces[si]!;
-    const pieces = sr.ok ? sr.value.pieces : [];
-    const start = offset;
-    offset += pieces.length;
     d.page(s.width >= s.height ? 'landscape' : 'portrait');
     d.text(`Plan coté — ${project.surfaces[si]?.name ?? ''}`, 15, { bold: true, gap: 1 });
     const size = s.outline
@@ -136,34 +199,43 @@ export function buildPdf(input: PdfInput): Blob {
     d.text(`${size}, joint ${fr(s.joint, 1)} mm`, 9, { color: MUTED, gap: 2 });
     if (!sr.ok) {
       d.text('Surface non calculée : vérifiez ses dimensions et son carreau.', 11, { color: THIN });
-      return;
+      continue;
     }
-    drawPlan(d, s, sr.value, result, start);
-  });
+    drawPlan(d, s, sr.value, result, starts[si]!);
+  }
+}
 
-  /* ---------- plan de découpe ---------- */
+/** Plan de découpe : les carreaux à couper qui donnent au moins une pièce de la partie. */
+function writeCuts(d: Doc, part: Part) {
+  const { project, result } = part;
   d.page();
   d.text('Plan de découpe', 15, { bold: true, gap: 1 });
   d.text('Les pièces de même numéro sortent du même carreau. Numéros identiques sur les plans.', 9, {
     color: MUTED,
     gap: 4,
   });
-  const cutGroups = result.plan.groups.filter((g) => g.tiles.length);
+  const cutGroups = result.plan.groups
+    .map((g) => ({ g, tiles: g.tiles.filter((t) => t.pieces.some((i) => part.pieces.has(i))) }))
+    .filter((x) => x.tiles.length);
   if (!cutGroups.length) d.text('Aucune coupe.', 10);
-  for (const g of cutGroups) {
+  for (const { g, tiles } of cutGroups) {
     d.room(14);
-    d.text(`${productName(g.label)} — ${g.tiles.length} carreaux à couper`, 11, { bold: true, gap: 1.5 });
+    d.text(`${productName(g.label)} — ${tiles.length} carreaux à couper`, 11, { bold: true, gap: 1.5 });
     d.table(
       [
         { label: 'N°', w: 14 },
         { label: 'Pièces taillées dans le carreau (mm)', w: d.w - 2 * M - 14 },
       ],
-      g.tiles.map((t) => [String(t.n), t.pieces.map((i) => pieceCutText(result.pieces[i]!, project)).join(' + ')]),
+      tiles.map((t) => [String(t.n), t.pieces.map((i) => pieceCutText(result.pieces[i]!, project)).join(' + ')]),
       { size: 8.5 },
     );
   }
+}
 
-  /* ---------- encollage ---------- */
+/** Encollage des bandes des poses de la partie. */
+function writeGlue(d: Doc, part: Part) {
+  const { project, result } = part;
+  const own = new Set(part.surfaces);
   d.room(40);
   d.text('Encollage (indicatif)', 13, { bold: true, gap: 2 });
   d.table(
@@ -174,13 +246,9 @@ export function buildPdf(input: PdfInput): Blob {
       { label: 'Encollage', w: 62 },
       { label: 'Colle', w: 22, align: 'right' },
     ],
-    glueRows(project, result).map((g) => [
-      g.where,
-      `${g.tile} (${g.size})`,
-      g.notch,
-      `${g.mode}${g.note ? ' — ' + g.note : ''}`,
-      g.kg,
-    ]),
+    glueRows(project, result)
+      .filter((_, i) => own.has(result.glue[i]!.surface))
+      .map((g) => [g.where, `${g.tile} (${g.size})`, g.notch, `${g.mode}${g.note ? ' — ' + g.note : ''}`, g.kg]),
     { size: 8.5 },
   );
   d.text(
@@ -188,20 +256,6 @@ export function buildPdf(input: PdfInput): Blob {
     8,
     { color: MUTED },
   );
-
-  /* ---------- pieds de page ---------- */
-  const n = pdf.getNumberOfPages();
-  for (let i = 1; i <= n; i++) {
-    pdf.setPage(i);
-    const w = pdf.internal.pageSize.getWidth(),
-      h = pdf.internal.pageSize.getHeight();
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(...MUTED);
-    pdf.text(pdfText(`Pilepoil · ${project.name}`), M, h - 7);
-    pdf.text(`${i} / ${n}`, w - M, h - 7, { align: 'right' });
-  }
-  return pdf.output('blob');
 }
 
 /** Plan coté d'une surface dans l'espace restant de la page, avec légende. */
