@@ -4,7 +4,7 @@
  * revêtement (fournies par son module), liste d'achat consolidée pour le dossier.
  */
 import { poseWhere } from '../../core/coverage';
-import { poseArea, scopePoses, type ResultScope } from '../../core/coverage/scope';
+import { poseArea, type ResultScope } from '../../core/coverage/scope';
 import type { Plan } from '../../core/plan/types';
 import { planBounds } from '../../core/plan/snap';
 import type { Libraries, ModuleResults, ResultExports, ToolModule } from '../../modules/types';
@@ -49,7 +49,7 @@ export function buildResultsPdf(input: ResultsPdfInput): Blob {
   if (scope.kind === 'project')
     for (const room of project.plan.rooms) {
       const s: ResultScope = { kind: 'room', room: room.id };
-      if (!scopePoses(project, s).length) continue;
+      if (!reportRows(input, s).rows.length) continue;
       d.room(30);
       d.text(room.name, 13, { bold: true, gap: 2 });
       summary(d, input, s);
@@ -65,7 +65,7 @@ export function buildResultsPdf(input: ResultsPdfInput): Blob {
 }
 
 /** Tableau des poses de la portée : où, surface revêtue, pièces posées et coupes, quantités à commander. */
-function summary(d: Doc, input: ResultsPdfInput, scope: ResultScope) {
+function reportRows(input: ResultsPdfInput, scope: ResultScope): { rows: string[][]; notes: Set<string> } {
   const { project, libraries } = input;
   const rows: string[][] = [];
   const notes = new Set<string>();
@@ -73,8 +73,18 @@ function summary(d: Doc, input: ResultsPdfInput, scope: ResultScope) {
     const reports = e.results.report({ project, libraries, result: e.result, scope });
     for (const r of reports) {
       const pose = project.poses.find((p) => p.id === r.pose);
-      if (!pose) continue;
       if (r.orderNote) notes.add(r.orderNote);
+      // module sans pose (cloisons) : l'objet se décrit lui-même
+      if (!pose) {
+        if (r.title)
+          rows.push([
+            `${e.module.label} · ${r.title}${r.where ? '\n' + r.where : ''}`,
+            '',
+            r.ok ? r.figures.map((f) => `${f.label} : ${f.value}`).join('\n') : r.alerts.join('\n'),
+            r.order.join('\n') + (r.orderNote ? ' *' : ''),
+          ]);
+        continue;
+      }
       rows.push([
         `${e.module.label} · ${pose.name}\n${poseWhere(project.plan, project.zones, pose.id, scope.kind === 'room' ? scope.room : undefined)}`,
         `${fr(poseArea(project.plan, project, pose.id, scope) / 1e6, 2)} m²`,
@@ -83,13 +93,19 @@ function summary(d: Doc, input: ResultsPdfInput, scope: ResultScope) {
       ]);
     }
   }
+  return { rows, notes };
+}
+
+function summary(d: Doc, input: ResultsPdfInput, scope: ResultScope) {
+  const { project, libraries } = input;
+  const { rows, notes } = reportRows(input, scope);
   if (!rows.length) {
     d.text('Aucun revêtement calculé ici.', 10, { color: MUTED, gap: 4 });
     return;
   }
   d.table(
     [
-      { label: 'Revêtement', w: 52 },
+      { label: 'Revêtement ou travaux', w: 52 },
       { label: 'Surface', w: 22, align: 'right' },
       { label: 'Posés et coupes', w: 48 },
       { label: 'À commander', w: 60 },

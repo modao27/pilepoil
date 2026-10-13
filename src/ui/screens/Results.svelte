@@ -32,7 +32,14 @@
   const missing = $derived(!project || (scope.kind === 'room' && !room) || (scope.kind === 'pose' && !pose));
   const poses = $derived(project ? scopePoses(project, scope) : []);
   const mods = $derived(
-    project ? modules.filter((m) => Object.hasOwn(project.modules, m.id) && poses.some((p) => p.module === m.id)) : [],
+    project
+      ? modules.filter(
+          (m) =>
+            Object.hasOwn(project.modules, m.id) &&
+            // un module sans pose (cloisons) est dans les résultats du projet et des pièces, pas d'une pose
+            (poses.some((p) => p.module === m.id) || (!m.coverage && scope.kind !== 'pose')),
+        )
+      : [],
   );
 
   /** Résultat de chaque module, avec le projet calculé ; null : le module ne peut pas calculer. */
@@ -230,7 +237,7 @@
       </ol>
     </nav>
 
-    {#if !poses.length}
+    {#if !poses.length && !mods.length}
       <EmptyState
         icon="info"
         title="Rien à calculer ici"
@@ -272,56 +279,88 @@
         {#snippet panel(t)}
           {#if t === 'summary'}
             {#each reports as g (g.module.id)}
-              <section class="module" aria-labelledby="m-{g.module.id}">
-                <h2 id="m-{g.module.id}">{g.module.label}</h2>
-                {#each g.poses as p (p.id)}
-                  {@const r = g.reports?.find((x) => x.pose === p.id)}
-                  <article
-                    class="pose"
-                    style="--pose: {poseColor(poseIndex(p))}"
-                    aria-label="{g.module.label} · {p.name}"
-                  >
-                    <header>
-                      <h3><span class="chip" aria-hidden="true"></span>{p.name}</h3>
-                      <span class="muted">{where(p)} · {area(p)} m²</span>
-                    </header>
+              {#if g.module.coverage || g.reports === undefined || g.reports === null || g.reports.length}
+                <section class="module" aria-labelledby="m-{g.module.id}">
+                  <h2 id="m-{g.module.id}">{g.module.label}</h2>
+                  {#if !g.module.coverage}
                     {#if g.reports === undefined}
                       <p class="muted" role="status">Calcul…</p>
-                    {:else if !r || !r.ok}
-                      <p class="err">
-                        {r?.alerts.join(' ') || 'À compléter : choisissez un produit dans le calepinage.'}
-                      </p>
+                    {:else if g.reports === null}
+                      <p class="muted">À compléter.</p>
                     {:else}
-                      <div class="stats">
-                        {#each r.figures as f (f.label)}<StatCard
-                            label={f.label}
-                            value={f.value}
-                            status={f.status}
-                          />{/each}
-                      </div>
-                      {#if r.order.length}
-                        <div class="order">
-                          <h4>À commander</h4>
-                          <ul>
-                            {#each r.order as o (o)}<li>{o}</li>{/each}
-                          </ul>
-                          {#if r.orderNote}<p class="muted">{r.orderNote}</p>{/if}
-                        </div>
-                      {/if}
-                      {#if r.alerts.length}
-                        <ul class="alerts" aria-label="Alertes">
-                          {#each r.alerts as a (a)}<li>{a}</li>{/each}
-                        </ul>
-                      {/if}
+                      {#each g.reports as r (r.pose)}
+                        <article class="pose" aria-label="{g.module.label} · {r.title}">
+                          <header>
+                            <h3>{r.title}</h3>
+                            <span class="muted">{r.where}</span>
+                          </header>
+                          {#if !r.ok}
+                            <p class="err">{r.alerts.join(' ') || 'À compléter.'}</p>
+                          {:else}
+                            <div class="stats">
+                              {#each r.figures as f (f.label)}<StatCard label={f.label} value={f.value} />{/each}
+                            </div>
+                            {#if r.alerts.length}
+                              <ul class="alerts" aria-label="Alertes">
+                                {#each r.alerts as a (a)}<li>{a}</li>{/each}
+                              </ul>
+                            {/if}
+                          {/if}
+                          <p class="links"><a href={r.href}>Élévation et fiche de coupe</a></p>
+                        </article>
+                      {/each}
+                      {#if g.reports[0]?.orderNote}<p class="muted">{g.reports[0].orderNote}</p>{/if}
                     {/if}
-                    <p class="links">
-                      <a href={g.module.poseHref?.(id, p.id)}>Calepinage</a>
-                      {#if scope.kind !== 'pose'}
-                        · <a href="#/p/{id}/pose/{p.id}/resultats">Résultats de la pose</a>{/if}
-                    </p>
-                  </article>
-                {/each}
-              </section>
+                  {/if}
+                  {#each g.poses as p (p.id)}
+                    {@const r = g.reports?.find((x) => x.pose === p.id)}
+                    <article
+                      class="pose"
+                      style="--pose: {poseColor(poseIndex(p))}"
+                      aria-label="{g.module.label} · {p.name}"
+                    >
+                      <header>
+                        <h3><span class="chip" aria-hidden="true"></span>{p.name}</h3>
+                        <span class="muted">{where(p)} · {area(p)} m²</span>
+                      </header>
+                      {#if g.reports === undefined}
+                        <p class="muted" role="status">Calcul…</p>
+                      {:else if !r || !r.ok}
+                        <p class="err">
+                          {r?.alerts.join(' ') || 'À compléter : choisissez un produit dans le calepinage.'}
+                        </p>
+                      {:else}
+                        <div class="stats">
+                          {#each r.figures as f (f.label)}<StatCard
+                              label={f.label}
+                              value={f.value}
+                              status={f.status}
+                            />{/each}
+                        </div>
+                        {#if r.order.length}
+                          <div class="order">
+                            <h4>À commander</h4>
+                            <ul>
+                              {#each r.order as o (o)}<li>{o}</li>{/each}
+                            </ul>
+                            {#if r.orderNote}<p class="muted">{r.orderNote}</p>{/if}
+                          </div>
+                        {/if}
+                        {#if r.alerts.length}
+                          <ul class="alerts" aria-label="Alertes">
+                            {#each r.alerts as a (a)}<li>{a}</li>{/each}
+                          </ul>
+                        {/if}
+                      {/if}
+                      <p class="links">
+                        <a href={g.module.poseHref?.(id, p.id)}>Calepinage</a>
+                        {#if scope.kind !== 'pose'}
+                          · <a href="#/p/{id}/pose/{p.id}/resultats">Résultats de la pose</a>{/if}
+                      </p>
+                    </article>
+                  {/each}
+                </section>
+              {/if}
             {/each}
             {#if scope.kind === 'project'}
               <section class="module" aria-labelledby="h-rooms">
@@ -336,18 +375,20 @@
           {:else if t === 'detail'}
             {#each reports as g (g.module.id)}
               {@const c = results[g.module.id]}
-              <section class="module" aria-labelledby="d-{g.module.id}">
-                <h2 id="d-{g.module.id}">{g.module.label}</h2>
-                {#if c === undefined}
-                  <p class="muted" role="status">Calcul…</p>
-                {:else if c === null}
-                  <p class="muted">À compléter dans le calepinage.</p>
-                {:else}
-                  {#await g.module.results().then((r) => r.section()) then Section}
-                    <Section project={c.project} {scope} result={c.result} />
-                  {/await}
-                {/if}
-              </section>
+              {#if g.module.coverage || !g.reports || g.reports.length}
+                <section class="module" aria-labelledby="d-{g.module.id}">
+                  <h2 id="d-{g.module.id}">{g.module.label}</h2>
+                  {#if c === undefined}
+                    <p class="muted" role="status">Calcul…</p>
+                  {:else if c === null}
+                    <p class="muted">À compléter dans le calepinage.</p>
+                  {:else}
+                    {#await g.module.results().then((r) => r.section()) then Section}
+                      <Section project={c.project} {scope} result={c.result} />
+                    {/await}
+                  {/if}
+                </section>
+              {/if}
             {/each}
           {:else}
             <div class="v3d">

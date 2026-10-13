@@ -15,6 +15,19 @@ import type { Libraries, ModuleError } from '../../types';
 import type { CloisonsSpec, End, PartitionSystem, SpecPartition } from '../core/types';
 import { CLOISONS_ID, defaultPartitionSettings, type CloisonsData, type PartitionSettings } from './model';
 
+/** Pièces dont un mur est une face de la cloison (noms triés, sans doublon). */
+export function partitionRooms(project: Project, id: Id): string[] {
+  const rooms = project.plan.rooms.filter((r) => r.walls.some((w) => w.of?.partition === id));
+  return [...new Set(rooms.map((r) => r.name))].sort();
+}
+
+/** « Cloison 2 · Chambre / Couloir » : numéro dans le plan (comme l'éditeur de plan), pièces voisines. */
+export function partitionTitle(project: Project, id: Id): string {
+  const n = project.site.partitions.findIndex((q) => q.id === id) + 1;
+  const rooms = partitionRooms(project, id);
+  return `Cloison ${n}${rooms.length ? ' · ' + rooms.join(' / ') : ''}`;
+}
+
 export const cloisonsData = (p: Project): CloisonsData | null =>
   (p.modules[CLOISONS_ID]?.data as CloisonsData | undefined) ?? null;
 
@@ -140,7 +153,7 @@ export function toSpec(project: Project, libraries: Libraries): { spec: Cloisons
       return !!w && carrelage.has(z.pose) && (w === `${q}:${face}` || w.startsWith(`${q}:${face}~`));
     });
 
-  const partitions = list.map((q, n): SpecPartition => {
+  const partitions = list.map((q): SpecPartition => {
     const own = Object.hasOwn(d.partitions, q.id) ? d.partitions[q.id] : undefined;
     const s = own ?? defaultPartitionSettings();
     const b = body.get(q.id)!;
@@ -149,7 +162,7 @@ export function toSpec(project: Project, libraries: Libraries): { spec: Cloisons
     const length = Math.max(0, b.s1 - b.s0);
     return {
       id: q.id,
-      name: `Cloison ${n + 1}${rooms.length ? ' · ' + [...new Set(rooms.map((r) => r.name))].sort().join(' / ') : ''}`,
+      name: partitionTitle(project, q.id),
       system: systemFor(own, q, systems)?.id ?? '',
       length,
       height,
