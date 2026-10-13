@@ -94,3 +94,22 @@ export function createSystem(id: string, now: number, o: Partial<PartitionSystem
     ...o,
   };
 }
+
+/** Modèles types de la bibliothèque (posés une seule fois ; un modèle supprimé ne revient pas). */
+export function templateSystems(now = 0): PartitionSystem[] {
+  return TEMPLATE_SYSTEMS.map((t) => createSystem(`modele-${t.name.replace('/', '-')}`, now, t));
+}
+
+/** Erreurs d'un système : codes (le texte est écrit par l'interface). */
+export function validateSystem(s: PartitionSystem): string[] {
+  const out: string[] = [];
+  if (!s.name.trim()) out.push('name');
+  if (!(s.thickness > 0)) out.push('thickness');
+  if (!(s.studWidth > 0)) out.push('studWidth');
+  if (!(s.plateThickness > 0)) out.push('plateThickness');
+  return out;
+}
+
+/** La composition ne donne pas l'épaisseur annoncée (à 3 mm près). */
+export const thicknessMismatch = (s: PartitionSystem): boolean =>
+  Math.abs(s.thickness - (s.studWidth + 2 * s.layers * s.plateThickness)) > 3;

@@ -202,6 +202,7 @@ export class PlanEditorState {
    */
   commit(action: ProjectAction, key?: string): boolean {
     const before = this.store.get().project;
+    action = this.withTool(action);
     const next = reduceProject(before, action);
     if (next === before) return false;
     const loss = lostByPose(before.plan, next.plan, before.zones, before.poses);
@@ -211,6 +212,15 @@ export class PlanEditorState {
     }
     this.dispatch(action, key);
     return true;
+  }
+
+  /** Tracer la première cloison active le module des cloisons (ses données sont créées hors du réducteur). */
+  private withTool(action: ProjectAction): ProjectAction {
+    const id = 'cloisons';
+    const m = action.type === 'plan/partition/add' && !Object.hasOwn(this.doc.modules, id) ? moduleById(id) : undefined;
+    if (!m) return action;
+    const doc = { schemaVersion: m.schemaVersion, data: m.create(this.doc.plan) };
+    return { type: 'batch', actions: [{ type: 'project/module/add', id, doc }, action] };
   }
 
   confirmPending(): void {
