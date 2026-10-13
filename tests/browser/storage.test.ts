@@ -67,7 +67,15 @@ describe('base IndexedDB', () => {
   it('crée les magasins à la version courante', async () => {
     const db = await fresh();
     expect(db.version).toBe(DB_VERSION);
-    expect([...db.objectStoreNames].sort()).toEqual(['boards', 'photos', 'prefs', 'projects', 'scenarios', 'tiles']);
+    expect([...db.objectStoreNames].sort()).toEqual([
+      'boards',
+      'paints',
+      'photos',
+      'prefs',
+      'projects',
+      'scenarios',
+      'tiles',
+    ]);
   });
 
   it('projets : enregistrement, liste du plus récent au plus ancien, suppression avec scénarios', async () => {
@@ -157,6 +165,36 @@ describe('base IndexedDB', () => {
     expect(db.version).toBe(DB_VERSION);
     expect(await listProjects(db)).toEqual([kept]);
     expect(await listItems(db, 'tiles')).toEqual([t]);
+  });
+
+  it('base v4 réelle : passe en v5, magasin des peintures ajouté, données gardées', async () => {
+    const name = 'test-' + newId();
+    const old = await openDB(name, 4, {
+      upgrade(db) {
+        db.createObjectStore('projects', { keyPath: 'id' }).createIndex('updatedAt', 'updatedAt');
+        const tiles = db.createObjectStore('tiles', { keyPath: 'id' });
+        tiles.createIndex('name', 'name');
+        tiles.createIndex('updatedAt', 'updatedAt');
+        db.createObjectStore('photos', { keyPath: 'id' });
+        db.createObjectStore('scenarios', { keyPath: 'id' }).createIndex('projectId', 'projectId');
+        db.createObjectStore('prefs', { keyPath: 'key' });
+        const boards = db.createObjectStore('boards', { keyPath: 'id' });
+        boards.createIndex('name', 'name');
+        boards.createIndex('updatedAt', 'updatedAt');
+      },
+    });
+    const t = createTile();
+    const kept = createProject(t.id, { name: 'Gardé' });
+    await old.put('projects', kept);
+    await old.put('tiles', t);
+    old.close();
+
+    const db = await openDb(name);
+    opened.push({ db, name });
+    expect(db.version).toBe(DB_VERSION);
+    expect(await listProjects(db)).toEqual([kept]);
+    expect(await listItems(db, 'tiles')).toEqual([t]);
+    expect(await listItems(db, 'paints')).toEqual([]);
   });
 
   it('nom de la base : pilepoil', () => {

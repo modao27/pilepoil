@@ -278,8 +278,7 @@ describe('besoins du projet', () => {
   it('deux poses du même produit : besoins additionnés, une seule combinaison de pots', () => {
     const a = room();
     const b = room();
-    const poses = [a, b].map((spec) => ({ spec, result: computePaint(spec) }));
-    const [need] = projectNeeds(poses);
+    const [need] = projectNeeds([a, b].map(computePaint), a.paints);
     expect(need!.need).toBe(6998 * 2);
     expect(need!.purchased).toBeGreaterThanOrEqual(13_996);
     expect(need!.cost!).toBeLessThanOrEqual(2 * 69);

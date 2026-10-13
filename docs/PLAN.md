@@ -213,6 +213,9 @@ Spécification : `docs/peinture/SPEC.md`. Une branche par phase, `npm run check`
 - Modules `index.ts` / `engine.ts`, données par pose, actions, règle « murs seulement », bibliothèque `paints`
   (nouvelle version de base, migration testée), modèles types, `'pot'` dans `ShoppingUnit`, `shopping()`.
 - Fini quand : une peinture se crée en bibliothèque et une pose se calcule par le worker.
+- Décidé (2026-10-13) : module caché des menus (`ModuleManifest.hidden`) jusqu'à PE3 ; prix au niveau du module.
+- Fait : base v5, `modules/peinture` complet côté données, achats et bibliothèque ; écran de pose provisoire.
+  Reste pour PE3 : retirer `hidden`, écran de pose, suppression d'un produit utilisé par un projet.
 
 ### PE3 — Interface
 - Action « Peindre » sur l'écran Pièce, écran de pose (murs, produit, couches, support, boiseries, résultat en

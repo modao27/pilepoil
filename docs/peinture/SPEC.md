@@ -52,7 +52,8 @@ export interface Paint {
   coats: number;
   /** Conditionnements : contenance en litres (kg pour un enduit) et prix du pot. */
   packs: { size: number; price: number | null }[];
-  photo?: Id;
+  photoId: Id | null;
+  // + schemaVersion, createdAt, updatedAt, brand, sheen, color : voir modules/peinture/core/paint.ts
 }
 
 /** Réglages d'une pose (modules.peinture.data.poses[poseId]). */
@@ -77,12 +78,13 @@ export interface PaintPoseSettings {
     primer: Id | null;
   };
   consumables: { masking: boolean; sheet: boolean; roller: boolean; brush: boolean };
-  prices: Record<string, number>;    // prix saisis dans le projet, par clé de ligne d'achat
 }
 ```
 
-Les zones et poses vivent dans le projet (`core/coverage`) ; le module garde seulement `PaintPoseSettings`
-par pose, avec un `schemaVersion` et ses migrations.
+Les zones et poses vivent dans le projet (`core/coverage`) ; le module garde `PeintureData` : les
+`PaintPoseSettings` de chaque pose et les prix saisis dans le projet (`prices`, par clé de ligne d'achat, communs à
+toutes les poses, comme le parquet), avec un `schemaVersion` et ses migrations. Le moteur reçoit les prix à part
+(`PaintSpec.prices`) et les produits sous la forme réduite `SpecPaint`.
 
 ## 3. Calcul d'une pose
 
@@ -162,7 +164,8 @@ universelle, enduit de rebouchage. Rendements et contenances types indicatifs, �
 
 Lignes `ShoppingLine` : finition, apprêt, enduit (`finish`), consommables (`consumable`). `ShoppingUnit` gagne
 `'pot'`. Quantité = nombre de pots d'une taille ; une combinaison produit une ligne par taille
-(`key` = `produit:taille`), `detail` = « 6,4 L + 10 % ». Prix : bibliothèque (`priceFromLibrary`) ou saisi dans
+(`key` = `peinture:<produit>:<rôle>:<taille>`), les besoins d'un produit sur plusieurs poses s'additionnent avant
+le choix des pots (`core/aggregate.ts`), `detail` = « 6,4 L + 10 % ». Prix : bibliothèque (`priceFromLibrary`) ou saisi dans
 le projet. Total par pose et pour le projet comme les autres modules.
 
 ## 6. Invariants (tests de propriétés, `fast-check`)

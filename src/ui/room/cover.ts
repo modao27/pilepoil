@@ -29,7 +29,7 @@ import type { ProjectAction } from '../../state/project';
 
 /** Modules qui posent sur ce type de surface (ordre du registre). */
 export const modulesFor = (s: SurfaceRef): ToolModule[] =>
-  modules.filter((m) => m.coverage.surfaces.includes(s.wall == null ? 'floor' : 'wall'));
+  modules.filter((m) => !m.hidden && m.coverage.surfaces.includes(s.wall == null ? 'floor' : 'wall'));
 
 /** Zones posées sur une surface, dans l'ordre du projet. */
 export const zonesOn = (p: Project, s: SurfaceRef): Zone[] => p.zones.filter((z) => sameSurface(z.surface, s));

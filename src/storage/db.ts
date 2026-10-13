@@ -18,6 +18,8 @@ export interface PilepoilDB extends DBSchema {
   prefs: { key: PrefKey; value: Pref };
   /** Bibliothèque de lames du parquet (le type précis arrive avec le module, P1). */
   boards: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
+  /** Bibliothèque de peintures du module peinture. */
+  paints: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
 }
 
 export type Db = IDBPDatabase<PilepoilDB>;
@@ -50,6 +52,12 @@ const UPGRADES: ((db: Db, tx: UpgradeTx) => void)[] = [
   (_db, tx) => void purge(tx, 'projects', 2),
   // v4 (N1) : zones et poses dans le projet ; projets précédents retirés, sans conversion.
   (_db, tx) => void purge(tx, 'projects', PROJECT_SCHEMA),
+  // v5 (PE2) : bibliothèque de peintures.
+  (db) => {
+    const paints = db.createObjectStore('paints', { keyPath: 'id' });
+    paints.createIndex('name', 'name');
+    paints.createIndex('updatedAt', 'updatedAt');
+  },
 ];
 
 /** Supprime les documents d'un magasin dont le schéma est antérieur à `min`. */

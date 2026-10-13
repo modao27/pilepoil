@@ -259,6 +259,8 @@ export interface ModuleManifest<
   /** Contenu SVG 34 × 24, trait 1,5 (icônes de module de l'identité). */
   icon: string;
   schemaVersion: number;
+  /** true : module en construction, absent des menus (Revêtir, Ajouter un outil) ; sa bibliothèque reste visible. */
+  hidden?: boolean;
   /** Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). */
   coverage: CoverageRules;
   /** Adresse de l'éditeur (calepinage) d'une pose du module : la coquille y mène sans connaître ses écrans. */

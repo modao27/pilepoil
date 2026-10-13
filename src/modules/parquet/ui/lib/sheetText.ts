@@ -66,6 +66,7 @@ const UNIT: Record<ShoppingLine['unit'], [string, string]> = {
   piece: ['pièce', 'pièces'],
   m2: ['m²', 'm²'],
   m: ['m', 'm'],
+  pot: ['pot', 'pots'],
 };
 
 /** « 7 paquets », « 1 rouleau ». */

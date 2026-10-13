@@ -3,7 +3,7 @@
  * avant le choix des pots, pour acheter une seule combinaison. Pur.
  */
 import { choosePacks } from './packs';
-import type { PackCount, PaintRole, PaintSpec, PaintResult, SpecPaint } from './types';
+import type { PackCount, PaintResult, PaintRole, SpecPaint } from './types';
 
 export interface ProjectNeed {
   paint: SpecPaint;
@@ -19,11 +19,14 @@ export interface ProjectNeed {
 }
 
 /** Un besoin par (produit, rôle), dans l'ordre d'apparition. */
-export function projectNeeds(poses: readonly { spec: PaintSpec; result: PaintResult }[]): ProjectNeed[] {
+export function projectNeeds(
+  results: readonly PaintResult[],
+  paints: Readonly<Record<string, SpecPaint>>,
+): ProjectNeed[] {
   const sums = new Map<string, { paint: SpecPaint; role: PaintRole; need: number; surface: number }>();
-  for (const { spec, result } of poses)
+  for (const result of results)
     for (const p of result.products) {
-      const paint = spec.paints[p.paint];
+      const paint = Object.hasOwn(paints, p.paint) ? paints[p.paint] : undefined;
       if (!paint) continue;
       const key = `${p.paint}:${p.role}`;
       const s = sums.get(key) ?? { paint, role: p.role, need: 0, surface: 0 };
