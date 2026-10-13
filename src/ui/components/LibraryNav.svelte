@@ -14,7 +14,9 @@
 <style>
   .libs {
     display: flex;
-    gap: var(--space-1);
+    /* quatre bibliothèques ou plus : les onglets passent à la ligne plutôt que de faire défiler la page */
+    flex-wrap: wrap;
+    gap: 0 var(--space-1);
     margin-bottom: var(--space-4);
     border-bottom: 1px solid var(--line);
   }
@@ -22,7 +24,7 @@
     display: flex;
     align-items: center;
     min-height: var(--touch);
-    padding: 0 var(--space-4);
+    padding: 0 var(--space-3);
     border-bottom: 3px solid transparent;
     color: var(--muted);
     font-weight: 600;
