@@ -207,6 +207,7 @@ Spécification : `docs/peinture/SPEC.md`. Une branche par phase, `npm run check`
 - `modules/peinture/core` : surface nette (ouvertures à seuil), couches, litres, enduit, boiseries, consommables,
   combinaison de pots ; tests de propriétés et cas de référence de la spec §7.
 - Fini quand : les invariants §6 et les cas chiffrés passent.
+- Fait : `modules/peinture/core` (types, defaults, surface, packs, compute), `tests/unit/peinture.test.ts`.
 
 ### PE2 — Module, données, bibliothèque
 - Modules `index.ts` / `engine.ts`, données par pose, actions, règle « murs seulement », bibliothèque `paints`

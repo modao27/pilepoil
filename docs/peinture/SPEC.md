@@ -124,15 +124,15 @@ Calculées par pose, sur les mêmes zones de mur :
 - **Plinthes** : longueur au pied des murs peints (une zone compte si elle touche le sol, `y = 0`), moins la
   largeur des portes (`sill = 0`) dans la zone ; surface = longueur × `skirtingHeight`.
 - **Huisseries** : par ouverture située dans les zones, périmètre (2 × hauteur + largeur pour une porte,
-  2 × (largeur + hauteur) pour une fenêtre) × `frameWidth`.
+  2 × (largeur + hauteur) pour une fenêtre ou une porte-fenêtre) × `frameWidth`.
 - **Vantaux** : par porte, largeur × hauteur × `doorFaces`.
 - Surface de boiseries = somme des postes cochés ; mêmes formules de couches (§3.2) avec le produit
   `woodwork.finish`, `woodwork.coats`, apprêt `woodwork.primer` ; le coefficient de support vaut 1,0.
 
 ### 3.5 Pots
 Entrée : besoin en millilitres (ou grammes), conditionnements du produit. Sortie : liste `(taille, nombre)`.
-Algorithme déterministe (sac à dos non borné, au plus 4 tailles, nombre de pots borné par
-`⌈besoin ÷ plus petite taille⌉ + 1`) : parmi les combinaisons dont le volume total ≥ besoin,
+Algorithme déterministe (sac à dos non borné, programmation dynamique exacte, toutes les tailles, volume borné par
+besoin + plus grand pot − 1, au-delà retirer un pot ne coûterait pas plus) : parmi les combinaisons dont le volume total ≥ besoin,
 1. coût total minimal (un conditionnement sans prix exclut le critère de coût : on passe à 2) ;
 2. puis surplus minimal ;
 3. puis nombre de pots minimal ;
@@ -148,7 +148,7 @@ Ces lignes n'ont pas de produit en bibliothèque : prix saisis dans le projet.
 ### 3.7 Alertes (codes ; le texte est produit par l'interface)
 `no-product` (pas de finition), `missing-yield` (rendement manquant ou nul), `no-pack` (produit sans
 conditionnement), `no-surface` (surface nette nulle), `dark-tint-coat`, `primer-missing` (support neuf
-sans apprêt), `product-use-mismatch` (produit hors de son usage : intérieur sec en pièce humide),
+sans apprêt), `product-use-mismatch` (produit hors de son rôle ou de son usage : murs, boiseries),
 `opening-overlap` (ouvertures qui se recouvrent : surface déduite une seule fois).
 
 ## 4. Bibliothèque
