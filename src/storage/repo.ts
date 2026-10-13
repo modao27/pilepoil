@@ -36,10 +36,10 @@ export async function deleteProject(db: Db, id: Id): Promise<void> {
   await tx.done;
 }
 
-/* ---------- bibliothèques de produits (carreaux, lames) ---------- */
+/* ---------- bibliothèques de produits (carreaux, lames, peintures) ---------- */
 
 /** Magasins de bibliothèque : `LibraryDefinition.store` des modules. */
-export const LIBRARY_STORES = ['tiles', 'boards'] as const;
+export const LIBRARY_STORES = ['tiles', 'boards', 'paints'] as const;
 export type LibraryStore = (typeof LIBRARY_STORES)[number];
 
 export function libraryStore(store: string): LibraryStore {

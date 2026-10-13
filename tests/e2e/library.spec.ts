@@ -54,3 +54,26 @@ test('bibliothèque de lames : modèles types, une lame se crée et s’enregist
   await expect(list.getByRole('link', { name: /Vinyle clipsable/ })).toHaveCount(0);
   await expect(list.getByRole('listitem')).toHaveCount(7);
 });
+
+test('bibliothèque de peintures : modèles types, une peinture se crée avec ses pots', async ({ page }, info) => {
+  await page.goto('/#/library/paints');
+  const list = page.getByRole('list', { name: 'Peintures' });
+  await expect(list.getByRole('listitem')).toHaveCount(5);
+  await expect(list.getByRole('link', { name: /Enduit de rebouchage/ })).toContainText('Enduit');
+  await check(page);
+  await shot(page, info, '82-peintures');
+
+  await page.getByRole('link', { name: 'Ajouter une peinture' }).click();
+  await page.getByLabel('Nom', { exact: true }).fill('Vert sauge mat');
+  await page.getByLabel('Rendement', { exact: true }).fill('11');
+  await page.getByLabel('Rendement', { exact: true }).press('Enter');
+  await page.getByLabel('Prix du pot', { exact: true }).first().fill('39,90');
+  await page.getByLabel('Prix du pot', { exact: true }).first().press('Enter');
+  await check(page);
+  await page.getByRole('button', { name: 'Ajouter la peinture' }).click();
+
+  await expect(list.getByRole('link', { name: /Vert sauge mat/ })).toContainText('39,90');
+  await expect(list.getByRole('listitem')).toHaveCount(6);
+  await page.reload();
+  await expect(list.getByRole('link', { name: /Vert sauge mat/ })).toBeVisible();
+});

@@ -60,7 +60,7 @@ const apply = (p: Project, r: ReturnType<typeof newPoseAction>) => {
 describe('revêtir une surface', () => {
   it('modules proposés : carrelage et parquet au sol, carrelage seul au mur', () => {
     expect(modulesFor(floor).map((m) => m.id)).toEqual(['carrelage', 'parquet']);
-    expect(modulesFor(wall(0)).map((m) => m.id)).toEqual(['carrelage']);
+    expect(modulesFor(wall(0)).map((m) => m.id)).toEqual(['carrelage', 'peinture']);
   });
 
   it('nouvelle pose de carrelage : « Pose 1 », une zone sur tout le sol, réglages au module', () => {

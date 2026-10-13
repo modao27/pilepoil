@@ -58,6 +58,7 @@ export const PRICE_LABEL: Record<ShoppingLine['unit'], string> = {
   piece: '€/pièce',
   m2: '€/m²',
   m: '€/m',
+  pot: '€/pot',
 };
 
 /** Prix saisi (« 12,5 », « 12.50 € ») ; null si vide ou invalide (revenir au prix de la bibliothèque). */

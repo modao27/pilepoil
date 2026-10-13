@@ -196,6 +196,11 @@ export interface ResultSectionProps {
 
 /** Fonctions lourdes des résultats, chargées à la demande (PDF, 3D). */
 export interface ResultExports<Result = unknown> {
+  /**
+   * true : les maillages se posent sur l'enveloppe des pièces sans la remplacer (peinture) ; le plâtre des murs
+   * du module reste dessiné par l'enveloppe.
+   */
+  overlay?: boolean;
   /** Ajoute au document les pages du module pour la portée : plans cotés, découpe… (pas la liste d'achat). */
   pdf(doc: Doc, input: ResultInput<Result>): void;
   /**
@@ -259,6 +264,8 @@ export interface ModuleManifest<
   /** Contenu SVG 34 × 24, trait 1,5 (icônes de module de l'identité). */
   icon: string;
   schemaVersion: number;
+  /** Bouton de l'écran Pièce qui ouvre la pose (« Calepinage » par défaut). */
+  poseLabel?: string;
   /** Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). */
   coverage: CoverageRules;
   /** Adresse de l'éditeur (calepinage) d'une pose du module : la coquille y mène sans connaître ses écrans. */

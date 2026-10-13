@@ -3,7 +3,7 @@
 export type ShoppingGroup = 'covering' | 'underlay' | 'finish' | 'consumable' | 'tool';
 
 export type ShoppingUnit =
-  'pack' | 'box' | 'roll' | 'bar' | 'bag' | 'sachet' | 'tube' | 'cartridge' | 'litre' | 'piece' | 'm2' | 'm';
+  'pack' | 'box' | 'roll' | 'bar' | 'bag' | 'sachet' | 'tube' | 'cartridge' | 'litre' | 'piece' | 'm2' | 'm' | 'pot';
 
 export interface ShoppingLine {
   /** Identifiant du module qui produit la ligne. */

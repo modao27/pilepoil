@@ -195,6 +195,47 @@ projets existants : nouvelle version de la base, projets précédents retirés.
 - Ajouté : premier chargement allégé (Lighthouse ≥ 90 sur téléphone, premier passage) ; 3D : mur revêtu en partie
   complété par l'enveloppe, sol continu rogné à la pièce dans ses résultats.
 
+## Module peinture (PE0 à PE5)
+
+Spécification : `docs/peinture/SPEC.md`. Une branche par phase, `npm run check` vert, parité carrelage à 100 %.
+
+### PE0 — Spécification
+- `docs/peinture/SPEC.md`, entrées dans `docs/BOITE.md` §11 et `CLAUDE.md`. Aucun code.
+- Fini quand : le périmètre, les coefficients et les cas chiffrés sont validés.
+
+### PE1 — Moteur
+- `modules/peinture/core` : surface nette (ouvertures à seuil), couches, litres, enduit, boiseries, consommables,
+  combinaison de pots ; tests de propriétés et cas de référence de la spec §7.
+- Fini quand : les invariants §6 et les cas chiffrés passent.
+- Fait : `modules/peinture/core` (types, defaults, surface, packs, compute), `tests/unit/peinture.test.ts`.
+
+### PE2 — Module, données, bibliothèque
+- Modules `index.ts` / `engine.ts`, données par pose, actions, règle « murs seulement », bibliothèque `paints`
+  (nouvelle version de base, migration testée), modèles types, `'pot'` dans `ShoppingUnit`, `shopping()`.
+- Fini quand : une peinture se crée en bibliothèque et une pose se calcule par le worker.
+- Décidé (2026-10-13) : module caché des menus (`ModuleManifest.hidden`) jusqu'à PE3 ; prix au niveau du module.
+- Fait : base v5, `modules/peinture` complet côté données, achats et bibliothèque ; écran de pose provisoire.
+  Reste pour PE3 : retirer `hidden`, écran de pose, suppression d'un produit utilisé par un projet.
+
+### PE3 — Interface
+- Action « Peindre » sur l'écran Pièce, écran de pose (murs, produit, couches, support, boiseries, résultat en
+  direct), section Résultats, tests e2e (390 px et bureau).
+- Fini quand : on peint un mur entier et une zone de mur sur téléphone, avec le coût.
+- Fait : éditeur dans la coquille commune (murs à plat, étapes Produit / Pose / Découpage / Finitions / Avancé),
+  rapport par pose et par pièce, section Résultats par mur, bouton « Réglages » de l'écran Pièce
+  (`ModuleManifest.poseLabel`), module visible (le drapeau `hidden` de PE2 est retiré, plus utilisé).
+  Test e2e : `tests/e2e/peinture.spec.ts`. Le détail par zone passe par `PaintResult.zones`.
+
+### PE4 — Achats, PDF, 3D
+- Lignes dans l'écran Achats et son PDF, PDF de la pose, couleur du produit sur les murs de la vue 3D.
+- Fini quand : la liste d'achat consolidée contient la peinture avec ses pots.
+- Fait : PDF de la pose, de la pièce et du projet (`modules/peinture/ui/lib/pdf.ts`), murs peints en 3D
+  (`render/scene3d/paint.ts`, posés à 2 mm devant le plâtre : `ResultExports.overlay` laisse l'enveloppe entière),
+  lignes d'achat et unité `pot` déjà en PE2. Parcours e2e complété (3D, PDF).
+
+### PE5 — Plafonds (plus tard)
+- Surface « plafond » dans `core/coverage` (`SurfaceRef`), affichage, 3D, règles ; peinture du plafond.
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

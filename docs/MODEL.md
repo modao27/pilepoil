@@ -96,13 +96,15 @@ rétablies (plan et autres modules gardés). Un scénario d'un schéma antérieu
 | `projects` | `id` | `updatedAt` | `Project` |
 | `tiles` | `id` | `name`, `updatedAt` | `Tile` |
 | `boards` | `id` | `name`, `updatedAt` | lames du parquet |
+| `paints` | `id` | `name`, `updatedAt` | peintures (`modules/peinture/core/paint.ts`) |
 | `photos` | `id` | — | `Photo` (Blob) |
 | `scenarios` | `id` | `projectId` | scénarios du carrelage |
 | `prefs` | `key` | — | `Pref` |
 
 Migrations à deux niveaux :
 - **schéma de base** (`storage/db.ts`) : étapes dans l'ordre, jamais modifiées une fois publiées. v2 : magasin
-  `boards` ; v3 : projets v1 (d'avant la boîte à outils) supprimés, sans conversion.
+  `boards` ; v3 : projets v1 (d'avant la boîte à outils) supprimés, sans conversion ; v5 : magasin
+  `paints`.
 - **documents** : `schemaVersion` sur le projet et sur les données de chaque module ; `migrateProject` migre à
   la lecture (le document migré est réécrit en tâche de fond), puis chaque module migre ses données
   (`migrations[n]` passe de n − 1 à n). Module inconnu : laissé tel quel ; version future : refusée. Carrelage
