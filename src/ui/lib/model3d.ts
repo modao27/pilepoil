@@ -42,7 +42,7 @@ export function modelMeshes(
   const { envelope, cutaway } = libs;
   const rooms = scopeRooms(p.plan, p, scope);
   // parties de murs revêtues par un module calculé : il les dessine (plâtre compris) ; le reste est dans l'enveloppe
-  const drawn = new Set(entries.map((e) => e.module));
+  const drawn = new Set(entries.filter((e) => !e.exports.overlay).map((e) => e.module));
   const covered = {
     zones: p.zones.filter((z) => drawn.has(p.poses.find((x) => x.id === z.pose)?.module ?? '')),
     poses: p.poses,

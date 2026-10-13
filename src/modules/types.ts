@@ -196,6 +196,11 @@ export interface ResultSectionProps {
 
 /** Fonctions lourdes des résultats, chargées à la demande (PDF, 3D). */
 export interface ResultExports<Result = unknown> {
+  /**
+   * true : les maillages se posent sur l'enveloppe des pièces sans la remplacer (peinture) ; le plâtre des murs
+   * du module reste dessiné par l'enveloppe.
+   */
+  overlay?: boolean;
   /** Ajoute au document les pages du module pour la portée : plans cotés, découpe… (pas la liste d'achat). */
   pdf(doc: Doc, input: ResultInput<Result>): void;
   /**

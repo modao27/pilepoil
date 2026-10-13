@@ -229,6 +229,9 @@ Spécification : `docs/peinture/SPEC.md`. Une branche par phase, `npm run check`
 ### PE4 — Achats, PDF, 3D
 - Lignes dans l'écran Achats et son PDF, PDF de la pose, couleur du produit sur les murs de la vue 3D.
 - Fini quand : la liste d'achat consolidée contient la peinture avec ses pots.
+- Fait : PDF de la pose, de la pièce et du projet (`modules/peinture/ui/lib/pdf.ts`), murs peints en 3D
+  (`render/scene3d/paint.ts`, posés à 2 mm devant le plâtre : `ResultExports.overlay` laisse l'enveloppe entière),
+  lignes d'achat et unité `pot` déjà en PE2. Parcours e2e complété (3D, PDF).
 
 ### PE5 — Plafonds (plus tard)
 - Surface « plafond » dans `core/coverage` (`SurfaceRef`), affichage, 3D, règles ; peinture du plafond.

@@ -6,6 +6,5 @@ import { peintureReport } from './results';
 export const results: ModuleResults<PeintureResult> = {
   report: peintureReport,
   section: () => import('../results/PeintureSection.svelte').then((m) => m.default),
-  // PDF et couleur 3D : PE4
-  exports: () => Promise.resolve({ pdf: () => {}, meshes: () => [] }),
+  exports: () => import('./resultExports').then((m) => m.exports),
 };

@@ -2,7 +2,9 @@
  * Peinture (PE3) : un mur entier peint depuis l'écran Pièce, réglages de la pose (support, apprêt, boiseries),
  * résumé en direct, résultats de la pose et achats du projet.
  */
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { sceneStats } from './room-helpers';
 import {
   cover,
   createProject,
@@ -68,6 +70,24 @@ test('peinture : mur entier, réglages, résumé, résultats et achats', async (
   await expect(page.getByRole('heading', { name: /^Résultats — Peinture · / })).toBeVisible();
   await expect(page.getByRole('article', { name: /^Peinture · / })).toContainText('Surface à peindre');
   await check(page);
+
+  // 3D : le mur peint s'ajoute à l'enveloppe, dans le budget de dessin
+  await page.getByRole('tab', { name: '3D' }).click();
+  const st = await sceneStats(page);
+  expect(st.drawCalls).toBeGreaterThanOrEqual(3);
+  expect(st.drawCalls).toBeLessThanOrEqual(40);
+  await shot(page, info, '96-peinture-3d');
+
+  // PDF de la pose
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'PDF du calepinage' }).click(),
+  ]);
+  expect(
+    readFileSync((await download.path())!)
+      .subarray(0, 5)
+      .toString(),
+  ).toBe('%PDF-');
 
   // achats du projet : pots de peinture
   await page.goto(`/#/p/${id}/achats`);

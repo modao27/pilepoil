@@ -19,12 +19,12 @@ const GROUND_Y = -0.001;
 
 const m = (v: number) => v / 1000;
 
-function linear(css: string): [number, number, number] {
+export function linear(css: string): [number, number, number] {
   const c = new Color().setStyle(css);
   return [c.r, c.g, c.b];
 }
 
-function emptyMesh(key: string, castShadow = false): MeshData {
+export function emptyMesh(key: string, castShadow = false): MeshData {
   return { key, photo: null, positions: [], normals: [], colors: [], uvs: [], castShadow, receiveShadow: true };
 }
 
@@ -43,7 +43,7 @@ function tri(d: MeshData, a: Vec3, b: Vec3, c: Vec3, n: Vec3, col: [number, numb
 }
 
 /** Polygone avec trous dans un repère 2D, placé en 3D par `map`. */
-function shape(
+export function shape(
   d: MeshData,
   outer: Point[],
   holes: Point[][],
@@ -68,7 +68,7 @@ function quad(d: MeshData, q: Vec3[], n: Vec3, col: [number, number, number]) {
 const abs = (r: PlanRoom, p: Point): Point => [r.origin[0] + p[0], r.origin[1] + p[1]];
 
 /** Baies d'un mur dans son repère (x le long du mur, y depuis le sol), rognées au mur, mm. */
-function wallHoles(room: PlanRoom, i: number): [number, number, number, number][] {
+export function wallHoles(room: PlanRoom, i: number): [number, number, number, number][] {
   const w = room.walls[i];
   const len = wallLength(room, i);
   if (!w) return [];

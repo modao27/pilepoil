@@ -1,5 +1,9 @@
 /** Module peinture (docs/peinture/SPEC.md §2, §4, §5) : état, projet → moteur, achats, bibliothèque. */
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { describe, expect, it } from 'vitest';
+import type { ResultScope } from '../../src/core/coverage/scope';
+import { loadModel3D, modelMeshes } from '../../src/ui/lib/model3d';
+import { Doc } from '../../src/ui/lib/pdf/doc';
 import { module as manifest } from '../../src/modules/peinture';
 import { computePeinture } from '../../src/modules/peinture/core/compute';
 import { PAINT_TEMPLATES, validatePaint, type Paint } from '../../src/modules/peinture/core/paint';
@@ -9,6 +13,8 @@ import type { PeintureData } from '../../src/modules/peinture/state/model';
 import { PEINTURE_SCHEMA } from '../../src/modules/peinture/state/model';
 import type { Project } from '../../src/state/model';
 import { elevationOf } from '../../src/modules/peinture/ui/lib/elevation';
+import { exports as exportsOf, peintureMeshes } from '../../src/modules/peinture/ui/lib/resultExports';
+import { writePeintureResults } from '../../src/modules/peinture/ui/lib/pdf';
 import { peintureReport } from '../../src/modules/peinture/ui/lib/results';
 import { reduceProject } from '../../src/state/project';
 import { planProject, rect, withOpening } from './planFixtures';
@@ -238,5 +244,108 @@ describe('résultats et élévation', () => {
       },
     ]);
     expect(cut.walls[0]!.painted[0]!.every(([, y]) => y <= 1200)).toBe(true);
+  });
+});
+
+describe('3D et PDF', () => {
+  /** Aire totale des triangles d'un maillage, m². */
+  function area(positions: number[]): number {
+    let t = 0;
+    for (let i = 0; i < positions.length; i += 9) {
+      const [ax, ay, az, bx, by, bz, cx, cy, cz] = positions.slice(i, i + 9) as number[];
+      const u = [bx! - ax!, by! - ay!, bz! - az!];
+      const v = [cx! - ax!, cy! - ay!, cz! - az!];
+      t += Math.hypot(u[1]! * v[2]! - u[2]! * v[1]!, u[2]! * v[0]! - u[0]! * v[2]!, u[0]! * v[1]! - u[1]! * v[0]!) / 2;
+    }
+    return t;
+  }
+  const inputOf = (p: Project, scope: ResultScope) => ({
+    project: p,
+    libraries,
+    result: computePeinture(specOf(p)),
+    scope,
+  });
+
+  it('maillage : murs peints à la couleur du produit, baies découpées, devant le plâtre', () => {
+    const p = project();
+    const [mesh] = peintureMeshes(inputOf(p, { kind: 'project' }));
+    expect(mesh!.key).toBe('paint');
+    // les 31,8068 m² nets : murs entiers moins la porte et la fenêtre
+    expect(area(mesh!.positions)).toBeCloseTo(31.8068, 2);
+    const ys = mesh!.positions.filter((_, i) => i % 3 === 1);
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...ys)).toBeLessThanOrEqual(2.5 + 1e-9);
+    // blanc du modèle type, en couleur linéaire
+    expect(mesh!.colors[0]).toBeGreaterThan(0.8);
+  });
+
+  it('maillage : la portée limite les murs (une pièce, une pose)', () => {
+    const p = project(['r', 's']);
+    const all = area(peintureMeshes(inputOf(p, { kind: 'project' }))[0]!.positions);
+    const room = area(peintureMeshes(inputOf(p, { kind: 'room', room: 's' }))[0]!.positions);
+    const pose = area(peintureMeshes(inputOf(p, { kind: 'pose', pose: 'P0' }))[0]!.positions);
+    expect(all).toBeCloseTo(2 * 31.8068, 2);
+    expect(room).toBeCloseTo(31.8068, 2);
+    expect(pose).toBeCloseTo(31.8068, 2);
+  });
+
+  it('maillage : mur peint à mi-hauteur seulement', () => {
+    const p = project();
+    const half = {
+      ...p,
+      zones: p.zones.map((z) =>
+        z.surface.wall === 'r-w2'
+          ? {
+              ...z,
+              cuts: [
+                {
+                  line: [
+                    [0, 1000],
+                    [4000, 1000],
+                  ] as [[number, number], [number, number]],
+                  side: -1 as const,
+                },
+              ],
+            }
+          : z,
+      ),
+    };
+    // mur 3 : 4 m × 1 m au lieu de 4 m × 2,5 m
+    expect(area(peintureMeshes(inputOf(half, { kind: 'project' }))[0]!.positions)).toBeCloseTo(31.8068 - 6, 2);
+  });
+
+  it('exports : les maillages se posent sur l’enveloppe (overlay)', () => {
+    expect(exportsOf.overlay).toBe(true);
+  });
+
+  it('PDF : résumé, murs, pots à commander', async () => {
+    const p = project();
+    const d = new Doc();
+    writePeintureResults(d, inputOf(p, { kind: 'project' }));
+    const doc = await getDocument({ data: new Uint8Array(d.pdf.output('arraybuffer')) }).promise;
+    let text = '';
+    for (let i = 1; i <= doc.numPages; i++)
+      text += (await (await doc.getPage(i)).getTextContent()).items.map((x) => ('str' in x ? x.str : '')).join(' ');
+    expect(text).toContain('Peinture');
+    expect(text).toContain('Surface à peindre');
+    expect(text).toContain('Pièce, mur 1');
+    expect(text).toContain('31,8 m');
+    expect(text).toMatch(/1 × 5 L \+ 2 × 1 L/);
+    expect(text).toContain('69,00');
+  });
+});
+
+describe('maquette 3D', () => {
+  it('la peinture ne remplace pas le plâtre des murs : l’enveloppe reste entière', async () => {
+    const p = project();
+    const libs = await loadModel3D();
+    const scope = { kind: 'project' } as const;
+    const bare = modelMeshes(libs, p, scope, [], libraries);
+    const entry = { module: 'peinture', project: p, result: computePeinture(specOf(p)), exports: exportsOf };
+    const painted = modelMeshes(libs, p, scope, [entry], libraries);
+    const verts = (ms: typeof bare, key: string) => ms.find((m) => m.key === key)?.positions.length ?? 0;
+    expect(verts(painted, 'plaster')).toBe(verts(bare, 'plaster'));
+    expect(verts(painted, 'paint')).toBeGreaterThan(0);
+    expect(verts(bare, 'paint')).toBe(0);
   });
 });
