@@ -236,6 +236,41 @@ Spécification : `docs/peinture/SPEC.md`. Une branche par phase, `npm run check`
 ### PE5 — Plafonds (plus tard)
 - Surface « plafond » dans `core/coverage` (`SurfaceRef`), affichage, 3D, règles ; peinture du plafond.
 
+## Module cloisons (T0, CL1 à CL3)
+
+Spécification : `docs/cloisons/SPEC.md` ; plan v3 : `docs/BOITE.md` §3 bis. Décidé le 2026-10-13. Une branche par
+phase, `npm run check` vert, parité carrelage à 100 %. Préfixe `CL` (C1 à C4 sont les phases du carrelage) ; `T0` est la
+phase du plan avec travaux, sans module nouveau. `core/cutting/bars.ts` existe déjà (P4) : il est réutilisé tel quel.
+
+### T0 — Plan v3 : état existant et travaux
+- Types `Site`, `Partition`, `Demolition`, `Wall.locked` et `Wall.of` ; `core/plan/derive.ts` (`planAfter`, identité des
+  pièces par ancre, provenance des arêtes), `core/plan/works.ts` (réducteur `plan/partition/*`, `plan/demolition/*`,
+  validation en codes).
+- Projet v4 : `site` enregistré, `plan` calculé (réducteur, chargement), `projectFrom(plan)` pour les tests ;
+  migration 3 → 4 sur document figé, base v6 (magasin `systems`), étape de purge v4 figée à 3, scénarios A/B migrés.
+- Contrat : `coverage`, `poseHref`, `createPose` facultatifs ; `'structure'` dans `ShoppingGroup`.
+- Éditeur de plan : bascule Existant | Travaux, verrou des murs et « Verrouiller les murs extérieurs », outils Cloison,
+  Démolir, Porte / baie, aimantation aux faces et parallèles, confirmation de la surface revêtue perdue.
+- Fini quand : les invariants de `docs/BOITE.md` §3 bis sont verts (tests de propriétés compris) ; un projet sans
+  travaux est inchangé (même référence de plan, carrelage, parquet et peinture identiques, parité 100 %) ; parcours e2e
+  « relever un L, verrouiller les murs extérieurs, tracer une cloison avec une porte, démolir une cloison, carreler la
+  face d'une cloison neuve, annuler » sur téléphone et ordinateur ; la 3D montre les cloisons ; dérivation < 10 ms.
+
+### CL1 — Moteur
+- `modules/cloisons/core` : rails, montants (doublages, baies, liaisons), plaques (décalages, chutes), isolant,
+  consommables, alertes, hauteurs maximales ; usage de `core/cutting/bars.ts` pour rails et montants.
+- Fini quand : les invariants du §6 et les cas R1 à R6 du §7 de la spécification passent ; 20 cloisons < 100 ms.
+
+### CL2 — Module, données, bibliothèque, achats
+- `index.ts` / `engine.ts`, `CloisonsData`, `toSpec` (longueur du corps, appuis, liaisons, faces carrelées), réducteur,
+  bibliothèque `systems` avec modèles types, table des hauteurs et réglages, `shopping()` (groupe `structure`).
+- Fini quand : une cloison dessinée dans le plan se calcule par le worker et ses lignes apparaissent dans les Achats.
+
+### CL3 — Interface, résultats, PDF
+- Écran du module, inspecteur d'une cloison, élévation (ossature et calepinage des plaques), section Résultats, PDF,
+  cloisons en 3D (murs), test e2e.
+- Fini quand : on passe du relevé à la liste d'achat des cloisons sur téléphone, sans aide.
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

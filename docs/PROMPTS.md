@@ -115,6 +115,20 @@ Lis docs/NAVIGATION.md, puis réalise la phase N<k> de docs/PLAN.md sur une bran
 Montre le plan (fichiers, types, étapes) avant de coder. Distingue ce qui existe de ce qui est à créer.
 ```
 
+## T0, CL1 à CL3 — Module cloisons
+```
+Lis CLAUDE.md, docs/BOITE.md (§3 bis), docs/NAVIGATION.md et docs/cloisons/SPEC.md, puis réalise la phase <T0|CL1|CL2|CL3>
+de docs/PLAN.md sur une branche phase/<t0-travaux|cl1-moteur|cl2-module|cl3-interface>.
+Montre le plan (fichiers, types, étapes) avant de coder, puis pose tes questions de conception avec une recommandation.
+```
+Précisions par phase :
+- T0 : commence par `core/plan/derive.ts` et ses tests de propriétés (invariants du §3 bis), puis la migration 3 → 4
+  sur document figé (corrige d'abord l'étape de purge de `storage/db.ts`), puis l'éditeur. Montre un rendu SVG d'un
+  appartement avec une cloison et une démolition avant de fusionner. Un projet sans travaux ne doit rien changer.
+- CL1 : écris d'abord les tests des cas R1 à R6, avec le calcul à la main en commentaire, puis le moteur.
+- CL2 : `toSpec` lit `project.site` ; aucun import d'un autre module (les faces carrelées se lisent dans `project.zones`).
+- CL3 : vérifie l'élévation et l'éditeur avec Playwright en 390 px et en bureau, captures à l'appui.
+
 ## En cours de route
 
 Reprise après une interruption :
