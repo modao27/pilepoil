@@ -69,6 +69,9 @@ function drawFace(
       pdf.setDrawColor(...ACCENT);
       pdf.rect(X(p.x0), Y(p.y1), (p.x1 - p.x0) * k, (p.y1 - p.y0) * k, 'S');
     }
+    // pastille blanche : le numéro reste lisible par-dessus un montant
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(X(p.lx) - 2.2, Y(p.ly) - 1.9, 4.4, 3.8, 'F');
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(Math.max(5, Math.min(9, 130 * k * 2.83)));
     d.color(INK);
@@ -86,14 +89,18 @@ function drawFace(
 }
 
 /** Pages des cloisons de la portée ; sans cloison dans la portée, rien n'est écrit. */
-export function writeCloisonsResults(d: Doc, input: ResultInput<CloisonsResult>): void {
+export function writeCloisonsResults(
+  d: Doc,
+  input: ResultInput<CloisonsResult>,
+  opts: { newPage?: boolean } = {},
+): void {
   const { project, result, scope } = input;
   const parts = scopedPartitions(project, result, scope);
   if (!parts.length) return;
   const spec = toSpec(project, input.libraries);
   const specs = 'spec' in spec ? spec.spec : null;
 
-  d.page();
+  if (opts.newPage ?? true) d.page();
   d.text('Cloisons', 16, { bold: true, gap: 1 });
   d.text(NOTICE, 9, { color: MUTED, gap: 3 });
   for (const p of parts) {
@@ -178,13 +185,13 @@ function writeTotals(d: Doc, project: Project, result: CloisonsResult): void {
 /** PDF des seules cloisons du projet (bouton de l'écran des cloisons). */
 export function buildCloisonsPdf(project: Project, libraries: Libraries, result: CloisonsResult, date: number): Blob {
   const d = new Doc();
-  d.text('Cloisons', 18, { bold: true, gap: 1 });
   d.text(
     `${project.name} · ${new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`,
     10,
     { color: MUTED, gap: 4 },
   );
-  writeCloisonsResults(d, { project, libraries, result, scope: { kind: 'project' } });
+  // la première page porte déjà le logo et la date : les cloisons y commencent
+  writeCloisonsResults(d, { project, libraries, result, scope: { kind: 'project' } }, { newPage: false });
   footers(d, `PilePoil · ${project.name} · ${NOTICE}`);
   return d.pdf.output('blob');
 }

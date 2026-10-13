@@ -116,6 +116,10 @@ describe('rapport par portée et PDF', () => {
     writeCloisonsResults(d, input({ kind: 'project' }));
     expect(d.pdf.getNumberOfPages()).toBeGreaterThanOrEqual(2);
     expect(d.pdf.output('blob').size).toBeGreaterThan(2000);
+    // PDF des seules cloisons : elles commencent sur la première page, sans page vide devant
+    const alone = new Doc();
+    writeCloisonsResults(alone, input({ kind: 'project' }), { newPage: false });
+    expect(alone.pdf.getNumberOfPages()).toBe(d.pdf.getNumberOfPages() - 1);
     // hors portée : rien n'est écrit
     const e = new Doc();
     writeCloisonsResults(e, input({ kind: 'room', room: 'b' }));
