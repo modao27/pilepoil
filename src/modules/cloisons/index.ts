@@ -35,6 +35,9 @@ export const module: ModuleManifest<CloisonsData, CloisonsSpec, CloisonsResult, 
   migrations: {},
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
+    routes: [
+      { path: 'c/:partitionId', load: () => import('./ui/screens/ElevationScreen.svelte').then((m) => m.default) },
+    ],
   },
   library,
 };

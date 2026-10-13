@@ -79,7 +79,7 @@
 {:else}
   <Screen title={project.name} backHref="#/" backLabel="Mes projets">
     {#snippet actions()}<Button variant="ghost" href="#/p/{project.id}/plan">Modifier le plan</Button>{/snippet}
-    {#if project.poses.length}
+    {#if project.poses.length || active.some((m) => !m.coverage)}
       <div class="row top">
         <Button variant="primary" icon="list" href="#/p/{project.id}/resultats"
           >Résultats du projet (3D, dossier PDF)</Button

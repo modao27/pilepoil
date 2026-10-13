@@ -283,6 +283,12 @@ phase du plan avec travaux, sans module nouveau. `core/cutting/bars.ts` existe d
 - Écran du module, inspecteur d'une cloison, élévation (ossature et calepinage des plaques), section Résultats, PDF,
   cloisons en 3D (murs), test e2e.
 - Fini quand : on passe du relevé à la liste d'achat des cloisons sur téléphone, sans aide.
+- Fait (2026-10-13) : élévation des deux faces côte à côte (l'une sous l'autre sur téléphone), plaques numérotées d'une
+  couche au choix, chutes en couleur de réemploi, fiche de coupe, ossature (`ui/lib/elevation.ts` partagé par l'écran et le
+  PDF) ; section et rapport par cloison dans l'écran Résultats commun (niveaux projet et pièce, pas d'une pose : `PoseReport`
+  gagne `title`, `where`, `href` pour un module sans pose) ; pages des cloisons dans le dossier du projet et PDF des seules
+  cloisons depuis leur écran ; 3D : les cloisons sont déjà des murs du plan après travaux. Tests : `cloisonsResults`, e2e
+  `cloisons.spec.ts`.
 
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.

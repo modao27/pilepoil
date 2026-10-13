@@ -81,7 +81,7 @@ export function layoutPlates(
     const covering = p.openings.find((o) => o.offset <= x0 + 0.5 && o.offset + o.width >= x1 - 0.5);
     if (covering) {
       const h = plateHeight - covering.height;
-      if (h > 0.5) out.push({ ...base, height: h, area: w * h });
+      if (h > 0.5) out.push({ ...base, y0: covering.height, height: h, area: w * h });
       continue;
     }
     const cut = p.openings.reduce(
@@ -89,7 +89,7 @@ export function layoutPlates(
         sum + Math.max(0, Math.min(x1, o.offset + o.width) - Math.max(x0, o.offset)) * Math.min(o.height, plateHeight),
       0,
     );
-    out.push({ ...base, height: plateHeight, area: w * plateHeight - cut });
+    out.push({ ...base, y0: 0, height: plateHeight, area: w * plateHeight - cut });
   }
   return out;
 }

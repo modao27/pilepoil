@@ -188,6 +188,8 @@ export interface PlatePiece {
   x1: number;
   width: number;
   height: number;
+  /** Hauteur du bas de la pièce depuis le sol (au-dessus d'une baie : sa hauteur), mm. */
+  y0: number;
   /** Surface réellement posée (baies déduites), mm². */
   area: number;
   /** Rempli après l'optimisation des feuilles. */

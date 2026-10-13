@@ -13,6 +13,7 @@
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import Select from '../../../../ui/components/Select.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
+  import { fileSlug, saveBlob } from '../../../../ui/lib/files';
   import type { InsulationKind, PlateType } from '../../core/types';
   import { summary } from '../../state/module';
   import { systemFor } from '../../state/spec';
@@ -64,6 +65,20 @@
   const resultOf = (id: string) => ed.result?.partitions.find((p) => p.id === id);
   const text = $derived(ed.result ? summary(ed.result).text : 'Calcul…');
   const fr = (v: number, d = 1) => v.toLocaleString('fr-FR', { maximumFractionDigits: d });
+
+  let pdf = $state<'idle' | 'busy' | 'done' | 'error'>('idle');
+  async function makePdf() {
+    const result = ed.result;
+    if (!result) return;
+    pdf = 'busy';
+    try {
+      const { buildCloisonsPdf } = await import('../lib/pdf');
+      saveBlob(buildCloisonsPdf(ed.doc, app.libraries, result, Date.now()), `cloisons-${fileSlug(ed.doc.name)}.pdf`);
+      pdf = 'done';
+    } catch {
+      pdf = 'error';
+    }
+  }
 </script>
 
 <Screen title="Cloisons" backHref="#/p/{project.id}" backLabel="Projet" wide>
@@ -83,6 +98,7 @@
       {@const res = resultOf(p.id)}
       <li class="card">
         <h2>{p.name}</h2>
+        <p class="links"><a href="#/p/{project.id}/m/cloisons/c/{p.id}">Voir l’élévation et la fiche de coupe</a></p>
         <p class="muted num">{fr(p.length / 10)} cm de long, {fr(p.height / 10)} cm de haut</p>
         <Select
           label="Système"
@@ -169,7 +185,13 @@
   <CloisonsSettingsForm {ed} />
   <div class="row">
     <Button variant="primary" href="#/p/{project.id}/achats">Liste d’achat</Button>
+    <Button href="#/p/{project.id}/resultats">Résultats du projet</Button>
+    <Button icon="download" disabled={!ed.result || pdf === 'busy'} onclick={makePdf}>PDF des cloisons</Button>
   </div>
+  <p class="muted" role="status">
+    {#if pdf === 'busy'}Préparation du PDF…{:else if pdf === 'done'}PDF enregistré dans vos téléchargements.{:else if pdf === 'error'}Création
+      du PDF impossible.{/if}
+  </p>
 </Screen>
 
 <style>

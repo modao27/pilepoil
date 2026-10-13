@@ -94,3 +94,40 @@ test('cloisons : changer de système change l’épaisseur de la cloison dans le
   await page.getByRole('button', { name: /^Cloison 1/ }).click();
   await expect(page.getByLabel('Épaisseur', { exact: true })).toHaveValue(/98/);
 });
+
+test('cloisons : élévation des deux faces, fiche de coupe, résultats et PDF', async ({ page }, info) => {
+  const id = await houseWithPartition(page);
+  // une porte dans la cloison, depuis le plan
+  await panel(page).getByRole('button', { name: 'Ajouter une porte' }).click();
+
+  // élévation : deux faces, plaques numérotées, fiche de coupe
+  await page.goto(`/#/p/${id}/m/cloisons`);
+  await page.getByRole('link', { name: /Voir l’élévation/ }).click();
+  await expect(page).toHaveURL(new RegExp(`#/p/${id}/m/cloisons/c/[^/]+$`));
+  await expect(page.getByRole('heading', { name: /^Face A · plaque standard/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Face B · plaque standard/ })).toBeVisible();
+  await expect(page.getByRole('img', { name: /face A, couche 1/ })).toBeVisible();
+  await expect(page.getByRole('img', { name: /face B, couche 1/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Fiche de coupe des plaques' })).toBeVisible();
+  await expect(page.getByText(/^Face A · pièce 1 : .+ × 2\s490 mm/)).toBeVisible();
+  await check(page);
+  await shot(page, info, '76-cloisons-elevation');
+
+  // résultats du projet : la cloison est décrite par elle-même, détail et dossier PDF
+  await page.goto(`/#/p/${id}/resultats`);
+  await expect(page.getByRole('heading', { name: 'Cloisons', exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('article', { name: /^Cloisons · Cloison 1/ })).toContainText('Longueur');
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  await expect(page.getByRole('heading', { name: 'À commander pour tout le projet' })).toBeVisible();
+  await expect(page.getByText(/^Rail R48/).first()).toBeVisible();
+  const pdf = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Dossier du projet (PDF)' }).click();
+  expect((await pdf).suggestedFilename()).toBe('dossier-maison.pdf');
+  await shot(page, info, '77-cloisons-resultats');
+
+  // PDF des seules cloisons depuis leur écran
+  await page.goto(`/#/p/${id}/m/cloisons`);
+  const only = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'PDF des cloisons' }).click();
+  expect((await only).suggestedFilename()).toBe('cloisons-maison.pdf');
+});

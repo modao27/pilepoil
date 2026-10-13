@@ -233,7 +233,7 @@ describe('invariants', () => {
     expect(ded('threshold')).toBeLessThanOrEqual(ded('all'));
   });
 
-  it('litres croissants avec les couches et la marge, décroissants avec le rendement', () => {
+  it('litres croissants avec les couches et la marge, décroissants avec le rendement', { timeout: 20_000 }, () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 1, max: 3 }),
@@ -266,7 +266,7 @@ describe('invariants', () => {
       ),
       { numRuns: 60 },
     );
-  }, 20_000); // propriété coûteuse : la limite de 5 s dépasse quand la suite tourne en parallèle
+  });
 
   it('déterminisme : même entrée, même JSON', () => {
     const a = JSON.stringify(computePaint(room()));

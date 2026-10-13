@@ -184,6 +184,15 @@ export interface PoseReport {
   alerts: string[];
   /** false : la pose ne se calcule pas (erreur dans `alerts`). */
   ok: boolean;
+  /**
+   * Module sans pose (cloisons) : `pose` est l'identifiant de l'objet (une cloison) et ces champs le décrivent, la
+   * coquille n'ayant pas de pose à nommer. Absents pour un module à poses.
+   */
+  title?: string;
+  /** Où : « Séjour / Chambre ». */
+  where?: string;
+  /** Adresse de l'objet (élévation d'une cloison). */
+  href?: string;
 }
 
 /** Props de la section d'un module sur l'écran Résultats commun. */
