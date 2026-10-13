@@ -111,7 +111,7 @@ describe('contrat du module carrelage', () => {
     expect(data.poses).toEqual({});
     expect(carrelageView(withCarrelage(p, data))!.surfaces).toEqual([]);
     const tile = createTile({ id: 't9' });
-    expect(carrelage.createPose(p, { tiles: [tile] })).toMatchObject({ joint: 3, bands: [{ tileId: 't9' }] });
+    expect(carrelage.createPose!(p, { tiles: [tile] })).toMatchObject({ joint: 3, bands: [{ tileId: 't9' }] });
   });
 
   it('toSpec, summary ; projet sans carrelage : erreur', () => {

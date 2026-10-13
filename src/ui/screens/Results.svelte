@@ -102,7 +102,7 @@
       ? `#/p/${id}`
       : scope.kind === 'room'
         ? `#/p/${id}/r/${scope.room}`
-        : (poseModule && pose && poseModule.poseHref(id, pose.id)) || `#/p/${id}`,
+        : (poseModule && pose && poseModule.poseHref?.(id, pose.id)) || `#/p/${id}`,
   );
 
   type Tab = 'summary' | 'detail' | '3d';
@@ -224,7 +224,7 @@
         <li><a href="#/p/{id}">Projet</a></li>
         {#if crumbRoom}<li><a href="#/p/{id}/r/{crumbRoom.id}">{crumbRoom.name}</a></li>{/if}
         {#if pose && poseModule}<li>
-            <a href={poseModule.poseHref(id, pose.id)}>{poseModule.label} – {pose.name}</a>
+            <a href={poseModule.poseHref?.(id, pose.id)}>{poseModule.label} – {pose.name}</a>
           </li>{/if}
         <li aria-current="page">Résultats</li>
       </ol>
@@ -315,7 +315,7 @@
                       {/if}
                     {/if}
                     <p class="links">
-                      <a href={g.module.poseHref(id, p.id)}>Calepinage</a>
+                      <a href={g.module.poseHref?.(id, p.id)}>Calepinage</a>
                       {#if scope.kind !== 'pose'}
                         · <a href="#/p/{id}/pose/{p.id}/resultats">Résultats de la pose</a>{/if}
                     </p>

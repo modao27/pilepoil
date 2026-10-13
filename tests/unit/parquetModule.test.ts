@@ -46,7 +46,7 @@ describe('module parquet', () => {
   it('create : aucune pose ; createPose : stratifié, règles du stratifié, ou réglages d’une autre pose', () => {
     expect(parquet.create({ rooms: [], passages: [] }).poses).toEqual({});
     const p = project();
-    const fresh = parquet.createPose(p, libraries) as ParquetPose;
+    const fresh = parquet.createPose!(p, libraries) as ParquetPose;
     expect(fresh).toMatchObject({
       boardId: 'modele-stratifie',
       method: 'floating',
@@ -65,7 +65,7 @@ describe('module parquet', () => {
       ],
       offset: [5, 5],
     });
-    expect(parquet.createPose(q, libraries, 'L1')).toMatchObject({ angle: 45, breaks: [], offset: [0, 0] });
+    expect(parquet.createPose!(q, libraries, 'L1')).toMatchObject({ angle: 45, breaks: [], offset: [0, 0] });
   });
 
   it('poses vues par l’éditeur : réglages, nom, pièces', () => {

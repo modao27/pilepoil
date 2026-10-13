@@ -11,7 +11,7 @@
  * - l'identité d'une pièce vient d'une ancre calculée sur l'état existant (aucune mémoire).
  */
 import { difference, intersection, regionArea, union, type Region } from '../geometry/boolean';
-import { pointInPolygon, signedArea } from '../geometry/polygon';
+import { bbox, pointInPolygon, signedArea } from '../geometry/polygon';
 import { components, type Component } from '../geometry/rings';
 import type { Point, Polygon } from '../geometry/types';
 import { fingerprint } from '../hash';
@@ -21,6 +21,7 @@ import { passageError, validateRoom } from './validate';
 import {
   absOutline,
   absPoint,
+  boxesOverlap,
   CONTACT_AREA,
   demolitionBand,
   neighborRooms,
@@ -45,6 +46,14 @@ const SLIVER = 100_000;
 /** Plus petit morceau d'ouverture gardé, mm. */
 const MIN_OPENING = 5;
 
+interface GroupResult {
+  sig: string;
+  members: PlanRoom[];
+  /** null : les travaux ne touchent pas ce groupe. */
+  pieces: Piece[] | null;
+  slivers: number;
+}
+const groupMemo = new WeakMap<PlanRoom, GroupResult>();
 const memo = new WeakMap<Site, Derived>();
 
 /** Plan après travaux, mémoïsé sur `site`. */
@@ -205,25 +214,32 @@ export function derive(site: Site): Derived {
   const pieceGroups: { rooms: PlanRoom[]; pieces: Piece[] }[] = [];
 
   for (const [key, members] of groups) {
-    const region = unionAll([...members.map((r) => [absOutline(r)]), ...(bands.get(key) ?? []).map((b) => [b])]);
-    const cutters = partBands.filter(({ band }) => area(intersection(region, [band])) > CONTACT_AREA);
-    if (!cutters.length && !(bands.get(key) ?? []).length) continue;
-    const left = cutters.length
-      ? difference(
-          region,
-          cutters.map((c) => c.band),
-        )
-      : region;
-    const comps = components(left).filter((c) => area([c.outer, ...c.holes]) >= SLIVER);
-    for (const c of components(left))
-      if (area([c.outer, ...c.holes]) < SLIVER)
-        outIssues.push({ code: 'derive/sliver', id: members[0]!.id, severity: 'warning' });
-    const srcs = sourcesOf(
-      members,
-      demSources.filter((x) => find(x.room.id) === key),
-      cutters.map((c) => c.q),
-    );
-    const pieces = buildPieces(members, comps, srcs);
+    const dems = demSources.filter((x) => find(x.room.id) === key);
+    const gbox = bbox([...members.flatMap((r) => absOutline(r)), ...(bands.get(key) ?? []).flat()]);
+    const cand = partBands.filter(({ band }) => boxesOverlap(gbox, bbox(band)));
+    if (!cand.length && !dems.length) continue;
+    // le gros du calcul (booléens, arêtes) ne dépend que des pièces du groupe, des bandes voisines et des
+    // démolitions : inchangé, il est repris tel quel (glisser une cloison ne recalcule que son groupe)
+    const sig = JSON.stringify([
+      cand.map((c) => [c.q.id, c.band]),
+      dems.map((x) => [x.d.id, x.d.from, x.d.to, x.room.id, x.i]),
+    ]);
+    let hit = groupMemo.get(members[0]!);
+    if (
+      !hit ||
+      hit.sig !== sig ||
+      hit.members.length !== members.length ||
+      hit.members.some((r, i) => r !== members[i])
+    ) {
+      hit = computeGroup(members, key, cand, dems);
+      hit.sig = sig;
+      hit.members = members;
+      groupMemo.set(members[0]!, hit);
+    }
+    if (!hit.pieces) continue;
+    for (let n = 0; n < hit.slivers; n++)
+      outIssues.push({ code: 'derive/sliver', id: members[0]!.id, severity: 'warning' });
+    const pieces = hit.pieces;
     pieceGroups.push({ rooms: members, pieces });
     allPieces.push(...pieces);
     for (const r of members) touched.add(r.id);
@@ -254,6 +270,31 @@ export function derive(site: Site): Derived {
     if (!rooms.includes(r) && validateRoom(r).length)
       outIssues.push({ code: 'derive/invalid-room', id: r.id, severity: 'error' });
   return { plan, issues: dedupe(outIssues) };
+
+  function computeGroup(
+    members: PlanRoom[],
+    key: Id,
+    cand: { q: Partition; band: Polygon }[],
+    dems: typeof demSources,
+  ): GroupResult {
+    const region = unionAll([...members.map((r) => [absOutline(r)]), ...(bands.get(key) ?? []).map((b) => [b])]);
+    const cutters = cand.filter(({ band }) => area(intersection(region, [band])) > CONTACT_AREA);
+    if (!cutters.length && !dems.length) return { sig: '', members, pieces: null, slivers: 0 };
+    const left = cutters.length
+      ? difference(
+          region,
+          cutters.map((c) => c.band),
+        )
+      : region;
+    const all = components(left);
+    const comps = all.filter((c) => area([c.outer, ...c.holes]) >= SLIVER);
+    const srcs = sourcesOf(
+      members,
+      dems,
+      cutters.map((c) => c.q),
+    );
+    return { sig: '', members, pieces: buildPieces(members, comps, srcs), slivers: all.length - comps.length };
+  }
 
   /* ----- sources d'arêtes d'un groupe ----- */
   function sourcesOf(members: PlanRoom[], dems: typeof demSources, cuts: Partition[]): Src[] {
@@ -411,6 +452,7 @@ function nameWalls(pieces: Piece[], partitions: Partition[], issues: WorksIssue[
       bySrc.set(s.src.key, [...(bySrc.get(s.src.key) ?? []), { piece, sub: s, at }]);
     }),
   );
+  for (const piece of pieces) piece.openings = [];
   const wallOf = new Map<Sub, Wall>();
   for (const list of bySrc.values()) {
     list.sort((x, y) => x.at - y.at);

@@ -425,7 +425,7 @@ d'achat ; la mention « Vérifier la notice du fabricant » en pied de page. Les
 murs de leurs pièces.
 
 ## 9. Performances
-- Dérivation du plan (`planAfter`) : < 10 ms pour 30 pièces et 40 cloisons, de façon à tenir à 60 i/s pendant le
-  glissement d'une cloison.
+- Dérivation du plan (`planAfter`) pour 30 pièces et 40 cloisons : moins de 30 ms à froid ; moins de 10 ms quand on
+  glisse une cloison (les groupes de pièces que le geste ne touche pas sont repris tels quels), pour tenir 60 i/s.
 - Calcul des cloisons d'un appartement (20 cloisons) : < 100 ms.
 - Élévation : dessin fluide (60 i/s) pour une cloison de 8 m avec deux couches.

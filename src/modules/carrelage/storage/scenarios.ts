@@ -2,7 +2,7 @@
  * Magasin `scenarios` du carrelage (docs/BOITE.md §4) : lecture, écriture, photos utilisées.
  * La coquille supprime les scénarios avec leur projet (index `projectId`).
  */
-import type { Id } from '../../../state/model';
+import { withSite, type Id } from '../../../state/model';
 import type { Db } from '../../../storage/db';
 import { SCENARIO_SCHEMA, type Scenario } from '../state/model';
 
@@ -11,9 +11,13 @@ export async function listScenarios(db: Db, projectId: Id): Promise<Scenario[]> 
   // scénarios d'avant le carrelage bâti sur le plan : supprimés, sans conversion (PLAN C2)
   for (const s of all as { id: Id; schemaVersion?: number }[])
     if ((s.schemaVersion ?? 0) < SCENARIO_SCHEMA) void db.delete('scenarios', s.id);
-  return (all as Scenario[])
-    .filter((s) => s.schemaVersion === SCENARIO_SCHEMA)
-    .sort((a, b) => a.slot.localeCompare(b.slot));
+  return (
+    (all as Scenario[])
+      .filter((s) => s.schemaVersion === SCENARIO_SCHEMA)
+      // copie d'avant le plan v3 : son plan devient l'état existant (jamais supprimée)
+      .map((s) => ({ ...s, snapshot: { ...s.snapshot, project: withSite(s.snapshot.project) } }))
+      .sort((a, b) => a.slot.localeCompare(b.slot))
+  );
 }
 
 /** Un seul scénario par emplacement A/B : l'ancien est remplacé. Renvoie true si un ancien a été retiré. */

@@ -1,5 +1,14 @@
 import type { LibraryItem } from '../modules/types';
-import type { Id, Photo, Pref, PrefKey, PrefValue, Project } from '../state/model';
+import {
+  dehydrate,
+  hydrate,
+  type Id,
+  type Photo,
+  type Pref,
+  type PrefKey,
+  type PrefValue,
+  type Project,
+} from '../state/model';
 import type { Db } from './db';
 import { migrateProject } from './migrations';
 
@@ -20,11 +29,11 @@ export async function getProject(db: Db, id: Id): Promise<Project | undefined> {
 function readProject(db: Db, raw: unknown): Project {
   const { doc, changed } = migrateProject(raw);
   if (changed) void db.put('projects', doc);
-  return doc;
+  return hydrate(doc);
 }
 
 export async function saveProject(db: Db, p: Project): Promise<void> {
-  await db.put('projects', p);
+  await db.put('projects', dehydrate(p));
 }
 
 /** Supprime le projet, ses scénarios et les photos devenues orphelines. */

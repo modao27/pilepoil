@@ -2,7 +2,7 @@
 import type { ShoppingGroup, ShoppingLine } from '../../core/shopping/types';
 
 /** Ordre des rayons, comme dans un magasin de bricolage. */
-export const GROUP_ORDER: ShoppingGroup[] = ['covering', 'underlay', 'finish', 'consumable', 'tool'];
+export const GROUP_ORDER: ShoppingGroup[] = ['covering', 'underlay', 'structure', 'finish', 'consumable', 'tool'];
 
 export interface Consolidated {
   groups: { group: ShoppingGroup; lines: ShoppingLine[]; total: number }[];
@@ -39,6 +39,7 @@ export function consolidate(lines: ShoppingLine[]): Consolidated {
 export const GROUP_LABEL: Record<ShoppingGroup, string> = {
   covering: 'Revêtements',
   underlay: 'Sous-couches',
+  structure: 'Ossature et plaques',
   finish: 'Finitions',
   consumable: 'Consommables',
   tool: 'Outillage',

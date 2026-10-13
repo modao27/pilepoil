@@ -1,5 +1,5 @@
 import { moduleById } from '../modules/registry';
-import { PROJECT_SCHEMA, type ModuleDoc, type Project } from '../state/model';
+import { PROJECT_SCHEMA, type ModuleDoc, type StoredProject } from '../state/model';
 
 /** Étape de migration : document en version n → version n + 1. */
 export type Step = (doc: Record<string, unknown>) => Record<string, unknown>;
@@ -35,14 +35,18 @@ export function migrate<T>(
 
 /* Étapes du projet. Ajouter ici `n: (doc) => …` à chaque montée de schéma, avec un test. Les projets v1 (avant
    la boîte à outils) ne sont plus lus : la base v3 les a retirés (db.ts). */
-export const PROJECT_STEPS: Record<number, Step> = {};
-export const migrateProject = (doc: unknown) => migrateModules(migrate<Project>(doc, PROJECT_SCHEMA, PROJECT_STEPS));
+export const PROJECT_STEPS: Record<number, Step> = {
+  // 3 → 4 (plan v3, docs/BOITE.md §3 bis) : le plan devient l'état existant d'un site sans travaux
+  3: ({ plan, ...rest }) => ({ ...rest, site: { existing: plan, partitions: [], demolitions: [] } }),
+};
+export const migrateProject = (doc: unknown) =>
+  migrateModules(migrate<StoredProject>(doc, PROJECT_SCHEMA, PROJECT_STEPS));
 
 /**
  * Migre les données de chaque module avec les étapes du module (`migrations`, version `schemaVersion`).
  * Données d'un module inconnu (version plus récente de l'application) : laissées telles quelles.
  */
-function migrateModules(r: { doc: Project; changed: boolean }): { doc: Project; changed: boolean } {
+function migrateModules(r: { doc: StoredProject; changed: boolean }): { doc: StoredProject; changed: boolean } {
   let changed = r.changed;
   const modules: Record<string, ModuleDoc> = {};
   for (const [id, m] of Object.entries(r.doc.modules)) {

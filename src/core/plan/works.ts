@@ -3,8 +3,8 @@
  * l'état existant, `plan/partition/*`, `plan/demolition/*`) et validation en codes. Pur ; mm, repère du plan.
  */
 import { difference, intersection, regionArea, type Region } from '../geometry/boolean';
-import { pointInPolygon, signedArea } from '../geometry/polygon';
-import type { Point, Polygon } from '../geometry/types';
+import { bbox, pointInPolygon, signedArea } from '../geometry/polygon';
+import type { BBox, Point, Polygon } from '../geometry/types';
 import { reducePlan, type PlanAction } from './reduce';
 import type { Demolition, Id, Partition, PartitionOpening, PlanRoom, Site } from './types';
 import { wallBands, wallDirection, wallIndex, wallLength, wallSegment, outwardNormal } from './walls';
@@ -171,7 +171,24 @@ const at = (o: Point, u: Point, s: number, n: Point, d: number): Point => [
 const positive = (r: Polygon): Polygon => (signedArea(r) < 0 ? [...r].reverse() : r);
 
 export const absPoint = (r: PlanRoom, p: Point): Point => [r.origin[0] + p[0], r.origin[1] + p[1]];
-export const absOutline = (r: PlanRoom): Polygon => positive(r.outline.map((p) => absPoint(r, p)));
+const outlineMemo = new WeakMap<PlanRoom, Polygon>();
+export function absOutline(r: PlanRoom): Polygon {
+  let o = outlineMemo.get(r);
+  if (!o) outlineMemo.set(r, (o = positive(r.outline.map((p) => absPoint(r, p)))));
+  return o;
+}
+
+/** Boîtes englobantes [x0, x1, y0, y1] qui se touchent (à `gap` près). */
+export const boxesOverlap = (a: BBox, b: BBox, gap = 0): boolean =>
+  a[0] <= b[1] + gap && b[0] <= a[1] + gap && a[2] <= b[3] + gap && b[2] <= a[3] + gap;
+
+const reachMemo = new WeakMap<PlanRoom, BBox>();
+/** Boîte d'une pièce avec ses murs (le plus loin que touche la pièce). */
+export function roomReach(r: PlanRoom): BBox {
+  let b = reachMemo.get(r);
+  if (!b) reachMemo.set(r, (b = bbox([...absOutline(r), ...absWallBands(r).flat()])));
+  return b;
+}
 
 /** Repère d'une cloison : axe, direction u, normale gauche nl = (uy, −ux), largeurs de chaque côté de l'axe. */
 export interface PartitionFrame {
@@ -221,8 +238,11 @@ export function demolitionBand(room: PlanRoom, i: number, from: number, to: numb
 }
 
 /** Murs d'une pièce comme bandes dans le repère du plan (une par mur, ordre du contour). */
+const bandsMemo = new WeakMap<PlanRoom, Polygon[]>();
 export function absWallBands(room: PlanRoom): Polygon[] {
-  return wallBands(room).map((ring) => positive(ring.map((q) => absPoint(room, q))));
+  let b = bandsMemo.get(room);
+  if (!b) bandsMemo.set(room, (b = wallBands(room).map((ring) => positive(ring.map((q) => absPoint(room, q))))));
+  return b;
 }
 
 const area = (r: Region) => Math.abs(regionArea(r));
@@ -234,6 +254,7 @@ export function partitionExtension(site: Site, q: Partition): [number, number] {
   const f = partitionFrame(q);
   const near = (p: Point): boolean => {
     for (const r of site.existing.rooms) {
+      if (!boxesOverlap([p[0], p[0], p[1], p[1]], roomReach(r), SNAP)) continue;
       const o = absOutline(r);
       for (let i = 0; i < o.length; i++) if (segDistance(p, o[i]!, o[(i + 1) % o.length]!) <= SNAP) return true;
       for (const b of absWallBands(r)) if (pointInPolygon(p, b)) return true;
@@ -345,6 +366,7 @@ function insideSomeRoom(site: Site, q: Partition): boolean {
   const f = partitionFrame(q);
   const ok = (p: Point) =>
     site.existing.rooms.some((r) => {
+      if (!boxesOverlap([p[0], p[0], p[1], p[1]], roomReach(r), SNAP)) return false;
       const o = absOutline(r);
       if (pointInPolygon(p, o)) return true;
       if (absWallBands(r).some((b) => pointInPolygon(p, b))) return true;
@@ -366,8 +388,10 @@ function crossedWalls(site: Site, q: Partition, demolished: Polygon[]): 'locked'
     at(f.a, f.u, 0, f.nl, -1),
   ]);
   const spans: { s0: number; s1: number; locked: boolean }[] = [];
+  const box = bbox(thin);
   for (const r of site.existing.rooms)
     absWallBands(r).forEach((band, i) => {
+      if (!boxesOverlap(box, bbox(band))) return;
       let hit: Region = intersection([thin], [band]);
       if (demolished.length) hit = difference(hit, demolished);
       if (area(hit) < 1) return;

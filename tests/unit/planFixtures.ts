@@ -6,7 +6,7 @@ import { createBand, createData, createPoseSettings } from '../../src/modules/ca
 import type { CarrelagePose } from '../../src/modules/carrelage/state/model';
 import type { Cut, Pose, SurfaceRef, Zone } from '../../src/core/coverage/types';
 import type { PatternId } from '../../src/modules/carrelage/core';
-import { PROJECT_SCHEMA, type Project } from '../../src/state/model';
+import { PROJECT_SCHEMA, siteOf, type Project } from '../../src/state/model';
 
 /** Identifiants déterministes : `${prefix}0`, `${prefix}1`… */
 export function ids(prefix: string): () => string {
@@ -45,13 +45,15 @@ export function withOpening(room: PlanRoom, i: number, o: Partial<WallOpening> =
 }
 
 export function planProject(rooms: PlanRoom[], data: Partial<CarrelageData> = {}, o: Partial<Project> = {}): Project {
+  const plan = { rooms, passages: [] };
   return {
     schemaVersion: PROJECT_SCHEMA,
     id: 'p1',
     name: 'Projet',
     createdAt: 0,
     updatedAt: 0,
-    plan: { rooms, passages: [] },
+    site: siteOf(o.plan ?? plan),
+    plan,
     zones: [],
     poses: [],
     modules: { carrelage: { schemaVersion: CARRELAGE_SCHEMA, data: createData(data) } },

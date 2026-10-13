@@ -74,8 +74,36 @@ describe('base IndexedDB', () => {
       'prefs',
       'projects',
       'scenarios',
+      'systems',
       'tiles',
     ]);
+  });
+
+  it('un projet v3 (plan seul) se lit comme un site sans travaux, et le plan calculé n’est pas enregistré', async () => {
+    const db = await fresh();
+    const t = createTile();
+    const p = createProject(t.id, { name: 'Ancien' }, 1000);
+    const { site: _site, ...v3 } = { ...p, schemaVersion: 3 };
+    void _site;
+    await db.put('projects', v3 as never);
+    const read = (await getProject(db, p.id))!;
+    expect(read.schemaVersion).toBe(4);
+    expect(read.site.existing).toEqual(p.plan);
+    expect(read.site.partitions).toEqual([]);
+    expect(read.plan).toBe(read.site.existing);
+    await saveProject(db, read);
+    expect('plan' in ((await db.get('projects', p.id)) as object)).toBe(false);
+  });
+
+  it('un scénario d’avant le plan v3 est gardé, son plan devient son état existant', async () => {
+    const db = await fresh();
+    const t = createTile();
+    const p = createProject(t.id);
+    const { site: _site, ...old } = p;
+    void _site;
+    await saveScenario(db, scenario(old as Project, 'A'));
+    const [s] = await listScenarios(db, p.id);
+    expect(s!.snapshot.project.site.existing).toEqual(p.plan);
   });
 
   it('projets : enregistrement, liste du plus récent au plus ancien, suppression avec scénarios', async () => {

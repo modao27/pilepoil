@@ -27,16 +27,16 @@ import type { Libraries, ToolModule } from '../../modules/types';
 import type { Id, Project } from '../../state/model';
 import type { ProjectAction } from '../../state/project';
 
-/** Modules qui posent sur ce type de surface (ordre du registre). */
+/** Modules qui posent sur ce type de surface (ordre du registre) ; les modules sans pose (cloisons) n'y sont pas. */
 export const modulesFor = (s: SurfaceRef): ToolModule[] =>
-  modules.filter((m) => m.coverage.surfaces.includes(s.wall == null ? 'floor' : 'wall'));
+  modules.filter((m) => m.coverage?.surfaces.includes(s.wall == null ? 'floor' : 'wall'));
 
 /** Zones posées sur une surface, dans l'ordre du projet. */
 export const zonesOn = (p: Project, s: SurfaceRef): Zone[] => p.zones.filter((z) => sameSurface(z.surface, s));
 
 /** Poses du module que la surface peut continuer (mur voisin, pièce reliée). */
 export const continuable = (p: Project, s: SurfaceRef, m: ToolModule): Pose[] =>
-  continuablePoses(p.plan, p, s, m.id, m.coverage);
+  continuablePoses(p.plan, p, s, m.id, m.coverage!);
 
 /** Le module est-il déjà dans le projet ? Sinon, l'action qui l'ajoute. */
 function withModule(p: Project, m: ToolModule): { project: Project; actions: ProjectAction[] } {
@@ -63,12 +63,12 @@ export function newPoseAction(
 ): { action: ProjectAction; poseId: Id } | { error: CoverageError } {
   const pose: Pose = { id: newId(), module: m.id, name: nextPoseName(p.poses) };
   const zone: Zone = { ...shape, id: newId(), surface, pose: pose.id };
-  const error = checkZone(p.plan, p, zone, m.coverage);
+  const error = checkZone(p.plan, p, zone, m.coverage!);
   if (error) return { error };
   const inRoom = new Set(p.zones.filter((z) => z.surface.room === surface.room).map((z) => z.pose));
   const like = [...p.poses].reverse().find((x) => x.module === m.id && inRoom.has(x.id))?.id;
   const { project, actions } = withModule(p, m);
-  const settings = m.createPose(project, libraries, like);
+  const settings = m.createPose!(project, libraries, like);
   return {
     action: { type: 'batch', actions: [...actions, { type: 'pose/add', pose, zones: [zone], settings }] },
     poseId: pose.id,
@@ -156,7 +156,7 @@ export function removeZoneAction(p: Project, libraries: Libraries, zone: Zone, n
       type: 'pose/add',
       pose: added,
       zones: moved.map((z) => ({ ...z, id: newId(), pose: added.id })),
-      settings: m.createPose(p, libraries, pose.id),
+      settings: m.createPose!(p, libraries, pose.id),
     });
   }
   return { type: 'batch', actions };
@@ -185,7 +185,7 @@ export function contourAction(
       zoneId: zone.id,
       outline,
       newZoneId: newId(),
-      pose: { pose: added, settings: m.createPose(p, libraries, zone.pose) },
+      pose: { pose: added, settings: m.createPose!(p, libraries, zone.pose) },
     },
     poseId: added.id,
   };

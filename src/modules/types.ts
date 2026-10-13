@@ -233,7 +233,7 @@ export interface ModuleLogic<
   /** Données initiales quand on active le module sur un projet (sans pose : les poses naissent des zones). */
   create(plan: Plan): Data;
   /** Réglages d'une nouvelle pose ; `like` : pose dont on reprend les réglages. */
-  createPose(project: Project, libraries: Libraries, like?: Id): unknown;
+  createPose?(project: Project, libraries: Libraries, like?: Id): unknown;
   /**
    * Réducteur pur des actions du module et des événements de pose (réglages ajoutés avec une pose, retirés avec
    * elle) ; renvoie `data` inchangé si rien ne change.
@@ -266,10 +266,13 @@ export interface ModuleManifest<
   schemaVersion: number;
   /** Bouton de l'écran Pièce qui ouvre la pose (« Calepinage » par défaut). */
   poseLabel?: string;
-  /** Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). */
-  coverage: CoverageRules;
+  /**
+   * Surfaces acceptées et étendue d'une pose (docs/NAVIGATION.md §4). Absent : le module ne revêt aucune surface
+   * (cloisons) ; il n'a ni pose, ni `poseHref`, ni `createPose`.
+   */
+  coverage?: CoverageRules;
   /** Adresse de l'éditeur (calepinage) d'une pose du module : la coquille y mène sans connaître ses écrans. */
-  poseHref(projectId: Id, poseId: Id): string;
+  poseHref?(projectId: Id, poseId: Id): string;
   /** Logique du module (réducteur, entrée moteur, achats), chargée à la demande. */
   logic(): Promise<ModuleLogic<Data, Spec, Result, Action>>;
   /** Résultats par pose, pièce et projet : chiffres, détail, PDF, 3D (chargés à la demande). */

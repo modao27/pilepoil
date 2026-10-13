@@ -126,7 +126,7 @@
                 <ul class="poses">
                   {#each poses as x (x.pose.id)}
                     <li style="--pose: {poseColor(x.index)}">
-                      <a href={x.module?.poseHref(project.id, x.pose.id)}
+                      <a href={x.module?.poseHref?.(project.id, x.pose.id)}
                         ><span class="chip" aria-hidden="true"></span>{x.module?.label} · {x.pose.name}
                         <span class="muted">({x.where})</span></a
                       >
