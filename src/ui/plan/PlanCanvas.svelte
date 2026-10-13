@@ -7,8 +7,12 @@
   import { onMount } from 'svelte';
   import type { Point } from '../../core/geometry/types';
   import { area } from '../../core/geometry/polygon';
-  import { labelPoint, planBounds, snapPoint, GRID } from '../../core/plan/snap';
-  import type { Id, PlanRoom } from '../../core/plan/types';
+  import { labelPoint, planBounds, snapPartitionPoint, snapPoint, GRID } from '../../core/plan/snap';
+  import { absWallBands, demolitionBand, partitionBand } from '../../core/plan/works';
+  import { lostByPose } from '../../core/coverage';
+  import type { Project } from '../../state/model';
+  import { toast } from '../lib/toasts.svelte';
+  import type { Demolition, Id, Partition, PlanRoom } from '../../core/plan/types';
   import { openingCenter, wallBands, wallDirection, wallIndex, wallLength, wallSegment } from '../../core/plan/walls';
   import { fitView, panBy, toWorld, zoomAt, type View } from '../../render/view';
   import { formatNumber } from '../lib/calc';
@@ -48,7 +52,8 @@
     | { kind: 'room'; room: Id; start: Point; origin: Point }
     | { kind: 'point'; room: Id; index: number }
     | { kind: 'obstacle'; room: Id; id: Id; start: Point; outline: Point[] }
-    | { kind: 'opening'; room: Id; id: Id };
+    | { kind: 'opening'; room: Id; id: Id }
+    | { kind: 'pend'; partition: Id; end: 0 | 1; start: Project };
 
   // pointeurs du geste en cours : interne, volontairement non réactif
   // eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -90,6 +95,12 @@
     gesture++;
     const d = data(e.target as Element);
     drag = { kind: 'pan' };
+    if (st.layer === 'works') {
+      // calque travaux : les pièces ne se modifient pas ; on glisse seulement les bouts d'une cloison choisie
+      if (st.mode === 'select' && d?.k === 'pend')
+        drag = { kind: 'pend', partition: d.id, end: d.i === 1 ? 1 : 0, start: st.doc };
+      return;
+    }
     if (st.mode !== 'select' || !d) return;
     const r = st.room(d.room);
     if (!r) return;
@@ -105,6 +116,7 @@
 
   function onpointermove(e: PointerEvent) {
     if (st.mode === 'draw') hover = snapDraw(world(e));
+    else if (st.mode === 'partition') hover = snapWorks(world(e));
     if (!pointers.has(e.pointerId)) return;
     const [x, y] = local(e);
     const prev = pointers.get(e.pointerId)!;
@@ -120,7 +132,7 @@
     if (!moved) {
       moved = true;
       // une pièce, un obstacle ou une ouverture qu'on commence à glisser devient la sélection
-      if (drag && drag.kind !== 'pan' && drag.kind !== 'point') select(data(down.target));
+      if (drag && drag.kind !== 'pan' && drag.kind !== 'point' && drag.kind !== 'pend') select(data(down.target));
     }
     const w = world(e);
     const key = `drag:${gesture}`;
@@ -156,6 +168,18 @@
         st.dispatch({ type: 'plan/obstacle/update', roomId: drag.room, obstacleId: drag.id, patch: { outline } }, key);
         return;
       }
+      case 'pend': {
+        const q = st.partition(drag.partition);
+        if (!q) return;
+        const other = drag.end === 0 ? q.b : q.a;
+        const pt = snapWorks(w, other);
+        // pendant le geste, pas de confirmation : la perte éventuelle est annoncée au relâchement
+        st.dispatch(
+          { type: 'plan/partition/update', partitionId: q.id, patch: drag.end === 0 ? { a: pt } : { b: pt } },
+          key,
+        );
+        return;
+      }
       case 'opening': {
         const r = st.room(drag.room);
         const id = drag.id;
@@ -178,6 +202,14 @@
     if (pointers.size < 2) pinch = null;
     const was = down;
     down = null;
+    if (drag?.kind === 'pend' && moved) {
+      const from = drag.start,
+        now = st.doc;
+      for (const l of lostByPose(from.plan, now.plan, from.zones, from.poses))
+        toast(
+          `${l.pose.name} perd ${formatNumber(l.area / 1e6, 2)} m² de revêtement : remettez la cloison en place ou annulez.`,
+        );
+    }
     if (!was || moved || pointers.size) {
       drag = null;
       return;
@@ -194,6 +226,20 @@
     if (st.mode === 'link') {
       if (d?.k === 'opening') st.link({ room: d.room, opening: d.id });
       else st.cancelLink();
+      return;
+    }
+    if (st.mode === 'partition') {
+      st.partitionPoint(snapWorks(w, st.partitionFrom));
+      return;
+    }
+    if (st.mode === 'demolish') {
+      if (d?.k === 'xwall') st.demolishWall(d.room, d.id);
+      return;
+    }
+    if (st.layer === 'works') {
+      if (d?.k === 'partition') st.select({ kind: 'partition', partition: d.id });
+      else if (d?.k === 'demolition') st.select({ kind: 'demolition', demolition: d.id });
+      else st.select(null);
       return;
     }
     if (d?.k === 'mid') st.splitWall(d.room, d.id);
@@ -229,9 +275,15 @@
     );
   }
 
+  /** Cloison en cours de tracé : angle droit, arêtes et faces des pièces, grille. */
+  function snapWorks(w: Point, start: Point | null = st.partitionFrom): Point {
+    return snapPartitionPoint(w, start, st.plan, tol());
+  }
+
   function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') {
-      if (st.mode === 'draw') st.cancelDraw();
+      if (st.mode === 'partition' || st.mode === 'demolish') st.cancelTool();
+      else if (st.mode === 'draw') st.cancelDraw();
       else if (st.mode === 'link') st.cancelLink();
       else st.select(null);
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && st.sel) {
@@ -242,6 +294,8 @@
       else if (s.kind === 'obstacle')
         st.dispatch({ type: 'plan/obstacle/remove', roomId: s.room, obstacleId: s.obstacle });
       else if (s.kind === 'passage') st.dispatch({ type: 'plan/passage/remove', passageId: s.passage });
+      else if (s.kind === 'partition') st.removePartition(s.partition);
+      else if (s.kind === 'demolition') st.removeDemolition(s.demolition);
       else return;
     } else return;
     e.preventDefault();
@@ -280,13 +334,33 @@
       ('index' in sel && sel.index === id));
   const activeRoom = $derived(st.selectedRoom?.id);
   const cm = (mm: number) => formatNumber(mm / 10, 1);
+  /** Polygone du plan d'ensemble en points d'écran. */
+  const ap = (poly: Point[]) => poly.map(([x, y]) => S(x, y).join(',')).join(' ');
+  const selPartition = $derived(sel?.kind === 'partition' ? sel.partition : null);
+  const selDemolition = $derived(sel?.kind === 'demolition' ? sel.demolition : null);
+  const works = $derived(st.layer === 'works');
+  const badPartitions = $derived(
+    st.doc.site.partitions.filter((q) => st.issues.some((i) => i.id === q.id && i.severity === 'error')),
+  );
+  /** Bande d'une démolition (repère du plan) ; null si son mur n'existe plus. */
+  function demoBand(d: Demolition): Point[] | null {
+    const r = st.doc.site.existing.rooms.find((x) => x.id === d.room);
+    const i = r ? wallIndex(r, d.wall) : -1;
+    return r && i >= 0 ? demolitionBand(r, i, d.from, d.to, 0) : null;
+  }
+  /** Cloison provisoire pendant le tracé. */
+  const preview = $derived.by<Partition | null>(() =>
+    st.mode === 'partition' && st.partitionFrom && hover
+      ? { id: 'preview', a: st.partitionFrom, b: hover, thickness: 72, align: 'right', openings: [] }
+      : null,
+  );
   /**
    * Cotes des murs de la pièce choisie, en px : hors du mur, sans toucher le « + » du milieu (décalage selon
    * l'orientation du mur) ; une cote qui en chevauche une autre s'écarte du mur (petits murs d'un angle).
    */
   const dims = $derived.by(() => {
     const r = st.selectedRoom;
-    if (!r || st.mode !== 'select') return [];
+    if (!r || st.mode !== 'select' || st.layer !== 'existing') return [];
     const out: { wall: Id; x: number; y: number; text: string }[] = [];
     r.outline.forEach((_, i) => {
       const [a, b] = wallSegment(r, i);
@@ -316,6 +390,7 @@
   class="plan"
   class:draw={st.mode === 'draw'}
   class:link={st.mode === 'link'}
+  class:tool={st.mode === 'partition' || st.mode === 'demolish'}
   role="application"
   aria-label={label}
   tabindex="0"
@@ -348,13 +423,16 @@
     <g class="room" class:active>
       <polygon class="floor" points={pts(r, r.outline)} data-k="room" data-room={r.id} />
       {#each wallBands(r) as band, i (r.walls[i]!.id)}
+        {@const w = r.walls[i]!}
         <polygon
           class="wall"
-          class:sel={isSel('wall', r.id, r.walls[i]!.id)}
+          class:locked={!!w.locked}
+          class:partition={!!w.of}
+          class:sel={w.of ? selPartition === w.of.partition : isSel('wall', r.id, w.id)}
           points={pts(r, band)}
-          data-k="wall"
+          data-k={w.of ? 'partition' : 'wall'}
           data-room={r.id}
-          data-id={r.walls[i]!.id}
+          data-id={w.of ? w.of.partition : w.id}
         />
       {/each}
       {#each r.obstacles as o (o.id)}
@@ -408,7 +486,24 @@
         ></text
       >
 
-      {#if active && st.mode === 'select'}
+      {#each r.walls as w, i (w.id)}
+        {#if w.locked && wallLength(r, i) * view.sc > 40}
+          {@const [a, b] = wallSegment(r, i)}
+          {@const u = wallDirection(r, i)}
+          {@const lp = S(
+            r.origin[0] + (a[0] + b[0]) / 2 + u[1] * (w.thickness / 2),
+            r.origin[1] + (a[1] + b[1]) / 2 - u[0] * (w.thickness / 2),
+          )}
+          <!-- cadenas : mur extérieur ou porteur, qu'on ne démolit pas -->
+          <g class="lock" transform="translate({lp[0]} {lp[1]})">
+            <title>{w.locked === 'exterior' ? 'Mur extérieur' : 'Mur porteur'}</title>
+            <rect x="-6" y="-1" width="12" height="9" rx="2" />
+            <path d="M -3.5 -1 v -3 a 3.5 3.5 0 0 1 7 0 v 3" />
+          </g>
+        {/if}
+      {/each}
+
+      {#if active && st.mode === 'select' && !works}
         {#each r.outline as _, i (i)}
           {@const [a, b] = wallSegment(r, i)}
           {@const wall = r.walls[i]!}
@@ -439,6 +534,84 @@
       {/if}
     </g>
   {/each}
+
+  {#if works}
+    <!-- démolitions : bande du mur démoli, hachurée -->
+    {#each st.doc.site.demolitions as d (d.id)}
+      {@const band = demoBand(d)}
+      {#if band}
+        <polygon
+          class="demolition"
+          class:sel={selDemolition === d.id}
+          class:bad={st.issues.some((i) => i.id === d.id && i.severity === 'error')}
+          points={ap(band)}
+          data-k="demolition"
+          data-id={d.id}
+        />
+      {/if}
+    {/each}
+    <!-- cloisons refusées : tracées en rouge pour pouvoir les corriger ou les supprimer -->
+    {#each badPartitions as q (q.id)}
+      <polygon
+        class="badpart"
+        class:sel={selPartition === q.id}
+        points={ap(partitionBand(q))}
+        data-k="partition"
+        data-id={q.id}
+      />
+    {/each}
+    {#if selPartition}
+      {@const q = st.partition(selPartition)}
+      {#if q}
+        {@const mid = S((q.a[0] + q.b[0]) / 2, (q.a[1] + q.b[1]) / 2)}
+        <g class="dim sel" pointer-events="none">
+          <rect x={mid[0] - 30} y={mid[1] - 13} width="60" height="26" rx="6" />
+          <text x={mid[0]} y={mid[1]}>{cm(Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1]))}</text>
+        </g>
+        {#each [q.a, q.b] as p, k (k)}
+          {@const sp = S(p[0], p[1])}
+          <g class="point" class:sel={true} data-k="pend" data-id={q.id} data-i={k}>
+            <circle class="hit" cx={sp[0]} cy={sp[1]} r="22" />
+            <circle cx={sp[0]} cy={sp[1]} r="8" />
+          </g>
+        {/each}
+      {/if}
+    {/if}
+    {#if st.mode === 'demolish'}
+      <!-- murs de l'état existant, à toucher pour les démolir ; les murs verrouillés sont refusés -->
+      {#each st.doc.site.existing.rooms as r (r.id)}
+        {#each absWallBands(r) as band, i (r.walls[i]!.id)}
+          <polygon
+            class="xwall"
+            class:locked={!!r.walls[i]!.locked}
+            points={ap(band)}
+            data-k="xwall"
+            data-room={r.id}
+            data-id={r.walls[i]!.id}
+          />
+        {/each}
+      {/each}
+    {/if}
+    {#if st.mode === 'partition'}
+      {#if preview}
+        <polygon class="preview" points={ap(partitionBand(preview))} />
+        <line
+          class="draft"
+          x1={S(...preview.a)[0]}
+          y1={S(...preview.a)[1]}
+          x2={S(...preview.b)[0]}
+          y2={S(...preview.b)[1]}
+        />
+      {/if}
+      {#if st.partitionFrom}<circle
+          class="draftpt"
+          cx={S(...st.partitionFrom)[0]}
+          cy={S(...st.partitionFrom)[1]}
+          r="6"
+        />{/if}
+      {#if hover}<circle class="cursor" cx={S(...hover)[0]} cy={S(...hover)[1]} r="5" />{/if}
+    {/if}
+  {/if}
 
   <!-- passages par-dessus les murs : bande largeur de porte × épaisseur du mur -->
   {#each st.plan.passages as p (p.id)}
@@ -495,7 +668,8 @@
     outline: 3px solid var(--color-focus);
     outline-offset: -3px;
   }
-  .plan.draw {
+  .plan.draw,
+  .plan.tool {
     cursor: crosshair;
   }
   .gridline {
@@ -520,6 +694,73 @@
   }
   .wall.sel {
     fill: var(--accent);
+  }
+  /* mur verrouillé : plus sombre, on ne le démolit pas */
+  .wall.locked {
+    fill: color-mix(in srgb, var(--ink) 55%, var(--muted));
+  }
+  /* face d'une cloison neuve */
+  .wall.partition {
+    fill: color-mix(in srgb, var(--accent) 45%, var(--sheet));
+  }
+  .wall.partition.sel {
+    fill: var(--accent);
+  }
+  .lock rect {
+    fill: var(--sheet);
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+  .lock path {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+  .lock {
+    pointer-events: none;
+  }
+  .demolition {
+    fill: color-mix(in srgb, var(--thin) 22%, transparent);
+    stroke: var(--thin);
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+    cursor: pointer;
+  }
+  .demolition.sel {
+    stroke-width: 4;
+  }
+  .demolition.bad,
+  .badpart {
+    fill: color-mix(in srgb, var(--thin) 35%, transparent);
+    stroke: var(--thin);
+    stroke-dasharray: 3 3;
+  }
+  .badpart {
+    cursor: pointer;
+    stroke-width: 2;
+  }
+  .badpart.sel {
+    stroke-width: 4;
+  }
+  .xwall {
+    fill: transparent;
+    stroke: var(--accent);
+    stroke-width: 2;
+    cursor: pointer;
+  }
+  .xwall:hover {
+    fill: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .xwall.locked {
+    stroke: var(--muted);
+    stroke-dasharray: 4 3;
+    cursor: not-allowed;
+  }
+  .preview {
+    fill: color-mix(in srgb, var(--accent) 30%, transparent);
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    pointer-events: none;
   }
   .obstacle {
     fill: var(--line);

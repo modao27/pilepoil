@@ -1,6 +1,6 @@
 <script lang="ts">
   /** Réglages de l'élément choisi sur le plan ; sans sélection, liste des pièces et problèmes à corriger. */
-  import type { Obstacle, PlanRoom, WallOpening } from '../../core/plan/types';
+  import type { Obstacle, Partition, PartitionOpening, PlanRoom, WallOpening } from '../../core/plan/types';
   import { wallIndex, wallLength } from '../../core/plan/walls';
   import Button from '../components/Button.svelte';
   import Dialog from '../components/Dialog.svelte';
@@ -9,7 +9,7 @@
   import Select from '../components/Select.svelte';
   import TextField from '../components/TextField.svelte';
   import { formatNumber } from '../lib/calc';
-  import { PLAN_MESSAGES } from '../lib/planMessages';
+  import { PLAN_MESSAGES, WORKS_MESSAGES } from '../lib/planMessages';
   import type { OpeningKind, PlanEditorState } from './planState.svelte';
 
   let { st, onaddroom }: { st: PlanEditorState; onaddroom: () => void } = $props();
@@ -45,7 +45,30 @@
       : [],
   );
 
+  const LAYERS = [
+    { value: 'existing' as const, label: 'État des lieux' },
+    { value: 'works' as const, label: 'Travaux' },
+  ];
+  const ALIGNS: { value: Partition['align']; label: string }[] = [
+    { value: 'right', label: 'À droite' },
+    { value: 'center', label: 'Centrée' },
+    { value: 'left', label: 'À gauche' },
+  ];
+  const LOCKS = [
+    { value: '', label: 'Libre' },
+    { value: 'exterior', label: 'Extérieur' },
+    { value: 'bearing', label: 'Porteur' },
+  ];
+  const length = (q: Partition) => Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1]);
+  const existing = $derived(st.doc.site.existing);
+  const wallName = (roomId: string, wallId: string) => {
+    const r = existing.rooms.find((x) => x.id === roomId);
+    return r ? `${r.name}, mur ${r.walls.findIndex((w) => w.id === wallId) + 1}` : '?';
+  };
+
   const sel = $derived(st.sel);
+  const partition = $derived(sel?.kind === 'partition' ? st.partition(sel.partition) : undefined);
+  const demolition = $derived(sel?.kind === 'demolition' ? st.demolition(sel.demolition) : undefined);
   const room = $derived(st.selectedRoom);
   const wall = $derived(sel?.kind === 'wall' && room ? room.walls.find((w) => w.id === sel.wall) : undefined);
   const wallI = $derived(wall && room ? wallIndex(room, wall.id) : -1);
@@ -67,6 +90,10 @@
       st.dispatch({ type: 'plan/opening/update', roomId: room.id, openingId: opening.id, patch }, key);
   }
 </script>
+
+{#snippet worksBack()}
+  <Button variant="ghost" icon="back" onclick={() => st.select(null)}>Tous les travaux</Button>
+{/snippet}
 
 {#snippet back(r: PlanRoom)}
   <Button variant="ghost" icon="back" onclick={() => st.select({ kind: 'room', room: r.id })}>Retour à {r.name}</Button>
@@ -94,7 +121,48 @@
   {/if}
 {/snippet}
 
+{#snippet worksIssues(ids: string[])}
+  {#each st.issuesOf(...ids) as i (i.code + i.id)}
+    <p class={i.severity === 'error' ? 'bad' : 'warn'}>{WORKS_MESSAGES[i.code]}</p>
+  {/each}
+{/snippet}
+
+{#snippet opening2(q: Partition, o: PartitionOpening, n: number)}
+  <fieldset class="opening">
+    <legend>{o.kind === 'door' ? 'Porte' : 'Baie'} {n}</legend>
+    {@render worksIssues([o.id])}
+    <NumberField
+      label="Largeur"
+      unit="cm"
+      factor={10}
+      min={10}
+      value={o.width}
+      onchange={(width) => st.updatePartitionOpening(q.id, o.id, { width })}
+    />
+    <NumberField
+      label="Distance au début"
+      unit="cm"
+      factor={10}
+      min={0}
+      value={o.offset}
+      onchange={(offset) => st.updatePartitionOpening(q.id, o.id, { offset })}
+    />
+    <NumberField
+      label="Hauteur"
+      unit="cm"
+      factor={10}
+      min={10}
+      value={o.height}
+      onchange={(height) => st.updatePartitionOpening(q.id, o.id, { height })}
+    />
+    <Button variant="danger" icon="trash" onclick={() => st.removePartitionOpening(q.id, o.id)}>Supprimer</Button>
+  </fieldset>
+{/snippet}
+
 <div class="panel">
+  {#if st.mode !== 'draw' && st.mode !== 'link'}
+    <Segmented label="Calque du plan" value={st.layer} options={LAYERS} onchange={(layer) => st.setLayer(layer)} />
+  {/if}
   {#if st.mode === 'draw'}
     <h2>Dessiner une pièce</h2>
     <p class="muted">
@@ -129,6 +197,124 @@
       <p>Aucune porte dans les autres pièces : ajoutez-en une sur un mur.</p>
     {/if}
     <Button variant="ghost" onclick={() => st.cancelLink()}>Annuler</Button>
+  {:else if st.mode === 'partition'}
+    <h2>Tracer une cloison</h2>
+    <p class="muted">
+      {st.partitionFrom
+        ? 'Touchez le point d’arrivée. La cloison se trace du premier au second point.'
+        : 'Touchez le point de départ, sur un mur ou dans la pièce.'}
+      Les points s’alignent sur les murs, les angles droits et une grille de 1 cm. Une face de la cloison est sur le trait
+      tracé, l’épaisseur part à droite ; vous pourrez la centrer ou la passer à gauche ensuite.
+    </p>
+    <Button variant="ghost" onclick={() => st.cancelTool()}>Annuler</Button>
+  {:else if st.mode === 'demolish'}
+    <h2>Démolir un mur</h2>
+    <p class="muted">
+      Touchez un mur de l’état existant. Les murs extérieurs et porteurs (cadenas) ne se démolissent pas ;
+      déverrouillez-les dans l’état des lieux si besoin.
+    </p>
+    <Button variant="ghost" onclick={() => st.cancelTool()}>Annuler</Button>
+  {:else if partition}
+    {@render worksBack()}
+    <h2>{st.partitionName(partition.id)}</h2>
+    {@render worksIssues([partition.id])}
+    <p class="num">Longueur {cm(length(partition))}</p>
+    <NumberField
+      label="Épaisseur"
+      unit="mm"
+      min={20}
+      max={300}
+      value={partition.thickness}
+      hint="Placo 72/48 : 72 mm ; 98/48 : 98 mm ; 100/70 : 100 mm."
+      onchange={(thickness) => st.updatePartition(partition.id, { thickness })}
+    />
+    <Segmented
+      label="Côté de l’épaisseur"
+      value={partition.align}
+      options={ALIGNS}
+      onchange={(align) => st.updatePartition(partition.id, { align })}
+    />
+    <p class="muted">Dans le sens du tracé. Glissez les points des bouts pour déplacer la cloison.</p>
+    <h3>Portes et baies</h3>
+    {#each partition.openings as o, n (o.id)}
+      {@render opening2(partition, o, n + 1)}
+    {/each}
+    <div class="row">
+      <Button icon="plus" onclick={() => st.addPartitionOpening(partition.id, 'door')}>Ajouter une porte</Button>
+      <Button icon="plus" onclick={() => st.addPartitionOpening(partition.id, 'opening')}>Ajouter une baie</Button>
+    </div>
+    <Button variant="danger" icon="trash" onclick={() => st.removePartition(partition.id)}>Supprimer la cloison</Button>
+  {:else if demolition}
+    {@const dr = existing.rooms.find((r) => r.id === demolition.room)}
+    {@const dl = dr ? wallLength(dr, wallIndex(dr, demolition.wall)) : 0}
+    {@render worksBack()}
+    <h2>Démolition — {wallName(demolition.room, demolition.wall)}</h2>
+    {@render worksIssues([demolition.id])}
+    <NumberField
+      label="Début"
+      unit="cm"
+      factor={10}
+      min={0}
+      max={Math.max(0, demolition.to - 10) / 10}
+      value={demolition.from}
+      hint="Distance depuis le début du mur."
+      onchange={(from) => st.updateDemolition(demolition.id, { from })}
+    />
+    <NumberField
+      label="Fin"
+      unit="cm"
+      factor={10}
+      min={(demolition.from + 10) / 10}
+      max={dl / 10}
+      value={demolition.to}
+      onchange={(to) => st.updateDemolition(demolition.id, { to })}
+    />
+    <p class="muted">
+      Les pièces de part et d’autre s’unissent. Les portes de la partie démolie disparaissent. Supprimer la démolition
+      rétablit le mur.
+    </p>
+    <Button variant="danger" icon="trash" onclick={() => st.removeDemolition(demolition.id)}
+      >Supprimer la démolition</Button
+    >
+  {:else if st.layer === 'works'}
+    <h2>Travaux</h2>
+    <p class="muted">
+      Dessinez des cloisons neuves et démolissez des murs. Les revêtements se posent sur les pièces après travaux. Les
+      murs avec un cadenas (extérieurs, porteurs) ne se démolissent pas.
+    </p>
+    <div class="row">
+      <Button variant="primary" icon="plus" disabled={!existing.rooms.length} onclick={() => st.startPartition()}
+        >Tracer une cloison</Button
+      >
+      <Button disabled={!existing.rooms.length} onclick={() => st.startDemolish()}>Démolir un mur</Button>
+    </div>
+    {#if st.doc.site.partitions.length}
+      <h3>Cloisons</h3>
+      <ul class="rooms">
+        {#each st.doc.site.partitions as q (q.id)}
+          <li>
+            <Button block onclick={() => st.select({ kind: 'partition', partition: q.id })}
+              >{st.partitionName(q.id)} ({cm(length(q))})</Button
+            >
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    {#if st.doc.site.demolitions.length}
+      <h3>Démolitions</h3>
+      <ul class="rooms">
+        {#each st.doc.site.demolitions as d (d.id)}
+          <li>
+            <Button block onclick={() => st.select({ kind: 'demolition', demolition: d.id })}
+              >{wallName(d.room, d.wall)}</Button
+            >
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    {#if st.plan.rooms.length && !st.isNew}
+      <Button variant="primary" href="#/p/{st.doc.id}">Choisir les revêtements</Button>
+    {/if}
   {:else if passage}
     {@const a = st.room(passage.a.room)}
     {@const b = st.room(passage.b.room)}
@@ -251,6 +437,13 @@
       onchange={(thickness) =>
         st.dispatch({ type: 'plan/wall/update', roomId: room.id, wallId: wall.id, patch: { thickness } })}
     />
+    <Select
+      label="Verrou"
+      value={wall.locked ?? ''}
+      options={LOCKS}
+      onchange={(v) => st.lockWall(room.id, wall.id, v === '' ? null : (v as 'exterior' | 'bearing'))}
+    />
+    <p class="muted">Un mur extérieur ou porteur (cadenas) ne se démolit pas dans les travaux.</p>
     <div class="row">
       <Button icon="plus" onclick={() => st.addOpening(room.id, wall.id, 'door')}>Ajouter une porte</Button>
       <Button icon="plus" onclick={() => st.addOpening(room.id, wall.id, 'window')}>Ajouter une fenêtre</Button>
@@ -360,12 +553,27 @@
     <Button variant={st.plan.rooms.length ? 'secondary' : 'primary'} icon="plus" onclick={onaddroom}
       >Ajouter une pièce</Button
     >
+    {#if st.plan.rooms.length}
+      <Button onclick={() => st.lockExterior()}>Verrouiller les murs extérieurs</Button>
+      <p class="muted">Les murs sans pièce en face sont verrouillés : on ne les démolit pas dans les travaux.</p>
+    {/if}
     {#if st.plan.rooms.length && !st.isNew}
       <Button variant="primary" href="#/p/{st.doc.id}">Choisir les revêtements</Button>
     {/if}
   {/if}
 
-  {#if st.errors.length && st.mode === 'select'}
+  {#if st.layer === 'works' && st.mode === 'select' && st.issues.length}
+    <section class="errors" aria-label="Problèmes des travaux">
+      <h3>À corriger</h3>
+      <ul>
+        {#each st.issues as i (i.code + i.id)}
+          <li>{WORKS_MESSAGES[i.code]}</li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
+
+  {#if st.errors.length && st.mode === 'select' && st.layer === 'existing'}
     <section class="errors" aria-label="Problèmes à corriger">
       <h3>À corriger</h3>
       <ul>
@@ -453,5 +661,26 @@
   .muted {
     margin: 0;
     color: var(--muted);
+  }
+  .bad,
+  .warn {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-left: 4px solid var(--thin);
+    border-radius: var(--r-field);
+  }
+  .warn {
+    border-left-color: var(--color-highlight);
+  }
+  fieldset.opening {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-field);
+  }
+  fieldset.opening legend {
+    font-weight: 600;
   }
 </style>

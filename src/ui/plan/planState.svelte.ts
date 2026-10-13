@@ -4,14 +4,26 @@
  */
 import type { Point, Polygon } from '../../core/geometry/types';
 import { lRoom, rectRoom, roomFromOutline, uRoom } from '../../core/plan/factories';
+import { deriveSite } from '../../core/plan/derive';
+import { DEFAULT_PARTITION_THICKNESS, MIN_PARTITION_LENGTH, type WorksIssue } from '../../core/plan/works';
 import type { PlanAction } from '../../core/plan/reduce';
 import { doorBetween, facingWalls, placeAgainst, type FacingWalls } from '../../core/plan/neighbors';
 import { clockwise, placeNewRoom } from '../../core/plan/snap';
-import type { Id, Obstacle, Plan, PlanRoom, WallOpening } from '../../core/plan/types';
+import type {
+  Demolition,
+  Id,
+  Obstacle,
+  Partition,
+  PartitionOpening,
+  Plan,
+  PlanRoom,
+  WallOpening,
+} from '../../core/plan/types';
 import { alignForPassage, validatePlan, validateRoom, type PlanError } from '../../core/plan/validate';
 import { DEFAULT_WALL_THICKNESS, wallIndex, wallLength, wallSegment } from '../../core/plan/walls';
 import type { Project } from '../../state/model';
 import { reduceProject, type ProjectAction } from '../../state/project';
+import { lostByPose, type PoseLoss } from '../../core/coverage';
 import { createProjectStore, type ProjectStore } from '../../state/store';
 import { createSaver, type Saver } from '../../storage/autosave';
 import { app } from '../lib/app.svelte';
@@ -29,6 +41,8 @@ export type PlanSelection =
   | { kind: 'opening'; room: Id; opening: Id }
   | { kind: 'obstacle'; room: Id; obstacle: Id }
   | { kind: 'passage'; passage: Id }
+  | { kind: 'partition'; partition: Id }
+  | { kind: 'demolition'; demolition: Id }
   | null;
 
 export type Shape =
@@ -50,7 +64,13 @@ export class PlanEditorState {
   canUndo = $state(false);
   canRedo = $state(false);
   sel = $state.raw<PlanSelection>(null);
-  mode = $state<'select' | 'draw' | 'link'>('select');
+  mode = $state<'select' | 'draw' | 'link' | 'partition' | 'demolish'>('select');
+  /** Calque : l'état existant (relevé) ou les travaux (cloisons, démolitions) sur le plan après travaux. */
+  layer = $state<'existing' | 'works'>('existing');
+  /** Cloison en cours de tracé : premier point posé, repère du plan. */
+  partitionFrom = $state.raw<Point | null>(null);
+  /** Action de travaux qui fait perdre des revêtements, en attente de confirmation. */
+  pending = $state.raw<{ action: ProjectAction; loss: PoseLoss[] } | null>(null);
   /** Dessin libre en cours : points dans le repère du plan d'ensemble. */
   draft = $state.raw<Point[]>([]);
   /** Première porte d'un passage en cours de liaison. */
@@ -63,8 +83,11 @@ export class PlanEditorState {
   readonly store: ProjectStore<Project, ProjectAction>;
   private saver: Saver<Project>;
 
-  plan = $derived<Plan>(this.doc.plan);
-  errors = $derived<PlanError[]>(validatePlan(this.doc.plan));
+  /** Plan affiché et édité : l'état existant, ou le plan après travaux (lecture seule) dans le calque travaux. */
+  plan = $derived<Plan>(this.layer === 'existing' ? this.doc.site.existing : this.doc.plan);
+  errors = $derived<PlanError[]>(validatePlan(this.doc.site.existing));
+  /** Problèmes des cloisons et démolitions. */
+  issues = $derived<WorksIssue[]>(deriveSite(this.doc.site).issues);
 
   constructor(p: Project, o: { isNew?: boolean } = {}) {
     this.isNew = o.isNew ?? false;
@@ -114,6 +137,8 @@ export class PlanEditorState {
     const s = this.sel;
     if (!s) return undefined;
     if (s.kind === 'passage') return this.plan.passages.find((p) => p.id === s.passage);
+    if (s.kind === 'partition') return this.doc.site.partitions.find((p) => p.id === s.partition)?.id;
+    if (s.kind === 'demolition') return this.doc.site.demolitions.find((d) => d.id === s.demolition)?.id;
     const r = this.room(s.room);
     if (!r) return undefined;
     switch (s.kind) {
@@ -132,12 +157,213 @@ export class PlanEditorState {
 
   /** Pièce de la sélection courante. */
   selectedRoom = $derived<PlanRoom | undefined>(
-    this.sel && this.sel.kind !== 'passage' ? this.room(this.sel.room) : undefined,
+    this.sel && this.sel.kind !== 'passage' && this.sel.kind !== 'partition' && this.sel.kind !== 'demolition'
+      ? this.room(this.sel.room)
+      : undefined,
   );
 
   select(s: PlanSelection): void {
     this.sel = s;
     if (this.mode === 'link' && s?.kind !== 'opening') this.cancelLink();
+  }
+
+  /* ---------- calques et travaux ---------- */
+
+  setLayer(layer: 'existing' | 'works'): void {
+    if (layer === this.layer) return;
+    this.cancelLink();
+    this.cancelDraw();
+    this.cancelTool();
+    this.layer = layer;
+    this.sel = null;
+  }
+
+  /** Nom d'une cloison : « Cloison 2 ». */
+  partitionName(id: Id): string {
+    return 'Cloison ' + (this.doc.site.partitions.findIndex((p) => p.id === id) + 1);
+  }
+
+  partition(id: Id): Partition | undefined {
+    return this.doc.site.partitions.find((p) => p.id === id);
+  }
+
+  demolition(id: Id): Demolition | undefined {
+    return this.doc.site.demolitions.find((d) => d.id === id);
+  }
+
+  /** Problèmes d'un travail ou d'une de ses ouvertures. */
+  issuesOf(...ids: Id[]): WorksIssue[] {
+    return this.issues.filter((i) => ids.includes(i.id));
+  }
+
+  /**
+   * Applique une action de travaux ; si elle fait perdre des revêtements (zones rognées ou orphelines), elle attend
+   * la confirmation de l'utilisateur (`pending`). Rien n'est supprimé dans les deux cas : annuler rétablit tout.
+   */
+  commit(action: ProjectAction, key?: string): boolean {
+    const before = this.store.get().project;
+    const next = reduceProject(before, action);
+    if (next === before) return false;
+    const loss = lostByPose(before.plan, next.plan, before.zones, before.poses);
+    if (loss.length) {
+      this.pending = { action, loss };
+      return false;
+    }
+    this.dispatch(action, key);
+    return true;
+  }
+
+  confirmPending(): void {
+    const p = this.pending;
+    this.pending = null;
+    if (p) this.dispatch(p.action);
+  }
+
+  cancelPending(): void {
+    this.pending = null;
+  }
+
+  /** Cloison : une face sur le trait tracé, épaisseur à droite du sens de tracé, 72 mm. */
+  startPartition(): void {
+    this.layer = 'works';
+    this.mode = 'partition';
+    this.partitionFrom = null;
+    this.sel = null;
+  }
+
+  startDemolish(): void {
+    this.layer = 'works';
+    this.mode = 'demolish';
+    this.partitionFrom = null;
+    this.sel = null;
+  }
+
+  cancelTool(): void {
+    if (this.mode === 'partition' || this.mode === 'demolish') this.mode = 'select';
+    this.partitionFrom = null;
+  }
+
+  /** Pose un point de la cloison ; le second point la crée (une seule étape d'annulation). */
+  partitionPoint(p: Point): void {
+    const from = this.partitionFrom;
+    if (!from) {
+      this.partitionFrom = p;
+      return;
+    }
+    if (Math.hypot(p[0] - from[0], p[1] - from[1]) < MIN_PARTITION_LENGTH) {
+      toast('Cloison trop courte : choisissez un point plus loin.', { tone: 'error' });
+      return;
+    }
+    const partition: Partition = {
+      id: newId(),
+      a: from,
+      b: p,
+      thickness: DEFAULT_PARTITION_THICKNESS,
+      align: 'right',
+      openings: [],
+    };
+    this.partitionFrom = null;
+    this.mode = 'select';
+    this.commit({ type: 'plan/partition/add', partition });
+    // la cloison est choisie même si la confirmation d'une perte de revêtement est en attente
+    this.sel = { kind: 'partition', partition: partition.id };
+    const issue = this.issuesOf(partition.id).find((i) => i.severity === 'error');
+    if (issue) toast(WORKS_TOAST[issue.code] ?? 'Cette cloison est refusée.', { tone: 'error' });
+  }
+
+  removePartition(id: Id): void {
+    const name = this.partitionName(id);
+    this.commit({ type: 'plan/partition/remove', partitionId: id });
+    this.sel = null;
+    toast(`${name} supprimée.`, { action: undoAction(this.store) });
+  }
+
+  updatePartition(id: Id, patch: Partial<Omit<Partition, 'id'>>, key?: string): void {
+    this.commit({ type: 'plan/partition/update', partitionId: id, patch }, key);
+  }
+
+  addPartitionOpening(id: Id, kind: PartitionOpening['kind']): void {
+    const q = this.partition(id);
+    if (!q) return;
+    const length = Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1]);
+    const width = Math.min(830, Math.max(100, Math.floor(length - 200)));
+    const opening: PartitionOpening = {
+      id: newId(),
+      kind,
+      offset: Math.max(0, Math.round((length - width) / 2 / 10) * 10),
+      width,
+      height: 2040,
+    };
+    this.commit({ type: 'plan/partition/opening/add', partitionId: id, opening });
+  }
+
+  updatePartitionOpening(id: Id, openingId: Id, patch: Partial<Omit<PartitionOpening, 'id'>>, key?: string): void {
+    this.commit({ type: 'plan/partition/opening/update', partitionId: id, openingId, patch }, key);
+  }
+
+  removePartitionOpening(id: Id, openingId: Id): void {
+    this.commit({ type: 'plan/partition/opening/remove', partitionId: id, openingId });
+  }
+
+  /** Démolit tout un mur de l'état existant (les bornes se règlent ensuite) ; refusé sur un mur verrouillé. */
+  demolishWall(roomId: Id, wallId: Id): void {
+    const room = this.doc.site.existing.rooms.find((r) => r.id === roomId);
+    const i = room ? wallIndex(room, wallId) : -1;
+    if (!room || i < 0) return;
+    const w = room.walls[i]!;
+    if (w.locked) {
+      const kind = w.locked === 'exterior' ? 'extérieur' : 'porteur';
+      toast(
+        `Mur ${i + 1} de ${room.name} : mur ${kind}, verrouillé. Déverrouillez-le dans l’état des lieux pour le démolir.`,
+        { tone: 'error' },
+      );
+      return;
+    }
+    const d: Demolition = { id: newId(), room: roomId, wall: wallId, from: 0, to: Math.round(wallLength(room, i)) };
+    this.commit({ type: 'plan/demolition/add', demolition: d });
+    const issue = this.issuesOf(d.id).find((x) => x.severity === 'error');
+    if (issue) toast(WORKS_TOAST[issue.code] ?? 'Cette démolition est refusée.', { tone: 'error' });
+    this.mode = 'select';
+    this.sel = { kind: 'demolition', demolition: d.id };
+  }
+
+  updateDemolition(id: Id, patch: Partial<Pick<Demolition, 'from' | 'to'>>, key?: string): void {
+    this.commit({ type: 'plan/demolition/update', demolitionId: id, patch }, key);
+  }
+
+  removeDemolition(id: Id): void {
+    this.commit({ type: 'plan/demolition/remove', demolitionId: id });
+    this.sel = null;
+    toast('Démolition retirée : le mur est rétabli.', { action: undoAction(this.store) });
+  }
+
+  /** Verrou d'un mur de l'état existant. */
+  lockWall(roomId: Id, wallId: Id, locked: 'exterior' | 'bearing' | null): void {
+    this.dispatch({ type: 'plan/wall/update', roomId, wallId, patch: { locked: locked ?? undefined } });
+  }
+
+  /** Verrouille comme extérieurs les murs sans pièce en vis-à-vis, en une étape ; renvoie leur nombre. */
+  lockExterior(): number {
+    const existing = this.doc.site.existing;
+    const faced = facingWalls(existing).flatMap((f) => [`${f.a.room}~${f.a.wall}`, `${f.b.room}~${f.b.wall}`]);
+    const actions: ProjectAction[] = [];
+    for (const r of existing.rooms)
+      for (const w of r.walls)
+        if (!faced.includes(`${r.id}~${w.id}`) && !w.locked)
+          actions.push({ type: 'plan/wall/update', roomId: r.id, wallId: w.id, patch: { locked: 'exterior' } });
+    if (!actions.length) {
+      toast('Tous les murs sans pièce en face sont déjà verrouillés.');
+      return 0;
+    }
+    this.dispatch({ type: 'batch', actions });
+    const n = actions.length;
+    toast(
+      `${n} mur${n > 1 ? 's' : ''} verrouillé${n > 1 ? 's' : ''} comme extérieur${n > 1 ? 's' : ''}. Vérifiez-les.`,
+      {
+        action: undoAction(this.store),
+      },
+    );
+    return n;
   }
 
   /* ---------- pièces ---------- */
@@ -393,6 +619,16 @@ export class PlanEditorState {
     return true;
   }
 }
+
+/** Textes courts des refus de travaux (messages complets : ui/lib/planMessages.ts). */
+const WORKS_TOAST: Partial<Record<string, string>> = {
+  'partition/outside': 'Cloison hors des pièces : ses deux bouts doivent toucher une pièce.',
+  'partition/crosses-wall': 'Cette cloison traverse un mur : arrêtez-la contre le mur, ou démolissez-le d’abord.',
+  'partition/crosses-locked': 'Cette cloison traverse un mur verrouillé (extérieur ou porteur).',
+  'partition/crosses-partition': 'Cette cloison en croise une autre : arrêtez-la contre l’autre.',
+  'partition/crosses-obstacle': 'Cette cloison passe dans un poteau ou un conduit.',
+  'demolition/no-neighbour': 'Ce mur n’a pas de pièce en face : il est peut-être extérieur.',
+};
 
 const LINK_ERRORS: Partial<Record<string, string>> = {
   'passage/missing': 'Choisissez une porte d’une autre pièce.',

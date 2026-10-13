@@ -7,6 +7,8 @@
   import Button from '../components/Button.svelte';
   import Dialog from '../components/Dialog.svelte';
   import TextField from '../components/TextField.svelte';
+  import { moduleById } from '../../modules/registry';
+  import { formatNumber } from '../lib/calc';
   import { app } from '../lib/app.svelte';
   import { go } from '../lib/router.svelte';
   import AddRoomDialog from './AddRoomDialog.svelte';
@@ -61,7 +63,16 @@
   const rooms = $derived(st.plan.rooms.length);
   const label = $derived(
     `Plan de ${st.doc.name} : ${rooms} pièce${rooms > 1 ? 's' : ''}` +
-      (st.mode === 'draw' ? ', dessin en cours' : st.mode === 'link' ? ', choix de la porte à relier' : ''),
+      (st.mode === 'draw'
+        ? ', dessin en cours'
+        : st.mode === 'link'
+          ? ', choix de la porte à relier'
+          : st.mode === 'partition'
+            ? ', tracé d’une cloison'
+            : st.mode === 'demolish'
+              ? ', choix du mur à démolir'
+              : '') +
+      (st.layer === 'works' ? ', calque travaux' : ''),
   );
 
   onMount(() => {
@@ -91,7 +102,11 @@
     {:else}
       <IconButton icon="back" label="Projet" href="#/p/{st.doc.id}" />
     {/if}
-    <h1><span class="pname">{st.doc.name}</span><span class="sub">Plan des pièces</span></h1>
+    <h1>
+      <span class="pname">{st.doc.name}</span><span class="sub"
+        >{st.layer === 'works' ? 'Plan : travaux' : 'Plan des pièces'}</span
+      >
+    </h1>
     <IconButton icon="edit" label="Renommer le projet" onclick={() => ((newName = st.doc.name), (renaming = true))} />
     <IconButton icon="undo" label="Annuler" disabled={!st.canUndo} onclick={() => st.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!st.canRedo} onclick={() => st.redo()} />
@@ -115,7 +130,15 @@
               ? 'Dessin : touchez pour placer un coin'
               : st.mode === 'link'
                 ? 'Touchez la porte à relier'
-                : `${rooms} pièce${rooms > 1 ? 's' : ''}`}
+                : st.mode === 'partition'
+                  ? st.partitionFrom
+                    ? 'Cloison : touchez le point d’arrivée'
+                    : 'Cloison : touchez le point de départ'
+                  : st.mode === 'demolish'
+                    ? 'Touchez le mur à démolir'
+                    : st.layer === 'works'
+                      ? 'Travaux'
+                      : `${rooms} pièce${rooms > 1 ? 's' : ''}`}
           </p>
         {/snippet}
         {@render panel()}
@@ -139,6 +162,26 @@
   {#snippet actions()}
     <Button variant="ghost" onclick={() => (renaming = false)}>Annuler</Button>
     <Button variant="primary" onclick={rename}>Renommer</Button>
+  {/snippet}
+</Dialog>
+
+<Dialog open={st.pending != null} title="Des revêtements seront réduits" onclose={() => st.cancelPending()}>
+  {#if st.pending}
+    <p>Ce changement retire de la surface revêtue :</p>
+    <ul class="loss">
+      {#each st.pending.loss as l (l.pose.id)}
+        <li>
+          {moduleById(l.pose.module)?.label ?? l.pose.module}, « {l.pose.name} » : −{formatNumber(l.area / 1e6, 2)} m²
+        </li>
+      {/each}
+    </ul>
+    <p class="muted">
+      Rien n’est supprimé : les revêtements reviennent si vous retirez la cloison ou la démolition, ou si vous annulez.
+    </p>
+  {/if}
+  {#snippet actions()}
+    <Button onclick={() => st.cancelPending()}>Annuler</Button>
+    <Button variant="primary" onclick={() => st.confirmPending()}>Valider</Button>
   {/snippet}
 </Dialog>
 
@@ -205,6 +248,14 @@
     right: var(--space-2);
     border-radius: var(--r-field);
     background: var(--paper);
+  }
+  .loss {
+    margin: 0;
+    padding-left: var(--space-5);
+  }
+  .muted {
+    margin: 0;
+    color: var(--muted);
   }
   .peek {
     display: flex;

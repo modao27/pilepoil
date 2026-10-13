@@ -401,9 +401,12 @@ Mêmes principes et composants que `docs/UX.md`.
 - Bascule **Existant | Travaux** dans la barre de l'éditeur. Existant : l'éditeur actuel, plus un verrou par mur
   (« Mur extérieur », « Mur porteur ») et « Verrouiller les murs extérieurs ». Travaux : l'état existant en fond
   (murs verrouillés hachurés et cadenassés), les pièces après travaux au premier plan, les murs démolis en pointillés.
-- Outils : **Cloison** (deux touchers ; aimantation aux faces des murs, aux parallèles et aux angles droits ; l'épaisseur
-  vient du système), **Démolir** (toucher un mur existant, glisser les bornes de l'intervalle ; refusé sur un mur
-  verrouillé, avec la raison), **Porte / baie** sur une cloison.
+- Outils : **Cloison** (deux touchers ; aimantation aux faces des murs, aux angles droits avec le départ et aux
+  arêtes sur la droite de l'angle droit ; une face de la cloison est sur le trait tracé, l'épaisseur part à droite du
+  sens de tracé par défaut, réglable : centrée ou à gauche ; 72 mm par défaut, puis celle du système), **Démolir**
+  (toucher un mur de l'état existant : tout le mur, puis deux champs de cote pour réduire l'intervalle ; refusé sur un
+  mur verrouillé, avec la raison), **Porte / baie** sur une cloison (champs de largeur, de distance et de hauteur).
+  Glisser les points d'un bout déplace la cloison ; la perte de revêtement éventuelle est annoncée au relâchement.
 - Avant de valider ce qui réduit une surface revêtue : liste par pose de ce qui est perdu, bouton « Annuler ».
 - Tout est accessible sans pointeur par le panneau (liste des cloisons, démolitions, ouvertures, saisie des cotes).
 
