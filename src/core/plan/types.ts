@@ -34,6 +34,10 @@ export interface Wall {
   id: Id;
   /** Épaisseur du mur (passages, 3D). */
   thickness: number;
+  /** Mur qu'on ne démolit pas : extérieur ou porteur (docs/BOITE.md §3 bis). Absent : libre. */
+  locked?: 'exterior' | 'bearing';
+  /** Mur dérivé : face d'une cloison neuve. Posé par `planAfter`, jamais saisi ni enregistré. */
+  of?: { partition: Id; face: 'a' | 'b' | 'start' | 'end' };
 }
 
 export interface Obstacle {
@@ -60,4 +64,45 @@ export interface Passage {
   id: Id;
   a: { room: Id; opening: Id };
   b: { room: Id; opening: Id };
+}
+
+/* ---------- plan v3 : état existant et travaux (docs/BOITE.md §3 bis) ---------- */
+
+/** Ce qui est enregistré : l'état relevé, les cloisons neuves, les démolitions. */
+export interface Site {
+  existing: Plan;
+  partitions: Partition[];
+  demolitions: Demolition[];
+}
+
+export interface Partition {
+  id: Id;
+  /** Axe tracé de a vers b, repère du plan. */
+  a: Point;
+  b: Point;
+  /** Épaisseur finie : c'est elle qui découpe les pièces. */
+  thickness: number;
+  /** Épaisseur centrée sur l'axe, ou d'un seul côté (gauche : côté de la normale (dy, −dx), à l'écran). */
+  align: 'center' | 'left' | 'right';
+  openings: PartitionOpening[];
+}
+
+export interface PartitionOpening {
+  id: Id;
+  /** `opening` : baie sans porte. */
+  kind: 'door' | 'opening';
+  /** Depuis a, le long de l'axe. */
+  offset: number;
+  width: number;
+  height: number;
+}
+
+export interface Demolition {
+  id: Id;
+  /** Mur de l'état existant. */
+  room: Id;
+  wall: Id;
+  /** Intervalle le long du mur, depuis son point i. */
+  from: number;
+  to: number;
 }
