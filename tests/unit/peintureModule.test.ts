@@ -8,6 +8,8 @@ import { logic } from '../../src/modules/peinture/logic';
 import type { PeintureData } from '../../src/modules/peinture/state/model';
 import { PEINTURE_SCHEMA } from '../../src/modules/peinture/state/model';
 import type { Project } from '../../src/state/model';
+import { elevationOf } from '../../src/modules/peinture/ui/lib/elevation';
+import { peintureReport } from '../../src/modules/peinture/ui/lib/results';
 import { reduceProject } from '../../src/state/project';
 import { planProject, rect, withOpening } from './planFixtures';
 
@@ -183,5 +185,58 @@ describe('bibliothèque de peintures', () => {
     const a = manifest.library!.templates!() as Paint[];
     a[0]!.packs.push({ size: 99, price: null });
     expect((manifest.library!.templates!() as Paint[])[0]!.packs).toHaveLength(PAINT_TEMPLATES[0]!.packs.length);
+  });
+});
+
+describe('résultats et élévation', () => {
+  it('zones : surface de chaque mur de la pose', () => {
+    const { zones } = computePeinture(specOf(project())).poses[0]!.result;
+    expect(zones.map((z) => [z.wall, +z.gross.toFixed(2), +z.openings.toFixed(4), +z.net.toFixed(4)])).toEqual([
+      ['r-w0', 10, 1.6932, 8.3068],
+      ['r-w1', 7.5, 1.5, 6],
+      ['r-w2', 10, 0, 10],
+      ['r-w3', 7.5, 0, 7.5],
+    ]);
+  });
+
+  it('rapport : surface de la portée (une pièce) et commande de la pose', () => {
+    const p = project(['r', 's']);
+    const result = computePeinture(specOf(p));
+    const input = { project: p, libraries, result };
+    const room = peintureReport({ ...input, scope: { kind: 'room', room: 's' } });
+    expect(room).toHaveLength(1);
+    expect(room[0]!.figures[0]).toEqual({ label: 'Surface à peindre', value: '31,8 m²' });
+    expect(room[0]!.orderNote).toBe('Pour toute la pose');
+    expect(peintureReport({ ...input, scope: { kind: 'project' } })).toHaveLength(2);
+    expect(peintureReport({ ...input, scope: { kind: 'pose', pose: 'P1' } }).map((r) => r.pose)).toEqual(['P1']);
+  });
+
+  it('élévation : murs côte à côte, partie peinte et ouvertures du mur', () => {
+    const p = project();
+    const e = elevationOf(p, p.zones);
+    expect(e.walls.map((w) => [w.label, w.x0, w.length, w.openings.length])).toEqual([
+      ['Pièce, mur 1', 0, 4000, 1],
+      ['Pièce, mur 2', 4400, 3000, 1],
+      ['Pièce, mur 3', 7800, 4000, 0],
+      ['Pièce, mur 4', 12200, 3000, 0],
+    ]);
+    expect(e.width).toBe(15200);
+    expect(e.height).toBe(2500);
+    // mur peint sur une partie seulement : la région suit la coupe
+    const cut = elevationOf(p, [
+      {
+        ...p.zones[0]!,
+        cuts: [
+          {
+            line: [
+              [0, 1200],
+              [4000, 1200],
+            ],
+            side: -1,
+          },
+        ],
+      },
+    ]);
+    expect(cut.walls[0]!.painted[0]!.every(([, y]) => y <= 1200)).toBe(true);
   });
 });

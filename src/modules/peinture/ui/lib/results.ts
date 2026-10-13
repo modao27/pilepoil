@@ -19,13 +19,17 @@ export function peintureReport(input: ResultInput<PeintureResult>): PoseReport[]
     const r = result.poses.find((x) => x.id === l.id)?.result;
     if (!r) return [];
     const alerts = r.alerts.map(alertText);
+    // surface exacte sur la portée : les zones de la pièce, ou toute la pose
+    const zones = scope.kind === 'room' ? r.zones.filter((z) => z.room === scope.room) : r.zones;
+    const net = zones.reduce((t, z) => t + z.net, 0);
+    const openings = zones.reduce((t, z) => t + z.openings, 0);
     if (!r.areas.net) return [{ pose: l.id, figures: [], order: [], orderNote: null, alerts, ok: false }];
     return [
       {
         pose: l.id,
         figures: [
-          { label: 'Surface à peindre', value: `${fr(r.areas.net)} m²` },
-          { label: 'Ouvertures déduites', value: `${fr(r.areas.openings)} m²` },
+          { label: 'Surface à peindre', value: `${fr(net)} m²` },
+          { label: 'Ouvertures déduites', value: `${fr(openings)} m²` },
           ...(r.woodwork.total ? [{ label: 'Boiseries', value: `${fr(r.woodwork.total)} m²` }] : []),
         ],
         order: r.products.map((p) => {

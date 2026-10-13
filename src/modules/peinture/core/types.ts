@@ -161,9 +161,21 @@ export interface ConsumableLine {
   unitPrice: number | null;
 }
 
+/** Surface d'une zone de mur de la pose, m². */
+export interface ZoneArea {
+  id: Id;
+  room: Id;
+  wall: Id;
+  gross: number;
+  openings: number;
+  net: number;
+}
+
 export interface PaintResult {
   /** m². */
   areas: { gross: number; openings: number; net: number };
+  /** Surface de chaque zone de la pose (résultats par pièce). */
+  zones: ZoneArea[];
   woodwork: { skirtingLength: number; skirting: number; frames: number; doors: number; total: number };
   products: PaintProduct[];
   consumables: ConsumableLine[];

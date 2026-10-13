@@ -309,7 +309,9 @@
                       </div>
                     {/if}
                     <div class="row">
-                      {#if m}<Button variant="primary" href={m.poseHref(id, z.pose)}>Calepinage</Button>{/if}
+                      {#if m}<Button variant="primary" href={m.poseHref(id, z.pose)}
+                          >{m.poseLabel ?? 'Calepinage'}</Button
+                        >{/if}
                       {#if kind === 'floor'}
                         <Button onclick={() => startCut(z)}>Découper par une ligne</Button>
                         <Button onclick={() => startCut(z, 'contour')}>Découper par un contour</Button>

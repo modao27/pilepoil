@@ -31,7 +31,7 @@ export const module: ModuleManifest<PeintureData, PeintureSpec, PeintureResult, 
   // rouleau à peinture sur un mur
   icon: '<rect x="2" y="2" width="30" height="20" rx="1.5"/><path fill="currentColor" fill-opacity=".18" stroke="none" d="M2 3.5A1.5 1.5 0 0 1 3.5 2H32v8H2z"/><path d="M2 10h30M17 10v4M17 14h-3v6h4v-6h-1"/>',
   schemaVersion: PEINTURE_SCHEMA,
-  hidden: true,
+  poseLabel: 'Réglages',
   coverage: PEINTURE_RULES,
   poseHref: (p, pose) => `#/p/${encodeURIComponent(p)}/m/peinture/pose/${encodeURIComponent(pose)}`,
   logic: () => import('./logic').then((m) => m.logic),

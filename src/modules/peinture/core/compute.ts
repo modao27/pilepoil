@@ -16,6 +16,7 @@ import type {
   PaintTarget,
   PeintureResult,
   PeintureSpec,
+  ZoneArea,
   PaintUse,
 } from './types';
 
@@ -24,6 +25,7 @@ const ceilMl = (litres: number) => Math.ceil(litres * 1000 - 1e-6);
 
 const noSurface = (): PaintResult => ({
   areas: { gross: 0, openings: 0, net: 0 },
+  zones: [],
   woodwork: { skirtingLength: 0, skirting: 0, frames: 0, doors: 0, total: 0 },
   products: [],
   consumables: [],
@@ -37,6 +39,7 @@ export function computePaint(spec: PaintSpec): PaintResult {
   const products: PaintProduct[] = [];
 
   // surface des murs
+  const zoneAreas: ZoneArea[] = [];
   let gross = 0,
     deductedArea = 0,
     overlap = false;
@@ -45,6 +48,14 @@ export function computePaint(spec: PaintSpec): PaintResult {
     gross += m.gross;
     deductedArea += m.openings;
     overlap ||= m.overlap;
+    zoneAreas.push({
+      id: z.id,
+      room: z.room,
+      wall: z.wall,
+      gross: m.gross / M2,
+      openings: m.openings / M2,
+      net: Math.max(0, m.gross - m.openings) / M2,
+    });
   }
   const netMm2 = Math.max(0, gross - deductedArea);
   if (netMm2 <= 0) return noSurface();
@@ -154,6 +165,7 @@ export function computePaint(spec: PaintSpec): PaintResult {
 
   return {
     areas: { gross: gross / M2, openings: deductedArea / M2, net: netMm2 / M2 },
+    zones: zoneAreas,
     woodwork: {
       skirtingLength: skirtLen / 1000,
       skirting: skirtMm2 / M2,

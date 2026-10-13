@@ -221,6 +221,10 @@ Spécification : `docs/peinture/SPEC.md`. Une branche par phase, `npm run check`
 - Action « Peindre » sur l'écran Pièce, écran de pose (murs, produit, couches, support, boiseries, résultat en
   direct), section Résultats, tests e2e (390 px et bureau).
 - Fini quand : on peint un mur entier et une zone de mur sur téléphone, avec le coût.
+- Fait : éditeur dans la coquille commune (murs à plat, étapes Produit / Pose / Découpage / Finitions / Avancé),
+  rapport par pose et par pièce, section Résultats par mur, bouton « Réglages » de l'écran Pièce
+  (`ModuleManifest.poseLabel`), module visible (le drapeau `hidden` de PE2 est retiré, plus utilisé).
+  Test e2e : `tests/e2e/peinture.spec.ts`. Le détail par zone passe par `PaintResult.zones`.
 
 ### PE4 — Achats, PDF, 3D
 - Lignes dans l'écran Achats et son PDF, PDF de la pose, couleur du produit sur les murs de la vue 3D.
