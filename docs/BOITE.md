@@ -177,6 +177,180 @@ Lien avec le carrelage : dans le socle, le carrelage garde ses surfaces rectangu
 A/B/C/D. Une pièce rectangulaire du plan pourra plus tard créer automatiquement les surfaces du carrelage
 (hors périmètre de ce plan de travail).
 
+## 3 bis. Plan v3 : état existant et travaux
+
+Décidé le 2026-10-13 pour le module cloisons (`docs/cloisons/SPEC.md`). **Raison** : relever l'appartement tel qu'il
+est, puis dessiner des cloisons neuves et des démolitions, sans perdre ni l'état d'origine ni les revêtements déjà
+posés ; carrelage, parquet et peinture travaillent sur les pièces **après travaux**.
+
+### Types
+
+```ts
+// core/plan/types.ts
+export interface Plan { rooms: PlanRoom[]; passages: Passage[] }   // inchangé : un état du logement
+
+export interface Wall {
+  id: Id; thickness: number;
+  /** Mur qu'on ne démolit pas : extérieur ou porteur. Absent : libre. */
+  locked?: 'exterior' | 'bearing';
+  /** Mur dérivé : face d'une cloison neuve (jamais saisi, jamais enregistré). */
+  of?: { partition: Id; face: 'a' | 'b' };
+}
+
+/** Plan v3, ce qui est enregistré. */
+export interface Site {
+  existing: Plan;              // état des lieux relevé (murs verrouillés compris)
+  partitions: Partition[];     // cloisons neuves
+  demolitions: Demolition[];   // démolitions de murs existants
+}
+
+export interface Partition {
+  id: Id;
+  /** Axe tracé de a vers b, repère du plan, mm. */
+  a: Point; b: Point;
+  /** Épaisseur finie (72 par défaut) : c'est elle qui découpe les pièces. Copiée du système au tracé. */
+  thickness: number;
+  /** Épaisseur centrée sur l'axe, ou d'un seul côté (gauche : côté de la normale (dy, −dx), à l'écran). */
+  align: 'center' | 'left' | 'right';
+  openings: PartitionOpening[];
+}
+export interface PartitionOpening {
+  id: Id;
+  kind: 'door' | 'opening';    // opening : baie sans porte
+  offset: number;              // depuis a, le long de l'axe
+  width: number; height: number;
+}
+
+export interface Demolition {
+  id: Id;
+  room: Id; wall: Id;          // mur de l'état existant
+  from: number; to: number;    // intervalle le long du mur, depuis son point i, mm
+}
+```
+
+Les cloisons existantes non porteuses sont des murs en vis-à-vis de l'état existant (§3) : on les démolit, on ne les
+« modifie » pas.
+
+### Projet v4 : enregistré et en mémoire
+
+```ts
+interface Project {            // state/model.ts, schéma 4
+  site: Site;                  // enregistré
+  plan: Plan;                  // APRÈS travaux = planAfter(site), en mémoire, jamais enregistré
+  // … zones, poses, modules inchangés
+}
+```
+
+- `planAfter(site)` (`core/plan/derive.ts`) est une fonction **pure** de `site`. Le réducteur racine recalcule
+  `plan` après chaque action qui change `site`, et le chargement le recalcule : rien de dérivé n'est lu sur disque.
+  Sans cloison ni démolition, `planAfter(site) === site.existing` (même référence : coût nul, aucun risque pour les
+  projets sans travaux).
+- **Tout lecteur de pièces lit `project.plan`** (après travaux), comme aujourd'hui : carrelage, parquet, peinture,
+  couverture, 3D, résultats. Seuls l'éditeur de plan, le réducteur et le module cloisons lisent `project.site`.
+  Invariant testé : `project.plan === planAfter(project.site)` après chaque action.
+- Le champ enregistré s'appelle `site` (et non `plan`) pour qu'un document ancien ne puisse pas faire passer l'état
+  existant pour le plan après travaux.
+- Les actions `plan/*` actuelles (pièces, points, murs, ouvertures, obstacles, passages) agissent sur
+  `site.existing`, puis `plan` est recalculé. L'éditeur actuel ne change pas.
+
+### Dérivation (`planAfter`)
+
+Repère du plan, millimètres ; booléens de `core/geometry/boolean`, arrondis au 1/100 mm.
+
+1. **Démolitions d'abord.** La bande du mur sur l'intervalle (largeur = épaisseur du mur, prolongée de la tolérance du
+   plan pour souder les deux pièces) est réunie aux pièces qu'elle touche : le mur disparaît, les pièces fusionnent.
+   Les ouvertures de l'intervalle et les passages qui les utilisent disparaissent.
+2. **Cloisons ensuite.** La bande de chaque cloison (rectangle `axe × épaisseur`, selon `align`, prolongé aux deux
+   bouts pour mordre dans les murs) est retirée de la région des pièces. Une cloison qui ne traverse pas la pièce
+   laisse une encoche ; un contour qui se referme autour d'un îlot donne un `Obstacle` (`kind: 'other'`).
+3. **Morceaux** = composantes de la région obtenue. Un morceau de moins de 0,1 m² est ignoré (code `derive/sliver`).
+4. **Provenance des arêtes.** Les booléens perdent l'origine des arêtes et suppriment les points colinéaires (donc
+   seules les pièces touchées par un travail passent par eux). Chaque arête de sortie est rattachée à sa source par
+   colinéarité (0,05 mm) :
+   - arête d'un mur existant : le mur garde son `id`, son épaisseur et son `locked` ; coupé en plusieurs parties, la
+     première (abscisse la plus petite) garde l'`id` (comme `plan/point/insert`), les suivantes prennent `<id>~2`,
+     `<id>~3` ; ses ouvertures suivent la partie qui les contient (`offset` recalculé) ;
+   - face de cloison : mur `<cloison>:a` ou `<cloison>:b` (suffixe `~k` s'il y a plusieurs parties dans le même
+     morceau), `thickness` = épaisseur de la cloison, `of` renseigné ;
+   - retour d'une démolition : mur `<démolition>:1` ou `:2`, épaisseur du mur démoli.
+   Les pièces de part et d'autre d'une cloison sont donc en vis-à-vis à l'épaisseur de la cloison : `facingWalls`, les
+   passages et la 3D fonctionnent sans changement.
+5. **Ouvertures de cloison.** Chacune donne une porte sur chaque face (`<ouverture>:a`, `<ouverture>:b`, `offset` de la
+   face b = `longueur − offset − largeur`) et un `Passage` `<ouverture>:p`, sauf si les deux faces sont dans le même
+   morceau.
+
+**Identité des pièces (sans mémoire).** L'ancre d'une pièce existante est son point d'étiquette (`labelPoint`), calculé
+sur l'état existant : il ne dépend que de données enregistrées.
+- Le morceau qui contient l'ancre garde l'`id`, l'`origin` (le contour reste dans le même repère : les `cuts`, `area` et
+  `holes` des zones de sol restent valides), le nom et la hauteur.
+- Plusieurs ancres dans un morceau (fusion) : la première pièce dans l'ordre du plan garde l'identité, les autres
+  disparaissent.
+- Morceau sans ancre : `id` = `<pièce d'origine>~<empreinte>`, l'empreinte (`core/hash`) portant sur les identifiants
+  triés des cloisons et démolitions qui bordent le morceau ; la pièce d'origine est celle qui a le plus grand
+  recouvrement. Nom « Séjour (2) », numéros dans l'ordre du coin haut gauche du morceau.
+- Déplacer une cloison ne change aucun identifiant tant qu'elle ne franchit pas une ancre.
+
+### Revêtements et pièces coupées ou fusionnées
+
+Les zones restent dans le projet, pointent des identifiants de pièce et de mur, et sont rognées par la géométrie
+(`zoneRegion`). La dérivation étant à la lecture, **rien n'est supprimé** :
+1. le morceau qui garde l'identité garde ses zones et ses poses, rognées à son contour ;
+2. les autres morceaux démarrent nus ; **aucune pose n'est copiée** (une pose sur deux pièces sans passage enfreindrait
+   la règle d'étendue) ; « Continuer la pose » (`continuablePoses`) reste possible ;
+3. une pièce ou un mur qui n'existe plus rend ses zones orphelines (`orphanZones`) : ignorées par les calculs,
+   signalées, retirées seulement par l'action « Retirer » (`zone/prune`), jamais pendant un geste ;
+4. supprimer la cloison ou la démolition (ou annuler) rétablit tout, puisque les zones n'ont pas bougé ;
+5. avant de valider un tracé ou une démolition qui réduit la surface revêtue, l'interface liste par pose ce qui est
+   perdu (« Carrelage, Pose 1 : −8,2 m² de sol ») avec `zoneArea` avant et après ; sans perte, pas de confirmation.
+
+### Actions
+
+- `plan/partition/add | update | remove`, `plan/partition/opening/add | update | remove`,
+  `plan/demolition/add | update | remove` : réducteur pur `core/plan/works.ts`, aiguillé par le préfixe.
+- Verrou : `plan/wall/update` avec `locked` (aucune action nouvelle). L'interface propose « Verrouiller les murs
+  extérieurs » : les murs sans vis-à-vis (`facingWalls`), en un seul lot.
+- `plan/point/remove` fusionne deux murs : le mur gardé est verrouillé si l'un des deux l'était.
+- Pas d'action `split` ni `merge` : les pièces coupées ou fusionnées sont des conséquences de `site`. Les modules ne
+  reçoivent rien de plus (les événements de pose existants suffisent).
+- Un tracé de cloison et la découpe qui en résulte sont une seule action, donc une seule étape d'annulation. Dans un
+  `batch`, le plan n'est recalculé qu'une fois, à la fin.
+
+### Validation (`core/plan/works.ts`, codes ; le texte est écrit par l'interface)
+
+`partition/too-short`, `partition/outside` (une extrémité hors des pièces), `partition/crosses-wall` (traverse un mur
+existant non démoli), `partition/crosses-locked`, `partition/crosses-partition` (V1 : l'une doit s'arrêter sur
+l'autre), `partition/crosses-obstacle`, `partition/over-opening` (alerte : l'extrémité tombe sur une fenêtre),
+`partition/opening-size`, `partition/opening-outside`, `partition/opening-overlap`, `demolition/wall-missing`,
+`demolition/locked`, `demolition/range`, `demolition/no-neighbour` (mur sans pièce en vis-à-vis),
+`derive/sliver`, `derive/invalid-room` (le plan dérivé échoue à `validateRoom`).
+
+### Invariants testés
+
+1. Sans travaux, `planAfter(site) === site.existing`.
+2. Déterminisme : même `site` (même en changeant l'ordre des cloisons) → même plan, identifiants compris.
+3. Aires : Σ pièces après travaux = Σ pièces existantes − Σ (bandes de cloison dans les pièces) + Σ (bandes démolies),
+   à 0,1 % près.
+4. `validatePlan(planAfter(site))` est vide quand `site` est valide ; tout passage dérivé passe `passageError`.
+5. Un mur verrouillé garde son `id` et son `locked` dans le plan dérivé ; on ne peut pas le démolir.
+6. Stabilité : déplacer une cloison sans franchir une ancre ne change aucun identifiant.
+7. Retirer une cloison rétablit exactement le plan précédent (identifiants compris).
+
+### Migration 3 → 4
+
+`site = { existing: plan, partitions: [], demolitions: [] }`, `plan` retiré du document ; données des modules inchangées
+(« sans changement pour le carrelage »). Base IndexedDB v6 : magasin `systems` (systèmes de cloison). **À corriger en
+même temps** : l'étape v4 de `storage/db.ts` appelle `purge(tx, 'projects', PROJECT_SCHEMA)` avec la constante
+vivante ; passer la constante à 4 supprimerait les projets v3. L'étape doit être figée à `3`. Les scénarios A/B
+contiennent un projet : leur copie est migrée par la même étape (ne pas les supprimer). Premier usage de
+`PROJECT_STEPS` ; test sur un document v3 figé.
+
+### Impact et coût
+
+Le contrat de module garde `plan` tel quel ; `coverage`, `poseHref` et `createPose` deviennent facultatifs (un module
+sans pose, comme les cloisons, ne revêt aucune surface) et `ShoppingGroup` gagne `'structure'`. Les ~50 fichiers qui
+lisent `project.plan` ne changent pas ; les fixtures de tests construisent un projet par une aide
+(`projectFrom(plan)`). Estimation : modèle et dérivation 7 à 9 jours, éditeur 6 à 8 jours (`docs/PLAN.md` T0).
+
 ## 4. Modèle persisté v2
 
 ```ts
@@ -204,7 +378,8 @@ export interface CarrelageData {
   prices: Record<string, number>;
 }
 ```
-Détail : `docs/MODEL.md`.
+Détail : `docs/MODEL.md`. État au 2026-10-13 : le projet est en schéma 3 (zones et poses, `docs/NAVIGATION.md` §4) ;
+le schéma 4 (plan v3, état existant et travaux) est décrit au §3 bis.
 
 Scénarios A/B : le magasin `scenarios` appartient au module carrelage (types, lecture, écriture). Un autre
 module pourra avoir ses propres scénarios plus tard.
@@ -219,8 +394,8 @@ communes.
   `parquet/layout/update`…
 - Le réducteur racine aiguille : `plan/*` vers `core/plan/reduce.ts`, `<module>/*` vers `module.reduce`.
 - Historique annuler/rétablir unique au niveau du projet (mécanisme existant, `coalesceKey` conservé).
-- Supprimer une pièce du plan : chaque module est prévenu par une action `plan/room/removed` et nettoie
-  ses données liées.
+- Supprimer une pièce du plan : la racine retire ses zones et les poses restées sans zone, puis envoie
+  `pose/removed` aux modules concernés (corrigé le 2026-10-13 : l'action `plan/room/removed` n'a jamais existé).
 
 ## 6. Worker
 
@@ -244,7 +419,7 @@ demandes, l'une après l'autre). Les deux restent. L'optimisation du carrelage
 export interface ShoppingLine {
   module: ModuleId;
   key: string;                       // unique dans le module, stable (sert de clé de prix)
-  group: 'covering' | 'underlay' | 'finish' | 'consumable' | 'tool';
+  group: 'covering' | 'underlay' | 'structure' | 'finish' | 'consumable' | 'tool';   // structure : ossature, plaques, isolant (cloisons)
   label: string;                     // « Stratifié chêne 1285 × 192 »
   quantity: number;                  // en unité de vente
   unit: 'pack' | 'box' | 'roll' | 'bar' | 'bag' | 'sachet' | 'tube' | 'cartridge' | 'litre'
@@ -349,3 +524,7 @@ seul le parquet s'en sert au début.
 | 2026-10-13 | PE2 : module peinture caché des menus (`hidden`) jusqu'à PE3 ; prix saisis au niveau du module ; besoins additionnés avant le choix des pots ; base v5 (magasin `paints`) | `peinture/SPEC.md`, `PLAN.md` PE2 |
 | 2026-10-13 | PE3 : éditeur de peinture dans la coquille commune ; murs et zones se modifient sur l'écran Pièce ; `poseLabel` du manifeste ; module visible, drapeau `hidden` retiré | `PLAN.md` PE3 |
 | 2026-10-13 | PE4 : peinture en 3D par une couche de 2 mm devant le plâtre (`overlay` des exports de résultats : l'enveloppe n'est pas retirée sous le module) ; PDF de la peinture par pose, pièce et projet | `PLAN.md` PE4 |
+| 2026-10-13 | Plan v3 : `Site` = état existant (murs `locked`) + cloisons + démolitions, enregistré ; `project.plan` (après travaux) calculé par `planAfter` à chaque changement et au chargement, jamais enregistré ; les lecteurs de pièces ne changent pas. Raison : relever l'existant puis chiffrer des cloisons sans perdre l'état d'origine ni les revêtements | §3 bis |
+| 2026-10-13 | Identité des pièces dérivées sans mémoire (ancre = point d'étiquette de l'état existant) ; pièce coupée : le morceau gardien garde ses zones, les autres démarrent nus, rien n'est copié ni supprimé (zones orphelines, réversible), perte confirmée avant validation | §3 bis |
+| 2026-10-13 | Migration 3 → 4 sans changement pour les modules ; étape de purge v4 de la base figée à 3 ; base v6 (`systems`) | §3 bis |
+| 2026-10-13 | Module cloisons : `coverage`, `poseHref`, `createPose` facultatifs ; groupe d'achat `structure` ; phases T0, CL1 à CL3 (C1 à C4 sont déjà le carrelage) ; `core/cutting/bars.ts` existe depuis P4 et sert tel quel | `cloisons/SPEC.md`, `PLAN.md` |
