@@ -22,6 +22,7 @@ terme du métier dans le module carrelage. Identité visuelle : `docs/IDENTITE.m
 | `docs/carrelage/` | Module carrelage : règles métier (`DOMAIN.md`), historique des phases |
 | `docs/parquet/SPEC.md` | Module parquet : spécification complète (cible V3) |
 | `docs/peinture/SPEC.md` | Module peinture : spécification (surfaces, couches, pots, boiseries) |
+| `docs/cloisons/SPEC.md` | Module cloisons : spécification (rails, montants, plaques ; plan v3 : `docs/BOITE.md` §3 bis) |
 | `docs/DEPLOY.md` | Mise en ligne statique |
 | `legacy/calepinage.html` | Ancienne version du carrelage, référence de parité du moteur |
 
