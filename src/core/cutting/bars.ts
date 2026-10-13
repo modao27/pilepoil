@@ -132,8 +132,10 @@ const STEP = 10;
  * sous-ensemble au dixième de millimètre). Toujours au moins un élément (le premier, le plus long).
  */
 function bestSubset(lengths: number[], cap: number): number[] {
-  const C = Math.floor(cap * STEP + EPS);
-  const w = lengths.map((l) => Math.ceil(l * STEP - EPS));
+  // longueurs entières (cas courant : mm) : mêmes sommes atteignables au pas de 1 mm, dix fois moins de calcul
+  const step = [cap, ...lengths].every(Number.isInteger) ? 1 : STEP;
+  const C = Math.floor(cap * step + EPS);
+  const w = lengths.map((l) => Math.ceil(l * step - EPS));
   // from[s] = indice de l'élément qui a rendu la somme s atteignable en premier (−1 : pas encore)
   const from = new Int32Array(C + 1).fill(-1);
   const reach = new Uint8Array(C + 1);

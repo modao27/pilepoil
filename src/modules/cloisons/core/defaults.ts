@@ -61,7 +61,9 @@ export function defaultSettings(): CloisonsSettings {
     plateMargin: 0.05,
     insulationMargin: 0.05,
     insulationPack: { m2: 6.48, unit: 'roll' },
-    ratios: structuredClone(DEFAULT_RATIOS),
+    ratios: Object.fromEntries(
+      Object.entries(DEFAULT_RATIOS).map(([k, v]) => [k, { ...v }]),
+    ) as unknown as ConsumableRatios,
   };
 }
 
