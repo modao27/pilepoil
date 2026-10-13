@@ -195,6 +195,36 @@ projets existants : nouvelle version de la base, projets précédents retirés.
 - Ajouté : premier chargement allégé (Lighthouse ≥ 90 sur téléphone, premier passage) ; 3D : mur revêtu en partie
   complété par l'enveloppe, sol continu rogné à la pièce dans ses résultats.
 
+## Module peinture (PE0 à PE5)
+
+Spécification : `docs/peinture/SPEC.md`. Une branche par phase, `npm run check` vert, parité carrelage à 100 %.
+
+### PE0 — Spécification
+- `docs/peinture/SPEC.md`, entrées dans `docs/BOITE.md` §11 et `CLAUDE.md`. Aucun code.
+- Fini quand : le périmètre, les coefficients et les cas chiffrés sont validés.
+
+### PE1 — Moteur
+- `modules/peinture/core` : surface nette (ouvertures à seuil), couches, litres, enduit, boiseries, consommables,
+  combinaison de pots ; tests de propriétés et cas de référence de la spec §7.
+- Fini quand : les invariants §6 et les cas chiffrés passent.
+
+### PE2 — Module, données, bibliothèque
+- Modules `index.ts` / `engine.ts`, données par pose, actions, règle « murs seulement », bibliothèque `paints`
+  (nouvelle version de base, migration testée), modèles types, `'pot'` dans `ShoppingUnit`, `shopping()`.
+- Fini quand : une peinture se crée en bibliothèque et une pose se calcule par le worker.
+
+### PE3 — Interface
+- Action « Peindre » sur l'écran Pièce, écran de pose (murs, produit, couches, support, boiseries, résultat en
+  direct), section Résultats, tests e2e (390 px et bureau).
+- Fini quand : on peint un mur entier et une zone de mur sur téléphone, avec le coût.
+
+### PE4 — Achats, PDF, 3D
+- Lignes dans l'écran Achats et son PDF, PDF de la pose, couleur du produit sur les murs de la vue 3D.
+- Fini quand : la liste d'achat consolidée contient la peinture avec ses pots.
+
+### PE5 — Plafonds (plus tard)
+- Surface « plafond » dans `core/coverage` (`SurfaceRef`), affichage, 3D, règles ; peinture du plafond.
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 
