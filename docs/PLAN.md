@@ -273,6 +273,11 @@ phase du plan avec travaux, sans module nouveau. `core/cutting/bars.ts` existe d
 - `index.ts` / `engine.ts`, `CloisonsData`, `toSpec` (longueur du corps, appuis, liaisons, faces carrelées), réducteur,
   bibliothèque `systems` avec modèles types, table des hauteurs et réglages, `shopping()` (groupe `structure`).
 - Fini quand : une cloison dessinée dans le plan se calcule par le worker et ses lignes apparaissent dans les Achats.
+- Fait (2026-10-13) : `modules/cloisons` complet côté données (`state/` : modèle, actions, `toSpec` avec longueur du
+  corps, appuis, liaisons et faces carrelées ; achats, résumé), bibliothèque `systems` (modèles types 72/48, 98/48, 100/70,
+  écrans liste et fiche), module enregistré (registre, worker), activé par la première cloison tracée, écran provisoire
+  des cloisons (système, hauteur, entraxe, plaques, isolant, renforts, alertes, réglages communs et table des hauteurs).
+  Tests : `cloisonsModule`, e2e `cloisons.spec.ts`. Reste pour CL3 : élévation, section Résultats, PDF.
 
 ### CL3 — Interface, résultats, PDF
 - Écran du module, inspecteur d'une cloison, élévation (ossature et calepinage des plaques), section Résultats, PDF,

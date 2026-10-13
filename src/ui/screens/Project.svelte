@@ -142,26 +142,35 @@
           <Button icon="plus" href="#/p/{project.id}/plan">Ajouter une pièce</Button>
         </div>
 
+        {#snippet toolCard(m: (typeof modules)[number])}
+          {@const s = summaries[m.id]}
+          <li>
+            <a class="card tool" href={m.coverage ? `#/p/${project!.id}/resultats` : `#/p/${project!.id}/m/${m.id}`}>
+              <!-- eslint-disable-next-line svelte/no-at-html-tags -- tracé de l'icône du module, fourni par le code -->
+              <svg class="icon" viewBox="0 0 34 24" aria-hidden="true">{@html m.icon}</svg>
+              <span class="text">
+                <span class="title">{m.label}</span>
+                <span class="muted num"
+                  >{s === undefined ? 'Calcul…' : s === null ? 'À compléter' : s.text}{#if s?.alerts}
+                    · <span class="alert">{s.alerts} alerte{s.alerts > 1 ? 's' : ''}</span>{/if}</span
+                >
+              </span>
+            </a>
+          </li>
+        {/snippet}
         {#if active.length}
-          <h2 class="sub">Revêtements</h2>
-          <ul class="tools">
-            {#each active as m (m.id)}
-              {@const s = summaries[m.id]}
-              <li>
-                <a class="card tool" href="#/p/{project.id}/resultats">
-                  <!-- eslint-disable-next-line svelte/no-at-html-tags -- tracé de l'icône du module, fourni par le code -->
-                  <svg class="icon" viewBox="0 0 34 24" aria-hidden="true">{@html m.icon}</svg>
-                  <span class="text">
-                    <span class="title">{m.label}</span>
-                    <span class="muted num"
-                      >{s === undefined ? 'Calcul…' : s === null ? 'À compléter' : s.text}{#if s?.alerts}
-                        · <span class="alert">{s.alerts} alerte{s.alerts > 1 ? 's' : ''}</span>{/if}</span
-                    >
-                  </span>
-                </a>
-              </li>
-            {/each}
-          </ul>
+          {#if active.some((m) => m.coverage)}
+            <h2 class="sub">Revêtements</h2>
+            <ul class="tools">
+              {#each active.filter((m) => m.coverage) as m (m.id)}{@render toolCard(m)}{/each}
+            </ul>
+          {/if}
+          {#if active.some((m) => !m.coverage)}
+            <h2 class="sub">Travaux</h2>
+            <ul class="tools">
+              {#each active.filter((m) => !m.coverage) as m (m.id)}{@render toolCard(m)}{/each}
+            </ul>
+          {/if}
           <a class="card shop" href="#/p/{project.id}/achats">
             <span class="text">
               <span class="title">Achats</span>
