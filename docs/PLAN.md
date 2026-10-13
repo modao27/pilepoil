@@ -265,6 +265,9 @@ phase du plan avec travaux, sans module nouveau. `core/cutting/bars.ts` existe d
 - `modules/cloisons/core` : rails, montants (doublages, baies, liaisons), plaques (décalages, chutes), isolant,
   consommables, alertes, hauteurs maximales ; usage de `core/cutting/bars.ts` pour rails et montants.
 - Fini quand : les invariants du §6 et les cas R1 à R6 du §7 de la spécification passent ; 20 cloisons < 100 ms.
+- Fait (2026-10-13) : `modules/cloisons/core` (types, defaults, studs, plates, compute) et `engine.ts`, pas encore
+  branché dans `engines.ts` (CL2) ; tests `cloisons`, `cloisonsProperties`, `tests/perf/cloisonsPerf`. Décidé : joint de
+  plaque près d'une baie corrigé (SPEC §4.3), chutes de plaques communes à tout le projet par type et épaisseur.
 
 ### CL2 — Module, données, bibliothèque, achats
 - `index.ts` / `engine.ts`, `CloisonsData`, `toSpec` (longueur du corps, appuis, liaisons, faces carrelées), réducteur,

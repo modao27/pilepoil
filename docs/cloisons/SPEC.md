@@ -178,7 +178,8 @@ export interface CloisonsSpec {
   partitions: SpecPartition[];       // dans l'ordre du plan
   systems: Record<Id, PartitionSystem>;
   settings: CloisonsSettings;
-  prices: Record<string, number>;
+  /** Surface de murs démolis, m² (information, calculée par `toSpec`). */
+  demolishedArea: number;
 }
 export interface SpecPartition {
   id: Id;
@@ -269,7 +270,11 @@ Montage vertical, plaque coupée à `H − plateGap`. Le format est le plus peti
 Pour chaque face `f ∈ {a, b}` et chaque couche `k ∈ {1, …, layers}` :
 1. **Décalage** : `o(f, k) = ((k − 1) + (f = b ? 1 : 0)) mod 2 × spacing`. Les joints d'une couche tombent donc à un
    entraxe des joints de l'autre couche, et ceux de la face b à un entraxe de ceux de la face a. Un joint tombe
-   toujours sur un montant.
+   toujours sur un montant. **Correction (décidée le 2026-10-13)** : si un joint tombe à moins de `studMinGap` d'un bord de
+   baie (là où le montant de trame est supprimé, donc sans montant dessous), le décalage de cette face et de cette
+   couche passe à l'autre valeur permise (`o + spacing` modulo la largeur d'une plaque) ; si aucune des deux ne
+   convient, le décalage normal est gardé avec l'alerte `joint-at-jamb`. Quand la correction fait coïncider les
+   joints de deux couches ou de deux faces, alerte `joints-aligned`.
 2. **Colonnes** : joints à `o + j × largeur de plaque` ; première colonne de largeur `o` (si `o > 0`), colonnes pleines,
    dernière colonne jusqu'à `L`.
 3. **Découpe des baies** : dans chaque colonne, le rectangle de l'ouverture est retiré (plaque en L ou en U, jamais
@@ -293,7 +298,7 @@ Les surfaces de plaque sont celles de §4.3 (aires réelles, toutes faces et cou
 - bande à joint : `perM2 × surface totale` ; enduit : `kgPerM2 × surface totale` ;
 - bande résiliente : somme des longueurs de rails et des montants de départ contre un mur ;
 - fixations : pour chaque rail et chaque montant de départ de longueur `ℓ`, `⌈ℓ ÷ spacing⌉ + 1` ;
-- cornière : une hauteur (`H`) par bout libre et par angle sortant ;
+- cornière : deux hauteurs (`H`) par bout libre (une par face) et une par angle (`partition-corner`) ;
 - renfort bois (`woodInsert`) : 2 × (hauteur de baie + 100) mm par ouverture, en mètres, ligne « tasseau ».
 Chaque ligne = `⌈quantité ÷ conditionnement⌉`.
 
@@ -303,7 +308,8 @@ Chaque ligne = `⌈quantité ÷ conditionnement⌉`.
 `opening-too-tall`, `opening-near-end` (baie à moins de 100 mm d'un bout), `opening-wide` (baie de plus de 1,2 m : linteau
 à justifier), `free-end` (bout sans appui), `short-run` (cloison de moins de 300 mm), `phonic-without-insulation`,
 `fire-unchecked` (plaque feu : la performance dépend du système complet), `wet-face-plate` (face carrelée sans plaque
-hydrofuge), `joint-at-jamb` (joint de plaque à moins de 100 mm d'un bord de baie).
+hydrofuge), `joint-at-jamb` (joint de plaque à moins de 100 mm d'un bord de baie, aucun décalage ne l'évite),
+`joints-aligned` (les joints de deux couches ou de deux faces coïncident, après correction pour une baie).
 
 ## 5. Achats
 
@@ -333,8 +339,9 @@ cloisons. Total par module et pour le projet comme les autres modules.
    plaque tombe toujours sur un montant ; aucun montant de trame à moins de `studMinGap` d'un montant renforcé.
 3. Plaques : Σ surfaces posées d'une face et d'une couche = `L × (H − plateGap)` − ouvertures ; feuilles ≥
    ⌈Σ surfaces ÷ surface d'une feuille⌉ ; chaque pièce tient dans sa feuille ; chaque chute réutilisée existe une fois.
-4. Joints : les joints de deux couches d'une face, et de deux faces d'une cloison, ne coïncident jamais (avec
-   `spacing` ≥ 400 et `layers`, `faces` ≤ 2).
+4. Joints : les joints de deux couches d'une face, et de deux faces d'une cloison, ne coïncident jamais, sauf
+   correction pour une baie (alerte `joints-aligned`) ; aucun joint à moins de `studMinGap` d'un bord de baie sauf
+   alerte `joint-at-jamb`.
 5. Monotonie : plus de hauteur, de longueur ou d'ouvertures ne diminue jamais les quantités de plaques ni de rails.
 6. Une cloison à erreur bloquante est exclue des totaux et ne les fausse pas.
 7. Déterminisme : même entrée, même résultat, JSON identique, même ordre de pièces.
@@ -367,10 +374,10 @@ plaque 2 490 mm de haut.
   1 200 est dans la baie : montant court de 2 490 − 2 040 = 450 mm. Pleins : 600, 2 400, 3 000, 3 600 = 4 ; baie
   1 000 et 1 830, doublés = 4 ; extrémités doublées = 4 → **12 pleins + 1 court = 13 montants, 13 barres** de 2 500
   (le court n'entre pas dans le reste de 10 mm d'un montant plein).
-- Plaques standard, face a (décalage 0) : 1 200 (L autour de la baie) / 1 200 (L) / 1 200 / 400 ; face b (décalage 600) :
-  600 / 1 200 / 1 200 / 1 000. Les cinq pièces de 1 200 prennent 5 feuilles ; 1 000 prend une sixième ; 600 une septième,
-  dont la chute de 600 sert aux 400 : **7 feuilles**. Alerte `joint-at-jamb` sur la face b (joint à 1 800, bord de baie
-  à 1 830).
+- Plaques standard, face a (décalage 0) : 1 200 (L autour de la baie) / 1 200 (L) / 1 200 / 400. Face b : le décalage
+  normal (600) met un joint à 1 800, à 30 mm du bord de baie (1 830) : il est corrigé, la face b passe au décalage 0 et
+  donne les mêmes colonnes que la face a (alerte `joints-aligned`). Six pièces de 1 200 = 6 feuilles ; les deux
+  pièces de 400 sortent d'une septième (chute de 400 gardée) : **7 feuilles**.
 
 **R4** : deux cloisons : P1 `L = 4 000` mur à mur ; P2 `L = 2 000` du mur de fond à la face de P1 (liaison en T à
 l'abscisse 2 000 de P1).
