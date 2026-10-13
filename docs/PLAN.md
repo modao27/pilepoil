@@ -255,6 +255,11 @@ phase du plan avec travaux, sans module nouveau. `core/cutting/bars.ts` existe d
   travaux est inchangé (même référence de plan, carrelage, parquet et peinture identiques, parité 100 %) ; parcours e2e
   « relever un L, verrouiller les murs extérieurs, tracer une cloison avec une porte, démolir une cloison, carreler la
   face d'une cloison neuve, annuler » sur téléphone et ordinateur ; la 3D montre les cloisons ; dérivation < 10 ms.
+- Fait (2026-10-13) : jalon 1 (modèle, dérivation, projet v4, migration, contrat) et jalon 2 (éditeur : calques, verrou,
+  outils Cloison, Démolir et porte, aimantation, confirmation de la surface revêtue perdue). Parcours e2e :
+  `tests/e2e/works.spec.ts` ; tests : `derive`, `deriveCases`, `site`, `worksEditor`. Écarts : dérivation à froid
+  < 30 ms et < 10 ms au glissement d'une cloison (SPEC §9) ; la démolition se règle par deux champs de cote, sans
+  poignées.
 
 ### CL1 — Moteur
 - `modules/cloisons/core` : rails, montants (doublages, baies, liaisons), plaques (décalages, chutes), isolant,

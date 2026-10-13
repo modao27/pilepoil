@@ -309,7 +309,7 @@
                       </div>
                     {/if}
                     <div class="row">
-                      {#if m}<Button variant="primary" href={m.poseHref(id, z.pose)}
+                      {#if m}<Button variant="primary" href={m.poseHref?.(id, z.pose)}
                           >{m.poseLabel ?? 'Calepinage'}</Button
                         >{/if}
                       {#if kind === 'floor'}

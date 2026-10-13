@@ -401,9 +401,12 @@ Mêmes principes et composants que `docs/UX.md`.
 - Bascule **Existant | Travaux** dans la barre de l'éditeur. Existant : l'éditeur actuel, plus un verrou par mur
   (« Mur extérieur », « Mur porteur ») et « Verrouiller les murs extérieurs ». Travaux : l'état existant en fond
   (murs verrouillés hachurés et cadenassés), les pièces après travaux au premier plan, les murs démolis en pointillés.
-- Outils : **Cloison** (deux touchers ; aimantation aux faces des murs, aux parallèles et aux angles droits ; l'épaisseur
-  vient du système), **Démolir** (toucher un mur existant, glisser les bornes de l'intervalle ; refusé sur un mur
-  verrouillé, avec la raison), **Porte / baie** sur une cloison.
+- Outils : **Cloison** (deux touchers ; aimantation aux faces des murs, aux angles droits avec le départ et aux
+  arêtes sur la droite de l'angle droit ; une face de la cloison est sur le trait tracé, l'épaisseur part à droite du
+  sens de tracé par défaut, réglable : centrée ou à gauche ; 72 mm par défaut, puis celle du système), **Démolir**
+  (toucher un mur de l'état existant : tout le mur, puis deux champs de cote pour réduire l'intervalle ; refusé sur un
+  mur verrouillé, avec la raison), **Porte / baie** sur une cloison (champs de largeur, de distance et de hauteur).
+  Glisser les points d'un bout déplace la cloison ; la perte de revêtement éventuelle est annoncée au relâchement.
 - Avant de valider ce qui réduit une surface revêtue : liste par pose de ce qui est perdu, bouton « Annuler ».
 - Tout est accessible sans pointeur par le panneau (liste des cloisons, démolitions, ouvertures, saisie des cotes).
 
@@ -425,7 +428,7 @@ d'achat ; la mention « Vérifier la notice du fabricant » en pied de page. Les
 murs de leurs pièces.
 
 ## 9. Performances
-- Dérivation du plan (`planAfter`) : < 10 ms pour 30 pièces et 40 cloisons, de façon à tenir à 60 i/s pendant le
-  glissement d'une cloison.
+- Dérivation du plan (`planAfter`) pour 30 pièces et 40 cloisons : moins de 30 ms à froid ; moins de 10 ms quand on
+  glisse une cloison (les groupes de pièces que le geste ne touche pas sont repris tels quels), pour tenir 60 i/s.
 - Calcul des cloisons d'un appartement (20 cloisons) : < 100 ms.
 - Élévation : dessin fluide (60 i/s) pour une cloison de 8 m avec deux couches.

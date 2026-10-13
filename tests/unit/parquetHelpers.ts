@@ -11,7 +11,7 @@ import {
   PARQUET_SCHEMA,
   type ParquetPose,
 } from '../../src/modules/parquet/state/model';
-import type { Project } from '../../src/state/model';
+import { PROJECT_SCHEMA, siteOf, type Project } from '../../src/state/model';
 import { DEFAULT_ACCESSORIES, RULES_BY_KIND } from '../../src/modules/parquet/core/defaults';
 import type {
   BoardSpec,
@@ -149,11 +149,12 @@ export function parquetProject(plan: Plan, poses: TestPose[], o: Partial<Project
   const data = createParquetData();
   for (const p of poses) data.poses[p.id] = createPoseSettings(p.settings);
   return {
-    schemaVersion: 3,
+    schemaVersion: PROJECT_SCHEMA,
     id: 'p',
     name: 'Maison',
     createdAt: 0,
     updatedAt: 0,
+    site: siteOf(plan),
     plan,
     zones: poses.flatMap((p) =>
       p.rooms.map((room) => ({

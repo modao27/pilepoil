@@ -2,6 +2,7 @@
 import { pointInPolygon } from '../geometry/polygon';
 import type { Point, Polygon } from '../geometry/types';
 import type { Plan } from './types';
+import { absOutline } from './works';
 
 /** Pas de la grille par défaut, mm (docs/BOITE.md §9). */
 export const GRID = 10;
@@ -94,4 +95,65 @@ function edgeDistance(p: Point, poly: Polygon): number {
     m = Math.min(m, Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy));
   }
   return m;
+}
+
+/**
+ * Point du plan d'ensemble aimanté aux faces des pièces : un sommet, sinon le point le plus proche d'une arête, à
+ * moins de `tolerance` mm ; null si rien n'est assez près. Les arêtes sont les faces intérieures des murs.
+ */
+export function snapToFaces(p: Point, plan: Plan, tolerance: number): Point | null {
+  let best: Point | null = null,
+    bestD = tolerance;
+  let corner = false;
+  for (const r of plan.rooms) {
+    const o = absOutline(r);
+    for (let i = 0; i < o.length; i++) {
+      const a = o[i]!,
+        b = o[(i + 1) % o.length]!;
+      const dv = Math.hypot(p[0] - a[0], p[1] - a[1]);
+      if (dv < bestD || (dv <= bestD && !corner)) [best, bestD, corner] = [a, dv, true];
+      const dx = b[0] - a[0],
+        dy = b[1] - a[1];
+      const l2 = dx * dx + dy * dy;
+      const t = l2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2)) : 0;
+      const q: Point = [a[0] + t * dx, a[1] + t * dy];
+      const de = Math.hypot(p[0] - q[0], p[1] - q[1]);
+      if (!corner && de < bestD) [best, bestD] = [q, de];
+    }
+  }
+  return best && [Math.round(best[0] * 10) / 10, Math.round(best[1] * 10) / 10];
+}
+
+/**
+ * Point d'une cloison en cours de tracé : angle droit avec le point de départ, puis arête des pièces (en restant
+ * sur la droite de l'angle droit quand il y en a une), puis faces, puis grille.
+ */
+export function snapPartitionPoint(p: Point, start: Point | null, plan: Plan, tolerance: number): Point {
+  const q = snapPoint(p, start ? [start] : [], tolerance);
+  const fixed: 0 | 1 | null = start ? (q[0] === start[0] ? 0 : q[1] === start[1] ? 1 : null) : null;
+  if (start && fixed !== null) {
+    // intersection de la droite imposée avec les arêtes des pièces, la plus proche de q
+    const k = fixed,
+      o = (1 - fixed) as 0 | 1;
+    let best: Point | null = null,
+      bestD = tolerance * 3;
+    for (const r of plan.rooms) {
+      const ring = absOutline(r);
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i]!,
+          b = ring[(i + 1) % ring.length]!;
+        const c = start[k];
+        if ((a[k]! - c) * (b[k]! - c) > 0 || a[k] === b[k]) continue;
+        const v = a[o]! + ((c - a[k]!) * (b[o]! - a[o]!)) / (b[k]! - a[k]!);
+        const d = Math.abs(v - q[o]!);
+        if (d < bestD) {
+          bestD = d;
+          best = k === 0 ? [c, v] : [v, c];
+        }
+      }
+    }
+    if (best) return [Math.round(best[0] * 10) / 10, Math.round(best[1] * 10) / 10];
+    return q;
+  }
+  return snapToFaces(q, plan, tolerance) ?? q;
 }

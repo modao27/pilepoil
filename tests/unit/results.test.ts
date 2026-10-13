@@ -35,7 +35,7 @@ import { writeParquetResults } from '../../src/modules/parquet/ui/lib/pdf';
 import { parquetReport } from '../../src/modules/parquet/ui/lib/results';
 import { moduleById } from '../../src/modules/registry';
 import type { Libraries, ModuleResults, ResultExports } from '../../src/modules/types';
-import type { Project } from '../../src/state/model';
+import { PROJECT_SCHEMA, siteOf, type Project } from '../../src/state/model';
 import { buildResultsPdf } from '../../src/ui/lib/resultsPdf';
 import { consolidate } from '../../src/ui/lib/shopping';
 import { rect, view, withOpening } from './planFixtures';
@@ -85,13 +85,15 @@ function project(linked = false): Project {
     ? [zone('z1', 'S', 'a'), zone('z2', 'S', 'b')]
     : [zone('z1', 'T1', 'a'), zone('z2', 'T2', 'a', 'a-w0'), zone('z3', 'P', 'b')];
   const tilePoses = linked ? ['S'] : ['T1', 'T2'];
+  const site = siteOf(twoRooms());
   return {
-    schemaVersion: 3,
+    schemaVersion: PROJECT_SCHEMA,
     id: 'p',
     name: 'Maison',
     createdAt: 0,
     updatedAt: 0,
-    plan: twoRooms(),
+    site,
+    plan: site.existing,
     zones,
     poses: [
       ...tilePoses.map((id, i) => ({ id, module: 'carrelage', name: `Pose ${i + 1}` })),

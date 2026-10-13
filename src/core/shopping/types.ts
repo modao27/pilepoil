@@ -1,6 +1,6 @@
 /** Ligne de la liste d'achat consolidée du projet (docs/BOITE.md §7). Types seuls en S1, branchés en S3. */
 
-export type ShoppingGroup = 'covering' | 'underlay' | 'finish' | 'consumable' | 'tool';
+export type ShoppingGroup = 'covering' | 'underlay' | 'structure' | 'finish' | 'consumable' | 'tool';
 
 export type ShoppingUnit =
   'pack' | 'box' | 'roll' | 'bar' | 'bag' | 'sachet' | 'tube' | 'cartridge' | 'litre' | 'piece' | 'm2' | 'm' | 'pot';

@@ -312,8 +312,9 @@ Les zones restent dans le projet, pointent des identifiants de pièce et de mur,
 - `plan/point/remove` fusionne deux murs : le mur gardé est verrouillé si l'un des deux l'était.
 - Pas d'action `split` ni `merge` : les pièces coupées ou fusionnées sont des conséquences de `site`. Les modules ne
   reçoivent rien de plus (les événements de pose existants suffisent).
-- Un tracé de cloison et la découpe qui en résulte sont une seule action, donc une seule étape d'annulation. Dans un
-  `batch`, le plan n'est recalculé qu'une fois, à la fin.
+- Un tracé de cloison et la découpe qui en résulte sont une seule action, donc une seule étape d'annulation. Le plan est recalculé après chaque
+  action, y compris dans un `batch` (les actions suivantes lisent le plan à jour) ; sans travaux le coût est nul et, avec
+  travaux, les groupes de pièces inchangés sont repris.
 
 ### Validation (`core/plan/works.ts`, codes ; le texte est écrit par l'interface)
 
@@ -322,7 +323,9 @@ existant non démoli), `partition/crosses-locked`, `partition/crosses-partition`
 l'autre), `partition/crosses-obstacle`, `partition/over-opening` (alerte : l'extrémité tombe sur une fenêtre),
 `partition/opening-size`, `partition/opening-outside`, `partition/opening-overlap`, `demolition/wall-missing`,
 `demolition/locked`, `demolition/range`, `demolition/no-neighbour` (mur sans pièce en vis-à-vis),
-`derive/sliver`, `derive/invalid-room` (le plan dérivé échoue à `validateRoom`).
+`derive/sliver`, `derive/invalid-room` (le plan dérivé échoue à `validateRoom`), `derive/passage-lost` (alerte : un
+passage ne relie plus deux portes qui se font face). Une ouverture existante coupée ou rognée par une cloison ou une
+démolition garde un morceau dans chaque pièce (`<id>`, `<id>~2`) et lève `partition/over-opening`.
 
 ### Invariants testés
 

@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction, type StoreNames } from 'idb';
 import type { LibraryItem } from '../modules/types';
-import { PROJECT_SCHEMA, type Photo, type Pref, type PrefKey, type Project } from '../state/model';
+import type { Photo, Pref, PrefKey, StoredProject } from '../state/model';
 
 /** Document d'un module rattaché à un projet (scénarios du carrelage) : typé par son module. */
 export interface ProjectRecord {
@@ -9,7 +9,7 @@ export interface ProjectRecord {
 }
 
 export interface PilepoilDB extends DBSchema {
-  projects: { key: string; value: Project; indexes: { updatedAt: number } };
+  projects: { key: string; value: StoredProject; indexes: { updatedAt: number } };
   /** Bibliothèque de carreaux du carrelage (typée par le module). */
   tiles: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
   photos: { key: string; value: Photo };
@@ -20,6 +20,8 @@ export interface PilepoilDB extends DBSchema {
   boards: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
   /** Bibliothèque de peintures du module peinture. */
   paints: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
+  /** Bibliothèque de systèmes de cloison du module cloisons. */
+  systems: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
 }
 
 export type Db = IDBPDatabase<PilepoilDB>;
@@ -50,13 +52,20 @@ const UPGRADES: ((db: Db, tx: UpgradeTx) => void)[] = [
   // v3 (C4) : projets v1 (avant la boîte à outils) retirés, sans conversion ; bibliothèques, photos et
   // préférences gardées. Les anciens scénarios sont retirés à la lecture par le carrelage.
   (_db, tx) => void purge(tx, 'projects', 2),
-  // v4 (N1) : zones et poses dans le projet ; projets précédents retirés, sans conversion.
-  (_db, tx) => void purge(tx, 'projects', PROJECT_SCHEMA),
+  // v4 (N1) : zones et poses dans le projet ; projets précédents retirés, sans conversion. Schéma figé à 3 : la
+  // constante du projet a changé depuis (le schéma 4 se migre à la lecture, jamais par suppression).
+  (_db, tx) => void purge(tx, 'projects', 3),
   // v5 (PE2) : bibliothèque de peintures.
   (db) => {
     const paints = db.createObjectStore('paints', { keyPath: 'id' });
     paints.createIndex('name', 'name');
     paints.createIndex('updatedAt', 'updatedAt');
+  },
+  // v6 (T0) : bibliothèque de systèmes de cloison.
+  (db) => {
+    const systems = db.createObjectStore('systems', { keyPath: 'id' });
+    systems.createIndex('name', 'name');
+    systems.createIndex('updatedAt', 'updatedAt');
   },
 ];
 

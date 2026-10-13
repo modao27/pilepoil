@@ -266,7 +266,7 @@ describe('invariants', () => {
       ),
       { numRuns: 60 },
     );
-  });
+  }, 20_000); // propriété coûteuse : la limite de 5 s dépasse quand la suite tourne en parallèle
 
   it('déterminisme : même entrée, même JSON', () => {
     const a = JSON.stringify(computePaint(room()));

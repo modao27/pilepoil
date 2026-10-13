@@ -5,8 +5,10 @@
  * projet d'origine si rien ne change.
  */
 import { reduceCoverage, removeRoom, type Coverage, type CoverageAction } from '../core/coverage';
-import { reducePlan, type PlanAction } from '../core/plan/reduce';
+import { planAfter } from '../core/plan/derive';
+import type { PlanAction } from '../core/plan/reduce';
 import type { Plan } from '../core/plan/types';
+import { reduceSite, type WorksAction } from '../core/plan/works';
 import { moduleById } from '../modules/registry';
 import type { ModuleAction, ModuleId, PoseEvent, ToolModule } from '../modules/types';
 import type { ModuleDoc, Project } from './model';
@@ -18,6 +20,7 @@ export type ProjectAction =
   /** Plusieurs actions en une seule étape d'historique (ex. résultat d'optimisation). */
   | { type: 'batch'; actions: ProjectAction[] }
   | PlanAction
+  | WorksAction
   | CoverageAction
   | ModuleAction;
 
@@ -49,9 +52,10 @@ export function reduceProject(p: Project, a: ProjectAction, find: Find = moduleB
     return withCoverage(p, cov, added, find);
   }
   if (a.type.startsWith('plan/')) {
-    const plan = reducePlan(p.plan, a as PlanAction);
-    if (plan === p.plan) return p;
-    let next: Project = { ...p, plan };
+    // `plan/*` agit sur l'état existant (et les travaux), puis le plan après travaux est recalculé
+    const site = reduceSite(p.site, a as PlanAction | WorksAction);
+    if (site === p.site) return p;
+    let next: Project = { ...p, site, plan: planAfter(site) };
     if (a.type === 'plan/room/remove') {
       // les zones de la pièce partent avec elle ; les poses restées sans zone aussi (et leurs réglages)
       next = withCoverage(next, removeRoom(next, (a as { roomId: string }).roomId), null, find);

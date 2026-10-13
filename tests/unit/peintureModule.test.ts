@@ -50,7 +50,7 @@ function project(roomIds = ['r']): Project {
   );
   const base = planProject(rooms, {}, { zones, poses });
   const data: PeintureData = {
-    poses: Object.fromEntries(poses.map((p) => [p.id, peinture.createPose(base, libraries) as PaintPoseSettings])),
+    poses: Object.fromEntries(poses.map((p) => [p.id, peinture.createPose!(base, libraries) as PaintPoseSettings])),
     prices: {},
   };
   return { ...base, modules: { ...base.modules, peinture: { schemaVersion: PEINTURE_SCHEMA, data } } };
@@ -67,7 +67,7 @@ describe('module peinture', () => {
   it('create : aucune pose ; createPose : blanc mat, boiseries des modèles types, ou réglages d’une autre pose', () => {
     expect(peinture.create({ rooms: [], passages: [] })).toEqual({ poses: {}, prices: {} });
     const p = project();
-    const fresh = peinture.createPose(p, libraries) as PaintPoseSettings;
+    const fresh = peinture.createPose!(p, libraries) as PaintPoseSettings;
     expect(fresh).toMatchObject({ finish: 'modele-blanc-mat', coats: 2, support: 'painted', margin: 0.1 });
     expect(fresh.woodwork.finish).toBe('modele-boiseries');
     const edited = reduceProject(p, {
@@ -75,8 +75,8 @@ describe('module peinture', () => {
       poseId: 'P0',
       patch: { coats: 3 },
     } as never);
-    expect(peinture.createPose(edited, libraries, 'P0')).toMatchObject({ coats: 3 });
-    expect(peinture.createPose(p, { paints: [] })).toMatchObject({ finish: null });
+    expect(peinture.createPose!(edited, libraries, 'P0')).toMatchObject({ coats: 3 });
+    expect(peinture.createPose!(p, { paints: [] })).toMatchObject({ finish: null });
   });
 
   it('toSpec : zones de murs au repère du mur, ouvertures du mur, longueurs et surface au sol', () => {
