@@ -3,10 +3,11 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { defaultPoseSettings } from '../../src/modules/peinture/core/defaults';
 import { computePaint } from '../../src/modules/peinture/core/compute';
+import { projectNeeds } from '../../src/modules/peinture/core/aggregate';
 import { choosePacks } from '../../src/modules/peinture/core/packs';
 import { rectRegion } from '../../src/modules/peinture/core/surface';
 import type {
-  Paint,
+  SpecPaint,
   PaintPack,
   PaintPoseSettings,
   PaintSpec,
@@ -21,7 +22,7 @@ const PACKS: PaintPack[] = [
   { size: 10, price: 80 },
 ];
 
-const paint = (id: string, o: Partial<Paint> = {}): Paint => ({
+const paint = (id: string, o: Partial<SpecPaint> = {}): SpecPaint => ({
   id,
   name: id,
   role: 'finish',
@@ -36,7 +37,7 @@ const DOOR: SpecOpening = { id: 'door', kind: 'door', offset: 500, width: 830, s
 const WINDOW: SpecOpening = { id: 'win', kind: 'window', offset: 700, width: 1200, sill: 900, height: 1250 };
 
 /** Pièce 4000 × 3000, hauteur 2500, quatre murs entiers ; porte sur le mur 0, fenêtre sur le mur 1. */
-function room(settings: Partial<PaintPoseSettings> = {}, paints: Paint[] = [paint('white')]): PaintSpec {
+function room(settings: Partial<PaintPoseSettings> = {}, paints: SpecPaint[] = [paint('white')]): PaintSpec {
   const lengths = [4000, 3000, 4000, 3000];
   const zones: SpecZone[] = lengths.map((L, i) => ({
     id: `z${i}`,
@@ -50,6 +51,7 @@ function room(settings: Partial<PaintPoseSettings> = {}, paints: Paint[] = [pain
     wallLengths: Object.fromEntries(lengths.map((L, i) => [`w${i}`, L])),
     floorArea: 12_000_000,
     paints: Object.fromEntries(paints.map((p) => [p.id, p])),
+    prices: {},
     settings: { ...defaultPoseSettings(), finish: 'white', ...settings },
   };
 }
@@ -181,12 +183,9 @@ describe('boiseries et consommables', () => {
   });
 
   it('masquage, bâche, rouleau, brosse', () => {
-    const r = computePaint(
-      room({
-        consumables: { masking: true, sheet: true, roller: true, brush: true },
-        prices: { 'consumable:brush': 8 },
-      }),
-    );
+    const s = room({ consumables: { masking: true, sheet: true, roller: true, brush: true } });
+    s.prices = { 'peinture:consumable:brush': 8 };
+    const r = computePaint(s);
     // murs 14 m + ouvertures 4,32 + 4,9 m = 23,22 m → 1 rouleau ; 12 m² → 1 bâche
     expect(r.consumables).toEqual([
       { id: 'masking', quantity: 1, unitPrice: null },
@@ -272,5 +271,17 @@ describe('invariants', () => {
   it('déterminisme : même entrée, même JSON', () => {
     const a = JSON.stringify(computePaint(room()));
     expect(JSON.stringify(computePaint(room()))).toBe(a);
+  });
+});
+
+describe('besoins du projet', () => {
+  it('deux poses du même produit : besoins additionnés, une seule combinaison de pots', () => {
+    const a = room();
+    const b = room();
+    const poses = [a, b].map((spec) => ({ spec, result: computePaint(spec) }));
+    const [need] = projectNeeds(poses);
+    expect(need!.need).toBe(6998 * 2);
+    expect(need!.purchased).toBeGreaterThanOrEqual(13_996);
+    expect(need!.cost!).toBeLessThanOrEqual(2 * 69);
   });
 });

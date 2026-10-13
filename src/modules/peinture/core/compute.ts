@@ -7,13 +7,15 @@ import { choosePacks } from './packs';
 import { framePerimeter, measureZone, openingsIn, skirtingLength } from './surface';
 import type {
   ConsumableLine,
-  Paint,
   PaintAlert,
   PaintProduct,
   PaintResult,
   PaintRole,
   PaintSpec,
+  SpecPaint,
   PaintTarget,
+  PeintureResult,
+  PeintureSpec,
   PaintUse,
 } from './types';
 
@@ -71,7 +73,7 @@ export function computePaint(spec: PaintSpec): PaintResult {
   const skirtMm2 = skirtLen * w.skirtingHeight;
   const woodMm2 = skirtMm2 + framesMm2 + doorsMm2;
 
-  const paintOf = (id: string | null): Paint | undefined => (id ? spec.paints[id] : undefined);
+  const paintOf = (id: string | null): SpecPaint | undefined => (id ? spec.paints[id] : undefined);
   const k = SUPPORT_YIELD[s.support];
 
   /** Produit d'une couche de produit sur une surface ; null (avec alerte) si le produit est inutilisable. */
@@ -138,7 +140,7 @@ export function computePaint(spec: PaintSpec): PaintResult {
   const lengths = [...wallsSeen].reduce((sum, id) => sum + (spec.wallLengths[id] ?? 0), 0);
   const consumables: ConsumableLine[] = [];
   const line = (id: ConsumableLine['id'], quantity: number) =>
-    consumables.push({ id, quantity, unitPrice: s.prices[`consumable:${id}`] ?? null });
+    consumables.push({ id, quantity, unitPrice: spec.prices[`peinture:consumable:${id}`] ?? null });
   if (c.masking) line('masking', Math.ceil((lengths + openingPerimeter) / MASKING_ROLL - 1e-9));
   if (c.sheet && spec.floorArea > 0) line('sheet', Math.ceil(spec.floorArea / SHEET_AREA - 1e-9));
   if (c.roller) line('roller', 1);
@@ -164,4 +166,9 @@ export function computePaint(spec: PaintSpec): PaintResult {
     cost: cost == null ? null : Math.round(cost * 100) / 100,
     alerts,
   };
+}
+
+/** Toutes les poses de peinture du projet. */
+export function computePeinture(spec: PeintureSpec): PeintureResult {
+  return { poses: spec.poses.map((p) => ({ id: p.id, result: computePaint(p.spec) })) };
 }

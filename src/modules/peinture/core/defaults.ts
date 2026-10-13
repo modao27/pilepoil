@@ -36,6 +36,5 @@ export function defaultPoseSettings(): PaintPoseSettings {
       primer: null,
     },
     consumables: { masking: false, sheet: false, roller: false, brush: false },
-    prices: {},
   };
 }

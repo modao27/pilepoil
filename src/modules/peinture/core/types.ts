@@ -20,14 +20,11 @@ export interface PaintPack {
   price: number | null;
 }
 
-/** Produit de la bibliothèque `paints`. */
-export interface Paint {
+/** Ce que le moteur lit d'un produit de la bibliothèque `paints` (voir `Paint`, paint.ts). */
+export interface SpecPaint {
   id: Id;
   name: string;
-  brand?: string;
   role: PaintRole;
-  sheen?: PaintSheen;
-  color?: { name: string; hex: string };
   tint?: Tint;
   uses: PaintUse[];
   /** Rendement par couche, m² par litre (par kg pour un enduit). */
@@ -35,7 +32,6 @@ export interface Paint {
   /** Couches conseillées par le fabricant. */
   coats: number;
   packs: PaintPack[];
-  photo?: Id;
 }
 
 export interface OpeningRule {
@@ -78,8 +74,6 @@ export interface PaintPoseSettings {
   openings: OpeningRule;
   woodwork: WoodworkSettings;
   consumables: Consumables;
-  /** Prix saisis dans le projet, par clé de ligne d'achat. */
-  prices: Record<string, number>;
 }
 
 export interface SpecOpening {
@@ -111,7 +105,9 @@ export interface PaintSpec {
   /** Surface au sol des pièces touchées, mm² (bâche). */
   floorArea: number;
   /** Produits utilisés par les réglages, par identifiant. */
-  paints: Record<Id, Paint>;
+  paints: Record<Id, SpecPaint>;
+  /** Prix saisis dans le projet, par clé de ligne d'achat (`peinture:consumable:<id>`…). */
+  prices: Record<string, number>;
   settings: PaintPoseSettings;
 }
 
@@ -174,4 +170,13 @@ export interface PaintResult {
   /** Somme des produits et des consommables chiffrés ; null si un produit n'a pas de prix. */
   cost: number | null;
   alerts: PaintAlert[];
+}
+
+/** Entrée du moteur peinture : une entrée par pose de peinture du projet. */
+export interface PeintureSpec {
+  poses: { id: Id; spec: PaintSpec }[];
+}
+
+export interface PeintureResult {
+  poses: { id: Id; result: PaintResult }[];
 }
