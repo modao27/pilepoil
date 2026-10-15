@@ -228,7 +228,10 @@
             />
           {/if}
           <p class="muted">
-            {fr(result?.areas.openings ?? 0, 2)} m² déduits sur {fr(result?.areas.gross ?? 0, 2)} m² de murs.
+            {fr(result?.areas.openings ?? 0, 2)} m² déduits sur {fr(result?.areas.gross ?? 0, 2)} m² de murs{result
+              ?.areas.skirting
+              ? `, et ${fr(result.areas.skirting, 2)} m² cachés par les plinthes`
+              : ''}.
           </p>
         </section>
       {:else if id === 'cut'}

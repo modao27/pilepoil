@@ -23,6 +23,7 @@ export function peintureReport(input: ResultInput<PeintureResult>): PoseReport[]
     const zones = scope.kind === 'room' ? r.zones.filter((z) => z.room === scope.room) : r.zones;
     const net = zones.reduce((t, z) => t + z.net, 0);
     const openings = zones.reduce((t, z) => t + z.openings, 0);
+    const skirting = zones.reduce((t, z) => t + z.skirting, 0);
     if (!r.areas.net) return [{ pose: l.id, figures: [], order: [], orderNote: null, alerts, ok: false }];
     return [
       {
@@ -30,6 +31,7 @@ export function peintureReport(input: ResultInput<PeintureResult>): PoseReport[]
         figures: [
           { label: 'Surface à peindre', value: `${fr(net)} m²` },
           { label: 'Ouvertures déduites', value: `${fr(openings)} m²` },
+          ...(skirting ? [{ label: 'Plinthes déduites', value: `${fr(skirting)} m²` }] : []),
           ...(r.woodwork.total ? [{ label: 'Boiseries', value: `${fr(r.woodwork.total)} m²` }] : []),
         ],
         order: r.products.map((p) => {

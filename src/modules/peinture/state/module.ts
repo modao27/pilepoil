@@ -1,5 +1,6 @@
 /** Fonctions du contrat de module (docs/BOITE.md §2) propres à la peinture, hors écrans. */
 import { surfacePolygon, zoneRegion } from '../../../core/coverage/geometry';
+import { basesOf, NO_CONTEXT, type ProjectContext } from '../../../core/coverage/wallBase';
 import { regionArea } from '../../../core/geometry/boolean';
 import type { PlanRoom } from '../../../core/plan/types';
 import { wallIndex, wallLength } from '../../../core/plan/walls';
@@ -45,7 +46,11 @@ const usedPaints = (s: PaintPoseSettings): string[] =>
   [s.finish, s.primer, s.filler, s.woodwork.finish, s.woodwork.primer].filter((x): x is string => !!x);
 
 /** Projet → entrée du moteur : zones de murs de chaque pose dans le repère du mur, produits de la bibliothèque. */
-export function toSpec(project: Project, libraries: Libraries): { spec: PeintureSpec } | { errors: ModuleError[] } {
+export function toSpec(
+  project: Project,
+  libraries: Libraries,
+  context: ProjectContext = NO_CONTEXT,
+): { spec: PeintureSpec } | { errors: ModuleError[] } {
   const d = peintureData(project);
   if (!d) return { errors: [{ code: 'peinture/absent' }] };
   const paints = paintsOf(libraries);
@@ -61,6 +66,8 @@ export function toSpec(project: Project, libraries: Libraries): { spec: Peinture
         if (!room || i < 0 || !region?.length) continue;
         const wall = z.surface.wall!;
         rooms.add(room);
+        // pied du mur dit par le revêtement du sol (parquet, carrelage) ; rien : réglage manuel en secours
+        const floor = basesOf(context, room.id, wall).filter((b) => b.kind !== 'tiled');
         wallLengths[wall] = wallLength(room, i);
         zones.push({
           id: z.id,
@@ -77,6 +84,13 @@ export function toSpec(project: Project, libraries: Libraries): { spec: Peinture
               sill: o.sill,
               height: o.height,
             })),
+          ...(floor.length
+            ? {
+                skirtings: floor
+                  .filter((b) => b.kind === 'skirting')
+                  .map((b) => ({ from: b.from, to: b.to, height: b.height, paintable: b.paintable })),
+              }
+            : {}),
         });
       }
       if (!zones.length) return null;

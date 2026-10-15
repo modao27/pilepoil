@@ -1,3 +1,4 @@
+import { NO_CONTEXT } from '../../src/core/coverage/wallBase';
 import { describe, expect, it } from 'vitest';
 import { intersection, regionArea } from '../../src/core/geometry/boolean';
 import type { Segment } from '../../src/core/geometry/types';
@@ -35,7 +36,7 @@ function project(): Project {
 
 const data = (p: Project) => p.modules.parquet!.data as ParquetData;
 const specOf = (p: Project) => {
-  const r = parquet.toSpec(p, libraries);
+  const r = parquet.toSpec(p, libraries, NO_CONTEXT);
   if (!('spec' in r)) throw new Error(JSON.stringify(r));
   return r.spec;
 };
@@ -89,7 +90,7 @@ describe('module parquet', () => {
     const p = project();
     expect(computeParquet(specOf(update(p, { boardId: 'x' }))).layouts[0]!.errors).toEqual([{ code: 'missing-board' }]);
     const none = reduceProject(p, { type: 'pose/remove', poseId: 'L1' });
-    expect(parquet.toSpec(none, libraries)).toEqual({ errors: [{ code: 'parquet/no-room' }] });
+    expect(parquet.toSpec(none, libraries, NO_CONTEXT)).toEqual({ errors: [{ code: 'parquet/no-room' }] });
     // réglages partis avec la pose
     expect(data(none).poses).toEqual({});
   });

@@ -3,7 +3,7 @@ import type { ModuleLogic } from '../types';
 import type { ProjectResult, ProjectSpec } from './core';
 import { reduce, type Action } from './state/actions';
 import type { CarrelageData } from './state/data';
-import { create, createPose, priceAction, shopping, summary, toSpec } from './state/module';
+import { create, createPose, priceAction, shopping, summary, toSpec, wallBases } from './state/module';
 
 export const logic: ModuleLogic<CarrelageData, ProjectSpec, ProjectResult, Action> = {
   create,
@@ -13,4 +13,5 @@ export const logic: ModuleLogic<CarrelageData, ProjectSpec, ProjectResult, Actio
   shopping,
   priceAction,
   summary,
+  wallBases,
 };

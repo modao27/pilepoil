@@ -1,4 +1,5 @@
 /** Export PDF du parquet : pages A4, résumé et achats, plan coté à l'échelle, fiche de coupe (cas R7). */
+import { NO_CONTEXT } from '../../src/core/coverage/wallBase';
 import { writeFileSync } from 'node:fs';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { describe, expect, it } from 'vitest';
@@ -64,7 +65,7 @@ describe('export PDF du parquet', () => {
   it('R7 : résumé et achats, plan coté à l’échelle, fiche de coupe, plinthes', async () => {
     const project = r7();
     const data = project.modules.parquet!.data as ParquetData;
-    const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES });
+    const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES }, NO_CONTEXT);
     if (!('spec' in s)) throw new Error('spec');
     const result = computeParquet(s.spec);
     const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project);
@@ -116,7 +117,7 @@ describe('export PDF du parquet', () => {
     l.boardId = 'modele-hongrie-45';
     l.pattern = { kind: 'chevron', endAngle: 45 };
     l.breaks = [];
-    const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES });
+    const s = parquet.toSpec(project, { boards: BOARD_TEMPLATES }, NO_CONTEXT);
     if (!('spec' in s)) throw new Error('spec');
     const result = computeParquet(s.spec);
     const lines = parquet.shopping(result, data, { boards: BOARD_TEMPLATES }, project);

@@ -127,6 +127,8 @@ export interface RoomSpec {
   area?: Polygon;
   /** Contours retirés de la zone (autre revêtement dessiné dans la pièce). */
   holes?: Polygon[];
+  /** Par mur (indice du contour) : intervalles sans plinthe, mur carrelé depuis le sol (docs/BOITE.md §2). */
+  noSkirting?: Record<number, [number, number][]>;
 }
 
 export interface LayoutSpec {

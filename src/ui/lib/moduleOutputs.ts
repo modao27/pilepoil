@@ -4,6 +4,7 @@ import { modules } from '../../modules/registry';
 import type { ModuleSummary, ToolModule } from '../../modules/types';
 import type { Project } from '../../state/model';
 import { app } from './app.svelte';
+import { projectContext } from './projectContext';
 
 export interface ModuleOutput {
   module: ToolModule;
@@ -16,7 +17,7 @@ export interface ModuleOutput {
 export const activeModules = (p: Project): ToolModule[] => modules.filter((m) => Object.hasOwn(p.modules, m.id));
 
 export async function moduleOutput(p: Project, m: ToolModule): Promise<ModuleOutput> {
-  const r = m.toSpec(p, app.libraries);
+  const r = m.toSpec(p, app.libraries, projectContext(p, app.libraries));
   if ('errors' in r) return { module: m, summary: null, lines: [] };
   const result = await app.queued(m.id, r.spec);
   return {

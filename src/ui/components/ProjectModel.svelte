@@ -12,6 +12,7 @@
   import { app } from '../lib/app.svelte';
   import { EMPTY_FRAME, loadModel3D, modelFrame, modelMeshes, type Model3DLibs, type ModelEntry } from '../lib/model3d';
   import Scene3DView from './Scene3DView.svelte';
+  import { projectContext } from '../lib/projectContext';
 
   let {
     project,
@@ -53,7 +54,7 @@
     const libraries = app.libraries;
     let live = true;
     for (const m of mods) {
-      const r = m.toSpec(p, libraries);
+      const r = m.toSpec(p, libraries, projectContext(p, libraries));
       if ('errors' in r) continue;
       void Promise.all([
         app.queued(m.id, r.spec),

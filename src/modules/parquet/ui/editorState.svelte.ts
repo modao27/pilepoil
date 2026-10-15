@@ -20,6 +20,7 @@ import type { Action } from '../state/actions';
 import { PARQUET_ID, type Layout, type ParquetPose } from '../state/model';
 import { toSpec } from '../state/module';
 import { layoutsOf, parquetData, splitPoseAction, toggleRoomAction } from '../state/poses';
+import { projectContext } from '../../../ui/lib/projectContext';
 
 const newId = () => crypto.randomUUID();
 
@@ -78,7 +79,7 @@ export class ParquetEditorState {
 
   /** Calcul en direct dans le worker (seule la dernière demande compte). */
   async recompute(): Promise<void> {
-    const r = toSpec(this.doc, app.libraries);
+    const r = toSpec(this.doc, app.libraries, projectContext(this.doc, app.libraries));
     if ('errors' in r) {
       this.result = null;
       return;
@@ -104,7 +105,7 @@ export class ParquetEditorState {
    */
   async optimize(): Promise<void> {
     const l = this.layout;
-    const r = toSpec(this.doc, app.libraries);
+    const r = toSpec(this.doc, app.libraries, projectContext(this.doc, app.libraries));
     if (!l || this.optimizing != null || 'errors' in r) return;
     this.abort = new AbortController();
     this.optimizing = 0;

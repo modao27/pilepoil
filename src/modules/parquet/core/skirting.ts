@@ -30,6 +30,7 @@ export function computeSkirting(spec: ParquetSpec): SkirtingResult {
         .map((o) => [along(a, b, o.segment[0]), along(a, b, o.segment[1])] as const)
         .filter(([s, t]) => s != null && t != null)
         .map(([s, t]) => [Math.max(0, Math.min(s!, t!)), Math.min(len, Math.max(s!, t!))] as [number, number])
+        .concat(room.noSkirting?.[i] ?? [])
         .sort((x, y) => x[0] - y[0]);
       let start = 0,
         k = 0;

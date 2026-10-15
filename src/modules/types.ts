@@ -7,6 +7,7 @@ import type { Component, Snippet } from 'svelte';
 
 import type { ResultScope } from '../core/coverage/scope';
 import type { CoverageRules } from '../core/coverage/types';
+import type { ProjectContext, WallBase } from '../core/coverage/wallBase';
 import type { Plan } from '../core/plan/types';
 import type { MeshData } from '../render/scene3d/types';
 import type { ShoppingLine } from '../core/shopping/types';
@@ -14,7 +15,7 @@ import type { Id, Project } from '../state/model';
 import type { Db } from '../storage/db';
 import type { Doc } from '../ui/lib/pdf/doc';
 
-export type { ResultScope };
+export type { ProjectContext, ResultScope, WallBase };
 
 /** 'carrelage', 'parquet'… Liste ouverte : ajouter un module ne touche pas aux types communs. */
 export type ModuleId = string;
@@ -253,8 +254,16 @@ export interface ModuleLogic<
    * elle) ; renvoie `data` inchangé si rien ne change.
    */
   reduce(data: Data, action: Action | PoseEvent, plan: Plan): Data;
-  /** État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. */
-  toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
+  /**
+   * État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. `context` : ce que les autres
+   * modules disent du projet (pied des murs…), rassemblé par la coquille (`ui/lib/projectContext`).
+   */
+  toSpec(project: Project, libraries: Libraries, context: ProjectContext): { spec: Spec } | { errors: ModuleError[] };
+  /**
+   * Ce que le module met au pied des murs (plinthes, sol sans plinthe, mur carrelé depuis le sol), tiré de ses seules
+   * données : les autres modules le lisent par `context`. Facultatif.
+   */
+  wallBases?(project: Project, libraries: Libraries): WallBase[];
   /** Lignes d'achat consolidables ; `project` : le projet calculé (plan, zones, poses). */
   shopping(result: Result, data: Data, libraries: Libraries, project: Project): ShoppingLine[];
   /** Action qui fixe le prix unitaire d'une ligne (`key`) ; null : revenir au prix de la bibliothèque. */

@@ -2,6 +2,7 @@
  * Résultats par pose, pièce et projet (docs/NAVIGATION.md §7) : portée, rapports des deux modules (pièces exactes
  * sur la portée, quantités honnêtes), placement 3D au repère du plan, PDF aux trois niveaux.
  */
+import { NO_CONTEXT } from '../../src/core/coverage/wallBase';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { describe, expect, it } from 'vitest';
 import { poseWhere, type Zone } from '../../src/core/coverage';
@@ -111,7 +112,7 @@ function project(linked = false): Project {
 
 const tilingResult = (p: Project): ProjectResult => computeProject(toProjectSpec(view(p), [tile]).spec);
 function parquetResult(p: Project): ParquetResult {
-  const s = moduleById('parquet')!.toSpec(p, libraries);
+  const s = moduleById('parquet')!.toSpec(p, libraries, NO_CONTEXT);
   if (!('spec' in s)) throw new Error('spec');
   return computeParquet(s.spec as Parameters<typeof computeParquet>[0]);
 }

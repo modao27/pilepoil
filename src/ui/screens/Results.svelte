@@ -23,6 +23,7 @@
   import { projectOutputs } from '../lib/moduleOutputs';
   import { consolidate } from '../lib/shopping';
   import { poseColor } from '../room/colors';
+  import { projectContext } from '../lib/projectContext';
 
   let { id, scope }: { id: string; scope: ResultScope } = $props();
 
@@ -60,8 +61,9 @@
       const { [m]: _, ...rest } = problems;
       problems = why ? { ...rest, [m]: why } : rest;
     };
+    const context = projectContext(p, libraries);
     for (const m of mods) {
-      const r = m.toSpec(p, libraries);
+      const r = m.toSpec(p, libraries, context);
       if ('errors' in r) untrack(() => set(m.id, null, r.errors));
       else
         void app.queued(m.id, r.spec).then(

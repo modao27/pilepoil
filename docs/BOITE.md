@@ -38,8 +38,12 @@ export interface ToolModule<Data, Spec, Result> {
   create(plan: Plan): Data;
   /** Réducteur pur des actions du module. */
   reduce(data: Data, action: ModuleAction, plan: Plan): Data;
-  /** État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. */
-  toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
+  /** État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. `context` : ce que les autres
+   *  modules disent du projet, rassemblé par la coquille (`ui/lib/projectContext`). */
+  toSpec(project: Project, libraries: Libraries, context: ProjectContext): { spec: Spec } | { errors: ModuleError[] };
+  /** Pied des murs (plinthe peignable ou non, sol sans plinthe, mur carrelé depuis le sol), tiré des seules données
+   *  du module : les autres le lisent par `context.wallBases` (`core/coverage/wallBase`). Facultatif. */
+  wallBases?(project: Project, libraries: Libraries): WallBase[];
   /** Lignes d'achat consolidables. */
   shopping(result: Result, data: Data, libraries: Libraries, plan: Plan): ShoppingLine[];
   /** Action qui fixe le prix d'une ligne (null : revenir au prix de la bibliothèque). */
@@ -533,3 +537,6 @@ seul le parquet s'en sert au début.
 | 2026-10-13 | CL2 : le module cloisons est activé par la première cloison tracée (`project/module/add` dans la même étape) ; ses réglages sont par cloison du plan et communs au projet ; bibliothèque `systems` (base v6), prix saisis dans le projet ; l'écran Projet range les outils sans pose sous « Travaux » | `cloisons/SPEC.md`, `PLAN.md` CL2 |
 | 2026-10-13 | CL3 : un module sans pose a ses résultats aux niveaux projet et pièce de l'écran Résultats commun ; `PoseReport` gagne `title`, `where`, `href` (objet décrit par le module : une cloison) ; élévation partagée écran / PDF | `cloisons/SPEC.md` §8, `PLAN.md` CL3 |
 | 2026-10-15 | Mode chantier du parquet retiré (écran, route `chantier`, `ModuleScreens.worksite`, champ `worksite` et actions `parquet/worksite/*`) ; les anciens documents gardent un champ `worksite` ignoré, sans migration | `PLAN.md` P5 |
+| 2026-10-15 | F1 : un produit de bibliothèque utilisé par un projet ne se supprime pas (`LibraryDefinition.usedIn`) ; un produit choisi absent est signalé par le moteur (peinture `product-missing`, cloisons `system-missing`), jamais remplacé en silence | `PLAN.md` F1 |
+| 2026-10-15 | F1 : un calcul qui échoue garde le résultat d'avant et le dit (`ComputeFailed`) ; chaque erreur de `toSpec` a un texte (`ModuleResults.errorText`) | `PLAN.md` F1 |
+| 2026-10-15 | F1 : les modules se lisent par la coquille, jamais par import : `wallBases` (pied des murs) rassemblé par `projectContext` et passé à `toSpec` ; la peinture retire la bande des plinthes et ne peint que les plinthes peignables (réglage manuel si le sol n'est pas revêtu), le parquet ne pose pas de plinthe le long d'un mur carrelé depuis le sol | `peinture/SPEC.md` §3, §7 |

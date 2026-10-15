@@ -333,8 +333,9 @@ interface Threshold {
 - Deux poses qui se recouvrent (même pièce sans zones séparées) : alerte `layout-overlap` sur la seconde.
 
 ### 4.5 Plinthes (`core/cutting/bars.ts`, partagé)
-1. Longueurs : chaque mur de chaque pièce, moins les ouvertures au sol (portes, baies), autour des obstacles
-   si l'option est cochée.
+1. Longueurs : chaque mur de chaque pièce, moins les ouvertures au sol (portes, baies), moins les parties de mur
+   carrelées depuis le sol (lues du carrelage, `RoomSpec.noSkirting`, F1), autour des obstacles si l'option est
+   cochée. Le parquet dit ses plinthes aux autres outils (`wallBases` : peignables, hauteur des accessoires).
 2. Optimiseur de barres 1D générique : premier ajustement décroissant puis amélioration locale, avec
    `kerf` et `mitreAllowance` par coupe d'angle.
 3. Sortie : nombre de barres, liste de coupes par mur, chutes.

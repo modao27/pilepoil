@@ -4,7 +4,7 @@
  */
 import { intersection, difference, regionArea, union } from '../../../core/geometry/boolean';
 import type { Polygon } from '../../../core/geometry/types';
-import type { OpeningRule, SpecOpening, SpecZone } from './types';
+import type { OpeningRule, SpecOpening, SpecSkirting, SpecZone, WoodworkSettings } from './types';
 
 /** Rectangle dans le même sens que `surfacePolygon` (core/coverage). */
 export function rectRegion(x0: number, y0: number, x1: number, y1: number): Polygon[] {
@@ -34,18 +34,32 @@ export interface ZoneMeasure {
   gross: number;
   /** Ouvertures retirées, sans double compte. */
   openings: number;
+  /** Bande des plinthes retirée (hors ouvertures déjà retirées). */
+  skirting: number;
   /** Des ouvertures retenues se recouvrent. */
   overlap: boolean;
 }
 
-export function measureZone(z: SpecZone, rule: OpeningRule): ZoneMeasure {
+/**
+ * Plinthes d'une zone : celles lues des autres revêtements, sinon (sol non revêtu dans l'application) le réglage
+ * manuel des boiseries s'il est coché, au pied de la zone moins les portes.
+ */
+export function zoneSkirtings(z: SpecZone, w: Pick<WoodworkSettings, 'skirting' | 'skirtingHeight'>): SpecSkirting[] {
+  if (z.skirtings) return z.skirtings;
+  if (!w.skirting) return [];
+  return floorRuns(z).map(([from, to]) => ({ from, to, height: w.skirtingHeight, paintable: true }));
+}
+
+export function measureZone(z: SpecZone, rule: OpeningRule, skirtings: readonly SpecSkirting[] = []): ZoneMeasure {
   const gross = area(z.region);
   const kept = z.openings.filter((o) => deducted(o, rule));
-  if (!kept.length || gross <= 0) return { gross, openings: 0, overlap: false };
   const all = kept.reduce<Polygon[]>((acc, o) => union(acc, openingRegion(o)), []);
-  const inside = area(intersection(z.region, all));
+  const inside = kept.length && gross > 0 ? area(intersection(z.region, all)) : 0;
   const sum = kept.reduce((s, o) => s + area(intersection(z.region, openingRegion(o))), 0);
-  return { gross, openings: inside, overlap: sum - inside > 1 };
+  const band = skirtings.reduce<Polygon[]>((acc, k) => union(acc, rectRegion(k.from, 0, k.to, k.height)), []);
+  const hidden = band.length && gross > 0 ? intersection(z.region, band) : [];
+  const skirting = hidden.length ? area(all.length ? difference(hidden, all) : hidden) : 0;
+  return { gross, openings: inside, skirting, overlap: sum - inside > 1 };
 }
 
 /** Ouvertures du mur qui touchent la zone (recouvrement non nul). */
@@ -53,13 +67,28 @@ export function openingsIn(z: SpecZone): SpecOpening[] {
   return z.openings.filter((o) => area(intersection(z.region, openingRegion(o))) > 0);
 }
 
-/** Longueur de plinthe au pied de la zone, moins les ouvertures au sol (portes), mm. */
-export function skirtingLength(z: SpecZone): number {
-  const strip = rectRegion(-1, 0, 1e7, 1);
-  let r = intersection(z.region, strip);
-  const doors = z.openings.filter((o) => o.sill === 0).map(openingRegion);
-  for (const d of doors) r = difference(r, d);
-  return area(r);
+/** Pied de la zone, moins les ouvertures au sol (portes) : intervalles le long du mur, mm. */
+function floorRuns(z: SpecZone): [number, number][] {
+  let r = intersection(z.region, rectRegion(-1, 0, 1e7, 1));
+  for (const o of z.openings.filter((x) => x.sill === 0)) r = difference(r, openingRegion(o));
+  return r
+    .map((p): [number, number] => [Math.min(...p.map((q) => q[0])), Math.max(...p.map((q) => q[0]))])
+    .filter(([a, b]) => b - a > 0.5)
+    .sort((a, b) => a[0] - b[0]);
+}
+
+/** Longueur de plinthe à peindre au pied de la zone (plinthes peignables seulement, portes retirées), mm. */
+export function paintableSkirting(z: SpecZone, skirtings: readonly SpecSkirting[]): { length: number; area: number } {
+  let length = 0,
+    surface = 0;
+  for (const k of skirtings.filter((x) => x.paintable)) {
+    let r = intersection(z.region, rectRegion(k.from, 0, k.to, 1));
+    for (const o of z.openings.filter((x) => x.sill === 0)) r = difference(r, openingRegion(o));
+    const l = area(r);
+    length += l;
+    surface += l * k.height;
+  }
+  return { length, area: surface };
 }
 
 /** Périmètre peint de l'huisserie : porte sans seuil, fenêtre sur ses quatre côtés, mm. */

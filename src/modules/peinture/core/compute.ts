@@ -4,7 +4,7 @@
  */
 import { FILLER_RATE, MASKING_ROLL, SHEET_AREA, SUPPORT_YIELD } from './defaults';
 import { choosePacks } from './packs';
-import { framePerimeter, measureZone, openingsIn, skirtingLength } from './surface';
+import { framePerimeter, measureZone, openingsIn, paintableSkirting, zoneSkirtings } from './surface';
 import type {
   ConsumableLine,
   PaintAlert,
@@ -24,7 +24,7 @@ const M2 = 1_000_000;
 const ceilMl = (litres: number) => Math.ceil(litres * 1000 - 1e-6);
 
 const noSurface = (): PaintResult => ({
-  areas: { gross: 0, openings: 0, net: 0 },
+  areas: { gross: 0, openings: 0, skirting: 0, net: 0 },
   zones: [],
   woodwork: { skirtingLength: 0, skirting: 0, frames: 0, doors: 0, total: 0 },
   products: [],
@@ -42,11 +42,13 @@ export function computePaint(spec: PaintSpec): PaintResult {
   const zoneAreas: ZoneArea[] = [];
   let gross = 0,
     deductedArea = 0,
+    skirtingBand = 0,
     overlap = false;
   for (const z of spec.zones) {
-    const m = measureZone(z, s.openings);
+    const m = measureZone(z, s.openings, zoneSkirtings(z, s.woodwork));
     gross += m.gross;
     deductedArea += m.openings;
+    skirtingBand += m.skirting;
     overlap ||= m.overlap;
     zoneAreas.push({
       id: z.id,
@@ -54,16 +56,18 @@ export function computePaint(spec: PaintSpec): PaintResult {
       wall: z.wall,
       gross: m.gross / M2,
       openings: m.openings / M2,
-      net: Math.max(0, m.gross - m.openings) / M2,
+      skirting: m.skirting / M2,
+      net: Math.max(0, m.gross - m.openings - m.skirting) / M2,
     });
   }
-  const netMm2 = Math.max(0, gross - deductedArea);
+  const netMm2 = Math.max(0, gross - deductedArea - skirtingBand);
   if (netMm2 <= 0) return noSurface();
   if (overlap) alerts.push({ code: 'opening-overlap' });
 
   // boiseries, sur les mêmes zones ; une ouverture n'est comptée qu'une fois par mur
   const w = s.woodwork;
   let skirtLen = 0,
+    skirtMm2 = 0,
     framesMm2 = 0,
     doorsMm2 = 0;
   const seen = new Set<string>();
@@ -71,7 +75,11 @@ export function computePaint(spec: PaintSpec): PaintResult {
   let openingPerimeter = 0;
   for (const z of spec.zones) {
     wallsSeen.add(z.wall);
-    if (w.skirting) skirtLen += skirtingLength(z);
+    if (w.skirting) {
+      const k = paintableSkirting(z, zoneSkirtings(z, w));
+      skirtLen += k.length;
+      skirtMm2 += k.area;
+    }
     for (const o of openingsIn(z)) {
       const key = `${z.wall}:${o.id}`;
       if (seen.has(key)) continue;
@@ -81,7 +89,6 @@ export function computePaint(spec: PaintSpec): PaintResult {
       if (w.doors && o.kind === 'door') doorsMm2 += o.width * o.height * w.doorFaces;
     }
   }
-  const skirtMm2 = skirtLen * w.skirtingHeight;
   const woodMm2 = skirtMm2 + framesMm2 + doorsMm2;
 
   const paintOf = (id: string | null): SpecPaint | undefined => (id ? spec.paints[id] : undefined);
@@ -166,7 +173,7 @@ export function computePaint(spec: PaintSpec): PaintResult {
       consumables.reduce((sum, l) => sum + (l.unitPrice == null ? 0 : l.unitPrice * l.quantity), 0);
 
   return {
-    areas: { gross: gross / M2, openings: deductedArea / M2, net: netMm2 / M2 },
+    areas: { gross: gross / M2, openings: deductedArea / M2, skirting: skirtingBand / M2, net: netMm2 / M2 },
     zones: zoneAreas,
     woodwork: {
       skirtingLength: skirtLen / 1000,
