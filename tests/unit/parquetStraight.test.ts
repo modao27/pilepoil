@@ -190,13 +190,11 @@ describe('erreurs', () => {
 });
 
 describe('déterminisme', () => {
-  it('même entrée → même résultat, même empreinte, mêmes identifiants', () => {
+  it('même entrée → même résultat, mêmes identifiants', () => {
     const s = spec(rect(4000, 3000), { angle: 30 });
     const a = computeParquet(s),
       b = computeParquet(structuredClone(s));
     expect(b).toEqual(a);
-    expect(a.hash).toMatch(/^[0-9a-f]{14}$/);
     expect(a.layouts[0]!.pieces[0]!.id).toBe('L1-R00-P00');
-    expect(computeParquet(spec(rect(4000, 3000), { angle: 30, seed: 2 })).hash).not.toBe(a.hash);
   });
 });

@@ -159,8 +159,6 @@ export interface ParquetResult {
   layouts: LayoutResult[];
   skirting: SkirtingResult;
   totals: { area: number; boards: number; boardsA: number; boardsB: number; wastePct: number; cuts: number };
-  /** Empreinte de l'entrée (suivi chantier). */
-  hash: string;
 }
 
 export interface LayoutResult {

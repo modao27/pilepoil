@@ -194,7 +194,6 @@ export interface ParquetResult {
   layouts: LayoutResult[];
   skirting: SkirtingResult;
   totals: { area: number; boards: number; boardsA: number; boardsB: number; wastePct: number; cuts: number };
-  hash: string;                      // empreinte de l'entrée (suivi chantier)
 }
 
 export interface LayoutResult {
@@ -375,7 +374,7 @@ interface SkirtingResult {
 - Toute pièce tient dans sa lame source ; somme des pièces d'une lame ≤ aire de la lame.
 - Règles respectées, ou alerte correspondante présente.
 - Lames à acheter ≥ lames utilisées ≥ 1.
-- Même entrée → même résultat, même `hash`.
+- Même entrée → même résultat.
 - Identifiants de pièces stables pour une même entrée.
 
 ### 4.8 Cas de référence
@@ -438,11 +437,6 @@ d'une pièce posée plus loin. Coupes en biais : longueurs des deux rives (le sc
 Lame neuve gardée entière et recoupée en largeur : « lame entière recoupée à 104 mm de large ».
 
 **Chantier** : retiré le 2026-10-15 (la fiche de coupe, dans l'ordre de pose, suffit).
-Fait en P5 : même ordre et mêmes textes que la fiche de coupe (croquis des coupes en biais compris), case par
-pièce ou par groupe de lames entières, « Tout ce rang est posé », mini-plan (rang en évidence, posées en
-gris), progression. Actions `parquet/worksite/mark` et `parquet/worksite/rebase` ; calcul changé : « Garder
-ce qui existe encore » ou « Repartir de zéro ». Rang affiché retenu sur l'appareil (stockage du navigateur).
-Tout reste sur l'appareil : fonctionne hors ligne (vérifié en e2e).
 
 **3D** : sol des pièces avec la texture de la lame orientée pièce par pièce, plinthes, murs bas ; réutiliser
 la base de scène three.js existante (`render/scene3d`). 60 i/s sur un téléphone récent pour 30 m².
