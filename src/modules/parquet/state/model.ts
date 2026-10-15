@@ -22,8 +22,6 @@ export interface ParquetData {
   accessories: Accessories;
   /** Prix unitaires par clé de ligne d'achat (`parquet:board:<id>`…). */
   prices: Record<string, number>;
-  /** Suivi chantier : pièces posées, valable pour une empreinte de calcul donnée (P5). */
-  worksite: { resultHash: string; done: string[] } | null;
 }
 
 /** Réglages d'une pose. */
@@ -82,6 +80,5 @@ export function createParquetData(): ParquetData {
     settings: { ...DEFAULT_SETTINGS },
     accessories: structuredClone(DEFAULT_ACCESSORIES),
     prices: {},
-    worksite: null,
   };
 }

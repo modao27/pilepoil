@@ -5,7 +5,6 @@
 import { difference, intersection, offset, regionArea, union } from '../../../core/geometry/boolean';
 import { pointInPolygon, signedArea } from '../../../core/geometry/polygon';
 import type { Polygon } from '../../../core/geometry/types';
-import { fingerprint } from '../../../core/hash';
 import { selfIntersecting } from '../../../core/plan/validate';
 import { appliedThresholds, breakBand, extendBreak, fractioning, halfPlane, passageBand } from './fractioning';
 import { layingFrame, ringFromFrame, ringToFrame } from './frame';
@@ -46,7 +45,6 @@ export function computeParquet(spec: ParquetSpec, o: { axisOptions?: boolean } =
       wastePct: boardArea > 0 ? Math.round(((boardArea - pieceArea) / boardArea) * 1000) / 10 : 0,
       cuts: pieces.filter((p) => p.cutType !== 'full').length,
     },
-    hash: fingerprint(spec),
   };
 }
 

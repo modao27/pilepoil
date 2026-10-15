@@ -19,7 +19,7 @@ Il calcule la pose d'un parquet, d'un stratifié ou d'un vinyle clipsable sur le
 | Plinthes optimisées en barres | Oui |
 | Plan 2D, fiche de coupe, liste d'achat, coût, PDF | Oui |
 | Vue 3D | Oui |
-| Mode chantier (suivi pièce par pièce sur téléphone) | Oui |
+| Mode chantier (suivi pièce par pièce sur téléphone) | Non (retiré le 2026-10-15) |
 | Panneaux Versailles, frises, encadrements, marqueterie | Non |
 
 Vocabulaire : « point de Hongrie » = chevron (extrémités en biais, joints alignés sur l'axe).
@@ -37,8 +37,6 @@ export interface ParquetData {
   settings: ParquetSettings;
   accessories: Accessories;
   prices: Record<string, number>;
-  /** Suivi chantier : pièces posées, valable pour une empreinte de calcul donnée. */
-  worksite: { resultHash: string; done: string[] } | null;
 }
 
 export interface ParquetPose {
@@ -196,7 +194,6 @@ export interface ParquetResult {
   layouts: LayoutResult[];
   skirting: SkirtingResult;
   totals: { area: number; boards: number; boardsA: number; boardsB: number; wastePct: number; cuts: number };
-  hash: string;                      // empreinte de l'entrée (suivi chantier)
 }
 
 export interface LayoutResult {
@@ -377,7 +374,7 @@ interface SkirtingResult {
 - Toute pièce tient dans sa lame source ; somme des pièces d'une lame ≤ aire de la lame.
 - Règles respectées, ou alerte correspondante présente.
 - Lames à acheter ≥ lames utilisées ≥ 1.
-- Même entrée → même résultat, même `hash`.
+- Même entrée → même résultat.
 - Identifiants de pièces stables pour une même entrée.
 
 ### 4.8 Cas de référence
@@ -439,14 +436,7 @@ utilisée (« chute C-07 (vient de Séjour — rang 3, n° 4) »), utile pour le
 d'une pièce posée plus loin. Coupes en biais : longueurs des deux rives (le schéma coté reste à faire).
 Lame neuve gardée entière et recoupée en largeur : « lame entière recoupée à 104 mm de large ».
 
-**Chantier** (`/chantier`) : une ligne ou un rang à la fois, grandes cibles, cocher les pièces posées.
-La progression est gardée dans `worksite` avec l'empreinte du calcul ; si le calcul change, prévenir et
-proposer de repartir de zéro.
-Fait en P5 : même ordre et mêmes textes que la fiche de coupe (croquis des coupes en biais compris), case par
-pièce ou par groupe de lames entières, « Tout ce rang est posé », mini-plan (rang en évidence, posées en
-gris), progression. Actions `parquet/worksite/mark` et `parquet/worksite/rebase` ; calcul changé : « Garder
-ce qui existe encore » ou « Repartir de zéro ». Rang affiché retenu sur l'appareil (stockage du navigateur).
-Tout reste sur l'appareil : fonctionne hors ligne (vérifié en e2e).
+**Chantier** : retiré le 2026-10-15 (la fiche de coupe, dans l'ordre de pose, suffit).
 
 **3D** : sol des pièces avec la texture de la lame orientée pièce par pièce, plinthes, murs bas ; réutiliser
 la base de scène three.js existante (`render/scene3d`). 60 i/s sur un téléphone récent pour 30 m².

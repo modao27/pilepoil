@@ -6,13 +6,9 @@ export interface ScreenMatch {
   params: Record<string, string>;
 }
 
-/** Écrans standard (éditeur, chantier) puis écrans propres au module ; null si aucun. */
+/** Écrans standard (éditeur) puis écrans propres au module ; null si aucun. */
 export function matchScreen(screens: ModuleScreens, path: string): ScreenMatch | null {
-  const routes: ModuleRoute[] = [
-    { path: '', load: screens.editor },
-    ...(screens.worksite ? [{ path: 'chantier', load: screens.worksite }] : []),
-    ...(screens.routes ?? []),
-  ];
+  const routes: ModuleRoute[] = [{ path: '', load: screens.editor }, ...(screens.routes ?? [])];
   const parts = path.split('/').filter(Boolean);
   for (const r of routes) {
     const pattern = r.path.split('/').filter(Boolean);

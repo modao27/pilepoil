@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * Croquis coté d'une coupe en biais : la pièce dans le repère de sa lame (rives horizontales), longueur de
-   * chaque rive, angle de chaque coupe avec la rive. Pour la fiche de coupe et le chantier.
+   * chaque rive, angle de chaque coupe avec la rive. Pour la fiche de coupe et le PDF.
    */
   import type { Polygon } from '../../../../core/geometry/types';
 

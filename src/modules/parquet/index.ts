@@ -38,7 +38,6 @@ export const module: ModuleManifest<ParquetData, ParquetSpec, ParquetResult, Act
   migrations: {},
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
-    worksite: () => import('./ui/screens/WorksiteScreen.svelte').then((m) => m.default),
     // éditeur ouvert sur une pose (#/p/:id/m/parquet/pose/:poseId)
     routes: [{ path: 'pose/:poseId', load: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default) }],
   },

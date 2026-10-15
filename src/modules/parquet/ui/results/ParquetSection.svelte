@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
    * Section du parquet sur l'écran Résultats commun (pose, pièce ou projet) : plan coté de chaque pose (une pièce :
-   * ses seules lames), fiche de coupe dans l'ordre de pose, plinthes, seuils, accès au chantier. Les prix se
+   * ses seules lames), fiche de coupe dans l'ordre de pose, plinthes, seuils. Les prix se
    * règlent sur l'écran Achats.
    */
   import type { Polygon } from '../../../../core/geometry/types';
@@ -127,7 +127,6 @@
       </ol>
     </section>
   {/if}
-  <p><a href="#/p/{project.id}/m/parquet/chantier">Suivre le chantier du parquet</a></p>
 {/if}
 
 <style>

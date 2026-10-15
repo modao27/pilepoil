@@ -17,7 +17,7 @@ async function setNumber(scope: Locator, label: string, value: string) {
   await f.press('Enter');
 }
 
-test('parcours : deux pièces, point de Hongrie, achats, chantier', async ({ page }, info) => {
+test('parcours : deux pièces, point de Hongrie, achats', async ({ page }, info) => {
   test.setTimeout(120_000);
 
   // 1. nouveau projet de parquet : on commence par le plan
@@ -91,16 +91,4 @@ test('parcours : deux pièces, point de Hongrie, achats, chantier', async ({ pag
   await expect(page.getByText('Sous-couche', { exact: true }).first()).toBeVisible();
   await check(page);
   await shot(page, info, 'P3-parcours-achats');
-
-  // 5. suivre la pose ligne par ligne
-  await page.goBack();
-  await page.getByRole('tab', { name: 'Détail' }).click();
-  await page.getByRole('link', { name: 'Suivre le chantier du parquet' }).click();
-  await expect(page.getByRole('heading', { name: /— ligne 1 \(1 \/ \d+\)/ })).toBeVisible();
-  await page.getByRole('button', { name: 'Toute cette ligne est posée' }).click();
-  await expect(page.getByText(/^[1-9]\d* \/ \d+ pièces posées/)).toBeVisible();
-  await page.getByRole('button', { name: 'Ligne suivante' }).click();
-  await expect(page.getByRole('heading', { name: /— ligne \d+ \(2 \/ \d+\)/ })).toBeVisible();
-  await check(page);
-  await shot(page, info, 'P4-parcours-chantier');
 });
