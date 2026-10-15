@@ -277,15 +277,25 @@ export class AppState {
     void this.tryWrite(() => repo.putItem(this.db, repo.libraryStore(def.store), stamped), SAVE_FAILED);
   }
 
-  removeLibraryItem(lib: string, id: Id): void {
+  /** Nom du premier projet qui utilise ce produit, sinon null. */
+  libraryItemUser(lib: string, id: Id): string | null {
     const def = libraryDefs.find((d) => d.id === lib);
-    if (!def) return;
+    return this.projects.find((p) => def?.usedIn(p, id, this.libraries))?.name ?? null;
+  }
+
+  /** Supprime un produit de bibliothèque ; refusé s'il sert à un projet : renvoie alors le nom de ce projet. */
+  removeLibraryItem(lib: string, id: Id): string | null {
+    const def = libraryDefs.find((d) => d.id === lib);
+    if (!def) return null;
+    const user = this.libraryItemUser(lib, id);
+    if (user) return user;
     this.libraries = { ...this.libraries, [lib]: (this.libraries[lib] ?? []).filter((x) => x.id !== id) };
     this.libraryVersion++;
     void this.tryWrite(async () => {
       await repo.deleteItem(this.db, repo.libraryStore(def.store), id);
       this.collectPhotos();
     }, SAVE_FAILED);
+    return null;
   }
 
   /** Base ouverte (modules). */

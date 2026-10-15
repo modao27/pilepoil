@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import Button from '../../../../ui/components/Button.svelte';
-  import Dialog from '../../../../ui/components/Dialog.svelte';
+  import ItemInUseDialog from '../../../../ui/components/ItemInUseDialog.svelte';
   import Screen from '../../../../ui/components/Screen.svelte';
   import TileForm from '../components/TileForm.svelte';
   import { createTile } from '../../state/factories';
@@ -13,6 +13,7 @@
   import type { LibraryScreenProps } from '../../../types';
 
   let { itemId: id }: LibraryScreenProps = $props();
+  const TILES_LIB = 'tiles';
 
   // Valeur initiale voulue : l'écran est recréé à chaque changement d'id ({#key} dans App.svelte).
   const existing = untrack(() => (id ? carrelage.tile(id) : undefined));
@@ -27,11 +28,8 @@
   }
 
   function remove() {
-    const user = carrelage.deleteTile(tile.id);
-    if (user) {
-      blocked = user;
-      return;
-    }
+    blocked = app.removeLibraryItem(TILES_LIB, tile.id);
+    if (blocked) return;
     app.collectPhotos();
     toast(`Carreau « ${tile.name} » supprimé.`);
     go({ name: 'library', lib: 'tiles' }, true);
@@ -50,10 +48,10 @@
       {/snippet}
     </TileForm>
   </Screen>
-  <Dialog open={blocked != null} title="Carreau utilisé" onclose={() => (blocked = null)}>
-    <p>
-      Ce carreau est utilisé dans le projet « {blocked} ». Choisissez un autre carreau dans ce projet, puis supprimez-le.
-    </p>
-    {#snippet actions()}<Button variant="primary" onclick={() => (blocked = null)}>Compris</Button>{/snippet}
-  </Dialog>
+  <ItemInUseDialog
+    bind:project={blocked}
+    title="Carreau utilisé"
+    message={(p) =>
+      `Ce carreau est utilisé dans le projet « ${p} ». Choisissez un autre carreau dans ce projet, puis supprimez-le.`}
+  />
 {/if}

@@ -33,6 +33,8 @@ export function alertText(a: PaintAlert): string {
   switch (a.code) {
     case 'no-product':
       return `Choisissez une peinture de finition${woodwork}.`;
+    case 'product-missing':
+      return `${ROLE_LABEL[a.role ?? 'finish']} introuvable dans la bibliothèque${woodwork} : choisissez-en un autre.`;
     case 'missing-yield':
       return `Une peinture n’a pas de rendement${woodwork} : renseignez-le dans la bibliothèque.`;
     case 'no-pack':

@@ -113,6 +113,7 @@ export interface PaintSpec {
 
 export type PaintAlertCode =
   | 'no-product'
+  | 'product-missing'
   | 'missing-yield'
   | 'no-pack'
   | 'no-surface'
@@ -127,6 +128,8 @@ export interface PaintAlert {
   code: PaintAlertCode;
   paint?: Id;
   target?: PaintTarget;
+  /** `product-missing` : rôle du produit choisi qui n'est plus dans la bibliothèque. */
+  role?: PaintRole;
 }
 
 export interface PackCount {

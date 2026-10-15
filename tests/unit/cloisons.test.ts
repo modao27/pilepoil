@@ -219,8 +219,9 @@ describe('alertes', () => {
       ]),
     );
     expect(r.partitions[0]).toMatchObject({ ok: false });
+    expect(computeCloisons(spec([part('a', { system: '' })])).alerts.map((a) => a.code)).toEqual(['no-system']);
     expect(codes(r)).toEqual(
-      ['fire-unchecked', 'free-end', 'no-system', 'phonic-without-insulation', 'wet-face-plate'].sort(),
+      ['fire-unchecked', 'free-end', 'phonic-without-insulation', 'system-missing', 'wet-face-plate'].sort(),
     );
   });
 

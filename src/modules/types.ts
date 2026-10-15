@@ -105,6 +105,11 @@ export interface LibraryDefinition {
   };
   /** Modèles types posés une seule fois dans la bibliothèque (un modèle supprimé ne revient pas). */
   templates?: () => LibraryItem[];
+  /**
+   * Le produit `itemId` sert-il au projet ? Un produit utilisé ne se supprime pas (les quantités ne changent jamais
+   * en silence). Léger : chargé avec le manifeste.
+   */
+  usedIn(project: Project, itemId: Id, libraries: Libraries): boolean;
 }
 
 /** Props passées aux écrans d'un module, sous #/p/:id/m/<module>/… */

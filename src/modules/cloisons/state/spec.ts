@@ -13,7 +13,10 @@ import { absOutline, absWallBands, partitionBand, partitionFrame, segDistance, S
 import type { Project } from '../../../state/model';
 import type { Libraries, ModuleError } from '../../types';
 import type { CloisonsSpec, End, PartitionSystem, SpecPartition } from '../core/types';
-import { CLOISONS_ID, defaultPartitionSettings, type CloisonsData, type PartitionSettings } from './model';
+import { CLOISONS_ID, defaultPartitionSettings, type CloisonsData } from './model';
+import { systemFor } from './usage';
+
+export { systemFor };
 
 /** Pièces dont un mur est une face de la cloison (noms triés, sans doublon). */
 export function partitionRooms(project: Project, id: Id): string[] {
@@ -39,16 +42,6 @@ const dot = (p: Point, q: Point) => p[0] * q[0] + p[1] * q[1];
 
 /** Hauteur sous plafond quand rien n'est connu. */
 const DEFAULT_HEIGHT = 2500;
-
-/** Système d'une cloison : celui qu'on a choisi, sinon le premier de même épaisseur, sinon le premier. */
-export function systemFor(
-  s: PartitionSettings | undefined,
-  q: Pick<Partition, 'thickness'>,
-  systems: readonly PartitionSystem[],
-): PartitionSystem | undefined {
-  const chosen = s?.system ? systems.find((x) => x.id === s.system) : undefined;
-  return chosen ?? systems.find((x) => Math.abs(x.thickness - q.thickness) < 1) ?? systems[0];
-}
 
 /** Partie de l'axe de la cloison qui est dans un polygone : abscisses [début, fin] depuis le point a ; null si aucune. */
 function axisInside(q: Partition, poly: Polygon): [number, number] | null {
@@ -163,7 +156,7 @@ export function toSpec(project: Project, libraries: Libraries): { spec: Cloisons
     return {
       id: q.id,
       name: partitionTitle(project, q.id),
-      system: systemFor(own, q, systems)?.id ?? '',
+      system: systemFor(own, q, systems)?.id ?? own?.system ?? '',
       length,
       height,
       spacing: s.spacing,

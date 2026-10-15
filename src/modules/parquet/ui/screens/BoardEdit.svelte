@@ -5,6 +5,7 @@
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import ColorSwatch from '../../../../ui/components/ColorSwatch.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
+  import ItemInUseDialog from '../../../../ui/components/ItemInUseDialog.svelte';
   import Screen from '../../../../ui/components/Screen.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import Select from '../../../../ui/components/Select.svelte';
@@ -69,8 +70,11 @@
     go({ name: 'libraryItem', lib: 'boards', id: copy.id }, true);
   }
 
+  let blocked = $state<string | null>(null);
+
   function remove() {
-    app.removeLibraryItem('boards', board.id);
+    blocked = app.removeLibraryItem('boards', board.id);
+    if (blocked) return;
     toast(`Lame « ${board.name} » supprimée.`);
     go({ name: 'library', lib: 'boards' }, true);
   }
@@ -189,6 +193,12 @@
       </div>
     </form>
   </Screen>
+  <ItemInUseDialog
+    bind:project={blocked}
+    title="Lame utilisée"
+    message={(p) =>
+      `Cette lame est utilisée dans le projet « ${p} ». Choisissez une autre lame dans ce projet, puis supprimez-la.`}
+  />
 {/if}
 
 <style>

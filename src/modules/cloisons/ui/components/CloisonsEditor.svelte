@@ -103,9 +103,14 @@
         <Select
           label="Système"
           value={p.system}
-          options={ed.systems.length
-            ? ed.systems.map((x) => ({ value: x.id, label: x.name }))
-            : [{ value: '', label: 'Aucun système : en ajouter dans la bibliothèque' }]}
+          options={[
+            ...(p.system && !ed.systems.some((x) => x.id === p.system)
+              ? [{ value: p.system, label: 'Système supprimé : en choisir un autre' }]
+              : []),
+            ...(ed.systems.length
+              ? ed.systems.map((x) => ({ value: x.id, label: x.name }))
+              : [{ value: '', label: 'Aucun système : en ajouter dans la bibliothèque' }]),
+          ]}
           onchange={(v) => v && ed.setSystem(p.id, v)}
         />
         <Checkbox

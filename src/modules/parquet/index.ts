@@ -8,6 +8,7 @@ import type { ParquetResult, ParquetSpec } from './core/types';
 import type { Action } from './state/actions';
 import { PARQUET_ID, PARQUET_SCHEMA, type ParquetData } from './state/model';
 import { PARQUET_RULES } from './state/ids';
+import { usesBoard } from './state/usage';
 
 /** Bibliothèque de lames (#/library/boards). */
 export const library: LibraryDefinition = {
@@ -21,6 +22,7 @@ export const library: LibraryDefinition = {
     edit: () => import('./ui/screens/BoardEdit.svelte').then((m) => m.default),
   },
   templates: () => BOARD_TEMPLATES.map((b) => ({ ...b })),
+  usedIn: usesBoard,
 };
 
 /** Module parquet (docs/BOITE.md §2, docs/parquet/SPEC.md). */

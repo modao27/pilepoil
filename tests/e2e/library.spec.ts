@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import {
+  createProject,
+  expectAccessible,
+  expectNoHorizontalScroll,
+  expectTouchTargets,
+  shot,
+  woodFloor,
+} from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -76,4 +83,20 @@ test('bibliothèque de peintures : modèles types, une peinture se crée avec se
   await expect(list.getByRole('listitem')).toHaveCount(6);
   await page.reload();
   await expect(list.getByRole('link', { name: /Vert sauge mat/ })).toBeVisible();
+});
+
+test('bibliothèque : une lame utilisée par un projet ne se supprime pas', async ({ page }, info) => {
+  const id = await createProject(page, { project: 'Appartement', name: 'Séjour', size: [400, 300] });
+  await woodFloor(page, id, 'Séjour');
+  await page.goto('/#/library/boards');
+  const list = page.getByRole('list', { name: 'Lames' });
+  await list.getByRole('link', { name: /Stratifié 1285 × 192/ }).click();
+  await page.getByRole('button', { name: 'Supprimer la lame' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Lame utilisée' });
+  await expect(dialog).toContainText('« Appartement »');
+  await check(page);
+  await shot(page, info, '83-lame-utilisee');
+  await dialog.getByRole('button', { name: 'Compris' }).click();
+  await page.goto('/#/library/boards');
+  await expect(list.getByRole('link', { name: /Stratifié 1285 × 192/ })).toBeVisible();
 });

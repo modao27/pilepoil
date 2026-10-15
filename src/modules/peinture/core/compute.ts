@@ -99,7 +99,9 @@ export function computePaint(spec: PaintSpec): PaintResult {
   ): void => {
     const paint = paintOf(id);
     if (!paint) {
-      if (role === 'finish') alerts.push({ code: 'no-product', target });
+      // produit choisi puis retiré de la bibliothèque : le signaler, jamais l'oublier en silence
+      if (id) alerts.push({ code: 'product-missing', paint: id, role, target });
+      else if (role === 'finish') alerts.push({ code: 'no-product', target });
       return;
     }
     if (paint.role !== role || (use && !paint.uses.includes(use)))

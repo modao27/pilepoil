@@ -7,6 +7,7 @@ import { templateSystems } from './core/defaults';
 import type { CloisonsResult, CloisonsSpec } from './core/types';
 import type { Action } from './state/actions';
 import { CLOISONS_ID, CLOISONS_SCHEMA, type CloisonsData } from './state/model';
+import { usesSystem } from './state/usage';
 
 /** Bibliothèque de systèmes de cloison (#/library/systems). */
 export const library: LibraryDefinition = {
@@ -20,6 +21,7 @@ export const library: LibraryDefinition = {
     edit: () => import('./ui/screens/SystemEdit.svelte').then((m) => m.default),
   },
   templates: () => templateSystems(),
+  usedIn: usesSystem,
 };
 
 /** Module cloisons (docs/BOITE.md §2, docs/cloisons/SPEC.md) : pas de pose, ses objets sont les cloisons du plan. */
