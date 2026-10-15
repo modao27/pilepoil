@@ -55,7 +55,7 @@ export function shoppingLabel(it: ShoppingItem, groups: ProductGroup[]): ItemLab
       return {
         label: `Mortier-colle ${it.flexible ? 'déformable C2 S1' : 'C2'}`,
         unit,
-        qty: `${fr(it.bags)} sacs de 25 kg (${fr(it.kg)} kg)`,
+        qty: `${fr(it.bags)} sac${it.bags > 1 ? 's' : ''} de 25 kg (${fr(it.kg)} kg)`,
       };
     case 'grout':
       return {

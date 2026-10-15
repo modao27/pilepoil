@@ -93,3 +93,40 @@ test('peinture : mur entier, réglages, résumé, résultats et achats', async (
   await page.goto(`/#/p/${id}/achats`);
   await expect(page.getByText(/pots? de /).first()).toBeVisible();
 });
+
+test('peinture : au-dessus d’une crédence carrelée, sur le même mur, sans recouvrement', async ({ page }, info) => {
+  const id = await createProject(page, { project: 'Maison', name: 'Cuisine', size: [400, 300] });
+  await openRoom(page, id, 'Cuisine');
+
+  // crédence carrelée du sol à 120 cm sur le mur 1
+  await cover(page, 'Mur 1', 'carrelage');
+  await fillNumber(page, 'Jusqu’à', '120');
+  const free = page.locator('.free');
+  await expect(free).toContainText('Libre de 120 cm à 250 cm');
+
+  // le reste du mur se peint
+  await free.getByRole('button', { name: 'Revêtir : peinture' }).click();
+  await expect(free).toHaveCount(0);
+  await expect(page.getByText(/^Peinture · /)).toBeVisible();
+  await check(page);
+  await shot(page, info, '97-peinture-credence');
+
+  // 4 m × 1,3 m peints : la crédence n'est pas comptée
+  await page.getByRole('link', { name: 'Réglages' }).first().click();
+  await expect(page.getByRole('link', { name: / m² · / }).first()).toContainText('5,2 m²');
+
+  // résultats de la pièce : les deux revêtements, chacun sur sa partie
+  await page.goto(`/#/p/${id}/r/${await roomId(page, id)}/resultats`);
+  await expect(page.getByRole('article', { name: /^Peinture · / })).toContainText('5,2 m²');
+  await expect(page.getByRole('article', { name: /^Carrelage · / })).toBeVisible();
+});
+
+/** Identifiant de la seule pièce du projet (adresse de l'écran Pièce). */
+async function roomId(page: Page, id: string): Promise<string> {
+  await page.goto(`/#/p/${id}`);
+  await page
+    .getByRole('link', { name: /^Cuisine( |$)/ })
+    .first()
+    .click();
+  return /#\/p\/[^/]+\/r\/([^/]+)/.exec(page.url())![1]!;
+}

@@ -19,8 +19,10 @@ import {
   continueAction,
   contourAction,
   cutAction,
+  freeWallSpans,
   modulesFor,
   newPoseAction,
+  newPoseOnSpan,
   removeZoneAction,
   spanAction,
   switchAction,
@@ -191,5 +193,19 @@ describe('contour sur un sol', () => {
     ];
     expect(contourAction(p, libraries, z, bow, ids('x'))).toBeNull();
     expect(contourAction(p, libraries, z, bow.slice(0, 2), ids('y'))).toBeNull();
+  });
+});
+
+describe('revêtir le reste d’un mur', () => {
+  it('hauteurs libres au-dessus d’une crédence ; une nouvelle pose s’y pose sans recouvrement', () => {
+    const p = project({ C: [{ ref: wall(0), cuts: wallHeightCuts(plan(), wall(0), 1200) }] });
+    expect(freeWallSpans(p, wall(0))).toEqual([[1200, 2500]]);
+    expect(freeWallSpans(p, wall(1))).toEqual([]);
+    const peinture = moduleById('peinture')!;
+    const r = newPoseOnSpan(p, libraries, peinture, wall(0), [1200, 2500], ids('n'));
+    if ('error' in r) throw new Error(r.error.code);
+    const q = reduceProject(p, r.action);
+    expect(freeWallSpans(q, wall(0))).toEqual([]);
+    expect(q.poses.map((x) => x.module)).toEqual(['carrelage', 'peinture']);
   });
 });

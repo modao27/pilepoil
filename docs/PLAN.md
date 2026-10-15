@@ -290,6 +290,24 @@ phase du plan avec travaux, sans module nouveau. `core/cutting/bars.ts` existe d
   cloisons depuis leur écran ; 3D : les cloisons sont déjà des murs du plan après travaux. Tests : `cloisonsResults`, e2e
   `cloisons.spec.ts`.
 
+## Fiabilité et cohérence entre outils (F1)
+
+Décidé le 2026-10-15, après une revue des quatre outils. Branche `phase/f1-fiabilite`.
+
+- Un produit de bibliothèque utilisé par un projet ne se supprime pas (`LibraryDefinition.usedIn`, dialogue commun) ;
+  un produit choisi absent est signalé par le moteur (peinture `product-missing`, cloisons `system-missing`).
+- Un calcul qui échoue garde le résultat d'avant et le dit (`ComputeFailed`, Réessayer) ; l'écran Résultats dit la
+  raison (`ModuleResults.errorText`) ; filet `unhandledrejection`.
+- Les outils se lisent par la coquille : `wallBases` rassemblé par `projectContext` et passé à `toSpec`. La peinture
+  retire la bande des plinthes et ne peint que les plinthes peignables (réglage manuel si le sol n'est pas revêtu) ;
+  le parquet ne pose pas de plinthe le long d'un mur carrelé depuis le sol.
+- Nettoyage : marges en fraction (parquet schéma 5, migration), clés d'achat du carrelage préfixées, carreaux types,
+  `SYSTEM_SCHEMA`. Marge d'achat et hauteur de plinthe réglables dans l'éditeur du parquet.
+- Écran Pièce : « Revêtir » la partie libre d'un mur (peinture au-dessus d'une crédence), qui n'était pas possible.
+- Fini quand : tests unitaires et e2e verts sur téléphone et ordinateur, dont `tests/e2e/mixed.spec.ts` (les quatre
+  outils dans un projet, achats et dossier PDF) et la peinture au-dessus d'une crédence (`peinture.spec.ts`).
+- Fait (2026-10-15).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 
