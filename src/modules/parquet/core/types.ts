@@ -43,8 +43,8 @@ export interface ParquetSettings {
   reuseOffcuts: boolean;
   /** Perte par coupe (lame de scie). */
   kerf: number;
-  /** Marge d'achat en % ; null = valeur conseillée du motif (5 / 10 / 12 %). */
-  marginPct: number | null;
+  /** Marge d'achat, fraction (0,10 = 10 %) ; null = valeur conseillée du motif (5 / 10 / 12 %). */
+  margin: number | null;
 }
 
 export interface Accessories {
@@ -78,8 +78,8 @@ export interface WallOpeningSpec {
 export interface ParquetSpec {
   /** Une par pose, pièces résolues depuis le plan. */
   layouts: LayoutSpec[];
-  /** marginPct résolu par toSpec (jamais null ici). */
-  settings: Omit<ParquetSettings, 'marginPct'> & { marginPct: number };
+  /** margin résolue par toSpec (jamais null ici). */
+  settings: Omit<ParquetSettings, 'margin'> & { margin: number };
   accessories: Accessories;
 }
 

@@ -3,6 +3,9 @@
  * Le moteur est 1D par cloison : il ne voit pas le plan, `toSpec` (CL2) construit chaque cloison dans son repère
  * (x le long de l'axe depuis le départ, y depuis le sol).
  */
+
+/** Version des systèmes de la bibliothèque `systems`. */
+export const SYSTEM_SCHEMA = 1;
 import type { BarsResult } from '../../../core/cutting/bars';
 
 export type Id = string;
@@ -11,7 +14,7 @@ export type Id = string;
 
 /** Système de cloison de la bibliothèque `systems` (« 72/48 »). */
 export interface PartitionSystem {
-  schemaVersion: 1;
+  schemaVersion: typeof SYSTEM_SCHEMA;
   id: Id;
   name: string;
   /** Épaisseur finie nominale. */

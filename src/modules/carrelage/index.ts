@@ -8,6 +8,7 @@ import type { Action } from './state/actions';
 import type { CarrelageData } from './state/data';
 import { CARRELAGE_ID, CARRELAGE_SCHEMA, TILE_RULES } from './state/ids';
 import { TILE_SCHEMA } from './state/model';
+import { TILE_TEMPLATES } from './state/templates';
 import { usesTile } from './state/usage';
 
 /** Éditeur d'une surface : #/p/:id/m/carrelage/s/:surfaceId. */
@@ -36,6 +37,7 @@ export const module: ModuleManifest<CarrelageData, ProjectSpec, ProjectResult, A
     schemaVersion: TILE_SCHEMA,
     migrations: {},
     usedIn: usesTile,
+    templates: () => TILE_TEMPLATES.map((t) => ({ ...t })),
     screens: {
       list: () => import('./ui/screens/Library.svelte').then((m) => m.default),
       edit: () => import('./ui/screens/TileEdit.svelte').then((m) => m.default),

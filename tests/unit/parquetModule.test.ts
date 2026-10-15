@@ -80,10 +80,10 @@ describe('module parquet', () => {
     expect(s.layouts[0]!.rooms[0]!.outline[0]).toEqual([1000, 500]);
     expect(s.layouts[0]!.rooms[0]!.bounds).toEqual([]);
     expect(s.layouts[0]!.referenceDirection).toEqual([1, 0]);
-    expect(s.settings.marginPct).toBe(5);
+    expect(s.settings.margin).toBe(0.05);
     expect(s.layouts[0]!.board).toMatchObject({ lengths: [1285], width: 192 });
     // diagonale : 10 %
-    expect(specOf(update(p, { angle: 45 })).settings.marginPct).toBe(10);
+    expect(specOf(update(p, { angle: 45 })).settings.margin).toBe(0.1);
   });
 
   it('toSpec : lame introuvable → erreur du moteur ; aucune pose → rien à calculer', () => {
@@ -186,9 +186,9 @@ describe('module parquet', () => {
     expect(parquet.summary(r).text).toMatch(/^\d+ lames, 11,9 m², perte \d+ %$/);
   });
 
-  it('schéma 4 : réglages par pose, sans migration des anciennes données', () => {
-    expect(parquet.schemaVersion).toBe(4);
-    expect(parquet.migrations).toEqual({});
+  it('schéma 5 : marge en fraction (migration 4 → 5), pas de migration des données d’avant les poses', () => {
+    expect(parquet.schemaVersion).toBe(5);
+    expect(Object.keys(parquet.migrations)).toEqual(['5']);
   });
 });
 

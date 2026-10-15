@@ -37,7 +37,7 @@ export function parquetReport(input: ResultInput<ParquetResult>): PoseReport[] {
   if (!data) return [];
   const boards = (libraries.boards ?? []) as readonly Board[];
   const layouts = layoutsOf(project);
-  const margin = marginOf(data) / 100;
+  const margin = marginOf(data);
   return scopeLayouts(input).flatMap((id): PoseReport[] => {
     const lr = result.layouts.find((x) => x.id === id);
     const l = layouts.find((x) => x.id === id);

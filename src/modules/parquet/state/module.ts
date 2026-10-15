@@ -25,11 +25,11 @@ export const createPose = (project: Project, libraries: Libraries, like?: string
 
 const boardsOf = (libraries: Libraries) => (libraries.boards ?? []) as readonly Board[];
 
-/** Marge d'achat : saisie, sinon conseillée pour le motif et l'angle de la première pose. */
+/** Marge d'achat (fraction) : saisie, sinon conseillée pour le motif et l'angle de la première pose. */
 export function marginOf(d: ParquetData): number {
-  if (d.settings.marginPct != null) return d.settings.marginPct;
+  if (d.settings.margin != null) return d.settings.margin;
   const l = Object.values(d.poses)[0];
-  return l ? defaultMargin(l.pattern, l.angle) : 5;
+  return l ? defaultMargin(l.pattern, l.angle) : 0.05;
 }
 
 /** Projet → entrée du moteur : pièces du plan au repère d'ensemble, lame de la bibliothèque, marge résolue. */
@@ -45,8 +45,7 @@ export function toSpec(
     .map((l) => layoutSpec(l, project.plan, boards.find((b) => b.id === l.boardId) ?? null, context))
     .filter((l): l is LayoutSpec => !!l);
   if (!layouts.length) return { errors: [{ code: 'parquet/no-room' }] };
-  const { marginPct: _, ...settings } = d.settings;
-  return { spec: { layouts, settings: { ...settings, marginPct: marginOf(d) }, accessories: d.accessories } };
+  return { spec: { layouts, settings: { ...d.settings, margin: marginOf(d) }, accessories: d.accessories } };
 }
 
 function layoutSpec(l: Layout, plan: Plan, board: Board | null, context: ProjectContext): LayoutSpec | null {
@@ -188,7 +187,7 @@ export function summary(r: ParquetResult): ModuleSummary {
  */
 export function shopping(r: ParquetResult, d: ParquetData, libraries: Libraries): ShoppingLine[] {
   const boards = boardsOf(libraries);
-  const margin = marginOf(d) / 100;
+  const margin = marginOf(d);
   const used = new Map<string, { A: number; B: number; plain: number }>();
   r.layouts.forEach((lr) => {
     const l = Object.hasOwn(d.poses, lr.id) ? d.poses[lr.id]! : null;

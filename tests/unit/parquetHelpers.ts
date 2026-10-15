@@ -59,7 +59,7 @@ export function spec(outline: Polygon, o: Partial<LayoutSpec> = {}, obstacles: P
         ...o,
       },
     ],
-    settings: { reuseOffcuts: true, kerf: 3, marginPct: 5 },
+    settings: { reuseOffcuts: true, kerf: 3, margin: 0.05 },
     accessories: DEFAULT_ACCESSORIES,
   };
 }

@@ -6,7 +6,7 @@ import type { LibraryDefinition, ModuleManifest } from '../types';
 import { BOARD_SCHEMA, BOARD_TEMPLATES } from './core/board';
 import type { ParquetResult, ParquetSpec } from './core/types';
 import type { Action } from './state/actions';
-import { PARQUET_ID, PARQUET_SCHEMA, type ParquetData } from './state/model';
+import { PARQUET_ID, PARQUET_MIGRATIONS, PARQUET_SCHEMA, type ParquetData } from './state/model';
 import { PARQUET_RULES } from './state/ids';
 import { usesBoard } from './state/usage';
 
@@ -37,7 +37,7 @@ export const module: ModuleManifest<ParquetData, ParquetSpec, ParquetResult, Act
   poseHref: (p, pose) => `#/p/${encodeURIComponent(p)}/m/parquet/pose/${encodeURIComponent(pose)}`,
   logic: () => import('./logic').then((m) => m.logic),
   results: () => import('./ui/lib/resultsModule').then((m) => m.results),
-  migrations: {},
+  migrations: PARQUET_MIGRATIONS,
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
     // éditeur ouvert sur une pose (#/p/:id/m/parquet/pose/:poseId)

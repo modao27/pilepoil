@@ -31,6 +31,29 @@ describe('migrations de documents', () => {
     expect(() => migrateProject(p)).toThrow(/Migration manquante/);
   });
 
+  it('parquet 4 → 5 : marge en pourcentage devenue fraction ; conseillée (null) gardée', () => {
+    const v4 = (marginPct: number | null) => ({
+      ...planProject([]),
+      modules: {
+        parquet: {
+          schemaVersion: 4,
+          data: { poses: {}, settings: { reuseOffcuts: true, kerf: 3, marginPct }, accessories: {}, prices: {} },
+        },
+      },
+    });
+    const r = migrateProject(v4(8));
+    expect(r.changed).toBe(true);
+    expect(r.doc.modules.parquet).toEqual({
+      schemaVersion: 5,
+      data: { poses: {}, settings: { reuseOffcuts: true, kerf: 3, margin: 0.08 }, accessories: {}, prices: {} },
+    });
+    expect((migrateProject(v4(null)).doc.modules.parquet!.data as { settings: unknown }).settings).toEqual({
+      reuseOffcuts: true,
+      kerf: 3,
+      margin: null,
+    });
+  });
+
   it('erreurs : version future, étape manquante, document illisible', () => {
     expect(() => migrate({ schemaVersion: 3 }, 2, steps)).toThrow(FutureVersionError);
     expect(() => migrate({ schemaVersion: 0 }, 2, { 1: steps[1]! })).toThrow(/manquante/);

@@ -117,3 +117,14 @@ describe('produit retiré de la bibliothèque : signalé, jamais remplacé en si
     expect(computeCloisons(r.spec).alerts.map((a) => a.code)).toContain('system-missing');
   });
 });
+
+describe('modèles types', () => {
+  it('chaque bibliothèque pose des modèles types, à identifiant stable et unique', () => {
+    for (const l of libraries) {
+      const items = l.templates?.() ?? [];
+      expect(items.length, l.id).toBeGreaterThan(0);
+      expect(new Set(items.map((x) => x.id)).size, l.id).toBe(items.length);
+      expect(l.templates!().map((x) => x.id)).toEqual(items.map((x) => x.id));
+    }
+  });
+});

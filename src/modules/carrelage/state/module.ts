@@ -127,8 +127,8 @@ export function shopping(
     const own = data.prices[it.key];
     const price = itemPrice(it, priced, tiles, result);
     const line: ShoppingLine = {
-      module: 'carrelage',
-      key: it.key,
+      module: CARRELAGE_ID,
+      key: KEY_PREFIX + it.key,
       group: GROUPS[it.kind],
       label: text.label,
       quantity: it.mult,
@@ -142,4 +142,14 @@ export function shopping(
   });
 }
 
-export const priceAction = (key: string, value: number | null): Action => ({ type: 'carrelage/price', key, value });
+/**
+ * Clés des lignes d'achat préfixées par le module, comme les autres outils (`carrelage:colle`) ; les prix du projet
+ * restent rangés sous la clé du moteur (`colle`), inchangée pour la parité.
+ */
+const KEY_PREFIX = `${CARRELAGE_ID}:`;
+
+export const priceAction = (key: string, value: number | null): Action => ({
+  type: 'carrelage/price',
+  key: key.startsWith(KEY_PREFIX) ? key.slice(KEY_PREFIX.length) : key,
+  value,
+});

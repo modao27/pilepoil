@@ -19,7 +19,7 @@
   import Select from '../../../../ui/components/Select.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
   import type { AxisKind, LayingMethod, Pattern, Threshold } from '../../core/types';
-  import { shopping } from '../../state/module';
+  import { marginOf, shopping } from '../../state/module';
   import { ParquetEditorState } from '../editorState.svelte';
   import { errorText, warningText } from '../lib/messages';
   import ParquetPlan from './ParquetPlan.svelte';
@@ -426,6 +426,15 @@
                 onchange={(barLength) => ed.updateAccessories({ skirting: { ...acc.skirting, barLength } })}
               />
               <NumberField
+                label="Hauteur de plinthe"
+                unit="mm"
+                min={10}
+                decimals={0}
+                value={acc.skirting.height}
+                hint="Retirée de la surface des murs peints."
+                onchange={(height) => ed.updateAccessories({ skirting: { ...acc.skirting, height } })}
+              />
+              <NumberField
                 label="Supplément par onglet"
                 unit="mm"
                 min={0}
@@ -493,6 +502,26 @@
           <Button variant="ghost" onclick={() => ed.resetRules()} disabled={!ed.board}
             >Revenir aux valeurs du type de lame</Button
           >
+        </section>
+        <section aria-labelledby="pq-margin">
+          <h2 id="pq-margin">Marge</h2>
+          <NumberField
+            label="Marge d’achat"
+            unit="%"
+            min={0}
+            max={50}
+            decimals={0}
+            value={Math.round(marginOf(ed.data) * 100)}
+            hint={ed.data.settings.margin == null
+              ? 'Conseillée pour le motif et l’angle. Ajoutée aux lames avant de compter les paquets.'
+              : 'Ajoutée aux lames avant de compter les paquets.'}
+            onchange={(v) => ed.dispatch({ type: 'parquet/settings', patch: { margin: v / 100 } })}
+          />
+          {#if ed.data.settings.margin != null}
+            <Button variant="ghost" onclick={() => ed.dispatch({ type: 'parquet/settings', patch: { margin: null } })}
+              >Revenir à la marge conseillée</Button
+            >
+          {/if}
         </section>
       {/if}
     </div>

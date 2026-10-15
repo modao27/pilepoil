@@ -3,7 +3,7 @@
  * La face moteur est engine.ts (importée par modules/engines.ts).
  */
 import type { LibraryDefinition, ModuleManifest } from '../types';
-import { templateSystems } from './core/defaults';
+import { SYSTEM_SCHEMA, templateSystems } from './core/defaults';
 import type { CloisonsResult, CloisonsSpec } from './core/types';
 import type { Action } from './state/actions';
 import { CLOISONS_ID, CLOISONS_SCHEMA, type CloisonsData } from './state/model';
@@ -14,7 +14,7 @@ export const library: LibraryDefinition = {
   id: 'systems',
   label: 'Cloisons',
   store: 'systems',
-  schemaVersion: 1,
+  schemaVersion: SYSTEM_SCHEMA,
   migrations: {},
   screens: {
     list: () => import('./ui/screens/SystemLibrary.svelte').then((m) => m.default),
