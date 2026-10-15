@@ -521,6 +521,8 @@
 
 <PoseEditorShell
   title={layout ? layoutTitle(layout) : 'Parquet'}
+  failed={ed.failed}
+  onretry={() => void ed.recompute()}
   context={ed.doc.name}
   ontitle={() => (posesDialog = true)}
   backHref={layout?.rooms[0] ? `#/p/${ed.doc.id}/r/${layout.rooms[0]}/sol` : `#/p/${ed.doc.id}`}

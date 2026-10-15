@@ -53,6 +53,8 @@ export class EditorState {
   scope3d = $state<'surface' | 'room'>('surface');
   result = $state.raw<ProjectResult | null>(null);
   spec = $state.raw<ProjectSpec | null>(null);
+  /** Le dernier calcul a échoué (erreur du moteur) : `result` est celui d'avant. */
+  failed = $state(false);
   guides = $state.raw<{ zone: number; x: number | null; y: number | null } | null>(null);
   optimizing = $state<{ zone: number; percent: number } | null>(null);
   colorClip = $state.raw<ColorClip | null>(null);
@@ -102,10 +104,17 @@ export class EditorState {
   /** Calcule le projet (dernière demande seulement) ; appelé à chaque changement du projet ou de la bibliothèque. */
   async recompute(): Promise<void> {
     const { spec } = toProjectSpec(this.project, carrelage.tiles);
-    const r = await carrelage.computeLive(spec);
-    if (r) {
-      this.result = r;
-      this.spec = spec;
+    try {
+      const r = await carrelage.computeLive(spec);
+      if (r) {
+        this.result = r;
+        this.spec = spec;
+        this.failed = false;
+      }
+    } catch (e) {
+      // résultat d'avant gardé, signalé comme tel (ComputeFailed)
+      this.failed = true;
+      console.error(e);
     }
   }
 

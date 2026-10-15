@@ -227,6 +227,8 @@ export interface ResultExports<Result = unknown> {
 export interface ModuleResults<Result = unknown> {
   /** Un rapport par pose du module touchée par la portée, dans l'ordre du projet. Léger, sans DOM. */
   report(input: ResultInput<Result>): PoseReport[];
+  /** Texte d'une erreur bloquante de `toSpec` (le calcul ne peut pas se faire). */
+  errorText(e: ModuleError): string;
   /** Détail du module sur l'écran Résultats (commande, plan, découpe…). */
   section: ScreenLoader<ResultSectionProps>;
   exports(): Promise<ResultExports<Result>>;

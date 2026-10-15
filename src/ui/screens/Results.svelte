@@ -9,7 +9,7 @@
   import { poseWhere, type Pose } from '../../core/coverage';
   import { poseArea, scopePoses, type ResultScope } from '../../core/coverage/scope';
   import { moduleById, modules } from '../../modules/registry';
-  import type { ModuleResults, PoseReport, ResultExports, ToolModule } from '../../modules/types';
+  import type { ModuleError, ModuleResults, PoseReport, ResultExports, ToolModule } from '../../modules/types';
   import type { Project } from '../../state/model';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
@@ -42,22 +42,31 @@
       : [],
   );
 
-  /** Résultat de chaque module, avec le projet calculé ; null : le module ne peut pas calculer. */
+  /**
+   * Résultat de chaque module, avec le projet calculé ; null : le module ne peut pas calculer. Les raisons sont
+   * gardées à part (erreurs de `toSpec` ou calcul échoué) pour être dites à l'utilisateur.
+   */
   type Computed = { project: Project; result: unknown } | null;
+  let problems = $state.raw<Record<string, ModuleError[] | 'failed'>>({});
   let results = $state.raw<Record<string, Computed>>({});
   $effect(() => {
     const p = project;
     const libraries = app.libraries;
     if (!p) return;
     let live = true;
-    const set = (m: string, v: Computed) => live && (results = { ...results, [m]: v });
+    const set = (m: string, v: Computed, why?: ModuleError[] | 'failed') => {
+      if (!live) return;
+      results = { ...results, [m]: v };
+      const { [m]: _, ...rest } = problems;
+      problems = why ? { ...rest, [m]: why } : rest;
+    };
     for (const m of mods) {
       const r = m.toSpec(p, libraries);
-      if ('errors' in r) untrack(() => set(m.id, null));
+      if ('errors' in r) untrack(() => set(m.id, null, r.errors));
       else
         void app.queued(m.id, r.spec).then(
           (result) => set(m.id, { project: p, result }),
-          () => set(m.id, null),
+          () => set(m.id, null, 'failed'),
         );
     }
     return () => (live = false);
@@ -82,7 +91,14 @@
           : c === null
             ? null
             : impl.report({ project: c.project, libraries: app.libraries, result: c.result, scope });
-      return { module: m, reports: list, poses: poses.filter((p) => p.module === m.id) };
+      const why = problems[m.id];
+      const problem =
+        c !== null || !impl
+          ? null
+          : why === 'failed'
+            ? 'Le calcul a échoué. Rechargez la page ; si le problème revient, signalez-le.'
+            : (why ?? []).map((e) => impl.errorText(e)).join(' ') || null;
+      return { module: m, reports: list, problem, poses: poses.filter((p) => p.module === m.id) };
     }),
   );
 
@@ -286,7 +302,7 @@
                     {#if g.reports === undefined}
                       <p class="muted" role="status">Calcul…</p>
                     {:else if g.reports === null}
-                      <p class="muted">À compléter.</p>
+                      <p class={g.problem ? 'err' : 'muted'}>{g.problem ?? 'À compléter.'}</p>
                     {:else}
                       {#each g.reports as r (r.pose)}
                         <article class="pose" aria-label="{g.module.label} · {r.title}">
@@ -327,7 +343,9 @@
                         <p class="muted" role="status">Calcul…</p>
                       {:else if !r || !r.ok}
                         <p class="err">
-                          {r?.alerts.join(' ') || 'À compléter : choisissez un produit dans le calepinage.'}
+                          {r?.alerts.join(' ') ||
+                            g.problem ||
+                            'À compléter : choisissez un produit dans le calepinage.'}
                         </p>
                       {:else}
                         <div class="stats">

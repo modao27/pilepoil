@@ -52,7 +52,8 @@ export function alertText(a: PaintAlert): string {
   }
 }
 
-export const ERRORS: Record<string, string> = {
+/** Erreurs bloquantes de `toSpec` (module, projet). */
+export const SPEC_ERRORS: Record<string, string> = {
   'peinture/absent': 'La peinture n’est pas activée dans ce projet.',
   'peinture/no-wall': 'Aucun mur à peindre : ajoutez un mur à une pose de peinture.',
 };

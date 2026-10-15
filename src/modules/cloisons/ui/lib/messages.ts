@@ -48,3 +48,9 @@ export function alertText(a: Alert): string {
       return a.code;
   }
 }
+
+/** Erreurs bloquantes de `toSpec` (module, projet). */
+export const SPEC_ERRORS: Record<string, string> = {
+  'cloisons/absent': 'Les cloisons ne sont pas activées dans ce projet.',
+  'cloisons/no-partition': 'Aucune cloison : tracez-en une dans le plan, calque Travaux.',
+};

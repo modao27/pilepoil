@@ -36,6 +36,8 @@ export class ParquetEditorState {
   /** Pose affichée dans les réglages (null : la première). */
   current = $state<string | null>(null);
   computing = $state(false);
+  /** Le dernier calcul a échoué (erreur du moteur) : `result` est celui d'avant. */
+  failed = $state(false);
   /** Optimisation du départ en cours : avancement en %. */
   optimizing = $state<number | null>(null);
   private abort: AbortController | null = null;
@@ -84,8 +86,13 @@ export class ParquetEditorState {
     this.computing = true;
     try {
       this.result = await app.live.compute<ParquetResult>(PARQUET_ID, r.spec satisfies ParquetSpec);
+      this.failed = false;
     } catch (e) {
-      if (!(e instanceof SupersededError)) throw e;
+      if (!(e instanceof SupersededError)) {
+        // résultat d'avant gardé, signalé comme tel (ComputeFailed)
+        this.failed = true;
+        console.error(e);
+      }
     } finally {
       this.computing = false;
     }

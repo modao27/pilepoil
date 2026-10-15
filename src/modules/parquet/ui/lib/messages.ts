@@ -34,3 +34,9 @@ export function errorText(e: ParquetError): string {
       return `Trop de pièces à calculer (environ ${e.estimate.toLocaleString('fr-FR')}). Choisissez moins de pièces ou une lame plus grande.`;
   }
 }
+
+/** Erreurs bloquantes de `toSpec` (module, projet). */
+export const SPEC_ERRORS: Record<string, string> = {
+  'parquet/absent': 'Le parquet n’est pas activé dans ce projet.',
+  'parquet/no-room': 'Aucun sol à poser : ajoutez le sol d’une pièce à une pose de parquet.',
+};

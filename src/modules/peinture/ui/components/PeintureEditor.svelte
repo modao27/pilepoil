@@ -388,6 +388,8 @@
 
 <PoseEditorShell
   {title}
+  failed={ed.failed}
+  onretry={() => void ed.recompute()}
   context={ed.doc.name}
   ontitle={() => (posesDialog = true)}
   {backHref}
