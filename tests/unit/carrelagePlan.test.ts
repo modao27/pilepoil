@@ -3,6 +3,7 @@
  * cotes, une zone coupée (crédence, sol partagé) aussi ; modifier le plan met le carrelage à jour ; joints entre
  * surfaces ; zones orphelines.
  */
+import { NO_CONTEXT } from '../../src/core/coverage/wallBase';
 import { describe, expect, it } from 'vitest';
 import { orphanZones } from '../../src/core/coverage';
 import { area, pointInPolygon, rectPoly, signedArea } from '../../src/core/geometry/polygon';
@@ -203,7 +204,7 @@ describe('plan modifié, scénarios', () => {
     // le point 0 retiré : le mur 4 (r-w3) absorbe le mur 1 (r-w0), qui disparaît
     expect(orphanZones(q.plan, q.zones).map((z) => z.id)).toEqual(['W-z']);
     expect(view(q).surfaces).toEqual([]);
-    expect(carrelage.toSpec(q, { tiles: [tile] })).toEqual({ errors: [{ code: 'carrelage/empty' }] });
+    expect(carrelage.toSpec(q, { tiles: [tile] }, NO_CONTEXT)).toEqual({ errors: [{ code: 'carrelage/empty' }] });
     const pruned = reduceProject(q, { type: 'zone/prune' });
     expect([pruned.zones, pruned.poses, view(pruned).poses]).toEqual([[], [], {}]);
   });

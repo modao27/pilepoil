@@ -2,6 +2,7 @@
 import type { Point, Polygon, Segment } from '../../../core/geometry/types';
 import type { Plan, PlanRoom } from '../../../core/plan/types';
 import type { Zone } from '../../../core/coverage/types';
+import { basesOf, floorSpans, NO_CONTEXT, type ProjectContext, type WallBase } from '../../../core/coverage/wallBase';
 import { wallDirection, wallLength, wallSegment } from '../../../core/plan/walls';
 import type { ShoppingLine } from '../../../core/shopping/types';
 import type { Project } from '../../../state/model';
@@ -24,27 +25,30 @@ export const createPose = (project: Project, libraries: Libraries, like?: string
 
 const boardsOf = (libraries: Libraries) => (libraries.boards ?? []) as readonly Board[];
 
-/** Marge d'achat : saisie, sinon conseillée pour le motif et l'angle de la première pose. */
+/** Marge d'achat (fraction) : saisie, sinon conseillée pour le motif et l'angle de la première pose. */
 export function marginOf(d: ParquetData): number {
-  if (d.settings.marginPct != null) return d.settings.marginPct;
+  if (d.settings.margin != null) return d.settings.margin;
   const l = Object.values(d.poses)[0];
-  return l ? defaultMargin(l.pattern, l.angle) : 5;
+  return l ? defaultMargin(l.pattern, l.angle) : 0.05;
 }
 
 /** Projet → entrée du moteur : pièces du plan au repère d'ensemble, lame de la bibliothèque, marge résolue. */
-export function toSpec(project: Project, libraries: Libraries): { spec: ParquetSpec } | { errors: ModuleError[] } {
+export function toSpec(
+  project: Project,
+  libraries: Libraries,
+  context: ProjectContext = NO_CONTEXT,
+): { spec: ParquetSpec } | { errors: ModuleError[] } {
   const d = parquetData(project);
   if (!d) return { errors: [{ code: 'parquet/absent' }] };
   const boards = boardsOf(libraries);
   const layouts = layoutsOf(project)
-    .map((l) => layoutSpec(l, project.plan, boards.find((b) => b.id === l.boardId) ?? null))
+    .map((l) => layoutSpec(l, project.plan, boards.find((b) => b.id === l.boardId) ?? null, context))
     .filter((l): l is LayoutSpec => !!l);
   if (!layouts.length) return { errors: [{ code: 'parquet/no-room' }] };
-  const { marginPct: _, ...settings } = d.settings;
-  return { spec: { layouts, settings: { ...settings, marginPct: marginOf(d) }, accessories: d.accessories } };
+  return { spec: { layouts, settings: { ...d.settings, margin: marginOf(d) }, accessories: d.accessories } };
 }
 
-function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | null {
+function layoutSpec(l: Layout, plan: Plan, board: Board | null, context: ProjectContext): LayoutSpec | null {
   const rooms = l.rooms.map((id) => plan.rooms.find((r) => r.id === id)).filter((r): r is PlanRoom => !!r);
   if (!rooms.length) return null;
   const at = (r: PlanRoom, p: Point): Point => [r.origin[0] + p[0], r.origin[1] + p[1]];
@@ -62,6 +66,15 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
       ...(z?.holes?.length ? { holes: z.holes.map(move) } : {}),
     };
   };
+  /** Murs carrelés depuis le sol (autre module) : pas de plinthe le long. */
+  const noSkirting = (r: PlanRoom): { noSkirting?: Record<number, [number, number][]> } => {
+    const out: Record<number, [number, number][]> = {};
+    r.walls.forEach((w, i) => {
+      const tiled = basesOf(context, r.id, w.id).filter((b) => b.kind === 'tiled');
+      if (tiled.length) out[i] = tiled.map((b) => [b.from, b.to]);
+    });
+    return Object.keys(out).length ? { noSkirting: out } : {};
+  };
   return {
     id: l.id,
     rooms: rooms.map((r) => ({
@@ -75,6 +88,7 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
       }),
       bounds: bounds(r),
       ...contour(r),
+      ...noSkirting(r),
     })),
     passages: plan.passages.flatMap((p) => {
       const ra = rooms.find((r) => r.id === p.a.room),
@@ -114,6 +128,33 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null): LayoutSpec | nu
   };
 }
 
+/**
+ * Pied des murs des sols posés (contrat `wallBases`) : plinthe peignable si les plinthes sont prévues, sinon sol sans
+ * plinthe ; sur tous les murs des pièces des poses, portes retirées (comme `core/skirting`).
+ */
+export function wallBases(project: Project): WallBase[] {
+  const d = parquetData(project);
+  if (!d) return [];
+  const sk = d.accessories.skirting;
+  const rooms = new Set(layoutsOf(project).flatMap((l) => l.rooms));
+  return project.plan.rooms
+    .filter((r) => rooms.has(r.id))
+    .flatMap((r) =>
+      r.walls.flatMap((w, i) =>
+        floorSpans(r, i).map(([from, to]): WallBase => ({
+          room: r.id,
+          wall: w.id,
+          from,
+          to,
+          kind: sk.enabled ? 'skirting' : 'bare',
+          height: sk.enabled ? sk.height : 0,
+          paintable: sk.enabled,
+          module: PARQUET_ID,
+        })),
+      ),
+    );
+}
+
 /** Ouverture sur le mur i, repère de la pièce. */
 function openingSegment(r: PlanRoom, i: number, offset: number, width: number): Segment {
   const [a] = wallSegment(r, i);
@@ -146,7 +187,7 @@ export function summary(r: ParquetResult): ModuleSummary {
  */
 export function shopping(r: ParquetResult, d: ParquetData, libraries: Libraries): ShoppingLine[] {
   const boards = boardsOf(libraries);
-  const margin = marginOf(d) / 100;
+  const margin = marginOf(d);
   const used = new Map<string, { A: number; B: number; plain: number }>();
   r.layouts.forEach((lr) => {
     const l = Object.hasOwn(d.poses, lr.id) ? d.poses[lr.id]! : null;

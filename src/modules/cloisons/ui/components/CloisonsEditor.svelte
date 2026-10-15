@@ -6,6 +6,7 @@
   import { onMount, untrack } from 'svelte';
   import type { Project } from '../../../../state/model';
   import Button from '../../../../ui/components/Button.svelte';
+  import ComputeFailed from '../../../../ui/components/ComputeFailed.svelte';
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import IconButton from '../../../../ui/components/IconButton.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
@@ -86,6 +87,7 @@
     <IconButton icon="undo" label="Annuler" disabled={!ed.canUndo} onclick={() => ed.store.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!ed.canRedo} onclick={() => ed.store.redo()} />
   {/snippet}
+  {#if ed.failed}<ComputeFailed onretry={() => void ed.recompute()} />{/if}
   <p class="summary num" aria-live="polite">{text}</p>
   <p class="muted">
     Les cloisons se dessinent dans le <a href="#/p/{project.id}/plan">plan</a>, calque Travaux. Vérifier la notice du
@@ -103,9 +105,14 @@
         <Select
           label="Système"
           value={p.system}
-          options={ed.systems.length
-            ? ed.systems.map((x) => ({ value: x.id, label: x.name }))
-            : [{ value: '', label: 'Aucun système : en ajouter dans la bibliothèque' }]}
+          options={[
+            ...(p.system && !ed.systems.some((x) => x.id === p.system)
+              ? [{ value: p.system, label: 'Système supprimé : en choisir un autre' }]
+              : []),
+            ...(ed.systems.length
+              ? ed.systems.map((x) => ({ value: x.id, label: x.name }))
+              : [{ value: '', label: 'Aucun système : en ajouter dans la bibliothèque' }]),
+          ]}
           onchange={(v) => v && ed.setSystem(p.id, v)}
         />
         <Checkbox

@@ -1,4 +1,5 @@
 /** Module peinture (docs/peinture/SPEC.md §2, §4, §5) : état, projet → moteur, achats, bibliothèque. */
+import { NO_CONTEXT } from '../../src/core/coverage/wallBase';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { describe, expect, it } from 'vitest';
 import type { ResultScope } from '../../src/core/coverage/scope';
@@ -58,7 +59,7 @@ function project(roomIds = ['r']): Project {
 
 const dataOf = (p: Project) => p.modules.peinture!.data as PeintureData;
 const specOf = (p: Project): PeintureSpec => {
-  const r = peinture.toSpec(p, libraries);
+  const r = peinture.toSpec(p, libraries, NO_CONTEXT);
   if (!('spec' in r)) throw new Error(JSON.stringify(r));
   return r.spec as PeintureSpec;
 };
@@ -97,9 +98,9 @@ describe('module peinture', () => {
   it('toSpec : module absent ou pose sans mur → erreurs', () => {
     const p = project();
     const bare = { ...p, modules: {} };
-    expect(peinture.toSpec(bare, libraries)).toEqual({ errors: [{ code: 'peinture/absent' }] });
+    expect(peinture.toSpec(bare, libraries, NO_CONTEXT)).toEqual({ errors: [{ code: 'peinture/absent' }] });
     const noZone = { ...p, zones: [] };
-    expect(peinture.toSpec(noZone, libraries)).toEqual({ errors: [{ code: 'peinture/no-wall' }] });
+    expect(peinture.toSpec(noZone, libraries, NO_CONTEXT)).toEqual({ errors: [{ code: 'peinture/no-wall' }] });
   });
 
   it('cas A de la spec de bout en bout : 31,8068 m², 6 998 mL, 1 × 5 L + 2 × 1 L', () => {

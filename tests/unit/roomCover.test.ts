@@ -3,6 +3,7 @@
  * elle ne se suit plus), changer le revêtement d'une zone, découper un sol, régler la hauteur d'une zone de mur.
  * Communs à tous les modules.
  */
+import { NO_CONTEXT } from '../../src/core/coverage/wallBase';
 import { describe, expect, it } from 'vitest';
 import type { Cut, SurfaceRef, Zone } from '../../src/core/coverage';
 import type { Plan } from '../../src/core/plan/types';
@@ -18,8 +19,10 @@ import {
   continueAction,
   contourAction,
   cutAction,
+  freeWallSpans,
   modulesFor,
   newPoseAction,
+  newPoseOnSpan,
   removeZoneAction,
   spanAction,
   switchAction,
@@ -81,7 +84,7 @@ describe('revêtir une surface', () => {
     const q = apply(p, newPoseAction(p, libraries, parquet, floor, ids('w')));
     expect(Object.keys(q.modules)).toEqual(['carrelage', 'parquet']);
     expect(q.poses.map((x) => x.module)).toEqual(['parquet']);
-    expect(parquet.toSpec(q, libraries)).toHaveProperty('spec');
+    expect(parquet.toSpec(q, libraries, NO_CONTEXT)).toHaveProperty('spec');
   });
 
   it('mur voisin : la pose peut continuer, en reprenant la hauteur de la zone voisine', () => {
@@ -139,7 +142,7 @@ describe('zones', () => {
     expect(zonesOn(s, floor).map((z) => z.cuts)).toEqual([[{ line, side: 1 }], [{ line, side: -1 }]]);
     // les deux calculs tiennent : 1 m de carrelage, 2 m de parquet
     expect(view(s).surfaces[0]).toMatchObject({ width: 1000, height: 2000 });
-    expect(parquet.toSpec(s, libraries)).toHaveProperty('spec');
+    expect(parquet.toSpec(s, libraries, NO_CONTEXT)).toHaveProperty('spec');
   });
 
   it('hauteur d’une zone de mur : crédence de 90 à 150 cm', () => {
@@ -172,7 +175,7 @@ describe('contour sur un sol', () => {
     const [tiles] = view(p2).surfaces;
     expect([tiles!.width, tiles!.height]).toEqual([1200, 1000]);
     // parquet : la pièce moins l'entrée, un jeu de 8 mm autour de chacun
-    const spec = parquet.toSpec(p2, libraries);
+    const spec = parquet.toSpec(p2, libraries, NO_CONTEXT);
     if (!('spec' in spec)) throw new Error('spec');
     const l = computeParquet(spec.spec as ParquetSpec).layouts[0]!;
     expect(regionArea(l.layable)).toBeCloseTo(2984 * 1984 - 1216 * 1016, -3);
@@ -190,5 +193,19 @@ describe('contour sur un sol', () => {
     ];
     expect(contourAction(p, libraries, z, bow, ids('x'))).toBeNull();
     expect(contourAction(p, libraries, z, bow.slice(0, 2), ids('y'))).toBeNull();
+  });
+});
+
+describe('revêtir le reste d’un mur', () => {
+  it('hauteurs libres au-dessus d’une crédence ; une nouvelle pose s’y pose sans recouvrement', () => {
+    const p = project({ C: [{ ref: wall(0), cuts: wallHeightCuts(plan(), wall(0), 1200) }] });
+    expect(freeWallSpans(p, wall(0))).toEqual([[1200, 2500]]);
+    expect(freeWallSpans(p, wall(1))).toEqual([]);
+    const peinture = moduleById('peinture')!;
+    const r = newPoseOnSpan(p, libraries, peinture, wall(0), [1200, 2500], ids('n'));
+    if ('error' in r) throw new Error(r.error.code);
+    const q = reduceProject(p, r.action);
+    expect(freeWallSpans(q, wall(0))).toEqual([]);
+    expect(q.poses.map((x) => x.module)).toEqual(['carrelage', 'peinture']);
   });
 });

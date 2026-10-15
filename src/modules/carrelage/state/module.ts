@@ -1,5 +1,7 @@
 /** Fonctions du contrat de module (docs/BOITE.md §2) propres au carrelage, hors écrans. */
-import type { Plan } from '../../../core/plan/types';
+import { zoneRegion } from '../../../core/coverage/geometry';
+import { floorSpans, spansAtFloor, type WallBase } from '../../../core/coverage/wallBase';
+import type { Id, Plan } from '../../../core/plan/types';
 import type { Project } from '../../../state/model';
 import type { CarrelagePose, Tile } from './model';
 import type { ShoppingGroup, ShoppingLine } from '../../../core/shopping/types';
@@ -11,6 +13,7 @@ import type { Action } from './actions';
 import { itemPrice } from './pricing';
 import { carrelageData, carrelageView, type CarrelageData } from './data';
 import { createData, newId } from './factories';
+import { CARRELAGE_ID } from './ids';
 import { newPoseSettings } from './poses';
 import { toProjectSpec } from './selectors';
 
@@ -30,6 +33,60 @@ export function toSpec(project: Project, libraries: Libraries): { spec: ProjectS
   if (!view) return { errors: [{ code: 'carrelage/absent' }] };
   if (!view.surfaces.length) return { errors: [{ code: 'carrelage/empty' }] };
   return { spec: toProjectSpec(view, (libraries.tiles ?? []) as readonly Tile[]).spec };
+}
+
+/**
+ * Pied des murs (contrat `wallBases`) : sol carrelé avec plinthe carrelée (non peignable) ou sans plinthe, sur tous
+ * les murs de la pièce, portes retirées ; mur carrelé là où sa zone touche le sol.
+ */
+export function wallBases(project: Project): WallBase[] {
+  const d = carrelageData(project);
+  if (!d) return [];
+  const out: WallBase[] = [];
+  const mine = new Set(project.poses.filter((p) => p.module === CARRELAGE_ID).map((p) => p.id));
+  const floors = new Map<Id, CarrelagePose['plinth']>();
+  for (const z of project.zones) {
+    const t = mine.has(z.pose) ? d.poses[z.pose] : undefined;
+    if (!t) continue;
+    if (z.surface.wall == null) {
+      const before = floors.get(z.surface.room);
+      floors.set(z.surface.room, before?.length ? before : t.plinth);
+      continue;
+    }
+    const region = zoneRegion(project.plan, z);
+    if (!region?.length) continue;
+    const top = Math.max(...region.flat().map((p) => p[1]));
+    for (const [from, to] of spansAtFloor(region))
+      out.push({
+        room: z.surface.room,
+        wall: z.surface.wall,
+        from,
+        to,
+        kind: 'tiled',
+        height: top,
+        paintable: false,
+        module: CARRELAGE_ID,
+      });
+  }
+  for (const [roomId, plinth] of floors) {
+    const r = project.plan.rooms.find((x) => x.id === roomId);
+    if (!r) continue;
+    const on = !!plinth && plinth.length > 0;
+    r.walls.forEach((w, i) => {
+      for (const [from, to] of floorSpans(r, i))
+        out.push({
+          room: r.id,
+          wall: w.id,
+          from,
+          to,
+          kind: on ? 'skirting' : 'bare',
+          height: on ? plinth.height : 0,
+          paintable: false,
+          module: CARRELAGE_ID,
+        });
+    });
+  }
+  return out;
 }
 
 /** « 46 carreaux, 12,4 m² » ; alertes : coupes fines et surfaces en erreur. */
@@ -70,8 +127,8 @@ export function shopping(
     const own = data.prices[it.key];
     const price = itemPrice(it, priced, tiles, result);
     const line: ShoppingLine = {
-      module: 'carrelage',
-      key: it.key,
+      module: CARRELAGE_ID,
+      key: KEY_PREFIX + it.key,
       group: GROUPS[it.kind],
       label: text.label,
       quantity: it.mult,
@@ -85,4 +142,14 @@ export function shopping(
   });
 }
 
-export const priceAction = (key: string, value: number | null): Action => ({ type: 'carrelage/price', key, value });
+/**
+ * Clés des lignes d'achat préfixées par le module, comme les autres outils (`carrelage:colle`) ; les prix du projet
+ * restent rangés sous la clé du moteur (`colle`), inchangée pour la parité.
+ */
+const KEY_PREFIX = `${CARRELAGE_ID}:`;
+
+export const priceAction = (key: string, value: number | null): Action => ({
+  type: 'carrelage/price',
+  key: key.startsWith(KEY_PREFIX) ? key.slice(KEY_PREFIX.length) : key,
+  value,
+});

@@ -74,7 +74,7 @@ describe('liste d’achat consolidée du carrelage', () => {
       const lines = carrelage.shopping(r, data(p), { tiles }, p);
       expect(r.shopping.length).toBeGreaterThan(2);
       // mêmes articles, dans le même ordre
-      expect(lines.map((l) => l.key)).toEqual(r.shopping.map((it) => it.key));
+      expect(lines.map((l) => l.key)).toEqual(r.shopping.map((it) => `carrelage:${it.key}`));
       r.shopping.forEach((it, i) => {
         const l = lines[i]!;
         const text = shoppingLabel(it, r.plan.groups);
@@ -95,7 +95,7 @@ describe('liste d’achat consolidée du carrelage', () => {
   it('prix saisi dans le projet : il l’emporte sur la bibliothèque, et se modifie par l’action du module', () => {
     const p = projects()[0]!;
     const r = compute(p);
-    const key = r.shopping.find((it) => it.kind === 'tile')!.key;
+    const key = `carrelage:${r.shopping.find((it) => it.kind === 'tile')!.key}`;
     const before = carrelage.shopping(r, data(p), { tiles }, p).find((l) => l.key === key)!;
     expect(before).toMatchObject({ unitPrice: 32.5, priceFromLibrary: true });
     const d = carrelage.reduce(data(p), carrelage.priceAction(key, 29.9), p.plan);
@@ -108,7 +108,7 @@ describe('liste d’achat consolidée du carrelage', () => {
   it('rayons : revêtements, consommables, outils, finitions', () => {
     const p = projects()[1]!;
     const lines = carrelage.shopping(compute(p), data(p), { tiles }, p);
-    const group = (k: string) => lines.find((l) => l.key === k || l.key.startsWith(k))?.group;
+    const group = (k: string) => lines.find((l) => l.key.startsWith(`carrelage:${k}`))?.group;
     expect(group('tile|')).toBe('covering');
     expect(group('colle')).toBe('consumable');
     expect(group('joint|')).toBe('consumable');

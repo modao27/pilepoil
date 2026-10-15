@@ -10,6 +10,8 @@ export function alertText(a: Alert): string {
   switch (a.code) {
     case 'no-system':
       return 'Aucun système de cloison : ajoutez-en un dans la bibliothèque, puis choisissez-le.';
+    case 'system-missing':
+      return 'Le système de cette cloison n’est plus dans la bibliothèque : choisissez-en un autre.';
     case 'system-thickness-mismatch':
       return 'L’ossature et les plaques du système ne font pas son épaisseur. Corrigez le système.';
     case 'height-over-max':
@@ -46,3 +48,9 @@ export function alertText(a: Alert): string {
       return a.code;
   }
 }
+
+/** Erreurs bloquantes de `toSpec` (module, projet). */
+export const SPEC_ERRORS: Record<string, string> = {
+  'cloisons/absent': 'Les cloisons ne sont pas activées dans ce projet.',
+  'cloisons/no-partition': 'Aucune cloison : tracez-en une dans le plan, calque Travaux.',
+};

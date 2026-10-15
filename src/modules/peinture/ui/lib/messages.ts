@@ -33,6 +33,8 @@ export function alertText(a: PaintAlert): string {
   switch (a.code) {
     case 'no-product':
       return `Choisissez une peinture de finition${woodwork}.`;
+    case 'product-missing':
+      return `${ROLE_LABEL[a.role ?? 'finish']} introuvable dans la bibliothèque${woodwork} : choisissez-en un autre.`;
     case 'missing-yield':
       return `Une peinture n’a pas de rendement${woodwork} : renseignez-le dans la bibliothèque.`;
     case 'no-pack':
@@ -50,7 +52,8 @@ export function alertText(a: PaintAlert): string {
   }
 }
 
-export const ERRORS: Record<string, string> = {
+/** Erreurs bloquantes de `toSpec` (module, projet). */
+export const SPEC_ERRORS: Record<string, string> = {
   'peinture/absent': 'La peinture n’est pas activée dans ce projet.',
   'peinture/no-wall': 'Aucun mur à peindre : ajoutez un mur à une pose de peinture.',
 };

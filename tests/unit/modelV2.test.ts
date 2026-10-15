@@ -1,3 +1,4 @@
+import { NO_CONTEXT } from '../../src/core/coverage/wallBase';
 import { describe, expect, it } from 'vitest';
 import { validatePlan } from '../../src/core/plan/validate';
 import { rectRoom } from '../../src/core/plan/factories';
@@ -118,12 +119,12 @@ describe('contrat du module carrelage', () => {
     const tile = createTile({ id: 't1' });
     const layout = { tileId: tile.id, tileUpright: false, pattern: 'half' as const, angle: 0, joint: 3 };
     const p = wallOnly(layout, 3000, 2400);
-    const r = carrelage.toSpec(p, { tiles: [tile] });
+    const r = carrelage.toSpec(p, { tiles: [tile] }, NO_CONTEXT);
     if (!('spec' in r)) throw new Error('spec attendue');
     const s = carrelage.summary(computeProject(r.spec));
     expect(s.text).toMatch(/^\d+ carreaux, [\d,]+ m²$/);
     expect(s.alerts).toBeGreaterThanOrEqual(0);
-    expect(carrelage.toSpec({ ...p, modules: {} }, {})).toEqual({ errors: [{ code: 'carrelage/absent' }] });
+    expect(carrelage.toSpec({ ...p, modules: {} }, {}, NO_CONTEXT)).toEqual({ errors: [{ code: 'carrelage/absent' }] });
   });
 
   it('withCarrelage : même objet si les données sont les mêmes', () => {

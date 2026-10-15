@@ -58,3 +58,9 @@ export function productName(l: ProductLabel): string {
       return `${cm(l.size[0])} × ${cm(l.size[1])} cm`;
   }
 }
+
+/** Erreurs bloquantes de `toSpec` (module, projet). */
+export const SPEC_ERRORS: Record<string, string> = {
+  'carrelage/absent': 'Le carrelage n’est pas activé dans ce projet.',
+  'carrelage/empty': 'Aucune surface à carreler : ajoutez un sol ou un mur à une pose de carrelage.',
+};

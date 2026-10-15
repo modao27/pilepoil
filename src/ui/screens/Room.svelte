@@ -29,7 +29,9 @@
     contourAction,
     cutAction,
     modulesFor,
+    freeWallSpans,
     newPoseAction,
+    newPoseOnSpan,
     removeZoneAction,
     spanAction,
     switchAction,
@@ -99,6 +101,14 @@
     choosing = null;
     if (!project) return;
     const r = newPoseAction(project, app.libraries, m, ref, newId);
+    if ('error' in r) toast(coverageText(r.error), { tone: 'error' });
+    else void dispatch(r.action);
+  }
+
+  /** Revêt la partie libre d'un mur (au-dessus d'une crédence…) par une nouvelle pose. */
+  function coverSpan(ref: SurfaceRef, m: ToolModule, s: [number, number]) {
+    if (!project) return;
+    const r = newPoseOnSpan(project, app.libraries, m, ref, s, newId);
     if ('error' in r) toast(coverageText(r.error), { tone: 'error' });
     else void dispatch(r.action);
   }
@@ -324,6 +334,18 @@
                   </li>
                 {/each}
               </ul>
+              {#each kind === 'wall' && project ? freeWallSpans(project, selected) : [] as s (s[0])}
+                <div class="free">
+                  <p class="muted">Libre de {cm(s[0])} à {cm(s[1])}</p>
+                  <div class="row">
+                    {#each modulesFor(selected) as m (m.id)}
+                      <Button variant="secondary" icon="plus" onclick={() => coverSpan(selected, m, s)}
+                        >Revêtir : {m.label.toLowerCase()}</Button
+                      >
+                    {/each}
+                  </div>
+                </div>
+              {/each}
             {:else}
               <p class="muted">Sans revêtement.</p>
               <div class="row">
@@ -443,6 +465,14 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
     gap: var(--space-3);
+  }
+  .free {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
   }
   .row {
     display: flex;

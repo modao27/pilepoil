@@ -59,14 +59,6 @@ export class CarrelageState {
     app.putLibraryItem(TILES, t);
   }
 
-  /** null si supprimé, sinon le nom d'un projet qui l'utilise. */
-  deleteTile(id: Id): string | null {
-    const user = app.projects.find((p) => uses(p, id));
-    if (user) return user.name;
-    app.removeLibraryItem(TILES, id);
-    return null;
-  }
-
   /** Vue carrelage d'un projet enregistré ; undefined s'il n'existe pas ou n'a pas le carrelage. */
   view(projectId: Id): CarrelageProject | undefined {
     const p = app.project(projectId);
@@ -200,9 +192,4 @@ export class CarrelageState {
 }
 
 /** Le projet utilise ce carreau (projets sans carrelage : non). */
-function uses(p: Project, tileId: Id): boolean {
-  const v = carrelageView(p);
-  return !!v && usedTileIds(v).has(tileId);
-}
-
 export const carrelage = new CarrelageState();

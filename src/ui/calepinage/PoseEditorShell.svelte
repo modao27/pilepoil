@@ -9,6 +9,7 @@
    */
   import { onMount, type Snippet } from 'svelte';
   import BottomSheet from '../components/BottomSheet.svelte';
+  import ComputeFailed from '../components/ComputeFailed.svelte';
   import IconButton from '../components/IconButton.svelte';
   import Tabs from '../components/Tabs.svelte';
   import Icon from '../icons/Icon.svelte';
@@ -35,6 +36,8 @@
     canvas,
     top,
     content,
+    failed = false,
+    onretry,
   }: {
     /** Nom de la pose et de ses surfaces : « Cuisine, murs 1 et 2 ». */
     title: string;
@@ -67,7 +70,12 @@
     top?: Snippet;
     /** Contenu d'une étape. */
     content: Snippet<[StepId]>;
+    /** Le dernier calcul a échoué : bandeau en tête du panneau, résumé remplacé. */
+    failed?: boolean;
+    onretry?: () => void;
   } = $props();
+
+  const shown = $derived(failed ? 'Calcul échoué : chiffres d’avant la dernière modification' : summary);
 
   onMount(() => {
     const mq = matchMedia('(min-width: 1024px)');
@@ -80,6 +88,7 @@
 
 {#snippet panel()}
   <div class="panel">
+    {#if failed}<ComputeFailed onretry={() => onretry?.()} />{/if}
     {@render top?.()}
     <Tabs label="Étapes du calepinage" tabs={[...STEPS]} bind:active={step}>
       {#snippet panel(id)}{@render content(id)}{/snippet}
@@ -107,11 +116,11 @@
       {#if !desktop && tools}<div class="float top">{@render tools()}</div>{/if}
     </div>
     {#if desktop}
-      <a class="summary bottom" href={resultsHref}>{summary}</a>
+      <a class="summary bottom" href={resultsHref}>{shown}</a>
       <aside class="inspector" aria-label={panelLabel}>{@render panel()}</aside>
     {:else}
       <BottomSheet label={panelLabel} bind:snap contained {peek}>
-        {#snippet header()}<a class="summary" href={resultsHref}>{summary}</a>{/snippet}
+        {#snippet header()}<a class="summary" href={resultsHref}>{shown}</a>{/snippet}
         {@render panel()}
       </BottomSheet>
     {/if}

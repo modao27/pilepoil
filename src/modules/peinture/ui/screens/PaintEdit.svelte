@@ -5,6 +5,7 @@
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import ColorSwatch from '../../../../ui/components/ColorSwatch.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
+  import ItemInUseDialog from '../../../../ui/components/ItemInUseDialog.svelte';
   import Screen from '../../../../ui/components/Screen.svelte';
   import Select from '../../../../ui/components/Select.svelte';
   import TextField from '../../../../ui/components/TextField.svelte';
@@ -84,8 +85,11 @@
     go({ name: 'libraryItem', lib: 'paints', id: copy.id }, true);
   }
 
+  let blocked = $state<string | null>(null);
+
   function remove() {
-    app.removeLibraryItem('paints', paint.id);
+    blocked = app.removeLibraryItem('paints', paint.id);
+    if (blocked) return;
     toast(`Peinture « ${paint.name} » supprimée.`);
     go({ name: 'library', lib: 'paints' }, true);
   }
@@ -184,6 +188,12 @@
       </div>
     </form>
   </Screen>
+  <ItemInUseDialog
+    bind:project={blocked}
+    title="Peinture utilisée"
+    message={(p) =>
+      `Cette peinture est utilisée dans le projet « ${p} ». Choisissez une autre peinture dans ce projet, puis supprimez-la.`}
+  />
 {/if}
 
 <style>

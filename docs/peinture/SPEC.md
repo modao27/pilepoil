@@ -98,7 +98,12 @@ Toutes les surfaces sont calculées en mm² puis converties en m² à la fin. Au
    puis retire celles que le réglage retient : `all` (toutes), `none`, `threshold` (surface de l'ouverture
    **strictement supérieure** au seuil, 1 m² par défaut). Le test porte sur l'ouverture entière, la déduction sur
    sa partie dans la zone.
-3. **Nette** = brute − ouvertures retenues, jamais négative.
+3. **Plinthes** (F1) : la bande cachée par les plinthes est retirée, hors ouvertures déjà retirées. Les plinthes
+   sont lues des autres revêtements par `toSpec(…, context)` (`core/coverage/wallBase`, `docs/BOITE.md` §2) : un sol
+   en parquet dit ses plinthes (peignables, hauteur des accessoires du parquet), un sol carrelé sa plinthe carrelée
+   (non peignable) ou l'absence de plinthe. Si le sol de la pièce n'est revêtu par aucun outil, le réglage manuel
+   des boiseries (`skirting`, `skirtingHeight`) sert de secours : plinthes au pied de la zone, portes retirées.
+4. **Nette** = brute − ouvertures retenues − bande des plinthes, jamais négative.
 
 ### 3.2 Couches
 Pour chaque produit de la pose, avec `k` le coefficient de support (§3.3) :
@@ -123,8 +128,9 @@ restent la référence.
 
 ### 3.4 Boiseries
 Calculées par pose, sur les mêmes zones de mur :
-- **Plinthes** : longueur au pied des murs peints (une zone compte si elle touche le sol, `y = 0`), moins la
-  largeur des portes (`sill = 0`) dans la zone ; surface = longueur × `skirtingHeight`.
+- **Plinthes** : plinthes **peignables** au pied des murs peints (une zone compte si elle touche le sol, `y = 0`),
+  moins la largeur des portes (`sill = 0`) dans la zone ; surface = Σ longueur × hauteur de chaque plinthe. Une
+  plinthe carrelée ne se peint jamais. Plinthes lues des autres revêtements, sinon réglage manuel (§3.1).
 - **Huisseries** : par ouverture située dans les zones, périmètre (2 × hauteur + largeur pour une porte,
   2 × (largeur + hauteur) pour une fenêtre ou une porte-fenêtre) × `frameWidth`.
 - **Vantaux** : par porte, largeur × hauteur × `doorFaces`.
@@ -197,6 +203,13 @@ meilleure combinaison **1 × 5 L + 2 × 1 L = 69 €** (7 L, surplus 2 mL) ; 5 +
 **Cas B** : mêmes murs, support plâtre neuf (k = 0,8), apprêt 1 couche à 10 m²/L, finition 2 couches à 10 m²/L.
 Apprêt = 31,8068 ÷ 8 × 1,1 = 4,3734 L → 4 374 mL ; finition = 63,6136 ÷ 8 × 1,1 = 8,7468 L → 8 747 mL.
 
-**Cas C** : plinthes du cas A, hauteur 100 mm. Longueur = 14 − 0,83 = 13,17 m ; surface = 1,317 m².
+**Cas C** : plinthes du cas A, hauteur 100 mm, sol non revêtu (réglage manuel). Longueur = 14 − 0,83 = 13,17 m ;
+surface = 1,317 m², retirée aussi de la surface des murs.
+
+**Cas D** (F1, `tests/unit/wallBases.test.ts`) : même pièce, parquet au sol avec plinthes de 60 mm, crédence carrelée
+du sol à 1,20 m sur le mur 2, peinture sur les murs 0, 1, 3 et le haut du mur 2. Plinthes au pied des murs peints :
+3,17 + 3 + 3 = 9,17 m (porte retirée ; le haut du mur 2 ne touche pas le sol) ; bande retirée = 9,17 × 0,06 =
+0,5502 m² ; plinthes à peindre 0,5502 m². Le parquet ne compte pas de plinthe le long de la crédence :
+14 − 0,83 − 4 = 9,17 m. Sol carrelé avec plinthe de 80 mm à la place : bande 0,7336 m², rien à peindre.
 
 Les valeurs exactes des tests sont recalculées à la main avant d'écrire le moteur.

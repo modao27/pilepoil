@@ -72,7 +72,7 @@ export function computeCloisons(spec: CloisonsSpec): CloisonsResult {
     const plateHeight = p.height - s.plateGap;
     const fmt = chooseFormat(plateHeight, s);
     if (!sys || bar === null || !fmt) {
-      if (!sys) alerts.push({ code: 'no-system', partition: p.id });
+      if (!sys) alerts.push({ code: p.system ? 'system-missing' : 'no-system', partition: p.id });
       else if (bar === null) alerts.push({ code: 'no-stud-length', partition: p.id, params: { length: full } });
       else alerts.push({ code: 'no-plate-format', partition: p.id, params: { height: plateHeight } });
       parts.push({ id: p.id, ok: false, studs: [], rails: [], plates: [], offsets: [], insulationArea: 0, alerts });

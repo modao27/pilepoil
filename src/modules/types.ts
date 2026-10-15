@@ -7,6 +7,7 @@ import type { Component, Snippet } from 'svelte';
 
 import type { ResultScope } from '../core/coverage/scope';
 import type { CoverageRules } from '../core/coverage/types';
+import type { ProjectContext, WallBase } from '../core/coverage/wallBase';
 import type { Plan } from '../core/plan/types';
 import type { MeshData } from '../render/scene3d/types';
 import type { ShoppingLine } from '../core/shopping/types';
@@ -14,7 +15,7 @@ import type { Id, Project } from '../state/model';
 import type { Db } from '../storage/db';
 import type { Doc } from '../ui/lib/pdf/doc';
 
-export type { ResultScope };
+export type { ProjectContext, ResultScope, WallBase };
 
 /** 'carrelage', 'parquet'… Liste ouverte : ajouter un module ne touche pas aux types communs. */
 export type ModuleId = string;
@@ -105,6 +106,11 @@ export interface LibraryDefinition {
   };
   /** Modèles types posés une seule fois dans la bibliothèque (un modèle supprimé ne revient pas). */
   templates?: () => LibraryItem[];
+  /**
+   * Le produit `itemId` sert-il au projet ? Un produit utilisé ne se supprime pas (les quantités ne changent jamais
+   * en silence). Léger : chargé avec le manifeste.
+   */
+  usedIn(project: Project, itemId: Id, libraries: Libraries): boolean;
 }
 
 /** Props passées aux écrans d'un module, sous #/p/:id/m/<module>/… */
@@ -222,6 +228,8 @@ export interface ResultExports<Result = unknown> {
 export interface ModuleResults<Result = unknown> {
   /** Un rapport par pose du module touchée par la portée, dans l'ordre du projet. Léger, sans DOM. */
   report(input: ResultInput<Result>): PoseReport[];
+  /** Texte d'une erreur bloquante de `toSpec` (le calcul ne peut pas se faire). */
+  errorText(e: ModuleError): string;
   /** Détail du module sur l'écran Résultats (commande, plan, découpe…). */
   section: ScreenLoader<ResultSectionProps>;
   exports(): Promise<ResultExports<Result>>;
@@ -246,8 +254,16 @@ export interface ModuleLogic<
    * elle) ; renvoie `data` inchangé si rien ne change.
    */
   reduce(data: Data, action: Action | PoseEvent, plan: Plan): Data;
-  /** État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. */
-  toSpec(project: Project, libraries: Libraries): { spec: Spec } | { errors: ModuleError[] };
+  /**
+   * État → entrée moteur. Renvoie les erreurs bloquantes sans lever d'exception. `context` : ce que les autres
+   * modules disent du projet (pied des murs…), rassemblé par la coquille (`ui/lib/projectContext`).
+   */
+  toSpec(project: Project, libraries: Libraries, context: ProjectContext): { spec: Spec } | { errors: ModuleError[] };
+  /**
+   * Ce que le module met au pied des murs (plinthes, sol sans plinthe, mur carrelé depuis le sol), tiré de ses seules
+   * données : les autres modules le lisent par `context`. Facultatif.
+   */
+  wallBases?(project: Project, libraries: Libraries): WallBase[];
   /** Lignes d'achat consolidables ; `project` : le projet calculé (plan, zones, poses). */
   shopping(result: Result, data: Data, libraries: Libraries, project: Project): ShoppingLine[];
   /** Action qui fixe le prix unitaire d'une ligne (`key`) ; null : revenir au prix de la bibliothèque. */

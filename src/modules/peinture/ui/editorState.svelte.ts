@@ -15,6 +15,7 @@ import type { Action } from '../state/actions';
 import { PEINTURE_ID } from '../state/model';
 import { toSpec } from '../state/module';
 import { layoutsOf, peintureData, type PaintLayout } from '../state/poses';
+import { projectContext } from '../../../ui/lib/projectContext';
 
 export class PeintureEditorState {
   doc = $state.raw<Project>(null as never);
@@ -24,6 +25,8 @@ export class PeintureEditorState {
   /** Pose affichée dans les réglages (null : la première). */
   current = $state<string | null>(null);
   computing = $state(false);
+  /** Le dernier calcul a échoué (erreur du moteur) : `result` est celui d'avant. */
+  failed = $state(false);
 
   readonly store: ProjectStore<Project, ProjectAction>;
   private saver: Saver<Project>;
@@ -61,7 +64,7 @@ export class PeintureEditorState {
 
   /** Calcul en direct dans le worker (seule la dernière demande compte). */
   async recompute(): Promise<void> {
-    const r = toSpec(this.doc, app.libraries);
+    const r = toSpec(this.doc, app.libraries, projectContext(this.doc, app.libraries));
     if ('errors' in r) {
       this.result = null;
       return;
@@ -69,8 +72,13 @@ export class PeintureEditorState {
     this.computing = true;
     try {
       this.result = await app.live.compute<PeintureResult>(PEINTURE_ID, r.spec satisfies PeintureSpec);
+      this.failed = false;
     } catch (e) {
-      if (!(e instanceof SupersededError)) throw e;
+      if (!(e instanceof SupersededError)) {
+        // résultat d'avant gardé, signalé comme tel (ComputeFailed)
+        this.failed = true;
+        console.error(e);
+      }
     } finally {
       this.computing = false;
     }

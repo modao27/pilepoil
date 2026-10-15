@@ -3,23 +3,25 @@
  * La face moteur est engine.ts (importée par modules/engines.ts).
  */
 import type { LibraryDefinition, ModuleManifest } from '../types';
-import { templateSystems } from './core/defaults';
+import { SYSTEM_SCHEMA, templateSystems } from './core/defaults';
 import type { CloisonsResult, CloisonsSpec } from './core/types';
 import type { Action } from './state/actions';
 import { CLOISONS_ID, CLOISONS_SCHEMA, type CloisonsData } from './state/model';
+import { usesSystem } from './state/usage';
 
 /** Bibliothèque de systèmes de cloison (#/library/systems). */
 export const library: LibraryDefinition = {
   id: 'systems',
   label: 'Cloisons',
   store: 'systems',
-  schemaVersion: 1,
+  schemaVersion: SYSTEM_SCHEMA,
   migrations: {},
   screens: {
     list: () => import('./ui/screens/SystemLibrary.svelte').then((m) => m.default),
     edit: () => import('./ui/screens/SystemEdit.svelte').then((m) => m.default),
   },
   templates: () => templateSystems(),
+  usedIn: usesSystem,
 };
 
 /** Module cloisons (docs/BOITE.md §2, docs/cloisons/SPEC.md) : pas de pose, ses objets sont les cloisons du plan. */

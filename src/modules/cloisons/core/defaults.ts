@@ -7,6 +7,9 @@ import type {
   PlateFormat,
   Reinforcement,
 } from './types';
+import { SYSTEM_SCHEMA } from './types';
+
+export { SYSTEM_SCHEMA };
 
 export const DEFAULT_REINFORCEMENT: Reinforcement = {
   ends: 'double',
@@ -82,7 +85,7 @@ export const TEMPLATE_SYSTEMS: {
 
 export function createSystem(id: string, now: number, o: Partial<PartitionSystem> = {}): PartitionSystem {
   return {
-    schemaVersion: 1,
+    schemaVersion: SYSTEM_SCHEMA,
     id,
     name: '72/48',
     thickness: 72,

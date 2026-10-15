@@ -8,6 +8,7 @@ import type { PeintureResult, PeintureSpec } from './core/types';
 import type { Action } from './state/actions';
 import { PEINTURE_RULES } from './state/ids';
 import { PEINTURE_ID, PEINTURE_SCHEMA, type PeintureData } from './state/model';
+import { usesPaint } from './state/usage';
 
 /** Bibliothèque de peintures (#/library/paints). */
 export const library: LibraryDefinition = {
@@ -21,6 +22,7 @@ export const library: LibraryDefinition = {
     edit: () => import('./ui/screens/PaintEdit.svelte').then((m) => m.default),
   },
   templates: () => PAINT_TEMPLATES.map((p) => ({ ...p, packs: p.packs.map((k) => ({ ...k })) })),
+  usedIn: usesPaint,
 };
 
 /** Module peinture (docs/BOITE.md §2, docs/peinture/SPEC.md). */

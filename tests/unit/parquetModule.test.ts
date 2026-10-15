@@ -1,3 +1,4 @@
+import { NO_CONTEXT } from '../../src/core/coverage/wallBase';
 import { describe, expect, it } from 'vitest';
 import { intersection, regionArea } from '../../src/core/geometry/boolean';
 import type { Segment } from '../../src/core/geometry/types';
@@ -35,7 +36,7 @@ function project(): Project {
 
 const data = (p: Project) => p.modules.parquet!.data as ParquetData;
 const specOf = (p: Project) => {
-  const r = parquet.toSpec(p, libraries);
+  const r = parquet.toSpec(p, libraries, NO_CONTEXT);
   if (!('spec' in r)) throw new Error(JSON.stringify(r));
   return r.spec;
 };
@@ -79,17 +80,17 @@ describe('module parquet', () => {
     expect(s.layouts[0]!.rooms[0]!.outline[0]).toEqual([1000, 500]);
     expect(s.layouts[0]!.rooms[0]!.bounds).toEqual([]);
     expect(s.layouts[0]!.referenceDirection).toEqual([1, 0]);
-    expect(s.settings.marginPct).toBe(5);
+    expect(s.settings.margin).toBe(0.05);
     expect(s.layouts[0]!.board).toMatchObject({ lengths: [1285], width: 192 });
     // diagonale : 10 %
-    expect(specOf(update(p, { angle: 45 })).settings.marginPct).toBe(10);
+    expect(specOf(update(p, { angle: 45 })).settings.margin).toBe(0.1);
   });
 
   it('toSpec : lame introuvable → erreur du moteur ; aucune pose → rien à calculer', () => {
     const p = project();
     expect(computeParquet(specOf(update(p, { boardId: 'x' }))).layouts[0]!.errors).toEqual([{ code: 'missing-board' }]);
     const none = reduceProject(p, { type: 'pose/remove', poseId: 'L1' });
-    expect(parquet.toSpec(none, libraries)).toEqual({ errors: [{ code: 'parquet/no-room' }] });
+    expect(parquet.toSpec(none, libraries, NO_CONTEXT)).toEqual({ errors: [{ code: 'parquet/no-room' }] });
     // réglages partis avec la pose
     expect(data(none).poses).toEqual({});
   });
@@ -185,9 +186,9 @@ describe('module parquet', () => {
     expect(parquet.summary(r).text).toMatch(/^\d+ lames, 11,9 m², perte \d+ %$/);
   });
 
-  it('schéma 4 : réglages par pose, sans migration des anciennes données', () => {
-    expect(parquet.schemaVersion).toBe(4);
-    expect(parquet.migrations).toEqual({});
+  it('schéma 5 : marge en fraction (migration 4 → 5), pas de migration des données d’avant les poses', () => {
+    expect(parquet.schemaVersion).toBe(5);
+    expect(Object.keys(parquet.migrations)).toEqual(['5']);
   });
 });
 

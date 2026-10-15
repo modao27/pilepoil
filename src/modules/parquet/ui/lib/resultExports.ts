@@ -9,10 +9,11 @@ import { layoutsOf } from '../../state/poses';
 import { app } from '../../../../ui/lib/app.svelte';
 import { writeParquetResults } from './pdf';
 import { scopedResult } from './results';
+import { projectContext } from '../../../../ui/lib/projectContext';
 
 /** Lames et plinthes des poses de la portée, dans le repère du plan (une pièce : ses seules lames). */
 export function parquetMeshes(input: ResultInput<ParquetResult>): MeshData[] {
-  const r = toSpec(input.project, input.libraries);
+  const r = toSpec(input.project, input.libraries, projectContext(input.project, input.libraries));
   if ('errors' in r) return [];
   const result = scopedResult(input.result, input);
   if (!result.layouts.length) return [];

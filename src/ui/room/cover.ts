@@ -49,6 +49,41 @@ function withModule(p: Project, m: ToolModule): { project: Project; actions: Pro
 }
 
 /**
+ * Hauteurs libres d'un mur (repère du mur, mm, du sol vers le haut) : le mur moins ses zones, pour revêtir le reste
+ * (peinture au-dessus d'une crédence). Un mur sans zone : [] (il se revêt entier). Morceaux de moins de 1 cm ignorés.
+ */
+export function freeWallSpans(p: Project, s: SurfaceRef): [number, number][] {
+  const room = p.plan.rooms.find((r) => r.id === s.room);
+  const zones = zonesOn(p, s);
+  if (!room || s.wall == null || !zones.length) return [];
+  const taken = zones
+    .map((z) => zoneBox(p.plan, z))
+    .filter((b): b is [number, number, number, number] => !!b)
+    .map((b): [number, number] => [b[2], b[3]])
+    .sort((a, b) => a[0] - b[0]);
+  const out: [number, number][] = [];
+  let y = 0;
+  for (const [lo, hi] of taken) {
+    if (lo - y >= 10) out.push([y, lo]);
+    y = Math.max(y, hi);
+  }
+  if (room.height - y >= 10) out.push([y, room.height]);
+  return out;
+}
+
+/** Nouvelle pose du module sur la hauteur libre `[from, to]` d'un mur (mm, repère du mur). */
+export function newPoseOnSpan(
+  p: Project,
+  libraries: Libraries,
+  m: ToolModule,
+  s: SurfaceRef,
+  [from, to]: [number, number],
+  newId: () => Id,
+): { action: ProjectAction; poseId: Id } | { error: CoverageError } {
+  return newPoseAction(p, libraries, m, s, newId, { cuts: wallSpanCuts(p.plan, s, from > 0 ? from : null, to) });
+}
+
+/**
  * Nouvelle pose du module sur une zone (`shape` : lignes, contour, trous ; vide : toute la surface). Ses réglages
  * reprennent la dernière pose du module dans la pièce, sinon les réglages par défaut. Erreur si la zone n'est pas
  * permise.

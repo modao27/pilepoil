@@ -184,6 +184,8 @@
 
 <PoseEditorShell
   title={ed.surface.name}
+  failed={ed.failed}
+  onretry={() => void ed.recompute()}
   context={ed.project.name}
   ontitle={() => (surfaceDialog = true)}
   backHref="#/p/{ed.project.id}/r/{ed.surface.ref.room}/{ed.surface.ref.wall ?? 'sol'}"

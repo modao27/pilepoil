@@ -119,9 +119,12 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
 test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', async ({ page }, info) => {
   await page.goto('/#/library');
-  await expect(page.getByRole('heading', { name: 'Aucun carreau' })).toBeVisible();
+  // modèles types posés au premier lancement
+  const list = page.getByRole('list', { name: 'Carreaux' });
+  await expect(list.getByRole('listitem')).toHaveCount(4);
+  await expect(list.getByRole('link', { name: /Grès cérame 60 × 60 cm/ })).toContainText('prix non saisi');
   await check(page);
-  await shot(page, info, '40-bibliotheque-vide');
+  await shot(page, info, '40-bibliotheque-modeles');
 
   await page.getByRole('link', { name: 'Ajouter un carreau' }).click();
   await page.getByRole('radio', { name: 'Hexagone' }).click();
@@ -146,7 +149,7 @@ test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', asyn
   // utilisé par un projet → suppression refusée
   await newWall(page, null);
   await page.goto('/#/library');
-  await page.getByRole('link', { name: /Hexagone terracotta/ }).click();
+  await list.getByRole('link', { name: /utilisé dans 1 projet/ }).click();
   await page.getByRole('button', { name: 'Supprimer le carreau' }).click();
   await expect(page.getByRole('dialog', { name: 'Carreau utilisé' })).toContainText('Pièce 300 × 240');
   await shot(page, info, '43-carreau-utilise');

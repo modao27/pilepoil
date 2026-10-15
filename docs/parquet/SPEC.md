@@ -79,8 +79,9 @@ export interface LayingRules {
 export interface ParquetSettings {
   reuseOffcuts: boolean;
   kerf: number;                      // perte par coupe (lame de scie)
-  /** Marge d'achat en % ; null = valeur par défaut du motif (5 / 10 / 12 %, tableau ci-dessous). */
-  marginPct: number | null;
+  /** Marge d'achat, fraction (0,10 = 10 %, comme la peinture et les cloisons) ; null = valeur par défaut du
+   *  motif (5 / 10 / 12 %, tableau ci-dessous). Schéma 5 (F1) : migration de l'ancien `marginPct`. */
+  margin: number | null;
 }
 
 export interface Accessories {
@@ -145,9 +146,9 @@ supprimé ne revient pas.
 
 L'interface affiche « Vérifier la notice du fabricant » à côté des règles.
 
-Marge : tant que `marginPct` vaut `null`, elle suit le motif et l'angle de la pose (changer de motif la
-met à jour). Dès que l'utilisateur la saisit, elle ne bouge plus ; un bouton « Revenir à la valeur
-conseillée » la remet à `null`.
+Marge : tant que `margin` vaut `null`, elle suit le motif et l'angle de la pose (changer de motif la
+met à jour). Dès que l'utilisateur la saisit (étape Avancé, F1), elle ne bouge plus ; un bouton « Revenir à la
+marge conseillée » la remet à `null`.
 
 Décidé (2026-10-08) : le type de lame (`Board.kind`) donne les valeurs (`core/defaults.ts`), et une pose collée
 ou clouée désactive les alertes de fractionnement et de passage. « Sans objet » s'écrit `null` dans les règles
@@ -159,8 +160,8 @@ ou clouée désactive les alertes de fractionnement et de passage. « Sans objet
 // src/modules/parquet/core/types.ts
 export interface ParquetSpec {
   layouts: LayoutSpec[];             // une par pose, pièces résolues depuis ses zones et le plan
-  /** marginPct résolu par toSpec (jamais null ici). */
-  settings: ParquetSettings & { marginPct: number };
+  /** margin résolue par toSpec (jamais null ici). */
+  settings: ParquetSettings & { margin: number };
   accessories: Accessories;
 }
 
@@ -333,8 +334,9 @@ interface Threshold {
 - Deux poses qui se recouvrent (même pièce sans zones séparées) : alerte `layout-overlap` sur la seconde.
 
 ### 4.5 Plinthes (`core/cutting/bars.ts`, partagé)
-1. Longueurs : chaque mur de chaque pièce, moins les ouvertures au sol (portes, baies), autour des obstacles
-   si l'option est cochée.
+1. Longueurs : chaque mur de chaque pièce, moins les ouvertures au sol (portes, baies), moins les parties de mur
+   carrelées depuis le sol (lues du carrelage, `RoomSpec.noSkirting`, F1), autour des obstacles si l'option est
+   cochée. Le parquet dit ses plinthes aux autres outils (`wallBases` : peignables, hauteur des accessoires).
 2. Optimiseur de barres 1D générique : premier ajustement décroissant puis amélioration locale, avec
    `kerf` et `mitreAllowance` par coupe d'angle.
 3. Sortie : nombre de barres, liste de coupes par mur, chutes.

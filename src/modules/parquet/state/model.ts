@@ -12,8 +12,17 @@ import type { Accessories, AxisKind, LayingMethod, LayingRules, ParquetSettings,
 type Id = string;
 
 export const PARQUET_ID = 'parquet';
-/** 4 : réglages par pose, pièces données par les zones du projet. */
-export const PARQUET_SCHEMA = 4;
+/** 4 : réglages par pose, pièces données par les zones du projet ; 5 : marge en fraction (`margin`). */
+export const PARQUET_SCHEMA = 5;
+
+/** Migrations des données du parquet : migrations[n] passe de n − 1 à n. */
+export const PARQUET_MIGRATIONS: Record<number, (doc: unknown) => unknown> = {
+  5: (doc) => {
+    const d = doc as { settings: { marginPct?: number | null } & Record<string, unknown> };
+    const { marginPct, ...settings } = d.settings;
+    return { ...d, settings: { ...settings, margin: marginPct == null ? null : marginPct / 100 } };
+  },
+};
 
 export interface ParquetData {
   /** Réglages de chaque pose de parquet du projet, par identifiant de pose. */

@@ -66,11 +66,11 @@ export const KERF = 3;
 
 /** Marge d'achat conseillée, % : 5 droit, 10 diagonale, 12 motifs (bâton rompu, point de Hongrie). */
 export function defaultMargin(pattern: Pattern, angle: number): number {
-  if (pattern.kind === 'herringbone' || pattern.kind === 'chevron') return 12;
-  return ((angle % 90) + 90) % 90 === 0 ? 5 : 10;
+  if (pattern.kind === 'herringbone' || pattern.kind === 'chevron') return 0.12;
+  return ((angle % 90) + 90) % 90 === 0 ? 0.05 : 0.1;
 }
 
-export const DEFAULT_SETTINGS: ParquetSettings = { reuseOffcuts: true, kerf: KERF, marginPct: null };
+export const DEFAULT_SETTINGS: ParquetSettings = { reuseOffcuts: true, kerf: KERF, margin: null };
 
 export const DEFAULT_ACCESSORIES: Accessories = {
   underlay: { enabled: true, m2PerRoll: 15, overlap: 0.05 },

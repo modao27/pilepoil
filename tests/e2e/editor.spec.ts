@@ -90,7 +90,7 @@ test('carreau : nouveau carreau, mélange, rendu', async ({ page }, info) => {
   const dlg = page.getByRole('dialog', { name: 'Nouveau carreau' });
   await dlg.getByRole('button', { name: '20 × 20' }).click();
   await dlg.getByRole('button', { name: 'Ajouter et utiliser' }).click();
-  await expect(page.getByRole('radio', { name: /20 × 20 cm/ })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: /20 × 20 cm · ép\. 9 mm/ })).toHaveAttribute('aria-checked', 'true');
   await page.getByRole('radio', { name: 'Alterné' }).click();
   await expect(page.getByRole('group', { name: 'Seconde couleur' })).toBeVisible();
   await expect(page.getByText(/Spatule crantée/)).toBeVisible();

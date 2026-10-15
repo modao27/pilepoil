@@ -96,6 +96,20 @@ export interface SpecZone {
   region: Polygon[];
   /** Ouvertures du mur. */
   openings: SpecOpening[];
+  /**
+   * Plinthes au pied du mur, lues des autres revêtements (intervalles le long du mur, mm). Absent : le sol n'est pas
+   * revêtu dans l'application, le réglage manuel des boiseries sert de secours. Vide : sol revêtu sans plinthe.
+   */
+  skirtings?: SpecSkirting[];
+}
+
+/** Plinthe au pied d'un mur : de `from` à `to` le long du mur, `height` de haut. */
+export interface SpecSkirting {
+  from: number;
+  to: number;
+  height: number;
+  /** Bois ou MDF : se peint ; carrelée : non. */
+  paintable: boolean;
 }
 
 export interface PaintSpec {
@@ -113,6 +127,7 @@ export interface PaintSpec {
 
 export type PaintAlertCode =
   | 'no-product'
+  | 'product-missing'
   | 'missing-yield'
   | 'no-pack'
   | 'no-surface'
@@ -127,6 +142,8 @@ export interface PaintAlert {
   code: PaintAlertCode;
   paint?: Id;
   target?: PaintTarget;
+  /** `product-missing` : rôle du produit choisi qui n'est plus dans la bibliothèque. */
+  role?: PaintRole;
 }
 
 export interface PackCount {
@@ -168,12 +185,14 @@ export interface ZoneArea {
   wall: Id;
   gross: number;
   openings: number;
+  /** Bande cachée par les plinthes, retirée. */
+  skirting: number;
   net: number;
 }
 
 export interface PaintResult {
   /** m². */
-  areas: { gross: number; openings: number; net: number };
+  areas: { gross: number; openings: number; skirting: number; net: number };
   /** Surface de chaque zone de la pose (résultats par pièce). */
   zones: ZoneArea[];
   woodwork: { skirtingLength: number; skirting: number; frames: number; doors: number; total: number };

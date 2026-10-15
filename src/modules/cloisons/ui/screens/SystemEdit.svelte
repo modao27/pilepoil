@@ -3,6 +3,7 @@
   import { untrack } from 'svelte';
   import Button from '../../../../ui/components/Button.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
+  import ItemInUseDialog from '../../../../ui/components/ItemInUseDialog.svelte';
   import Screen from '../../../../ui/components/Screen.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import TextField from '../../../../ui/components/TextField.svelte';
@@ -53,8 +54,11 @@
     go({ name: 'libraryItem', lib: 'systems', id: copy.id }, true);
   }
 
+  let blocked = $state<string | null>(null);
+
   function remove() {
-    app.removeLibraryItem('systems', system.id);
+    blocked = app.removeLibraryItem('systems', system.id);
+    if (blocked) return;
     toast(`Système « ${system.name} » supprimé.`);
     go({ name: 'library', lib: 'systems' }, true);
   }
@@ -104,6 +108,12 @@
       </div>
     </form>
   </Screen>
+  <ItemInUseDialog
+    bind:project={blocked}
+    title="Système utilisé"
+    message={(p) =>
+      `Ce système sert à une cloison du projet « ${p} ». Choisissez un autre système pour cette cloison, puis supprimez-le.`}
+  />
 {/if}
 
 <style>

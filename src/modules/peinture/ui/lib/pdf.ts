@@ -70,19 +70,30 @@ export function writePeintureResults(d: Doc, input: ResultInput<PeintureResult>)
           2,
         )} m²`,
       ],
+      ...(zones.some((z) => z.skirting)
+        ? ([
+            [
+              'Plinthes déduites',
+              `${fr(
+                zones.reduce((t, z) => t + z.skirting, 0),
+                2,
+              )} m²`,
+            ],
+          ] as [string, string][])
+        : []),
       ...(r.woodwork.total ? ([['Boiseries', `${fr(r.woodwork.total, 1)} m²`]] as [string, string][]) : []),
     ]);
     d.table(
       [
         { label: 'Mur', w: 76 },
         { label: 'Brut', w: 34, align: 'right' },
-        { label: 'Ouvertures', w: 34, align: 'right' },
+        { label: 'Déduit', w: 34, align: 'right' },
         { label: 'Net', w: 38, align: 'right' },
       ],
       zones.map((z) => [
         wallLabel(z.room, z.wall),
         `${fr(z.gross, 2)} m²`,
-        `${fr(z.openings, 2)} m²`,
+        `${fr(z.openings + z.skirting, 2)} m²`,
         `${fr(z.net, 2)} m²`,
       ]),
     );
