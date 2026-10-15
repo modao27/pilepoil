@@ -19,7 +19,7 @@ Il calcule la pose d'un parquet, d'un stratifié ou d'un vinyle clipsable sur le
 | Plinthes optimisées en barres | Oui |
 | Plan 2D, fiche de coupe, liste d'achat, coût, PDF | Oui |
 | Vue 3D | Oui |
-| Mode chantier (suivi pièce par pièce sur téléphone) | Oui |
+| Mode chantier (suivi pièce par pièce sur téléphone) | Non (retiré le 2026-10-15) |
 | Panneaux Versailles, frises, encadrements, marqueterie | Non |
 
 Vocabulaire : « point de Hongrie » = chevron (extrémités en biais, joints alignés sur l'axe).
@@ -37,8 +37,6 @@ export interface ParquetData {
   settings: ParquetSettings;
   accessories: Accessories;
   prices: Record<string, number>;
-  /** Suivi chantier : pièces posées, valable pour une empreinte de calcul donnée. */
-  worksite: { resultHash: string; done: string[] } | null;
 }
 
 export interface ParquetPose {
@@ -439,9 +437,7 @@ utilisée (« chute C-07 (vient de Séjour — rang 3, n° 4) »), utile pour le
 d'une pièce posée plus loin. Coupes en biais : longueurs des deux rives (le schéma coté reste à faire).
 Lame neuve gardée entière et recoupée en largeur : « lame entière recoupée à 104 mm de large ».
 
-**Chantier** (`/chantier`) : une ligne ou un rang à la fois, grandes cibles, cocher les pièces posées.
-La progression est gardée dans `worksite` avec l'empreinte du calcul ; si le calcul change, prévenir et
-proposer de repartir de zéro.
+**Chantier** : retiré le 2026-10-15 (la fiche de coupe, dans l'ordre de pose, suffit).
 Fait en P5 : même ordre et mêmes textes que la fiche de coupe (croquis des coupes en biais compris), case par
 pièce ou par groupe de lames entières, « Tout ce rang est posé », mini-plan (rang en évidence, posées en
 gris), progression. Actions `parquet/worksite/mark` et `parquet/worksite/rebase` ; calcul changé : « Garder

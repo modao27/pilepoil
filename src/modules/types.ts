@@ -129,7 +129,7 @@ export interface ModuleRoute {
   /**
    * Chemin sous #/p/:id/m/<module>/, sans barre initiale ni finale.
    * Segments fixes ou paramètres `:nom` : 'room', 's/:surfaceId'.
-   * Réservés : '' (éditeur), 'results' (ancienne adresse des résultats), 'chantier'.
+   * Réservés : '' (éditeur), 'results' (ancienne adresse des résultats).
    */
   path: string;
   load: ScreenLoader;
@@ -138,8 +138,6 @@ export interface ModuleRoute {
 export interface ModuleScreens {
   /** #/p/:id/m/<module> */
   editor: ScreenLoader;
-  /** #/p/:id/m/<module>/chantier — mode chantier. */
-  worksite?: ScreenLoader;
   /** Autres écrans du module (pièce 3D, comparaison…). */
   routes?: ModuleRoute[];
   /** #/new : assistant de création d'un projet avec cet outil. */

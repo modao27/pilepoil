@@ -59,7 +59,6 @@ export interface ToolModule<Data, Spec, Result> {
   /** Écrans, chargés à la demande. */
   screens: {
     editor: () => Promise<Component>;
-    worksite?: () => Promise<Component>;       // mode chantier
     routes?: ModuleRoute[];                    // écrans propres sous #/p/:id/m/<id>/…
     create?: () => Promise<Component>;         // #/new/<id> : assistant de création
     card?: () => Promise<Component>;           // carte du projet sur l'accueil
@@ -447,7 +446,7 @@ Accueil (projets)
      ├─ Plan  #/p/:id/plan                éditeur de pièces commun
      ├─ Carrelage  #/p/:id/m/carrelage     pièces du plan, sol et murs à cocher ; /s/:surfaceId (éditeur),
      │                                     /room/:roomId (vue de la pièce), /results, /compare
-     ├─ Parquet    #/p/:id/m/parquet       éditeur ; /results ; /chantier
+     ├─ Parquet    #/p/:id/m/parquet       éditeur ; /results
      └─ Achats #/p/:id/achats             liste consolidée
 Bibliothèques  #/library/tiles, #/library/boards
 Réglages
@@ -533,3 +532,4 @@ seul le parquet s'en sert au début.
 | 2026-10-13 | Module cloisons : `coverage`, `poseHref`, `createPose` facultatifs ; groupe d'achat `structure` ; phases T0, CL1 à CL3 (C1 à C4 sont déjà le carrelage) ; `core/cutting/bars.ts` existe depuis P4 et sert tel quel | `cloisons/SPEC.md`, `PLAN.md` |
 | 2026-10-13 | CL2 : le module cloisons est activé par la première cloison tracée (`project/module/add` dans la même étape) ; ses réglages sont par cloison du plan et communs au projet ; bibliothèque `systems` (base v6), prix saisis dans le projet ; l'écran Projet range les outils sans pose sous « Travaux » | `cloisons/SPEC.md`, `PLAN.md` CL2 |
 | 2026-10-13 | CL3 : un module sans pose a ses résultats aux niveaux projet et pièce de l'écran Résultats commun ; `PoseReport` gagne `title`, `where`, `href` (objet décrit par le module : une cloison) ; élévation partagée écran / PDF | `cloisons/SPEC.md` §8, `PLAN.md` CL3 |
+| 2026-10-15 | Mode chantier du parquet retiré (écran, route `chantier`, `ModuleScreens.worksite`, champ `worksite` et actions `parquet/worksite/*`) ; les anciens documents gardent un champ `worksite` ignoré, sans migration | `PLAN.md` P5 |

@@ -14,7 +14,6 @@
   import Button from '../../../../ui/components/Button.svelte';
   import Checkbox from '../../../../ui/components/Checkbox.svelte';
   import EmptyState from '../../../../ui/components/EmptyState.svelte';
-  import IconButton from '../../../../ui/components/IconButton.svelte';
   import NumberField from '../../../../ui/components/NumberField.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import Select from '../../../../ui/components/Select.svelte';
@@ -500,10 +499,6 @@
   {/if}
 {/snippet}
 
-{#snippet header()}
-  <IconButton icon="check" label="Chantier" href="#/p/{ed.doc.id}/m/parquet/chantier" />
-{/snippet}
-
 {#snippet drawingArea()}
   <ParquetPlan
     rooms={roomShapes}
@@ -540,7 +535,6 @@
   bind:snap
   bind:desktop
   peek={112}
-  {header}
   canvas={drawingArea}
   {top}
   {content}

@@ -112,11 +112,9 @@ describe('routes', () => {
 describe('écrans des modules', () => {
   const Fake = (() => {}) as unknown as Component<ModuleScreenProps>;
   const editor = async () => Fake;
-  const worksite = async () => Fake;
   const room = async () => Fake;
   const screens = {
     editor,
-    worksite,
     routes: [
       { path: 's/:surfaceId', load: editor },
       { path: 'room', load: room },
@@ -125,7 +123,7 @@ describe('écrans des modules', () => {
 
   it.each<[string, ScreenMatch | null]>([
     ['', { load: editor, params: {} }],
-    ['chantier', { load: worksite, params: {} }],
+    ['chantier', null],
     ['results', null],
     ['s/s2', { load: editor, params: { surfaceId: 's2' } }],
     ['room', { load: room, params: {} }],

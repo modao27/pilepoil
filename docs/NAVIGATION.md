@@ -20,7 +20,7 @@ parcours) et **[À créer]**.
 
 À garder : plan commun et son éditeur, les deux moteurs (recalcul permanent, jamais de résultat périmé),
 enregistrement automatique avec annuler / rétablir, bibliothèques, achats consolidés, vue de la pièce dépliée
-et 3D, chantier du parquet.
+et 3D.
 
 ## 2. Principes
 
@@ -112,7 +112,7 @@ Capacités des moteurs :
 | 6 | **Calepinage d'une pose** | `#/p/:id/m/<module>/…` (adresse donnée par `poseHref`) | [Existe] : coquille commune `ui/calepinage` (N4) |
 | 7 | **Résultats** d'une pose, d'une pièce ou du projet, avec export | `#/p/:id/pose/:pose/resultats`, `#/p/:id/r/:pièce/resultats`, `#/p/:id/resultats` | [Existe] (N5) : écran commun `ui/screens/Results` |
 | 8 | Achats du projet | `#/p/:id/achats` | [Existe] |
-| 9 | Chantier (parquet) | `#/p/:id/pose/:pose/chantier` | [Existe] sous une autre adresse |
+| 9 | Chantier (parquet) | — | Retiré le 2026-10-15 |
 | 10 | Bibliothèques, Réglages | `#/library`, `#/settings` | [Existe] |
 
 L'assistant carrelage est retiré : ses formes types existent dans « Ajouter une pièce », ses étapes Carreau et
