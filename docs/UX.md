@@ -67,6 +67,12 @@ Encollage. Export PDF et partage.
 
 **Pièce** : plan de dessus avec les 4 murs dépliés autour du sol, chaque surface cliquable ; 3D maquette.
 
+**Bibliothèques** (`#/library/<id>`) : modèles types génériques et références relevées en magasin (`lm-…`), à
+dupliquer et ajuster. Formulaire d'un produit : « Coller une fiche produit » en tête ; le tableau des
+caractéristiques copié sur le site d'un magasin remplit les champs, un bandeau dit lesquels, rien n'est enregistré
+sans validation. Le favori « Envoyer à PilePoil » (à installer depuis Réglages) fait la même chose depuis la page
+du produit : `#/import` propose la bibliothèque devinée, puis ouvre le formulaire pré-rempli.
+
 ## Système de design
 Identité PilePoil 1.0 (« Vos travaux, au millimètre près. »), adoptée le 2026-10-12 : voir `docs/IDENTITE.md`
 et la référence `src/ui/design/identite/` (ne pas modifier). Variables dans `src/ui/design/tokens.css`,

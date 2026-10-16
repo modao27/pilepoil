@@ -97,7 +97,10 @@ Précisions (décidées le 2026-10-08) :
   `modules/types.ts` et `modules/engines.ts` (worker). Une règle ESLint l'impose ; les tests peuvent importer
   les internes. Le magasin `scenarios` et les types du carrelage sont dans le module.
 - Bibliothèques : déclarées par les modules (`LibraryDefinition`, avec `templates` facultatifs), tenues par la
-  coquille (chargement, migration, modèles types posés une seule fois, routes `#/library/<id>`).
+  coquille (chargement, migration, modèles types posés une seule fois chacun, routes `#/library/<id>`). Depuis B1,
+  `importHint` (facultatif) : le formulaire « nouveau » du module lit une fiche produit, et la coquille propose la
+  bibliothèque dans `#/import` (fiche envoyée par le favori « Envoyer à PilePoil »). Lecture commune des fiches :
+  `src/core/sheet`, correspondance par module (`fromSheet.ts`).
 
 ## 3. Plan commun
 
@@ -541,3 +544,5 @@ seul le parquet s'en sert au début.
 | 2026-10-15 | F1 : un calcul qui échoue garde le résultat d'avant et le dit (`ComputeFailed`) ; chaque erreur de `toSpec` a un texte (`ModuleResults.errorText`) | `PLAN.md` F1 |
 | 2026-10-15 | F1 : les modules se lisent par la coquille, jamais par import : `wallBases` (pied des murs) rassemblé par `projectContext` et passé à `toSpec` ; la peinture retire la bande des plinthes et ne peint que les plinthes peignables (réglage manuel si le sol n'est pas revêtu), le parquet ne pose pas de plinthe le long d'un mur carrelé depuis le sol | `peinture/SPEC.md` §3, §7 |
 | 2026-10-15 | F1 : marges en fraction partout (parquet schéma 5, migration de `marginPct`) ; lignes d'achat du carrelage préfixées `carrelage:` (prix rangés sous la clé du moteur, sans migration, parité intacte) ; carreaux types en bibliothèque ; `SYSTEM_SCHEMA` des cloisons | `parquet/SPEC.md` §2 |
+| 2026-10-16 | B1 : pas d'extraction automatique de catalogue ni de lecture d'une URL (le site du magasin bloque les robots, la PWA n'a pas de serveur) : une fiche produit arrive par le collage ou par le favori « Envoyer à PilePoil », qui lit la page ouverte par l'utilisateur, sans prix ni photo | `PLAN.md` B1 |
+| 2026-10-16 | B1 : modèles types posés un par un (`templatesSeeded`) ; 24 carreaux et 26 lames relevés sur leroymerlin.fr (caractéristiques seulement, `lm-<réf>`, embarqués dans toute compilation), 20 peintures génériques (`type-…`) et 4 Leroy Merlin ; aspect « velours » | `MODEL.md` |
