@@ -13,6 +13,7 @@
     "test": "vitest run --project unit --project browser && vitest run --project perf",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:audit": "playwright test -c playwright.audit.config.ts",
     "parity:extract": "tsx scripts/extract-legacy.ts",
     "check": "npm run typecheck && npm run lint && npm run test",
     "lighthouse": "tsx scripts/lighthouse.ts",

@@ -1,0 +1,2521 @@
+{
+  "stores": {
+    "boards": {
+      "keyPath": true,
+      "rows": [
+        {
+          "key": "lm-69126806",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-69126806",
+            "name": "Barlinek contrecollé chêne 3 frises 1092 × 207, 10 mm",
+            "kind": "engineered",
+            "lengths": [1092],
+            "lengthMix": null,
+            "width": 207,
+            "thickness": 10,
+            "profile": "click",
+            "handed": false,
+            "color": "#d1b183",
+            "photoId": null,
+            "boardsPerPack": 9,
+            "m2PerPack": 2.03,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-71709866",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-71709866",
+            "name": "Deschaumes massif chêne bâton rompu 300 × 85 (lames A/B)",
+            "kind": "solid",
+            "lengths": [300],
+            "lengthMix": null,
+            "width": 85,
+            "thickness": 13,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#c49a62",
+            "photoId": null,
+            "boardsPerPack": 20,
+            "m2PerPack": 0.51,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-72452352",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-72452352",
+            "name": "Barlinek contrecollé chêne blond 1092 × 130, 14 mm",
+            "kind": "engineered",
+            "lengths": [1092],
+            "lengthMix": null,
+            "width": 130,
+            "thickness": 14,
+            "profile": "click",
+            "handed": false,
+            "color": "#d1b183",
+            "photoId": null,
+            "boardsPerPack": 7,
+            "m2PerPack": 0.99,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-74778012",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-74778012",
+            "name": "Lamett contrecollé chêne Porto 1200 × 190, 14 mm",
+            "kind": "engineered",
+            "lengths": [1200],
+            "lengthMix": null,
+            "width": 190,
+            "thickness": 14,
+            "profile": "click",
+            "handed": false,
+            "color": "#a77b52",
+            "photoId": null,
+            "boardsPerPack": 8,
+            "m2PerPack": 1.824,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-83006265",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-83006265",
+            "name": "Barlinek contrecollé bâton rompu 725 × 130 (lames A/B)",
+            "kind": "engineered",
+            "lengths": [725],
+            "lengthMix": null,
+            "width": 130,
+            "thickness": 14,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#d1b183",
+            "photoId": null,
+            "boardsPerPack": 7,
+            "m2PerPack": 0.65,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-84509639",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-84509639",
+            "name": "Artens Medio Old XL vinyle clipsable 1220 × 180",
+            "kind": "vinyl",
+            "lengths": [1220],
+            "lengthMix": null,
+            "width": 180,
+            "thickness": 4,
+            "profile": "click",
+            "handed": false,
+            "color": "#b38d66",
+            "photoId": null,
+            "boardsPerPack": 8,
+            "m2PerPack": 1.76,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-85086562",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-85086562",
+            "name": "Artens Intenso Malte stratifié 1257 × 192, 10 mm",
+            "kind": "laminate",
+            "lengths": [1257],
+            "lengthMix": null,
+            "width": 192,
+            "thickness": 10,
+            "profile": "click",
+            "handed": false,
+            "color": "#8a5f3c",
+            "photoId": null,
+            "boardsPerPack": 7,
+            "m2PerPack": 1.689,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-85335290",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-85335290",
+            "name": "Fairfloor massif chêne point de Hongrie 502 × 90 (lames A/B)",
+            "kind": "solid",
+            "lengths": [502],
+            "lengthMix": null,
+            "width": 90,
+            "thickness": 15,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#d1b183",
+            "photoId": null,
+            "boardsPerPack": 32,
+            "m2PerPack": 1.446,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-85335291",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-85335291",
+            "name": "Fairfloor massif chêne bâton rompu 600 × 120 (lames A/B)",
+            "kind": "solid",
+            "lengths": [600],
+            "lengthMix": null,
+            "width": 120,
+            "thickness": 15,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#d1b183",
+            "photoId": null,
+            "boardsPerPack": 24,
+            "m2PerPack": 1.728,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-85372756",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-85372756",
+            "name": "Protac plancher massif épicéa 2050 × 140, 20 mm",
+            "kind": "solid",
+            "lengths": [2050],
+            "lengthMix": null,
+            "width": 140,
+            "thickness": 20,
+            "profile": "tongue-groove",
+            "handed": false,
+            "color": "#e3c99d",
+            "photoId": null,
+            "boardsPerPack": 5,
+            "m2PerPack": 1.435,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-87909696",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-87909696",
+            "name": "Artens Intenso Malte light stratifié 1257 × 192, 10 mm",
+            "kind": "laminate",
+            "lengths": [1257],
+            "lengthMix": null,
+            "width": 192,
+            "thickness": 10,
+            "profile": "click",
+            "handed": false,
+            "color": "#cdb594",
+            "photoId": null,
+            "boardsPerPack": 7,
+            "m2PerPack": 1.69,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-87943162",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-87943162",
+            "name": "Narita vinyle clipsable 935 × 150",
+            "kind": "vinyl",
+            "lengths": [935],
+            "lengthMix": null,
+            "width": 150,
+            "thickness": 3.2,
+            "profile": "click",
+            "handed": false,
+            "color": "#c49a62",
+            "photoId": null,
+            "boardsPerPack": 16,
+            "m2PerPack": 2.24,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-88972562",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-88972562",
+            "name": "Sens by Quick-Step Odéon stratifié 1261 × 192, 8 mm",
+            "kind": "laminate",
+            "lengths": [1261],
+            "lengthMix": null,
+            "width": 192,
+            "thickness": 8,
+            "profile": "click",
+            "handed": false,
+            "color": "#cdb594",
+            "photoId": null,
+            "boardsPerPack": 9,
+            "m2PerPack": 2.179,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-88972567",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-88972567",
+            "name": "Sens by Quick-Step Avron stratifié 1257 × 192, 8 mm",
+            "kind": "laminate",
+            "lengths": [1257],
+            "lengthMix": null,
+            "width": 192,
+            "thickness": 8,
+            "profile": "click",
+            "handed": false,
+            "color": "#d2b48a",
+            "photoId": null,
+            "boardsPerPack": 9,
+            "m2PerPack": 2.172,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-90975646",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-90975646",
+            "name": "Artens Intenso Malte vinyle clipsable 1253 × 189",
+            "kind": "vinyl",
+            "lengths": [1253],
+            "lengthMix": null,
+            "width": 189,
+            "thickness": 5.2,
+            "profile": "click",
+            "handed": false,
+            "color": "#8a5f3c",
+            "photoId": null,
+            "boardsPerPack": 9,
+            "m2PerPack": 2.13,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92014724",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92014724",
+            "name": "Creativ’ Miami stratifié 1290 × 214, 8 mm",
+            "kind": "laminate",
+            "lengths": [1290],
+            "lengthMix": null,
+            "width": 214,
+            "thickness": 8,
+            "profile": "click",
+            "handed": false,
+            "color": "#d2b48a",
+            "photoId": null,
+            "boardsPerPack": 9,
+            "m2PerPack": 2.485,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92014738",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92014738",
+            "name": "Creativ’ Oléron stratifié 1290 × 214, 8 mm",
+            "kind": "laminate",
+            "lengths": [1290],
+            "lengthMix": null,
+            "width": 214,
+            "thickness": 8,
+            "profile": "click",
+            "handed": false,
+            "color": "#c49a62",
+            "photoId": null,
+            "boardsPerPack": 9,
+            "m2PerPack": 2.485,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92014740",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92014740",
+            "name": "Creativ’ Amarante stratifié bâton rompu 644 × 143 (lames A/B)",
+            "kind": "laminate",
+            "lengths": [644],
+            "lengthMix": null,
+            "width": 143,
+            "thickness": 8,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#b48a5e",
+            "photoId": null,
+            "boardsPerPack": 20,
+            "m2PerPack": 1.842,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92014744",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92014744",
+            "name": "Creativ’ Austin stratifié 1290 × 172, 8 mm",
+            "kind": "laminate",
+            "lengths": [1290],
+            "lengthMix": null,
+            "width": 172,
+            "thickness": 8,
+            "profile": "click",
+            "handed": false,
+            "color": "#d2b48a",
+            "photoId": null,
+            "boardsPerPack": 9,
+            "m2PerPack": 1.997,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92083124",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92083124",
+            "name": "Homflor plaqué chêne bâton rompu 595 × 126 (lames A/B)",
+            "kind": "engineered",
+            "lengths": [595],
+            "lengthMix": null,
+            "width": 126,
+            "thickness": 10,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#d6b98f",
+            "photoId": null,
+            "boardsPerPack": 11,
+            "m2PerPack": 0.825,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92208100",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92208100",
+            "name": "Fairfloor massif chêne blond 1200 × 150, 15 mm",
+            "kind": "solid",
+            "lengths": [1200],
+            "lengthMix": null,
+            "width": 150,
+            "thickness": 15,
+            "profile": "tongue-groove",
+            "handed": false,
+            "color": "#d1b183",
+            "photoId": null,
+            "boardsPerPack": 7,
+            "m2PerPack": 1.26,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92245930",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92245930",
+            "name": "Beaulieu contrecollé chêne naturel 1180 × 164, 14 mm",
+            "kind": "engineered",
+            "lengths": [1180],
+            "lengthMix": null,
+            "width": 164,
+            "thickness": 14,
+            "profile": "click",
+            "handed": false,
+            "color": "#c49a62",
+            "photoId": null,
+            "boardsPerPack": 8,
+            "m2PerPack": 1.548,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-93180820",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-93180820",
+            "name": "DS Parquet Manchester point de Hongrie 780 × 125 (lames A/B)",
+            "kind": "engineered",
+            "lengths": [780],
+            "lengthMix": null,
+            "width": 125,
+            "thickness": 15,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#b48a5e",
+            "photoId": null,
+            "boardsPerPack": 16,
+            "m2PerPack": 1.56,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95102155",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95102155",
+            "name": "Artens Forte Lissandra vinyle clipsable 1220 × 180",
+            "kind": "vinyl",
+            "lengths": [1220],
+            "lengthMix": null,
+            "width": 180,
+            "thickness": 5,
+            "profile": "click",
+            "handed": false,
+            "color": "#c49a62",
+            "photoId": null,
+            "boardsPerPack": 8,
+            "m2PerPack": 1.76,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95239131",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95239131",
+            "name": "Contrecollé chêne fumé bâton rompu 610 × 120 (lames A/B)",
+            "kind": "engineered",
+            "lengths": [610],
+            "lengthMix": null,
+            "width": 120,
+            "thickness": 15,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#6b4a32",
+            "photoId": null,
+            "boardsPerPack": 12,
+            "m2PerPack": 0.89,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-98185527",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-98185527",
+            "name": "Cubox Colonia vinyle SPC clipsable 1220 × 180, 5 mm",
+            "kind": "vinyl",
+            "lengths": [1220],
+            "lengthMix": null,
+            "width": 180,
+            "thickness": 5,
+            "profile": "click",
+            "handed": false,
+            "color": "#b38d66",
+            "photoId": null,
+            "boardsPerPack": 10,
+            "m2PerPack": 2.2,
+            "pricePerPack": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "modele-baton-rompu",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-baton-rompu",
+            "photoId": null,
+            "pricePerPack": null,
+            "createdAt": 1791417600000,
+            "updatedAt": 1791417600000,
+            "name": "Bâton rompu 600 × 100 (lames A/B)",
+            "kind": "engineered",
+            "lengths": [600],
+            "lengthMix": null,
+            "width": 100,
+            "thickness": 10,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#b07d4f",
+            "boardsPerPack": 12,
+            "m2PerPack": 0.72
+          }
+        },
+        {
+          "key": "modele-contrecolle",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-contrecolle",
+            "photoId": null,
+            "pricePerPack": null,
+            "createdAt": 1791417600000,
+            "updatedAt": 1791417600000,
+            "name": "Contrecollé 1900 × 190",
+            "kind": "engineered",
+            "lengths": [1900],
+            "lengthMix": null,
+            "width": 190,
+            "thickness": 14,
+            "profile": "click",
+            "handed": false,
+            "color": "#b98a5a",
+            "boardsPerPack": 6,
+            "m2PerPack": 2.17
+          }
+        },
+        {
+          "key": "modele-hongrie-45",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-hongrie-45",
+            "photoId": null,
+            "pricePerPack": null,
+            "createdAt": 1791417600000,
+            "updatedAt": 1791417600000,
+            "name": "Point de Hongrie 45° 600 × 90 (lames A/B)",
+            "kind": "engineered",
+            "lengths": [600],
+            "lengthMix": null,
+            "width": 90,
+            "thickness": 10,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#9c6a3f",
+            "boardsPerPack": 12,
+            "m2PerPack": 0.65
+          }
+        },
+        {
+          "key": "modele-hongrie-60",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-hongrie-60",
+            "photoId": null,
+            "pricePerPack": null,
+            "createdAt": 1791417600000,
+            "updatedAt": 1791417600000,
+            "name": "Point de Hongrie 60° 500 × 90 (lames A/B)",
+            "kind": "engineered",
+            "lengths": [500],
+            "lengthMix": null,
+            "width": 90,
+            "thickness": 10,
+            "profile": "tongue-groove",
+            "handed": true,
+            "color": "#8f6038",
+            "boardsPerPack": 14,
+            "m2PerPack": 0.63
+          }
+        },
+        {
+          "key": "modele-massif",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-massif",
+            "photoId": null,
+            "pricePerPack": null,
+            "createdAt": 1791417600000,
+            "updatedAt": 1791417600000,
+            "name": "Massif longueurs mixtes 400 à 1200 × 140",
+            "kind": "solid",
+            "lengths": [400, 600, 800, 1000, 1200],
+            "lengthMix": [0.1, 0.2, 0.3, 0.25, 0.15],
+            "width": 140,
+            "thickness": 20,
+            "profile": "tongue-groove",
+            "handed": false,
+            "color": "#a87445",
+            "boardsPerPack": 9,
+            "m2PerPack": 1.05
+          }
+        },
+        {
+          "key": "modele-stratifie",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-stratifie",
+            "photoId": null,
+            "pricePerPack": null,
+            "createdAt": 1791417600000,
+            "updatedAt": 1791417600000,
+            "name": "Stratifié 1285 × 192",
+            "kind": "laminate",
+            "lengths": [1285],
+            "lengthMix": null,
+            "width": 192,
+            "thickness": 8,
+            "profile": "click",
+            "handed": false,
+            "color": "#c9a77c",
+            "boardsPerPack": 9,
+            "m2PerPack": 2.22
+          }
+        },
+        {
+          "key": "modele-vinyle",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-vinyle",
+            "photoId": null,
+            "pricePerPack": null,
+            "createdAt": 1791417600000,
+            "updatedAt": 1791417600000,
+            "name": "Vinyle clipsable 1220 × 180",
+            "kind": "vinyl",
+            "lengths": [1220],
+            "lengthMix": null,
+            "width": 180,
+            "thickness": 5,
+            "profile": "click",
+            "handed": false,
+            "color": "#b8a48c",
+            "boardsPerPack": 10,
+            "m2PerPack": 2.2
+          }
+        }
+      ]
+    },
+    "paints": {
+      "keyPath": true,
+      "rows": [
+        {
+          "key": "lm-82033318",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-82033318",
+            "name": "Tollens Tolpro Hydro velours blanc",
+            "brand": "Tollens",
+            "role": "finish",
+            "sheen": "velvet",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls", "humid"],
+            "yield": 11,
+            "coats": 2,
+            "packs": [{ "size": 10, "price": null }],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95908993",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95908993",
+            "name": "Luxens Résistant satin blanc",
+            "brand": "Luxens",
+            "role": "finish",
+            "sheen": "satin",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls", "woodwork", "humid"],
+            "yield": 10,
+            "coats": 2,
+            "packs": [
+              { "size": 5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95908997",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95908997",
+            "name": "Luxens Résistant velours blanc",
+            "brand": "Luxens",
+            "role": "finish",
+            "sheen": "velvet",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls", "woodwork", "humid"],
+            "yield": 10,
+            "coats": 2,
+            "packs": [
+              { "size": 5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95909015",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95909015",
+            "name": "Luxens Résistant mat blanc",
+            "brand": "Luxens",
+            "role": "finish",
+            "sheen": "mat",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls", "woodwork", "humid"],
+            "yield": 10,
+            "coats": 2,
+            "packs": [{ "size": 10, "price": null }],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "modele-blanc-mat",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-blanc-mat",
+            "brand": "",
+            "photoId": null,
+            "createdAt": 1791849600000,
+            "updatedAt": 1791849600000,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "tint": "light",
+            "name": "Blanc mat murs et plafonds",
+            "role": "finish",
+            "sheen": "mat",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "uses": ["walls"],
+            "yield": 10,
+            "coats": 2
+          }
+        },
+        {
+          "key": "modele-boiseries",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-boiseries",
+            "brand": "",
+            "photoId": null,
+            "createdAt": 1791849600000,
+            "updatedAt": 1791849600000,
+            "packs": [
+              { "size": 0.5, "price": null },
+              { "size": 1, "price": null },
+              { "size": 2.5, "price": null }
+            ],
+            "tint": "light",
+            "name": "Boiseries satin",
+            "role": "finish",
+            "sheen": "satin",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "uses": ["woodwork"],
+            "yield": 12,
+            "coats": 2
+          }
+        },
+        {
+          "key": "modele-enduit",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-enduit",
+            "brand": "",
+            "photoId": null,
+            "createdAt": 1791849600000,
+            "updatedAt": 1791849600000,
+            "packs": [
+              { "size": 1, "price": null },
+              { "size": 5, "price": null }
+            ],
+            "name": "Enduit de rebouchage en poudre",
+            "role": "filler",
+            "sheen": null,
+            "color": null,
+            "uses": ["walls"],
+            "yield": 1,
+            "coats": 1
+          }
+        },
+        {
+          "key": "modele-satin-humide",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-satin-humide",
+            "brand": "",
+            "photoId": null,
+            "createdAt": 1791849600000,
+            "updatedAt": 1791849600000,
+            "packs": [
+              { "size": 1, "price": null },
+              { "size": 2.5, "price": null },
+              { "size": 5, "price": null }
+            ],
+            "tint": "light",
+            "name": "Satiné pièces humides",
+            "role": "finish",
+            "sheen": "satin",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "uses": ["walls", "humid"],
+            "yield": 12,
+            "coats": 2
+          }
+        },
+        {
+          "key": "modele-sous-couche",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-sous-couche",
+            "brand": "",
+            "photoId": null,
+            "createdAt": 1791849600000,
+            "updatedAt": 1791849600000,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "name": "Sous-couche universelle",
+            "role": "primer",
+            "sheen": null,
+            "color": null,
+            "uses": ["walls", "woodwork"],
+            "yield": 10,
+            "coats": 1
+          }
+        },
+        {
+          "key": "type-couleur-claire",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-couleur-claire",
+            "name": "Couleur claire satinée (lin)",
+            "brand": "",
+            "role": "finish",
+            "sheen": "satin",
+            "color": { "name": "Lin", "hex": "#e6dccb" },
+            "tint": "light",
+            "uses": ["walls"],
+            "yield": 11,
+            "coats": 2,
+            "packs": [
+              { "size": 0.5, "price": null },
+              { "size": 2.5, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-couleur-foncee",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-couleur-foncee",
+            "name": "Couleur foncée mat (bleu nuit)",
+            "brand": "",
+            "role": "finish",
+            "sheen": "mat",
+            "color": { "name": "Bleu nuit", "hex": "#2d3a4f" },
+            "tint": "dark",
+            "uses": ["walls"],
+            "yield": 10,
+            "coats": 2,
+            "packs": [
+              { "size": 0.5, "price": null },
+              { "size": 2.5, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-couleur-moyenne",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-couleur-moyenne",
+            "name": "Couleur moyenne velours (grège)",
+            "brand": "",
+            "role": "finish",
+            "sheen": "velvet",
+            "color": { "name": "Grège", "hex": "#b9ab97" },
+            "tint": "medium",
+            "uses": ["walls"],
+            "yield": 11,
+            "coats": 2,
+            "packs": [
+              { "size": 0.5, "price": null },
+              { "size": 2.5, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-cuisine-bain",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-cuisine-bain",
+            "name": "Cuisine et bain satiné",
+            "brand": "",
+            "role": "finish",
+            "sheen": "satin",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls", "humid"],
+            "yield": 12,
+            "coats": 2,
+            "packs": [{ "size": 2, "price": null }],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-enduit-lissage",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-enduit-lissage",
+            "name": "Enduit de lissage en pâte",
+            "brand": "",
+            "role": "filler",
+            "sheen": null,
+            "color": null,
+            "uses": ["walls"],
+            "yield": 1,
+            "coats": 1,
+            "packs": [
+              { "size": 5, "price": null },
+              { "size": 15, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-enduit-rebouchage-pate",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-enduit-rebouchage-pate",
+            "name": "Enduit de rebouchage en pâte",
+            "brand": "",
+            "role": "filler",
+            "sheen": null,
+            "color": null,
+            "uses": ["walls"],
+            "yield": 1,
+            "coats": 1,
+            "packs": [
+              { "size": 0.5, "price": null },
+              { "size": 1, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-impression-fixateur",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-impression-fixateur",
+            "name": "Fixateur d’impression murs",
+            "brand": "",
+            "role": "primer",
+            "sheen": null,
+            "color": null,
+            "uses": ["walls"],
+            "yield": 12,
+            "coats": 1,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-laque-brillante",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-laque-brillante",
+            "name": "Laque brillante boiseries",
+            "brand": "",
+            "role": "finish",
+            "sheen": "gloss",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["woodwork"],
+            "yield": 14,
+            "coats": 2,
+            "packs": [
+              { "size": 0.5, "price": null },
+              { "size": 1, "price": null },
+              { "size": 2.5, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-laque-satin",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-laque-satin",
+            "name": "Laque satinée boiseries",
+            "brand": "",
+            "role": "finish",
+            "sheen": "satin",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["woodwork"],
+            "yield": 14,
+            "coats": 2,
+            "packs": [
+              { "size": 0.5, "price": null },
+              { "size": 1, "price": null },
+              { "size": 2.5, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-mat-lessivable",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-mat-lessivable",
+            "name": "Blanc mat lessivable",
+            "brand": "",
+            "role": "finish",
+            "sheen": "mat",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls"],
+            "yield": 10,
+            "coats": 2,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-plafond-humide",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-plafond-humide",
+            "name": "Plafond pièces humides mat",
+            "brand": "",
+            "role": "finish",
+            "sheen": "mat",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls", "humid"],
+            "yield": 10,
+            "coats": 2,
+            "packs": [{ "size": 2.5, "price": null }],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-plafond-mat",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-plafond-mat",
+            "name": "Plafond blanc mat",
+            "brand": "",
+            "role": "finish",
+            "sheen": "mat",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls"],
+            "yield": 10,
+            "coats": 2,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-radiateur",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-radiateur",
+            "name": "Radiateurs satiné",
+            "brand": "",
+            "role": "finish",
+            "sheen": "satin",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["woodwork"],
+            "yield": 12,
+            "coats": 2,
+            "packs": [{ "size": 0.5, "price": null }],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-satin-blanc",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-satin-blanc",
+            "name": "Blanc satiné murs",
+            "brand": "",
+            "role": "finish",
+            "sheen": "satin",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls"],
+            "yield": 11,
+            "coats": 2,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-sous-couche-bois",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-sous-couche-bois",
+            "name": "Sous-couche bois",
+            "brand": "",
+            "role": "primer",
+            "sheen": null,
+            "color": null,
+            "uses": ["woodwork"],
+            "yield": 12,
+            "coats": 1,
+            "packs": [
+              { "size": 0.5, "price": null },
+              { "size": 2.5, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-sous-couche-humidite",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-sous-couche-humidite",
+            "name": "Sous-couche anti-humidité",
+            "brand": "",
+            "role": "primer",
+            "sheen": null,
+            "color": null,
+            "uses": ["walls", "humid"],
+            "yield": 8,
+            "coats": 1,
+            "packs": [{ "size": 2.5, "price": null }],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-sous-couche-platre",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-sous-couche-platre",
+            "name": "Sous-couche plaque de plâtre",
+            "brand": "",
+            "role": "primer",
+            "sheen": null,
+            "color": null,
+            "uses": ["walls"],
+            "yield": 10,
+            "coats": 1,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-sous-couche-tannin",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-sous-couche-tannin",
+            "name": "Sous-couche bois tanniques",
+            "brand": "",
+            "role": "primer",
+            "sheen": null,
+            "color": null,
+            "uses": ["woodwork"],
+            "yield": 10,
+            "coats": 1,
+            "packs": [{ "size": 0.5, "price": null }],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-velours-blanc",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-velours-blanc",
+            "name": "Blanc velours murs et plafonds",
+            "brand": "",
+            "role": "finish",
+            "sheen": "velvet",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls"],
+            "yield": 10,
+            "coats": 2,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 5, "price": null },
+              { "size": 10, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "type-velours-humide",
+          "value": {
+            "schemaVersion": 1,
+            "id": "type-velours-humide",
+            "name": "Velours pièces humides",
+            "brand": "",
+            "role": "finish",
+            "sheen": "velvet",
+            "color": { "name": "Blanc", "hex": "#f4f1ea" },
+            "tint": "light",
+            "uses": ["walls", "humid"],
+            "yield": 12,
+            "coats": 2,
+            "packs": [
+              { "size": 2.5, "price": null },
+              { "size": 5, "price": null }
+            ],
+            "photoId": null,
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        }
+      ]
+    },
+    "prefs": {
+      "keyPath": true,
+      "rows": [
+        {
+          "key": "lastProjectId",
+          "value": { "key": "lastProjectId", "value": "a539e83d-d79c-4e76-9465-7ef29861592c" }
+        },
+        {
+          "key": "templatesSeeded",
+          "value": {
+            "key": "templatesSeeded",
+            "value": [
+              "tiles:modele-gres-60x60",
+              "tiles:modele-gres-60x30",
+              "tiles:modele-faience-20x20",
+              "tiles:modele-metro-20x10",
+              "tiles:lm-90543471",
+              "tiles:lm-90543472",
+              "tiles:lm-90543473",
+              "tiles:lm-95598390",
+              "tiles:lm-95598435",
+              "tiles:lm-95985488",
+              "tiles:lm-90823561",
+              "tiles:lm-92393574",
+              "tiles:lm-82003908",
+              "tiles:lm-89123943",
+              "tiles:lm-95598413",
+              "tiles:lm-82935837",
+              "tiles:lm-91656777",
+              "tiles:lm-97139881",
+              "tiles:lm-82862839",
+              "tiles:lm-84731824",
+              "tiles:lm-91656725",
+              "tiles:lm-91656783",
+              "tiles:lm-92023549",
+              "tiles:lm-95240402",
+              "tiles:lm-95598399",
+              "tiles:lm-95598383",
+              "tiles:lm-84865552",
+              "tiles:lm-95187216",
+              "boards:modele-stratifie",
+              "boards:modele-vinyle",
+              "boards:modele-contrecolle",
+              "boards:modele-massif",
+              "boards:modele-baton-rompu",
+              "boards:modele-hongrie-45",
+              "boards:modele-hongrie-60",
+              "boards:lm-92014738",
+              "boards:lm-92014724",
+              "boards:lm-92014744",
+              "boards:lm-88972562",
+              "boards:lm-88972567",
+              "boards:lm-85086562",
+              "boards:lm-87909696",
+              "boards:lm-92014740",
+              "boards:lm-72452352",
+              "boards:lm-69126806",
+              "boards:lm-92245930",
+              "boards:lm-74778012",
+              "boards:lm-83006265",
+              "boards:lm-92083124",
+              "boards:lm-95239131",
+              "boards:lm-93180820",
+              "boards:lm-92208100",
+              "boards:lm-85372756",
+              "boards:lm-85335291",
+              "boards:lm-71709866",
+              "boards:lm-85335290",
+              "boards:lm-90975646",
+              "boards:lm-95102155",
+              "boards:lm-84509639",
+              "boards:lm-87943162",
+              "boards:lm-98185527",
+              "paints:modele-blanc-mat",
+              "paints:modele-satin-humide",
+              "paints:modele-boiseries",
+              "paints:modele-sous-couche",
+              "paints:modele-enduit",
+              "paints:lm-95908997",
+              "paints:lm-95909015",
+              "paints:lm-95908993",
+              "paints:lm-82033318",
+              "paints:type-velours-blanc",
+              "paints:type-satin-blanc",
+              "paints:type-mat-lessivable",
+              "paints:type-plafond-mat",
+              "paints:type-plafond-humide",
+              "paints:type-velours-humide",
+              "paints:type-cuisine-bain",
+              "paints:type-couleur-claire",
+              "paints:type-couleur-moyenne",
+              "paints:type-couleur-foncee",
+              "paints:type-laque-satin",
+              "paints:type-laque-brillante",
+              "paints:type-radiateur",
+              "paints:type-sous-couche-platre",
+              "paints:type-impression-fixateur",
+              "paints:type-sous-couche-humidite",
+              "paints:type-sous-couche-bois",
+              "paints:type-sous-couche-tannin",
+              "paints:type-enduit-lissage",
+              "paints:type-enduit-rebouchage-pate",
+              "systems:modele-72-48",
+              "systems:modele-98-48",
+              "systems:modele-100-70"
+            ]
+          }
+        }
+      ]
+    },
+    "projects": {
+      "keyPath": true,
+      "rows": [
+        {
+          "key": "a539e83d-d79c-4e76-9465-7ef29861592c",
+          "value": {
+            "schemaVersion": 4,
+            "id": "a539e83d-d79c-4e76-9465-7ef29861592c",
+            "name": "Maison Dupont",
+            "createdAt": 1792162724122,
+            "updatedAt": 1792162728796,
+            "site": {
+              "existing": {
+                "rooms": [
+                  {
+                    "id": "82b4cca8-ff8d-4e13-9805-e321a041e5cb",
+                    "name": "Séjour",
+                    "outline": [
+                      [0, 0],
+                      [6000, 0],
+                      [6000, 4000],
+                      [0, 4000]
+                    ],
+                    "walls": [
+                      { "id": "26dfdd2f-7ce3-47cb-839f-befe7c3a6c82", "thickness": 72 },
+                      { "id": "1247d1e9-b80d-47aa-a379-3edfe9944a0d", "thickness": 72 },
+                      { "id": "16ac71b5-3e49-4c3d-aff9-510489ffdfbd", "thickness": 72 },
+                      { "id": "87b46d48-d63a-4c6c-93c7-cae1ef63a421", "thickness": 72 }
+                    ],
+                    "obstacles": [],
+                    "openings": [],
+                    "height": 2500,
+                    "origin": [0, 0]
+                  },
+                  {
+                    "id": "1746ece9-a046-4102-adc9-184348844cdd",
+                    "name": "Salle de bain",
+                    "outline": [
+                      [0, 0],
+                      [3000, 0],
+                      [3000, 1700],
+                      [2000, 1700],
+                      [2000, 2500],
+                      [0, 2500]
+                    ],
+                    "walls": [
+                      { "id": "2c46ba26-863c-45da-85c0-40b3febe4a1a", "thickness": 72 },
+                      { "id": "ffd6d373-75e7-4e38-89b2-7ed8e1e1fb92", "thickness": 72 },
+                      { "id": "c6072541-308e-4fda-98aa-2325930de12a", "thickness": 72 },
+                      { "id": "eb816bd3-c88b-4405-8f71-97d7afbb0d22", "thickness": 72 },
+                      { "id": "6d15f111-24b7-4d63-88e7-dd5a6d4c09e9", "thickness": 72 },
+                      { "id": "fd3c3bff-98ae-47a2-96d9-40235952152b", "thickness": 72 }
+                    ],
+                    "obstacles": [],
+                    "openings": [],
+                    "height": 2500,
+                    "origin": [7000, 0]
+                  }
+                ],
+                "passages": []
+              },
+              "partitions": [
+                {
+                  "id": "40d160e7-70cd-4a41-a8d9-87173ee86a8e",
+                  "a": [3000, 0],
+                  "b": [3000, 4000],
+                  "thickness": 72,
+                  "align": "right",
+                  "openings": []
+                }
+              ],
+              "demolitions": []
+            },
+            "zones": [
+              {
+                "cuts": [],
+                "id": "58b92670-eb83-4204-925e-457c3b17d735",
+                "surface": { "room": "82b4cca8-ff8d-4e13-9805-e321a041e5cb", "wall": null },
+                "pose": "7729743d-c10e-411e-b76b-8c35d033c5de"
+              },
+              {
+                "cuts": [
+                  {
+                    "line": [
+                      [0, 1200],
+                      [2928, 1200]
+                    ],
+                    "side": -1
+                  }
+                ],
+                "id": "00f322e9-7523-41d3-a21f-7dbcb165c8f3",
+                "surface": {
+                  "room": "82b4cca8-ff8d-4e13-9805-e321a041e5cb",
+                  "wall": "26dfdd2f-7ce3-47cb-839f-befe7c3a6c82"
+                },
+                "pose": "5e942ccb-36af-4ac4-bcc7-4ce8ed39054a"
+              },
+              {
+                "cuts": [
+                  {
+                    "line": [
+                      [0, 1200],
+                      [2928, 1200]
+                    ],
+                    "side": 1
+                  }
+                ],
+                "id": "f95190b6-eb3a-4167-b867-73d5510ef350",
+                "surface": {
+                  "room": "82b4cca8-ff8d-4e13-9805-e321a041e5cb",
+                  "wall": "26dfdd2f-7ce3-47cb-839f-befe7c3a6c82"
+                },
+                "pose": "37e8376e-5dda-434e-87be-6f879717088d"
+              },
+              {
+                "cuts": [],
+                "id": "5c964c27-9f72-48b3-b70b-a7739e3098b5",
+                "surface": {
+                  "room": "82b4cca8-ff8d-4e13-9805-e321a041e5cb",
+                  "wall": "16ac71b5-3e49-4c3d-aff9-510489ffdfbd~2"
+                },
+                "pose": "37fbd4d9-03d4-452d-b811-ef0e7d4271a1"
+              },
+              {
+                "cuts": [],
+                "id": "60fd91fb-c95c-451d-944c-d9514275e040",
+                "surface": { "room": "1746ece9-a046-4102-adc9-184348844cdd", "wall": null },
+                "pose": "75751aab-4a75-4453-8552-858aa191a9eb"
+              },
+              {
+                "cuts": [],
+                "id": "63e894fb-8600-416f-be8a-12ae7e6eb8af",
+                "surface": {
+                  "room": "1746ece9-a046-4102-adc9-184348844cdd",
+                  "wall": "2c46ba26-863c-45da-85c0-40b3febe4a1a"
+                },
+                "pose": "3205162b-bbf7-43b6-a8e9-240f3d538118"
+              },
+              {
+                "id": "27b88117-23d7-4389-a0d1-339817d6e026",
+                "surface": {
+                  "room": "1746ece9-a046-4102-adc9-184348844cdd",
+                  "wall": "ffd6d373-75e7-4e38-89b2-7ed8e1e1fb92"
+                },
+                "cuts": [],
+                "pose": "3205162b-bbf7-43b6-a8e9-240f3d538118"
+              }
+            ],
+            "poses": [
+              { "id": "7729743d-c10e-411e-b76b-8c35d033c5de", "module": "parquet", "name": "Pose 1" },
+              { "id": "5e942ccb-36af-4ac4-bcc7-4ce8ed39054a", "module": "carrelage", "name": "Pose 2" },
+              { "id": "37e8376e-5dda-434e-87be-6f879717088d", "module": "peinture", "name": "Pose 3" },
+              { "id": "37fbd4d9-03d4-452d-b811-ef0e7d4271a1", "module": "peinture", "name": "Pose 4" },
+              { "id": "75751aab-4a75-4453-8552-858aa191a9eb", "module": "carrelage", "name": "Pose 5" },
+              { "id": "3205162b-bbf7-43b6-a8e9-240f3d538118", "module": "carrelage", "name": "Pose 6" }
+            ],
+            "modules": {
+              "cloisons": {
+                "schemaVersion": 1,
+                "data": {
+                  "partitions": {},
+                  "settings": {
+                    "maxHeights": [
+                      {
+                        "system": "72/48",
+                        "spacing": 600,
+                        "max": 2600,
+                        "verified": false,
+                        "source": "ordre de grandeur, à confirmer : notice du fabricant du système choisi, DTU 25.41"
+                      },
+                      {
+                        "system": "72/48",
+                        "spacing": 400,
+                        "max": 2800,
+                        "verified": false,
+                        "source": "ordre de grandeur, à confirmer : notice du fabricant du système choisi, DTU 25.41"
+                      },
+                      {
+                        "system": "98/48",
+                        "spacing": 600,
+                        "max": 3000,
+                        "verified": false,
+                        "source": "ordre de grandeur, à confirmer : notice du fabricant du système choisi, DTU 25.41"
+                      },
+                      {
+                        "system": "98/48",
+                        "spacing": 400,
+                        "max": 3300,
+                        "verified": false,
+                        "source": "ordre de grandeur, à confirmer : notice du fabricant du système choisi, DTU 25.41"
+                      },
+                      {
+                        "system": "100/70",
+                        "spacing": 600,
+                        "max": 3400,
+                        "verified": false,
+                        "source": "ordre de grandeur, à confirmer : notice du fabricant du système choisi, DTU 25.41"
+                      },
+                      {
+                        "system": "100/70",
+                        "spacing": 400,
+                        "max": 3800,
+                        "verified": false,
+                        "source": "ordre de grandeur, à confirmer : notice du fabricant du système choisi, DTU 25.41"
+                      }
+                    ],
+                    "plateFormats": [
+                      { "length": 2500, "width": 1200 },
+                      { "length": 2600, "width": 1200 },
+                      { "length": 3000, "width": 1200 }
+                    ],
+                    "studLengths": [2500, 2600, 2700, 3000, 3500, 4000],
+                    "railBar": 3000,
+                    "kerf": 0,
+                    "studClearance": 10,
+                    "plateGap": 10,
+                    "lintelBearing": 50,
+                    "studMinGap": 100,
+                    "minOffcut": 150,
+                    "plateMargin": 0.05,
+                    "insulationMargin": 0.05,
+                    "insulationPack": { "m2": 6.48, "unit": "roll" },
+                    "ratios": {
+                      "screw25": { "perM2": 15, "pack": 1000 },
+                      "screw35": { "perM2": 12, "pack": 1000 },
+                      "jointTape": { "perM2": 1.5, "pack": 150 },
+                      "jointCompound": { "kgPerM2": 0.5, "pack": 25 },
+                      "resilientStrip": { "pack": 30 },
+                      "fixing": { "spacing": 600, "pack": 100 },
+                      "cornerBead": { "pack": 2.5 },
+                      "woodInsert": { "pack": 1 }
+                    }
+                  },
+                  "prices": {}
+                }
+              },
+              "parquet": {
+                "schemaVersion": 5,
+                "data": {
+                  "poses": {
+                    "7729743d-c10e-411e-b76b-8c35d033c5de": {
+                      "boardId": "modele-stratifie",
+                      "pattern": { "kind": "random-stagger" },
+                      "angle": 0,
+                      "reference": null,
+                      "axis": "room-center",
+                      "offset": [0, 0],
+                      "method": "floating",
+                      "rules": {
+                        "expansionGap": 8,
+                        "minCutLength": 300,
+                        "minJointOffset": 300,
+                        "minEdgeRowWidth": 50,
+                        "balanceEdgeRows": "if-needed",
+                        "maxFloatingLength": 10000,
+                        "maxFloatingWidth": 8000,
+                        "minPassageWidth": 1200
+                      },
+                      "breaks": [],
+                      "seed": 1
+                    }
+                  },
+                  "settings": { "reuseOffcuts": true, "kerf": 3, "margin": null },
+                  "accessories": {
+                    "underlay": { "enabled": true, "m2PerRoll": 15, "overlap": 0.05 },
+                    "vaporBarrier": { "enabled": false, "m2PerRoll": 25, "overlap": 0.1, "upstand": 50 },
+                    "skirting": {
+                      "enabled": true,
+                      "barLength": 2400,
+                      "height": 60,
+                      "mitreAllowance": 10,
+                      "aroundObstacles": false
+                    },
+                    "thresholds": { "barLength": 930 },
+                    "glue": null,
+                    "fixings": null
+                  },
+                  "prices": {}
+                }
+              },
+              "carrelage": {
+                "schemaVersion": 3,
+                "data": {
+                  "poses": {
+                    "5e942ccb-36af-4ac4-bcc7-4ce8ed39054a": {
+                      "joint": 3,
+                      "split": "h",
+                      "bands": [
+                        {
+                          "id": "d3880ad5-5097-4441-a829-2dd88969645f",
+                          "size": 3,
+                          "unit": "rest",
+                          "tileId": "modele-metro-20x10",
+                          "tileUpright": false,
+                          "pattern": "half",
+                          "angle": 0,
+                          "start": "corner",
+                          "offsetX": 0,
+                          "offsetY": 0,
+                          "mix": "solid",
+                          "colorB": "#3f5a6b",
+                          "groutColor": "#8f8a83",
+                          "photoRandomFlip": true
+                        }
+                      ],
+                      "reservations": [],
+                      "openings": {},
+                      "plinth": null,
+                      "edgesHidden": true,
+                      "hiddenEdges": { "top": true, "bottom": true, "left": true, "right": true },
+                      "junctionsCovered": false
+                    },
+                    "75751aab-4a75-4453-8552-858aa191a9eb": {
+                      "joint": 3,
+                      "split": "h",
+                      "bands": [
+                        {
+                          "id": "4f5da194-6e48-4dc0-ae62-a3f748a59bb6",
+                          "size": 3,
+                          "unit": "rest",
+                          "tileId": "modele-metro-20x10",
+                          "tileUpright": false,
+                          "pattern": "half",
+                          "angle": 0,
+                          "start": "corner",
+                          "offsetX": 0,
+                          "offsetY": 0,
+                          "mix": "solid",
+                          "colorB": "#3f5a6b",
+                          "groutColor": "#8f8a83",
+                          "photoRandomFlip": true
+                        }
+                      ],
+                      "reservations": [],
+                      "openings": {},
+                      "plinth": null,
+                      "edgesHidden": true,
+                      "hiddenEdges": { "top": true, "bottom": true, "left": true, "right": true },
+                      "junctionsCovered": false
+                    },
+                    "3205162b-bbf7-43b6-a8e9-240f3d538118": {
+                      "joint": 3,
+                      "split": "h",
+                      "bands": [
+                        {
+                          "id": "9c4abd1e-986e-4d4d-bf6b-3920512c2a5d",
+                          "size": 3,
+                          "unit": "rest",
+                          "tileId": "modele-metro-20x10",
+                          "tileUpright": false,
+                          "pattern": "half",
+                          "angle": 0,
+                          "start": "corner",
+                          "offsetX": 0,
+                          "offsetY": 0,
+                          "mix": "solid",
+                          "colorB": "#3f5a6b",
+                          "groutColor": "#8f8a83",
+                          "photoRandomFlip": true
+                        }
+                      ],
+                      "reservations": [],
+                      "openings": {},
+                      "plinth": null,
+                      "edgesHidden": true,
+                      "hiddenEdges": { "top": true, "bottom": true, "left": true, "right": true },
+                      "junctionsCovered": false
+                    }
+                  },
+                  "settings": {
+                    "margin": 10,
+                    "reuseOffcuts": true,
+                    "kerf": 2,
+                    "minOffcut": 20,
+                    "shadeVariation": 0.06,
+                    "optimizerGoal": "thin",
+                    "outerCornersCovered": true
+                  },
+                  "prices": { "tile|rect|200x100||#f4f2ee": 24.9 }
+                }
+              },
+              "peinture": {
+                "schemaVersion": 2,
+                "data": {
+                  "poses": {
+                    "37e8376e-5dda-434e-87be-6f879717088d": {
+                      "finish": "modele-blanc-mat",
+                      "color": null,
+                      "coats": 2,
+                      "primer": null,
+                      "filler": null,
+                      "fillerState": "good",
+                      "support": "painted",
+                      "margin": 0.1,
+                      "openings": { "mode": "threshold", "threshold": 1000000 },
+                      "woodwork": {
+                        "skirting": false,
+                        "skirtingHeight": 100,
+                        "frames": false,
+                        "frameWidth": 120,
+                        "doors": false,
+                        "doorFaces": 2,
+                        "finish": "modele-boiseries",
+                        "color": null,
+                        "coats": 2,
+                        "primer": null
+                      },
+                      "consumables": { "masking": false, "sheet": false, "roller": false, "brush": false }
+                    },
+                    "37fbd4d9-03d4-452d-b811-ef0e7d4271a1": {
+                      "finish": "modele-blanc-mat",
+                      "color": null,
+                      "coats": 2,
+                      "primer": null,
+                      "filler": null,
+                      "fillerState": "good",
+                      "support": "painted",
+                      "margin": 0.1,
+                      "openings": { "mode": "threshold", "threshold": 1000000 },
+                      "woodwork": {
+                        "skirting": false,
+                        "skirtingHeight": 100,
+                        "frames": false,
+                        "frameWidth": 120,
+                        "doors": false,
+                        "doorFaces": 2,
+                        "finish": "modele-boiseries",
+                        "color": null,
+                        "coats": 2,
+                        "primer": null
+                      },
+                      "consumables": { "masking": false, "sheet": false, "roller": false, "brush": false }
+                    }
+                  },
+                  "prices": {}
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "scenarios": { "keyPath": true, "rows": [] },
+    "systems": {
+      "keyPath": true,
+      "rows": [
+        {
+          "key": "modele-100-70",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-100-70",
+            "name": "100/70",
+            "thickness": 100,
+            "studWidth": 70,
+            "layers": 1,
+            "plateThickness": 15,
+            "createdAt": 0,
+            "updatedAt": 0
+          }
+        },
+        {
+          "key": "modele-72-48",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-72-48",
+            "name": "72/48",
+            "thickness": 72,
+            "studWidth": 48,
+            "layers": 1,
+            "plateThickness": 12.5,
+            "createdAt": 0,
+            "updatedAt": 0
+          }
+        },
+        {
+          "key": "modele-98-48",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-98-48",
+            "name": "98/48",
+            "thickness": 98,
+            "studWidth": 48,
+            "layers": 2,
+            "plateThickness": 12.5,
+            "createdAt": 0,
+            "updatedAt": 0
+          }
+        }
+      ]
+    },
+    "tiles": {
+      "keyPath": true,
+      "rows": [
+        {
+          "key": "lm-82003908",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-82003908",
+            "name": "Quartzite effet pierre gris moyen 30 × 60,4",
+            "shape": "rect",
+            "length": 604,
+            "width": 300,
+            "thickness": 7.4,
+            "color": "#8d8d8a",
+            "photoId": null,
+            "m2PerBox": 1.54,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-82862839",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-82862839",
+            "name": "Artens Arden effet bois beige 20 × 80",
+            "shape": "rect",
+            "length": 800,
+            "width": 200,
+            "thickness": 8.2,
+            "color": "#c7a985",
+            "photoId": null,
+            "m2PerBox": 1.28,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-82935837",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-82935837",
+            "name": "Gaya Forès Galbe Cottage géométrique 33,15 × 33,15",
+            "shape": "rect",
+            "length": 331.5,
+            "width": 331.5,
+            "thickness": 7.3,
+            "color": "#c9b79c",
+            "photoId": null,
+            "m2PerBox": 1.32,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-84731824",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-84731824",
+            "name": "Artens Moha effet zellige bleu 31,6 × 60",
+            "shape": "rect",
+            "length": 600,
+            "width": 316,
+            "thickness": 9.5,
+            "color": "#2b6f7a",
+            "photoId": null,
+            "m2PerBox": 1.52,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-84865552",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-84865552",
+            "name": "Pablo effet zellige noir 6 × 24",
+            "shape": "rect",
+            "length": 240,
+            "width": 60,
+            "thickness": 10,
+            "color": "#232323",
+            "photoId": null,
+            "m2PerBox": 0.52,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-89123943",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-89123943",
+            "name": "Monastère effet pierre beige 80,5 × 80,5",
+            "shape": "rect",
+            "length": 805,
+            "width": 805,
+            "thickness": 9,
+            "color": "#cdbb9c",
+            "photoId": null,
+            "m2PerBox": 1.3,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-90543471",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-90543471",
+            "name": "Artens Casablanca effet marbre blanc 60 × 60",
+            "shape": "rect",
+            "length": 600,
+            "width": 600,
+            "thickness": 9.5,
+            "color": "#ece9e4",
+            "photoId": null,
+            "m2PerBox": 1.08,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-90543472",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-90543472",
+            "name": "Artens Casablanca effet marbre blanc 60 × 120",
+            "shape": "rect",
+            "length": 1200,
+            "width": 600,
+            "thickness": 9,
+            "color": "#ece9e4",
+            "photoId": null,
+            "m2PerBox": 1.44,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-90543473",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-90543473",
+            "name": "Artens Casablanca effet marbre blanc 30 × 60",
+            "shape": "rect",
+            "length": 600,
+            "width": 300,
+            "thickness": 9.5,
+            "color": "#ece9e4",
+            "photoId": null,
+            "m2PerBox": 1.08,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-90823561",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-90823561",
+            "name": "Tiber effet travertin beige 60,4 × 60,4",
+            "shape": "rect",
+            "length": 604,
+            "width": 604,
+            "thickness": 7.4,
+            "color": "#d6c4a5",
+            "photoId": null,
+            "m2PerBox": 1.46,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-91656725",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-91656725",
+            "name": "Artens Arctic vert sauge mat 30 × 90",
+            "shape": "rect",
+            "length": 900,
+            "width": 300,
+            "thickness": 7,
+            "color": "#9caf95",
+            "photoId": null,
+            "m2PerBox": 1.35,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-91656777",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-91656777",
+            "name": "Artens Malte effet bois marron 19,8 × 119,8",
+            "shape": "rect",
+            "length": 1198,
+            "width": 198,
+            "thickness": 8.5,
+            "color": "#8a5f3c",
+            "photoId": null,
+            "m2PerBox": 1.2,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-91656783",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-91656783",
+            "name": "Artens Arctic sauge 59,6 × 119,4",
+            "shape": "rect",
+            "length": 1194,
+            "width": 596,
+            "thickness": 7,
+            "color": "#9caf95",
+            "photoId": null,
+            "m2PerBox": 1.42,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92023549",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92023549",
+            "name": "Team satiné terracotta 30 × 60",
+            "shape": "rect",
+            "length": 600,
+            "width": 300,
+            "thickness": 8,
+            "color": "#b5653f",
+            "photoId": null,
+            "m2PerBox": 1.62,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-92393574",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-92393574",
+            "name": "Tiber effet travertin beige 60 × 119,8",
+            "shape": "rect",
+            "length": 1198,
+            "width": 600,
+            "thickness": 7.4,
+            "color": "#d6c4a5",
+            "photoId": null,
+            "m2PerBox": 1.44,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95187216",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95187216",
+            "name": "Aelle Fango Cotto bejmat terracotta 5 × 15",
+            "shape": "rect",
+            "length": 150,
+            "width": 50,
+            "thickness": 8,
+            "color": "#b0603c",
+            "photoId": null,
+            "m2PerBox": 0.495,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95240402",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95240402",
+            "name": "Instahouse Stay uni terracotta 20 × 60",
+            "shape": "rect",
+            "length": 600,
+            "width": 200,
+            "thickness": 8.3,
+            "color": "#b5653f",
+            "photoId": null,
+            "m2PerBox": 1.44,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95598383",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95598383",
+            "name": "Artens Bricklane effet zellige vert foncé 10 × 10",
+            "shape": "rect",
+            "length": 100,
+            "width": 100,
+            "thickness": 8.2,
+            "color": "#2f5141",
+            "photoId": null,
+            "m2PerBox": 0.54,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95598390",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95598390",
+            "name": "Artens Urban effet béton beige 60 × 60",
+            "shape": "rect",
+            "length": 600,
+            "width": 600,
+            "thickness": 9,
+            "color": "#cfc2ad",
+            "photoId": null,
+            "m2PerBox": 1.08,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95598399",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95598399",
+            "name": "Artens Bricklane effet zellige denim 7,4 × 30,1",
+            "shape": "rect",
+            "length": 301,
+            "width": 74,
+            "thickness": 8.2,
+            "color": "#3e5a78",
+            "photoId": null,
+            "m2PerBox": 0.98,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95598413",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95598413",
+            "name": "Artens Easy patchwork terracotta 45 × 45",
+            "shape": "rect",
+            "length": 450,
+            "width": 450,
+            "thickness": 9.1,
+            "color": "#b8704b",
+            "photoId": null,
+            "m2PerBox": 1.42,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95598435",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95598435",
+            "name": "Artens Melrose effet bois naturel 60 × 120",
+            "shape": "rect",
+            "length": 1200,
+            "width": 600,
+            "thickness": 9,
+            "color": "#b38d66",
+            "photoId": null,
+            "m2PerBox": 1.44,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-95985488",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-95985488",
+            "name": "STN Ceramica Arcano effet béton gris 60 × 60",
+            "shape": "rect",
+            "length": 600,
+            "width": 600,
+            "thickness": 9.5,
+            "color": "#9a9893",
+            "photoId": null,
+            "m2PerBox": 1.08,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "lm-97139881",
+          "value": {
+            "schemaVersion": 1,
+            "id": "lm-97139881",
+            "name": "STN Ceramica Timor effet chêne 23 × 120",
+            "shape": "rect",
+            "length": 1200,
+            "width": 230,
+            "thickness": 9.7,
+            "color": "#b48a5e",
+            "photoId": null,
+            "m2PerBox": 1.11,
+            "pricePerM2": null,
+            "orientation": "free",
+            "createdAt": 1792108800000,
+            "updatedAt": 1792108800000
+          }
+        },
+        {
+          "key": "modele-faience-20x20",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-faience-20x20",
+            "shape": "rect",
+            "orientation": "free",
+            "photoId": null,
+            "pricePerM2": null,
+            "createdAt": 1792022400000,
+            "updatedAt": 1792022400000,
+            "name": "Faïence murale 20 × 20 cm",
+            "length": 200,
+            "width": 200,
+            "thickness": 7,
+            "color": "#eeebe5",
+            "m2PerBox": 1
+          }
+        },
+        {
+          "key": "modele-gres-60x30",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-gres-60x30",
+            "shape": "rect",
+            "orientation": "free",
+            "photoId": null,
+            "pricePerM2": null,
+            "createdAt": 1792022400000,
+            "updatedAt": 1792022400000,
+            "name": "Grès cérame 60 × 30 cm",
+            "length": 600,
+            "width": 300,
+            "thickness": 9,
+            "color": "#d8cfc2",
+            "m2PerBox": 1.44
+          }
+        },
+        {
+          "key": "modele-gres-60x60",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-gres-60x60",
+            "shape": "rect",
+            "orientation": "free",
+            "photoId": null,
+            "pricePerM2": null,
+            "createdAt": 1792022400000,
+            "updatedAt": 1792022400000,
+            "name": "Grès cérame 60 × 60 cm",
+            "length": 600,
+            "width": 600,
+            "thickness": 9,
+            "color": "#cfc8bd",
+            "m2PerBox": 1.44
+          }
+        },
+        {
+          "key": "modele-metro-20x10",
+          "value": {
+            "schemaVersion": 1,
+            "id": "modele-metro-20x10",
+            "shape": "rect",
+            "orientation": "free",
+            "photoId": null,
+            "pricePerM2": null,
+            "createdAt": 1792022400000,
+            "updatedAt": 1792022400000,
+            "name": "Carreau métro 20 × 10 cm",
+            "length": 200,
+            "width": 100,
+            "thickness": 7,
+            "color": "#f4f2ee",
+            "m2PerBox": 0.5
+          }
+        }
+      ]
+    }
+  }
+}
