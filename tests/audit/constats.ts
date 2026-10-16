@@ -216,6 +216,21 @@ export const FINDINGS: Finding[] = [
     reco: 'Select à 100 % de largeur ; reprendre les outils de vue (cotes, zoom, ajuster) de la coquille commune.',
   },
   {
+    id: 'UI-03',
+    screen: 'Calepinage et plan en paysage (téléphone)',
+    devices:
+      'téléphones en paysage (7 appareils sur 8) ; « Voir tout le plan » trop petit en paysage 375 × 667 et 360 × 740 (axe target-size)',
+    gravity: 'P2',
+    axis: 'UI',
+    finding:
+      'En paysage, le panneau tiré garde la mise en page portrait : à mi-hauteur il laisse environ 150 px au dessin, les outils flottants (Plan / Rendu / 3D, zoom) recouvrent la cote « 300 cm » et le coin du dessin, la consigne du panneau passe sous le résumé, à moitié coupée ; les réglages de l’étape ne sont pas visibles sans agrandir le panneau, qui cache alors tout le dessin.',
+    proof: `${C}/calepinage-carrelage/tel-360x740-paysage-chromium/E1-produit.jpg ; ${C}/calepinage-carrelage/tel-360x740-paysage-chromium/E6-vue-Plan.jpg`,
+    steps: 'Téléphone en paysage → calepinage du sol de la salle de bain.',
+    cause:
+      'src/ui/calepinage/PoseEditorShell.svelte:83-86 : mise en page « ordinateur » (panneau à droite) seulement à partir de 1024 px de large ; idem src/ui/plan/PlanEditor.svelte:79.',
+    reco: 'Panneau latéral dès que la largeur dépasse la hauteur et 640 px (paysage), outils en colonne à gauche comme sur ordinateur.',
+  },
+  {
     id: 'UX-01',
     screen: 'Calepinage carrelage, barre de résumé',
     devices: ALL,
@@ -636,6 +651,62 @@ export const FINDINGS: Finding[] = [
     steps: 'npm run build.',
     cause: 'vite.config.ts (precache), import de jspdf',
     reco: 'Exclure html2canvas et purify (jsPDF sans .html()) ; précharger la 3D et le PDF seulement après le premier écran.',
+  },
+  {
+    id: 'UI-04',
+    screen: 'Fiche carreau et réglages (WebKit, texte agrandi)',
+    devices: 'iPhone 360 px (WebKit) ; texte à 200 % sur tous les téléphones',
+    gravity: 'P2',
+    axis: 'UI',
+    finding:
+      'Sous WebKit à 360 px, la fiche carreau déborde de 6 px à droite (la page défile latéralement, le bord droit des champs touche l’écran). Avec le texte à 200 %, le débordement atteint 73 px sous Chromium et 262 à 332 px sous WebKit (fiche carreau), 76 à 146 px dans les Réglages sous WebKit : formats courants et rangées de boutons sans retour à la ligne.',
+    proof: `${C}/fiche-carreau/tel-360x740-portrait-webkit/N1-light.jpg ; ${C}/fiche-carreau/tel-390x844-portrait-webkit/N3-texte200.jpg ; docs/audit/mesures/controles.md`,
+    steps: 'iPhone SE (ou 360 px WebKit) → #/library/tiles/modele-gres-60x60 ; puis texte à 200 %.',
+    cause:
+      'Rangées sans retour à la ligne dans src/modules/carrelage/ui/components/TileForm.svelte (formats courants, forme) et Segmented de largeur fixe ; contenu plus large que la colonne sous WebKit.',
+    reco: 'Segmented et rangées de pastilles à retour à la ligne, min-width:0 sur les conteneurs de formulaire ; test « pas de défilement horizontal » à 360 px et à 200 % dans la suite e2e.',
+  },
+  {
+    id: 'UI-05',
+    screen: 'Plan et calepinage sur tablette 768 px',
+    devices: 'tablettes 768 × 1024 (portrait et paysage)',
+    gravity: 'P3',
+    axis: 'UI',
+    finding:
+      'Sous 1024 px de large, les tablettes reçoivent la mise en page téléphone : plan limité à la moitié haute, panneau tiré qui occupe le reste (boutons étirés sur plus de 700 px). Un iPad de 768 px a pourtant la place d’un panneau latéral.',
+    proof: `${C}/plan/tab-768x1024-portrait-webkit/N1-light.jpg`,
+    steps: 'Plan du projet maison sur un écran de 768 × 1024.',
+    cause:
+      'Seuil unique min-width:1024px (src/ui/plan/PlanEditor.svelte:79, src/ui/calepinage/PoseEditorShell.svelte:83).',
+    reco: 'Panneau latéral dès 700 px de large (paysage compris), panneau tiré seulement en dessous.',
+  },
+  {
+    id: 'UX-05',
+    screen: 'Résultats, onglet Détail (téléphone)',
+    devices: 'téléphones',
+    gravity: 'P3',
+    axis: 'UX',
+    finding:
+      'L’onglet Détail des résultats du projet fait environ 11 300 px de haut sur téléphone (14 écrans de défilement) : fiche de coupe de chaque rang et de chaque plaque à la suite, sans sommaire ni repli par pose.',
+    proof:
+      'docs/audit/mesures/echecs.md (I1 : capture pleine page impossible au-delà de 32 767 px sous WebKit) ; hauteur mesurée 11 341 px sur 390 × 844',
+    steps: 'Résultats du projet maison → Détail.',
+    cause: 'src/ui/screens/Results.svelte (onglet Détail sans repli), sections des modules.',
+    reco: 'Sections repliables par pose, lien « aller à… » en tête, fiche de coupe ouverte seulement pour la pose consultée.',
+  },
+  {
+    id: 'A11Y-03',
+    screen: 'Pièce (murs dépliés), Résultats, Plan (panneau plein)',
+    devices: 'téléphones et ordinateur (25 appareils pour le lien de cloison)',
+    gravity: 'P3',
+    axis: 'a11y',
+    finding:
+      'Cibles sous 44 px : murs étroits de l’écran Pièce (26 × 66 et 66 × 21 px, 16 appareils) ; lien « Cloison 1 » des résultats (21 px de haut) ; « Voir tout le plan » trop près d’une autre cible quand le panneau est ouvert en paysage (axe target-size) ; bouton « Optimiser » à 200 %.',
+    proof: `${C}/plan/tel-375x667-paysage-chromium/C10-panneau-plein.jpg ; docs/audit/mesures/controles.md`,
+    steps: 'Écran Pièce d’un L ; résultats du projet ; plan en paysage, panneau plein.',
+    cause:
+      'src/ui/room/RoomDrawing.svelte (zone de toucher = le mur déplié) ; src/ui/screens/Results.svelte (lien en ligne) ; src/ui/plan/PlanEditor.svelte (bouton flottant).',
+    reco: 'Zone de toucher élargie autour des murs fins (la liste de surfaces existe comme alternative) ; lien de cloison en bouton de 44 px ; écarter le bouton flottant.',
   },
   {
     id: 'DOC-01',

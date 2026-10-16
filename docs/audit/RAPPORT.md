@@ -1,6 +1,6 @@
 # Audit UI/UX de PilePoil — rapport
 
-Audit du 16 octobre 2026, branche `audit/ui-ux`, sur `main` 1cd0bc6 (phases jusqu'à B2). Aucun fichier de `src/` n'a
+Audit des 16 et 17 octobre 2026 (matrice complète : 89 scénarios × 29 appareils), branche `audit/ui-ux`, sur `main` 1cd0bc6 (phases jusqu'à B2). Aucun fichier de `src/` n'a
 été modifié. Détails : [`CONSTATS.md`](CONSTATS.md) et [`constats.csv`](constats.csv) ; couverture :
 [`MATRICE.md`](MATRICE.md) ; cartographie : [`CARTOGRAPHIE.md`](CARTOGRAPHIE.md) ; à vérifier sur un vrai téléphone :
 [`A_TESTER_SUR_TELEPHONE.md`](A_TESTER_SUR_TELEPHONE.md) ; propositions : [`PROPOSITIONS.md`](PROPOSITIONS.md).
@@ -9,8 +9,8 @@ Audit du 16 octobre 2026, branche `audit/ui-ux`, sur `main` 1cd0bc6 (phases jusq
 
 PilePoil tient ses promesses de fond : les quatre outils calculent juste sur les cas vérifiés à la main (carrelage,
 parquet, peinture, cloisons, voir § Justesse métier), vite (0,1 à 0,25 s même sur 120 m²), hors ligne, et l'interface est
-très propre en accessibilité automatique (axe-core : aucune violation sur les 33 écrans en clair et en sombre, en dehors
-d'un cas de données forcées). Les défauts se concentrent sur **la gestion des projets**, **la précision du plan au
+très propre en accessibilité automatique (axe-core : aucune violation sur les 33 écrans en clair et en sombre ; seules
+remontent, sur les 29 appareils, des cibles trop rapprochées en paysage et deux cas de données forcées). Les défauts se concentrent sur **la gestion des projets**, **la précision du plan au
 doigt** et **la liste d'achat**, c'est-à-dire là où l'artisan engage du temps ou de l'argent.
 
 **Les 5 problèmes les plus graves**
@@ -23,7 +23,7 @@ doigt** et **la liste d'achat**, c'est-à-dire là où l'artisan engage du temps
 | 4 | CAR-01 | En vannerie, les achats inventent un carreau « 20 × 9,9 cm » sans prix : total sous-estimé de 30 %. | P1 |
 | 5 | PLAN-02 / ROB-01 | Pertes silencieuses : Suppr efface une pièce revêtue sans confirmation ; deux onglets s'écrasent l'un l'autre. | P1 |
 
-**Constats** : 46 au total — P0 : 0, P1 : 6, P2 : 23, P3 : 17 (liste vivante : `tests/audit/constats.ts`).
+**Constats** : 51 au total — P0 : 0, P1 : 6, P2 : 25, P3 : 20 (liste vivante : `tests/audit/constats.ts`).
 Aucun calcul faux n'a été trouvé dans les moteurs ; les écarts chiffrés viennent de la présentation (achats, libellés).
 
 **Notes par axe** (sur 10, appréciation de l'auditeur à partir des constats)
@@ -114,13 +114,14 @@ carrelés, casse comprise ; total des achats = 23,5 m² × 24,90 € = 585,15 �
 
 ### Accessibilité (WCAG 2.2 AA)
 
-- axe-core : 0 violation sur les 33 écrans du tour, en clair et en sombre, sur les appareils de référence (détail par
-  appareil : `mesures/controles.md`). Seuls deux cas avec des données forcées (nom de projet vide : lien sans nom).
+- axe-core : 0 violation sur les 33 écrans du tour, en clair et en sombre, sur les 29 appareils (détail :
+  `mesures/controles.md`), sauf `target-size` sur « Voir tout le plan » en paysage (7 appareils) et sur « Optimiser » à 200 %
+  (A11Y-03), et `link-name` pour des noms de projet vides forcés dans les données (non atteignable par l'interface).
 - Contraste : vérifié par axe (et par `tests/unit/contrast.test.ts` du projet) ; terracotta et ocre jamais en texte.
 - Cibles : ≥ 44 px partout sauf deux murs dépliés étroits de l'écran Pièce (41 × 103, 103 × 33 px) et le lien de
   cloison des résultats (21 px de haut).
 - Clavier : ordre logique, pas de piège, focus visible (trait épais sur le dessin SVG) ; manque : obstacle (PLAN-05).
-- Titres de page et h1 des éditeurs : A11Y-01. Zoom 200 % : A11Y-02. Mouvement réduit : respecté (aucune transition
+- Titres de page et h1 des éditeurs : A11Y-01. Zoom 200 % : A11Y-02 et UI-04 (débordement bien plus fort sous WebKit). Mouvement réduit : respecté (aucune transition
   restante).
 - Alternatives au dessin : le dessin de la pièce a une liste équivalente ; le plan a ses listes de pièces, murs et
   ouvertures ; l'élévation des cloisons a une description ; le calepinage n'a que la fiche de coupe dans les résultats.
@@ -175,5 +176,6 @@ logiciel, processeur du PC) : voir `A_TESTER_SUR_TELEPHONE.md`.
 
 ## Couverture et limites
 
-Voir [`MATRICE.md`](MATRICE.md) : scénarios × appareils, et ce qui n'a pas pu être testé (installation réelle, iOS
-réel, plein soleil, gants, appareil photo, multi-touch WebKit, Lighthouse hors Chromium).
+Voir [`MATRICE.md`](MATRICE.md) : 2 440 exécutions sur 2 581 au bout sans étape en échec, 36 sans objet, le reste
+expliqué cellule par cellule. Non testé : installation réelle, iOS réel (zoom au focus, encoche, clavier), plein soleil,
+gants, appareil photo, hors ligne sous WebKit, multi-touch WebKit, Lighthouse hors Chromium.

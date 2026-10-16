@@ -72,7 +72,7 @@ Avec le plan ouvert dans un onglet et les achats dans un autre, le nom de pièce
 - Cause probable : src/ui/lib/app.svelte.ts:88-92 : l’état des projets est chargé une fois par onglet, aucune synchronisation entre onglets (BroadcastChannel, storage event) ni contrôle de version à l’écriture.
 - Recommandation : Diffuser chaque enregistrement aux autres onglets (BroadcastChannel) et refuser une écriture dont la base a changé (updatedAt) en proposant de recharger.
 
-## P2 (23)
+## P2 (25)
 
 ### PLAN-03 — Plan, dessin libre (#/new, Ajouter une pièce → Dessin)
 
@@ -150,6 +150,17 @@ La liste « Lame » de l’étape Produit dépasse à droite de l’écran (468 
 - Reproduire : Projet maison → Séjour → Sol → Calepinage (téléphone).
 - Cause probable : src/modules/parquet/ui/components/ParquetEditor.svelte:222 (Select sans largeur maximale) ; outils de vue absents de ParquetPlan.svelte.
 - Recommandation : Select à 100 % de largeur ; reprendre les outils de vue (cotes, zoom, ajuster) de la coquille commune.
+
+### UI-03 — Calepinage et plan en paysage (téléphone)
+
+**UI** · téléphones en paysage (7 appareils sur 8) ; « Voir tout le plan » trop petit en paysage 375 × 667 et 360 × 740 (axe target-size)
+
+En paysage, le panneau tiré garde la mise en page portrait : à mi-hauteur il laisse environ 150 px au dessin, les outils flottants (Plan / Rendu / 3D, zoom) recouvrent la cote « 300 cm » et le coin du dessin, la consigne du panneau passe sous le résumé, à moitié coupée ; les réglages de l’étape ne sont pas visibles sans agrandir le panneau, qui cache alors tout le dessin.
+
+- Preuve : docs/audit/captures/calepinage-carrelage/tel-360x740-paysage-chromium/E1-produit.jpg ; docs/audit/captures/calepinage-carrelage/tel-360x740-paysage-chromium/E6-vue-Plan.jpg
+- Reproduire : Téléphone en paysage → calepinage du sol de la salle de bain.
+- Cause probable : src/ui/calepinage/PoseEditorShell.svelte:83-86 : mise en page « ordinateur » (panneau à droite) seulement à partir de 1024 px de large ; idem src/ui/plan/PlanEditor.svelte:79.
+- Recommandation : Panneau latéral dès que la largeur dépasse la hauteur et 640 px (paysage), outils en colonne à gauche comme sur ordinateur.
 
 ### UX-01 — Calepinage carrelage, barre de résumé
 
@@ -327,7 +338,18 @@ Il n’y a ni aide, ni prise en main, ni glossaire : « pose », « zone », « 
 - Cause probable : src/ui/screens/Settings.svelte:137-144
 - Recommandation : Prise en main en 3 écrans au premier lancement, aide contextuelle (i) sur les termes métier, page « Comment ça marche ».
 
-## P3 (17)
+### UI-04 — Fiche carreau et réglages (WebKit, texte agrandi)
+
+**UI** · iPhone 360 px (WebKit) ; texte à 200 % sur tous les téléphones
+
+Sous WebKit à 360 px, la fiche carreau déborde de 6 px à droite (la page défile latéralement, le bord droit des champs touche l’écran). Avec le texte à 200 %, le débordement atteint 73 px sous Chromium et 262 à 332 px sous WebKit (fiche carreau), 76 à 146 px dans les Réglages sous WebKit : formats courants et rangées de boutons sans retour à la ligne.
+
+- Preuve : docs/audit/captures/fiche-carreau/tel-360x740-portrait-webkit/N1-light.jpg ; docs/audit/captures/fiche-carreau/tel-390x844-portrait-webkit/N3-texte200.jpg ; docs/audit/mesures/controles.md
+- Reproduire : iPhone SE (ou 360 px WebKit) → #/library/tiles/modele-gres-60x60 ; puis texte à 200 %.
+- Cause probable : Rangées sans retour à la ligne dans src/modules/carrelage/ui/components/TileForm.svelte (formats courants, forme) et Segmented de largeur fixe ; contenu plus large que la colonne sous WebKit.
+- Recommandation : Segmented et rangées de pastilles à retour à la ligne, min-width:0 sur les conteneurs de formulaire ; test « pas de défilement horizontal » à 360 px et à 200 % dans la suite e2e.
+
+## P3 (20)
 
 ### PLAN-06 — Plan, messages d’erreur
 
@@ -504,6 +526,39 @@ Supprimer un produit utilisé est refusé avec une explication claire, mais seul
 - Reproduire : npm run build.
 - Cause probable : vite.config.ts (precache), import de jspdf
 - Recommandation : Exclure html2canvas et purify (jsPDF sans .html()) ; précharger la 3D et le PDF seulement après le premier écran.
+
+### UI-05 — Plan et calepinage sur tablette 768 px
+
+**UI** · tablettes 768 × 1024 (portrait et paysage)
+
+Sous 1024 px de large, les tablettes reçoivent la mise en page téléphone : plan limité à la moitié haute, panneau tiré qui occupe le reste (boutons étirés sur plus de 700 px). Un iPad de 768 px a pourtant la place d’un panneau latéral.
+
+- Preuve : docs/audit/captures/plan/tab-768x1024-portrait-webkit/N1-light.jpg
+- Reproduire : Plan du projet maison sur un écran de 768 × 1024.
+- Cause probable : Seuil unique min-width:1024px (src/ui/plan/PlanEditor.svelte:79, src/ui/calepinage/PoseEditorShell.svelte:83).
+- Recommandation : Panneau latéral dès 700 px de large (paysage compris), panneau tiré seulement en dessous.
+
+### UX-05 — Résultats, onglet Détail (téléphone)
+
+**UX** · téléphones
+
+L’onglet Détail des résultats du projet fait environ 11 300 px de haut sur téléphone (14 écrans de défilement) : fiche de coupe de chaque rang et de chaque plaque à la suite, sans sommaire ni repli par pose.
+
+- Preuve : docs/audit/mesures/echecs.md (I1 : capture pleine page impossible au-delà de 32 767 px sous WebKit) ; hauteur mesurée 11 341 px sur 390 × 844
+- Reproduire : Résultats du projet maison → Détail.
+- Cause probable : src/ui/screens/Results.svelte (onglet Détail sans repli), sections des modules.
+- Recommandation : Sections repliables par pose, lien « aller à… » en tête, fiche de coupe ouverte seulement pour la pose consultée.
+
+### A11Y-03 — Pièce (murs dépliés), Résultats, Plan (panneau plein)
+
+**a11y** · téléphones et ordinateur (25 appareils pour le lien de cloison)
+
+Cibles sous 44 px : murs étroits de l’écran Pièce (26 × 66 et 66 × 21 px, 16 appareils) ; lien « Cloison 1 » des résultats (21 px de haut) ; « Voir tout le plan » trop près d’une autre cible quand le panneau est ouvert en paysage (axe target-size) ; bouton « Optimiser » à 200 %.
+
+- Preuve : docs/audit/captures/plan/tel-375x667-paysage-chromium/C10-panneau-plein.jpg ; docs/audit/mesures/controles.md
+- Reproduire : Écran Pièce d’un L ; résultats du projet ; plan en paysage, panneau plein.
+- Cause probable : src/ui/room/RoomDrawing.svelte (zone de toucher = le mur déplié) ; src/ui/screens/Results.svelte (lien en ligne) ; src/ui/plan/PlanEditor.svelte (bouton flottant).
+- Recommandation : Zone de toucher élargie autour des murs fins (la liste de surfaces existe comme alternative) ; lien de cloison en bouton de 44 px ; écarter le bouton flottant.
 
 ### DOC-01 — Documents
 

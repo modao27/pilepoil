@@ -4,28 +4,26 @@ Branche : `audit/ui-ux`. Règles : ne rien modifier dans `src/`, ne rien corrige
 `docs/audit/`, `playwright.audit.config.ts` et au script `npm run test:audit`.
 
 ## Étape en cours
-**Étape 2 — matrice complète en cours** (29 appareils, `npm run test:audit`, ~3 h, 5 workers). Ensuite : étape 3.
-Relevés : `docs/audit/captures-local/mesures/<scénario>/<appareil>.json` ; rapport JSON :
-`docs/audit/captures-local/resultats.json`. Lecture rapide des relevés : script `show.cjs` du dossier temporaire (à
-recréer : affiche `notes` d'un JSON).
+**Terminée le 2026-10-17** : matrice complète passée (2 581 exécutions), 51 constats, rapport, matrice de couverture,
+propositions. Reste : attendre les choix de l'utilisateur sur `PROPOSITIONS.md` ; rien n'est mis en œuvre.
 
 ## Étapes
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)
 - [x] 1. Matrice : `playwright.audit.config.ts` (29 projets, 5 workers), script `npm run test:audit`, navigateurs
 - [x] 2a. Scénarios A à N écrits (`tests/audit/*.spec.ts`), verts sur 390 Chromium et 1280 Chromium
-- [ ] 2b. Passage complet sur les 29 appareils (lancé, log : `docs/audit/captures-local/run-complet.log` ; ensuite
+- [x] 2b. Passage complet sur les 29 appareils (lancé, log : `docs/audit/captures-local/run-complet.log` ; ensuite
       `npx playwright test -c playwright.audit.config.ts --last-failed` puis `npx tsx tests/audit/aggregate.ts`)
 - [x] 3a. Analyse sur les appareils de référence ; constats saisis dans `tests/audit/constats.ts`
       (`npx tsx tests/audit/constats.ts` → `constats.csv`, `CONSTATS.md`)
 - [x] 4a. `A_TESTER_SUR_TELEPHONE.md`
 - [x] 4b. `RAPPORT.md` (brouillon complet, couverture à compléter), `PROPOSITIONS.md` (étape 5, maquettes dans
       `maquettes/`)
-- [ ] 3b. À la fin de la matrice : `--last-failed`, `npx tsx tests/audit/aggregate.ts`, lire `mesures/couverture.md`,
+- [x] 3b. À la fin de la matrice : `--last-failed`, `npx tsx tests/audit/aggregate.ts`, lire `mesures/couverture.md`,
       `controles.md`, `echecs.md` ; regarder les captures paysage, tablettes, Firefox, WebKit (`captures-local/<écran>/`)
       ; ajouter les constats propres à ces appareils dans `tests/audit/constats.ts` et régénérer
-- [ ] 4c. `MATRICE.md` (couverture réelle + non testé), chiffres de la synthèse de `RAPPORT.md` mis à jour, captures de
+- [x] 4c. `MATRICE.md` (couverture réelle + non testé), chiffres de la synthèse de `RAPPORT.md` mis à jour, captures de
       preuve hors référence copiées dans `captures/`, commit
-- [ ] Fin : résumé en 10 lignes (couverture, constats par gravité, 5 actions, non testé), attendre les choix
+- [x] Fin : résumé en 10 lignes (couverture, constats par gravité, 5 actions, non testé), attendre les choix
 - [ ] 3. Analyse des captures (Nielsen, UX.md, identité, WCAG 2.2, mobile, textes, parcours, métier)
 - [ ] 4. Rapport : `RAPPORT.md`, `constats.csv`, `MATRICE.md`, `A_TESTER_SUR_TELEPHONE.md`
 - [ ] 5. `PROPOSITIONS.md` (corrections par lots, améliorations, fonctionnalités, classement)
