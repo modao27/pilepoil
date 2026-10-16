@@ -4,12 +4,16 @@ Branche : `audit/ui-ux`. Règles : ne rien modifier dans `src/`, ne rien corrige
 `docs/audit/`, `playwright.audit.config.ts` et au script `npm run test:audit`.
 
 ## Étape en cours
-**Étape 0 — cartographie : faite, en attente de validation** (`docs/audit/CARTOGRAPHIE.md`).
+**Étape 2 — matrice complète en cours** (29 appareils, `npm run test:audit`, ~3 h, 5 workers). Ensuite : étape 3.
+Relevés : `docs/audit/captures-local/mesures/<scénario>/<appareil>.json` ; rapport JSON :
+`docs/audit/captures-local/resultats.json`. Lecture rapide des relevés : script `show.cjs` du dossier temporaire (à
+recréer : affiche `notes` d'un JSON).
 
 ## Étapes
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)
-- [ ] 1. Matrice : `playwright.audit.config.ts`, script `npm run test:audit`, navigateurs
-- [ ] 2. Scénarios A à N dans `tests/audit/`, captures dans `docs/audit/captures/<écran>/<appareil>/`
+- [x] 1. Matrice : `playwright.audit.config.ts` (29 projets, 5 workers), script `npm run test:audit`, navigateurs
+- [x] 2a. Scénarios A à N écrits (`tests/audit/*.spec.ts`), verts sur 390 Chromium et 1280 Chromium
+- [ ] 2b. Passage complet sur les 29 appareils
 - [ ] 3. Analyse des captures (Nielsen, UX.md, identité, WCAG 2.2, mobile, textes, parcours, métier)
 - [ ] 4. Rapport : `RAPPORT.md`, `constats.csv`, `MATRICE.md`, `A_TESTER_SUR_TELEPHONE.md`
 - [ ] 5. `PROPOSITIONS.md` (corrections par lots, améliorations, fonctionnalités, classement)

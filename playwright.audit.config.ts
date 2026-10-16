@@ -65,6 +65,7 @@ export default defineConfig({
   outputDir: 'test-results/audit',
   fullyParallel: true,
   retries: 0,
+  workers: 5,
   timeout: 120_000,
   expect: { timeout: 10_000 },
   reporter: [['list'], ['json', { outputFile: 'docs/audit/captures-local/resultats.json' }]],

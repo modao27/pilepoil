@@ -246,9 +246,9 @@ export async function dumpDb(page: Page): Promise<Dump> {
  * Remplace le contenu de la base par un jeu de données, puis recharge : la base est d'abord créée par
  * l'application elle-même (bon schéma), les magasins sont vidés et remplis. Attend l'accueil prêt.
  */
-export async function seed(page: Page, data: Dump | string, then = '/#/'): Promise<void> {
+export async function seed(page: Page, data: Dump | string, then = '/#/', base = ''): Promise<void> {
   const dump = typeof data === 'string' ? fixture(data) : data;
-  await page.goto('/#/settings');
+  await page.goto(base + '/#/settings');
   await expect(page.getByRole('heading', { name: 'Réglages' })).toBeVisible({ timeout: 30_000 });
   await page.evaluate(
     (dump) =>
@@ -321,6 +321,18 @@ export function panel(page: Page): Locator {
     .first();
 }
 
+/** Sur téléphone, ouvre le panneau tiré s'il est replié (ses réglages sont cachés tant qu'il est fermé). */
+export async function openSheet(page: Page): Promise<void> {
+  await panel(page)
+    .waitFor({ state: 'attached', timeout: 15_000 })
+    .catch(() => undefined);
+  const h = page.locator('.sheet > button.handle').first();
+  if ((await h.count()) && (await h.getAttribute('aria-expanded')) === 'false') {
+    await h.click();
+    await page.waitForTimeout(400);
+  }
+}
+
 /** Saisit un texte dans un champ (par libellé) et le valide par Entrée ; renvoie la valeur affichée ensuite. */
 export async function typeIn(scope: Page | Locator, label: string | RegExp, value: string): Promise<string> {
   const f = scope.getByLabel(label, { exact: typeof label === 'string' }).first();
@@ -334,6 +346,24 @@ export async function typeIn(scope: Page | Locator, label: string | RegExp, valu
 export async function tap(page: Page, x: number, y: number, touch: boolean): Promise<void> {
   if (touch) await page.touchscreen.tap(x, y);
   else await page.mouse.click(x, y);
+}
+
+/** Texte de chaque page d'un PDF (pdfjs, sous Node). */
+export async function pdfText(path: string, max = 2000): Promise<string[]> {
+  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const doc = await getDocument({ data: new Uint8Array(readFileSync(path)) }).promise;
+  const pages: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const c = await (await doc.getPage(i)).getTextContent();
+    pages.push(
+      c.items
+        .map((x) => ('str' in x ? x.str : ''))
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .slice(0, max),
+    );
+  }
+  return pages;
 }
 
 /** Durée d'une action (ms). */
