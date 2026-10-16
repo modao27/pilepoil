@@ -26,6 +26,8 @@
   import { elevationOf } from '../lib/elevation';
   import { alertText, STATE_LABEL, SUPPORT_LABEL } from '../lib/messages';
   import WallsElevation from './WallsElevation.svelte';
+  import TintPicker from './TintPicker.svelte';
+  import { shownColor } from '../../core/colors';
 
   /** `poseId` : pose affichée à l'ouverture (#/p/:id/m/peinture/pose/:poseId). */
   let { project, poseId }: { project: Project; poseId?: string } = $props();
@@ -56,6 +58,7 @@
   const result = $derived(ed.poseResult);
   const paintOf = (id: string | null) => ed.paints.find((p) => p.id === id);
   const finish = $derived(paintOf(s?.finish ?? null));
+  const woodFinish = $derived(paintOf(s?.woodwork.finish ?? null));
   const elevation = $derived(layout ? elevationOf(ed.doc, layout.zones) : null);
   const areas = $derived(
     Object.fromEntries(
@@ -154,6 +157,12 @@
             <p class="muted">
               {finish.yield.toLocaleString('fr-FR')} m²/L par couche · {finish.coats} couches conseillées
             </p>
+            <TintPicker
+              label="Teinte des murs"
+              value={s.color}
+              productColor={finish.color}
+              onchange={(color) => ed.update({ color })}
+            />
           {/if}
           <NumberField
             label="Couches de finition"
@@ -307,6 +316,14 @@
               ]}
               onchange={(v) => ed.updateWoodwork({ finish: orNull(v) })}
             />
+            {#if woodFinish}
+              <TintPicker
+                label="Teinte des boiseries"
+                value={s.woodwork.color}
+                productColor={woodFinish.color}
+                onchange={(color) => ed.updateWoodwork({ color })}
+              />
+            {/if}
             <NumberField
               label="Couches"
               min={1}
@@ -383,7 +400,7 @@
 
 {#snippet drawingArea()}
   {#if elevation?.walls.length}
-    <WallsElevation {elevation} color={finish?.color?.hex ?? '#f4f1ea'} {areas} />
+    <WallsElevation {elevation} color={shownColor(s?.color, finish?.color)} {areas} />
   {:else}
     <EmptyState icon="room" title="Aucun mur" text="Peignez un mur depuis l’écran de la pièce." />
   {/if}

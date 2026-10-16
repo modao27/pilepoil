@@ -8,8 +8,23 @@ import type { PaintPoseSettings } from '../core/types';
 type Id = string;
 
 export const PEINTURE_ID = 'peinture';
-/** 1 : réglages par pose, prix au niveau du module. */
-export const PEINTURE_SCHEMA = 1;
+/** 1 : réglages par pose, prix au niveau du module. 2 : teinte choisie dans la pose (murs et boiseries). */
+export const PEINTURE_SCHEMA = 2;
+
+/** Migrations des données : migrations[n] passe de n − 1 à n. */
+export const PEINTURE_MIGRATIONS: Record<number, (doc: unknown) => unknown> = {
+  2: (doc) => {
+    type Pose = Record<string, unknown> & { woodwork: Record<string, unknown> };
+    const d = doc as { poses: Record<string, Pose> } & Record<string, unknown>;
+    const poses = Object.fromEntries(
+      Object.entries(d.poses).map(([id, p]) => [
+        id,
+        { ...p, color: p.color ?? null, woodwork: { ...p.woodwork, color: p.woodwork.color ?? null } },
+      ]),
+    );
+    return { ...d, poses };
+  },
+};
 
 export interface PeintureData {
   /** Réglages de chaque pose de peinture du projet, par identifiant de pose. */

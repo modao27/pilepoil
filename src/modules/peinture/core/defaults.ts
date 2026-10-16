@@ -17,6 +17,7 @@ export const SHEET_AREA = 20_000_000;
 export function defaultPoseSettings(): PaintPoseSettings {
   return {
     finish: null,
+    color: null,
     coats: 2,
     primer: null,
     filler: null,
@@ -32,6 +33,7 @@ export function defaultPoseSettings(): PaintPoseSettings {
       doors: false,
       doorFaces: 2,
       finish: null,
+      color: null,
       coats: 2,
       primer: null,
     },

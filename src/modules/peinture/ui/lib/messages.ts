@@ -1,8 +1,22 @@
 /** Textes de la peinture : bibliothèque, alertes du moteur, erreurs du calcul. */
+import type { ColorFamily } from '../../core/colors';
 import type { PaintError } from '../../core/paint';
 import type { PaintAlert, PaintRole, PaintSheen, Support, SupportState, Tint } from '../../core/types';
 
 export const ROLE_LABEL: Record<PaintRole, string> = { finish: 'Finition', primer: 'Apprêt', filler: 'Enduit' };
+
+export const FAMILY_LABEL: Record<ColorFamily, string> = {
+  whites: 'Blancs',
+  beiges: 'Beiges et grèges',
+  greys: 'Gris',
+  greens: 'Verts',
+  blues: 'Bleus',
+  reds: 'Roses et rouges',
+  yellows: 'Jaunes et ocres',
+  browns: 'Bruns',
+  purples: 'Violets',
+  blacks: 'Noirs',
+};
 
 export const SHEEN_LABEL: Record<PaintSheen, string> = {
   mat: 'Mat',

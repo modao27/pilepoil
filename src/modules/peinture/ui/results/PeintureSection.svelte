@@ -50,7 +50,7 @@
       <ul class="products">
         {#each p.result.products as x (x.key)}
           <li>
-            {name(x.paint)} : {fr(x.need / 1000)}
+            {name(x.paint)}{x.color ? ' — ' + x.color.name : ''} : {fr(x.need / 1000)}
             {x.role === 'filler' ? 'kg' : 'L'} sur {fr(x.surface)} m² ({x.packs
               .map((k) => `${k.count} × ${fr(k.size, 2)}`)
               .join(' + ') || 'pas de pot'})
