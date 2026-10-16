@@ -94,6 +94,49 @@ test('peinture : mur entier, réglages, résumé, résultats et achats', async (
   await expect(page.getByText(/pots? de /).first()).toBeVisible();
 });
 
+test('peinture : teinte choisie dans chaque pose, des pots par teinte', async ({ page }, info) => {
+  test.setTimeout(90_000);
+  const id = await createProject(page, { project: 'Appartement', name: 'Chambre', size: [400, 300] });
+  await openRoom(page, id, 'Chambre');
+
+  /** Teinte des murs de la pose ouverte, choisie dans la palette. */
+  async function tint(name: string, capture = false) {
+    await panel(page)
+      .getByRole('button', { name: /^Teinte des murs :/ })
+      .first()
+      .click();
+    const dialog = page.getByRole('dialog', { name: 'Teinte des murs' });
+    if (capture) {
+      await check(page);
+      await shot(page, info, '98-peinture-palette');
+    }
+    await dialog.getByRole('button', { name, exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(panel(page).getByRole('button', { name: `Teinte des murs : ${name}` })).toBeVisible();
+  }
+
+  await cover(page, 'Mur 1', 'peinture');
+  await page.getByRole('link', { name: 'Réglages' }).first().click();
+  // au départ, la teinte de la peinture
+  await expect(panel(page).getByRole('button', { name: /^Teinte des murs : Blanc/ })).toBeVisible();
+  await tint('Vert sauge', true);
+  await check(page);
+  await shot(page, info, '97-peinture-teinte');
+
+  // second mur, nouvelle pose de la même peinture, en bleu nuit : une couche de plus conseillée
+  await openRoom(page, id, 'Chambre');
+  await cover(page, 'Mur 2', 'peinture', 'new');
+  await page.getByRole('link', { name: 'Réglages' }).first().click();
+  await tint('Bleu nuit');
+  await expect(page.getByRole('region', { name: 'Alertes' })).toBeVisible();
+
+  // achats : une combinaison de pots par teinte
+  await page.goto(`/#/p/${id}/achats`);
+  await expect(page.getByText(/— Vert sauge — pot de /).first()).toBeVisible();
+  await expect(page.getByText(/— Bleu nuit — pot de /).first()).toBeVisible();
+  await check(page);
+});
+
 test('peinture : au-dessus d’une crédence carrelée, sur le même mur, sans recouvrement', async ({ page }, info) => {
   const id = await createProject(page, { project: 'Maison', name: 'Cuisine', size: [400, 300] });
   await openRoom(page, id, 'Cuisine');

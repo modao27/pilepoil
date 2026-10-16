@@ -36,11 +36,16 @@
 </script>
 
 <div class="tp">
-  <span class="lbl">{label}</span>
-  <button type="button" class="current" aria-haspopup="dialog" onclick={() => (open = true)}>
+  <span class="lbl" aria-hidden="true">{label}</span>
+  <button
+    type="button"
+    class="current"
+    aria-haspopup="dialog"
+    aria-label="{label} : {current}"
+    onclick={() => (open = true)}
+  >
     <span class="dot" style="background: {shownColor(value, productColor)}" aria-hidden="true"></span>
     <span>{current}</span>
-    <span class="sr">, changer la teinte</span>
   </button>
 </div>
 
@@ -135,13 +140,5 @@
     height: 1.75rem;
     border: 1px solid var(--line);
     border-radius: 50%;
-  }
-  .sr {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 </style>
