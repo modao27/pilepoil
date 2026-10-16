@@ -38,6 +38,7 @@ export const module: ModuleManifest<CarrelageData, ProjectSpec, ProjectResult, A
     schemaVersion: TILE_SCHEMA,
     migrations: {},
     usedIn: usesTile,
+    importHint: /carrelage|carreau|faience|gres|zellige|mosaique|tomette/g,
     templates: () => [...TILE_TEMPLATES, ...TILE_CATALOG].map((t) => ({ ...t })),
     screens: {
       list: () => import('./ui/screens/Library.svelte').then((m) => m.default),

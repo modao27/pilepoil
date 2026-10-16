@@ -82,6 +82,19 @@ export function findLength(sheet: Sheet, fallback: LengthUnit, ...patterns: RegE
   return p ? lengthMm(p.value, p.label, fallback) : null;
 }
 
+/**
+ * Nom du produit : libellé « Nom » ou « Désignation », sinon première ligne si elle ressemble à un nom. Coupé au
+ * dernier mot entier avant `max` caractères (longueur des champs Nom). Null si rien ne convient.
+ */
+export function productName(sheet: Sheet, max = 60): string | null {
+  const raw = findValue(sheet, /^(nom|designation|titre)$/) ?? (sheet.title.length > 8 ? sheet.title : '');
+  const name = raw.replace(/\s*\|.*$/, '').trim();
+  if (!name || name.includes('\t')) return null;
+  if (name.length <= max) return name;
+  const cut = name.slice(0, max + 1);
+  return cut.slice(0, Math.max(cut.lastIndexOf(' '), max / 2)).replace(/[\s,;:–-]+$/, '');
+}
+
 /** Tout le texte normalisé (libellés et valeurs), pour les indices diffus (« bâton rompu », « clipsable »…). */
 export function sheetText(sheet: Sheet): string {
   return normalizeLabel([sheet.title, ...sheet.pairs.map((p) => p.key + ' ' + p.value)].join(' '));

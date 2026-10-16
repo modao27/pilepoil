@@ -8,6 +8,7 @@ import {
   findValue,
   firstNumber,
   parseSheet,
+  productName,
   price,
   put,
   sheetText,
@@ -28,7 +29,7 @@ export function boardFromSheet(text: string): SheetRead<Board> {
   const r: SheetRead<Board> = { fields: {}, read: [] };
   const all = sheetText(sheet);
 
-  put(r, 'name', findValue(sheet, /^(nom|designation|titre)$/) ?? (sheet.title.length > 8 ? sheet.title : null));
+  put(r, 'name', productName(sheet));
   put(
     r,
     'kind',

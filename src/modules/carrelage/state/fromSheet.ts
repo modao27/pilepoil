@@ -10,6 +10,7 @@ import {
   firstNumber,
   normalizeLabel,
   parseSheet,
+  productName,
   price,
   put,
   sheetText,
@@ -21,7 +22,7 @@ export function tileFromSheet(text: string): SheetRead<Tile> {
   const sheet = parseSheet(text);
   const r: SheetRead<Tile> = { fields: {}, read: [] };
 
-  put(r, 'name', findValue(sheet, /^(nom|designation|titre)$/) ?? (sheet.title.length > 8 ? sheet.title : null));
+  put(r, 'name', productName(sheet));
 
   let length = findLength(sheet, 'cm', /^longueur(?!.*joint)/);
   let width = findLength(sheet, 'cm', /^largeur(?!.*joint)/);

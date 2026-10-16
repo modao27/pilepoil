@@ -10,6 +10,8 @@ export type Route =
   | { name: 'library'; lib: string }
   | { name: 'libraryItem'; lib: string; id: string | null }
   | { name: 'settings' }
+  /** Fiche produit envoyée par le favori « Envoyer à PilePoil » (#/import/<texte>), ou à coller (#/import). */
+  | { name: 'import'; text: string }
   | { name: 'demo' }
   /** Écran Projet : plan, outils activés, ajout d'un outil. */
   | { name: 'project'; id: string }
@@ -52,6 +54,7 @@ export function parseRoute(hash: string): Route {
     if (!d) return item(b, c);
   }
   if (a === 'settings' && !b) return { name: 'settings' };
+  if (a === 'import') return { name: 'import', text: parts.slice(1).join('/') };
   if (a === 'demo' && !b) return { name: 'demo' };
   if (a === 'p' && b && c === 'm' && d) {
     // ancienne adresse des résultats d'un outil : ceux du projet
@@ -84,6 +87,8 @@ export function href(r: Route): string {
       return '#/library/' + encodeURIComponent(r.lib) + '/' + (r.id == null ? 'new' : encodeURIComponent(r.id));
     case 'settings':
       return '#/settings';
+    case 'import':
+      return '#/import' + (r.text ? '/' + encodeURIComponent(r.text) : '');
     case 'demo':
       return '#/demo';
     case 'project':

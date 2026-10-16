@@ -10,6 +10,7 @@ import {
   numbers,
   parseSheet,
   price,
+  productName,
   volume,
 } from '../../src/core/sheet';
 
@@ -47,6 +48,18 @@ describe('paires libellé / valeur', () => {
         return Array.isArray(s.pairs) && typeof s.title === 'string';
       }),
     );
+  });
+});
+
+describe('nom du produit', () => {
+  it('libellé Nom, sinon première ligne ; coupé au dernier mot entier', () => {
+    expect(productName(parseSheet('Nom\tCarreau Exemplo\nCouleur\tGris'))).toBe('Carreau Exemplo');
+    const long = 'Parquet chêne massif bâton rompu huilé naturel ép. 13 mm l. 85 mm long. 300 mm fabrication française';
+    const n = productName(parseSheet(long))!;
+    expect(n.length).toBeLessThanOrEqual(60);
+    expect(long.startsWith(n)).toBe(true);
+    expect(long[n.length]).toBe(' ');
+    expect(productName(parseSheet('Bof'))).toBeNull();
   });
 });
 

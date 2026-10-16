@@ -271,6 +271,21 @@ export class AppState {
     this.libraryVersion++;
   }
 
+  /** Fiche produit reçue du favori (#/import), en attente du formulaire « nouveau » de la bibliothèque `lib`. */
+  private pendingSheet: { lib: string; text: string } | null = null;
+
+  setPendingSheet(lib: string, text: string): void {
+    this.pendingSheet = { lib, text };
+  }
+
+  /** La fiche en attente pour `lib`, une seule fois. */
+  takePendingSheet(lib: string): string | null {
+    const p = this.pendingSheet;
+    if (!p || p.lib !== lib) return null;
+    this.pendingSheet = null;
+    return p.text;
+  }
+
   libraryItem<T extends LibraryItem>(lib: string, id: Id): T | undefined {
     return this.libraries[lib]?.find((x) => x.id === id) as T | undefined;
   }

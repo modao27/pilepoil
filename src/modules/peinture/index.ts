@@ -29,6 +29,7 @@ export const library: LibraryDefinition = {
       packs: p.packs.map((k) => ({ ...k })),
     })),
   usedIn: usesPaint,
+  importHint: /peinture|sous-couche|enduit|laque|primaire|velours|satin/g,
 };
 
 /** Module peinture (docs/BOITE.md §2, docs/peinture/SPEC.md). */

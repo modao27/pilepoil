@@ -45,7 +45,9 @@
    * l'écran affiché en a besoin, sinon quand le navigateur est libre.
    */
   let logicReady = $state(modulesLoaded());
-  const needsLogic = $derived(!['home', 'library', 'libraryItem', 'settings', 'notFound'].includes(route.name));
+  const needsLogic = $derived(
+    !['home', 'library', 'libraryItem', 'settings', 'import', 'notFound'].includes(route.name),
+  );
   const loadLogic = () =>
     void loadModules().then(
       () => (logicReady = true),
@@ -100,6 +102,10 @@
         />{/if}{/await}{/key}
 {:else if route.name === 'settings'}
   {#await import('./screens/Settings.svelte') then { default: Settings }}<Settings />{/await}
+{:else if route.name === 'import'}
+  {#key route.text}{#await import('./screens/Import.svelte') then { default: Import }}<Import
+        text={route.text}
+      />{/await}{/key}
 {:else if route.name === 'demo'}
   {#await import('./screens/Demo.svelte') then { default: Demo }}<Demo />{/await}
 {:else if route.name === 'room'}

@@ -10,6 +10,7 @@ import {
   lowestNumber,
   normalizeLabel,
   parseSheet,
+  productName,
   price,
   put,
   sheetText,
@@ -31,7 +32,7 @@ export function paintFromSheet(text: string): SheetRead<Paint> {
   const sheet = parseSheet(text);
   const r: SheetRead<Paint> = { fields: {}, read: [] };
   const all = sheetText(sheet);
-  const name = findValue(sheet, /^(nom|designation|titre)$/) ?? (sheet.title.length > 8 ? sheet.title : null);
+  const name = productName(sheet);
   put(r, 'name', name);
   put(r, 'brand', findValue(sheet, /^marque/));
 
@@ -61,7 +62,8 @@ export function paintFromSheet(text: string): SheetRead<Paint> {
   put(r, 'coats', coats !== null && coats >= 1 ? Math.round(coats) : null);
 
   const declared = findValue(sheet, /^capacite/, /^contenance/, /^volume/, /^poids net/);
-  const size = declared !== undefined ? volume(declared) : volume(name ?? undefined, true);
+  const fullName = findValue(sheet, /^(nom|designation|titre)$/) ?? sheet.title;
+  const size = declared !== undefined ? volume(declared) : volume(fullName, true);
   const p = price(findValue(sheet, /^prix/));
   if (size !== null && size > 0) put(r, 'packs', [{ size, price: p && p.per !== 'm2' ? p.amount : null }]);
   return r;

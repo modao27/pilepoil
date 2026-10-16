@@ -24,6 +24,7 @@ export const library: LibraryDefinition = {
   },
   templates: () => [...BOARD_TEMPLATES, ...BOARD_CATALOG].map((b) => ({ ...b, lengths: [...b.lengths] })),
   usedIn: usesBoard,
+  importHint: /parquet|stratifie|plancher|contrecolle|lame|vinyle|baton rompu|point de hongrie/g,
 };
 
 /** Module parquet (docs/BOITE.md §2, docs/parquet/SPEC.md). */

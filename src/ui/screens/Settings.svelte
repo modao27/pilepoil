@@ -7,9 +7,21 @@
   import { libraries, modules } from '../../modules/registry';
   import { count } from '../lib/format';
   import { APP_VERSION, pwa } from '../lib/pwa.svelte';
+  import { bookmarklet } from '../lib/bookmarklet';
 
   let appStatus = $state('');
   let checking = $state(false);
+  let bookmarkStatus = $state('');
+  const bookmarkletUrl = bookmarklet(location.href.split('#')[0]!);
+
+  async function copyBookmarklet() {
+    try {
+      await navigator.clipboard.writeText(bookmarkletUrl);
+      bookmarkStatus = 'Favori copié.';
+    } catch {
+      bookmarkStatus = 'Copie impossible : faites un appui long sur le lien « Envoyer à PilePoil ».';
+    }
+  }
 
   async function checkUpdate() {
     checking = true;
@@ -47,6 +59,24 @@
         hint="Pour les nouvelles pièces. 72 mm : cloison placo 72/48. Modifiable ensuite pièce par pièce et mur par mur."
         onchange={(v) => void app.setWallThickness(v)}
       />
+    </section>
+
+    <section aria-labelledby="s-import">
+      <h2 id="s-import">Importer des produits</h2>
+      <p>
+        Le favori « Envoyer à PilePoil » lit la fiche d’un produit ouverte sur le site d’un magasin et la remplit dans
+        une bibliothèque. Vous vérifiez avant d’enregistrer.
+      </p>
+      <p class="muted">
+        Sur ordinateur : faites glisser ce lien dans la barre de favoris. Sur téléphone : copiez-le, créez un favori et
+        remplacez son adresse par le texte copié ; ouvrez-le ensuite depuis la barre d’adresse en tapant son nom.
+      </p>
+      <div class="actions">
+        <a class="bm" href={bookmarkletUrl} onclick={(e) => e.preventDefault()}>Envoyer à PilePoil</a>
+        <Button onclick={copyBookmarklet}>Copier le favori</Button>
+        <Button href="#/import">Coller une fiche</Button>
+      </div>
+      <p class="status" role="status">{bookmarkStatus}</p>
     </section>
 
     <section aria-labelledby="s-data">
@@ -150,5 +180,18 @@
   a {
     display: inline-block;
     padding: var(--space-2) 0;
+  }
+  a.bm {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
+    padding: 0 var(--space-4);
+    border: 1px dashed var(--accent);
+    border-radius: var(--r-field);
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 500;
+    text-decoration: none;
+    cursor: grab;
   }
 </style>
