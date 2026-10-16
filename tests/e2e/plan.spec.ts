@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot } from './helpers';
+import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, savedProjectNames, shot } from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -149,6 +149,8 @@ test('plan : dessin libre point par point, aimanté', async ({ page }, info) => 
   await rename.getByLabel('Nom du projet', { exact: true }).fill('Studio');
   await rename.getByRole('button', { name: 'Renommer' }).click();
   await expect(page.getByRole('heading', { name: /^Studio/ })).toBeVisible();
+  // l'écriture est lancée tout de suite mais asynchrone : un rechargement trop tôt l'interromprait
+  await expect.poll(() => savedProjectNames(page)).toContain('Studio');
   await page.reload();
   await expect(page.getByRole('heading', { name: /^Studio/ })).toBeVisible();
 });

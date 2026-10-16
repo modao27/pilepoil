@@ -170,6 +170,25 @@ export async function addPlanWindow(page: Page, id: string, room = 'Pièce'): Pr
 }
 
 /** Capture pleine page dans screenshots/<profil>/<nom>.png (non versionné). */
+/** Noms des projets enregistrés dans IndexedDB (pour attendre une écriture avant de recharger la page). */
+export function savedProjectNames(page: Page): Promise<string[]> {
+  return page.evaluate(
+    () =>
+      new Promise<string[]>((resolve, reject) => {
+        const open = indexedDB.open('pilepoil');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const req = open.result.transaction('projects').objectStore('projects').getAll();
+          req.onsuccess = () => {
+            resolve((req.result as { name: string }[]).map((p) => p.name));
+            open.result.close();
+          };
+          req.onerror = () => reject(req.error);
+        };
+      }),
+  );
+}
+
 export async function shot(page: Page, info: TestInfo, name: string): Promise<void> {
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({
