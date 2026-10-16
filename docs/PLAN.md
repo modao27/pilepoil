@@ -323,6 +323,18 @@ Décidé le 2026-10-16. Branche `b1-bibliotheques`.
 - Fini quand : tests unitaires (catalogues, amorçage, lecture, correspondances, routes, favori) et e2e
   (`import.spec.ts`, bibliothèques) verts sur téléphone et ordinateur.
 
+## Teintes de peinture dans la pose (B2)
+
+Décidé le 2026-10-16. Branche `b2-teintes`.
+
+- Palette de teintes nommées sans marque (`peinture/core/colors.ts`), teinte claire/moyenne/foncée déduite de la
+  luminance (`tintOf`).
+- Schéma peinture 2 : `color` des murs et `woodwork.color` dans chaque pose (null : teinte du produit), migration.
+- Moteur et achats : alerte de teinte foncée selon la teinte de la pose ; besoins additionnés par produit et par
+  teinte, une ligne d'achat par teinte (clé d'origine sans teinte).
+- Éditeur : sélecteur de teinte (murs, boiseries) ; élévation, 3D, PDF et résultats à la teinte de la pose.
+- Fini quand : tests unitaires (`peintureTints`) et e2e (même peinture, deux teintes, deux lignes de pots) verts.
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

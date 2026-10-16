@@ -59,6 +59,7 @@ export interface Paint {
 /** Réglages d'une pose (modules.peinture.data.poses[poseId]). */
 export interface PaintPoseSettings {
   finish: Id | null;                 // produit de finition des murs
+  color: { name: string; hex: string } | null;   // teinte choisie dans la pose (B2) ; null : celle du produit
   coats: number;                     // 2 par défaut
   primer: Id | null;                 // apprêt ; proposé selon le support
   filler: Id | null;
@@ -74,12 +75,17 @@ export interface PaintPoseSettings {
     doors: boolean;                  // vantaux : largeur × hauteur × faces
     doorFaces: 1 | 2;               // 2
     finish: Id | null;               // produit de finition des boiseries (usage `woodwork`)
+    color: { name: string; hex: string } | null;   // teinte des boiseries ; null : celle du produit
     coats: number;                   // 2
     primer: Id | null;
   };
   consumables: { masking: boolean; sheet: boolean; roller: boolean; brush: boolean };
 }
 ```
+
+Teintes (B2, schéma 2) : palette de teintes nommées sans marque, par famille (`core/colors.ts`), choisie dans
+chaque pose pour les murs et les boiseries ; une même peinture de la bibliothèque sert dans plusieurs teintes.
+Élévation, 3D, PDF et achats montrent la teinte de la pose, sinon celle du produit.
 
 Les zones et poses vivent dans le projet (`core/coverage`) ; le module garde `PeintureData` : les
 `PaintPoseSettings` de chaque pose et les prix saisis dans le projet (`prices`, par clé de ligne d'achat, communs à
@@ -113,7 +119,8 @@ Pour chaque produit de la pose, avec `k` le coefficient de support (§3.3) :
 - **Finition** : `coats` couches. **Apprêt** : 1 couche. **Enduit** : kg = surface × `fillerRate(état)`
   (0 pour `good`, 0,3 pour `average`, 1,0 kg/m² pour `poor`), × (1 + marge), arrondi au gramme supérieur.
 - Apprêt proposé par défaut si le support est `plaster` ou `concrete`, pas si `painted`.
-- La teinte `dark` sur support `painted` produit l'alerte `dark-tint-coat` (une couche de plus conseillée),
+- La teinte (celle de la pose si elle est choisie, déduite de sa luminance par `tintOf`, sinon `tint` du
+  produit) `dark` sur support `painted` produit l'alerte `dark-tint-coat` (une couche de plus conseillée),
   sans changer le calcul : l'utilisateur ajuste les couches.
 
 ### 3.3 Support
@@ -170,8 +177,9 @@ universelle, enduit de rebouchage. Rendements et contenances types indicatifs, �
 
 Lignes `ShoppingLine` : finition, apprêt, enduit (`finish`), consommables (`consumable`). `ShoppingUnit` gagne
 `'pot'`. Quantité = nombre de pots d'une taille ; une combinaison produit une ligne par taille
-(`key` = `peinture:<produit>:<rôle>:<taille>`), les besoins d'un produit sur plusieurs poses s'additionnent avant
-le choix des pots (`core/aggregate.ts`), `detail` = « 6,4 L + 10 % ». Prix : bibliothèque (`priceFromLibrary`) ou saisi dans
+(`key` = `peinture:<produit>:<rôle>:<taille>`), les besoins d'un produit dans une même teinte sur plusieurs poses
+s'additionnent avant le choix des pots ; une teinte choisie dans la pose a ses propres pots (clé suffixée
+`:<hex>`, libellé « — Vert sauge »), sans teinte la clé reste celle d'origine (`core/aggregate.ts`), `detail` = « 6,4 L + 10 % ». Prix : bibliothèque (`priceFromLibrary`) ou saisi dans
 le projet. Total par pose et pour le projet comme les autres modules.
 
 ## 6. Invariants (tests de propriétés, `fast-check`)

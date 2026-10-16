@@ -40,6 +40,12 @@ export interface OpeningRule {
   threshold: number;
 }
 
+/** Teinte nommée et sa pastille. */
+export interface PaintColor {
+  name: string;
+  hex: string;
+}
+
 export interface WoodworkSettings {
   skirting: boolean;
   /** mm. */
@@ -50,6 +56,8 @@ export interface WoodworkSettings {
   doors: boolean;
   doorFaces: 1 | 2;
   finish: Id | null;
+  /** Teinte choisie pour la finition des boiseries ; null : celle de la peinture. */
+  color: PaintColor | null;
   coats: number;
   primer: Id | null;
 }
@@ -64,6 +72,8 @@ export interface Consumables {
 /** Réglages d'une pose de peinture. */
 export interface PaintPoseSettings {
   finish: Id | null;
+  /** Teinte choisie pour la finition des murs ; null : celle de la peinture. */
+  color: PaintColor | null;
   coats: number;
   primer: Id | null;
   filler: Id | null;
@@ -159,6 +169,8 @@ export interface PaintProduct {
   paint: Id;
   role: PaintRole;
   target: PaintTarget;
+  /** Teinte choisie dans la pose (finition seulement) : les pots s'achètent par teinte. */
+  color?: PaintColor;
   /** Surface traitée, m². */
   surface: number;
   coats: number;

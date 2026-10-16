@@ -8,7 +8,7 @@ import { PAINT_CATALOG } from './core/catalog';
 import type { PeintureResult, PeintureSpec } from './core/types';
 import type { Action } from './state/actions';
 import { PEINTURE_RULES } from './state/ids';
-import { PEINTURE_ID, PEINTURE_SCHEMA, type PeintureData } from './state/model';
+import { PEINTURE_ID, PEINTURE_MIGRATIONS, PEINTURE_SCHEMA, type PeintureData } from './state/model';
 import { usesPaint } from './state/usage';
 
 /** Bibliothèque de peintures (#/library/paints). */
@@ -45,7 +45,7 @@ export const module: ModuleManifest<PeintureData, PeintureSpec, PeintureResult, 
   poseHref: (p, pose) => `#/p/${encodeURIComponent(p)}/m/peinture/pose/${encodeURIComponent(pose)}`,
   logic: () => import('./logic').then((m) => m.logic),
   results: () => import('./ui/lib/resultsModule').then((m) => m.results),
-  migrations: {},
+  migrations: PEINTURE_MIGRATIONS,
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
     routes: [{ path: 'pose/:poseId', load: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default) }],

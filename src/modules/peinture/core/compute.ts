@@ -2,11 +2,13 @@
  * Calcul d'une pose de peinture (docs/peinture/SPEC.md §3) : surface nette, couches, litres, pots, boiseries,
  * consommables, alertes. Pur et déterministe, repère du mur, mm ; résultats en m², mL (g pour un enduit).
  */
+import { tintOf } from './colors';
 import { FILLER_RATE, MASKING_ROLL, SHEET_AREA, SUPPORT_YIELD } from './defaults';
 import { choosePacks } from './packs';
 import { framePerimeter, measureZone, openingsIn, paintableSkirting, zoneSkirtings } from './surface';
 import type {
   ConsumableLine,
+  PaintColor,
   PaintAlert,
   PaintProduct,
   PaintResult,
@@ -103,6 +105,7 @@ export function computePaint(spec: PaintSpec): PaintResult {
     coats: number,
     coef: number,
     use: PaintUse | null,
+    color: PaintColor | null = null,
   ): void => {
     const paint = paintOf(id);
     if (!paint) {
@@ -131,6 +134,7 @@ export function computePaint(spec: PaintSpec): PaintResult {
       paint: paint.id,
       role,
       target,
+      ...(color ? { color } : {}),
       surface: surfaceMm2 / M2,
       coats: role === 'filler' ? 1 : coats,
       need,
@@ -145,14 +149,15 @@ export function computePaint(spec: PaintSpec): PaintResult {
   if (s.filler && s.fillerState !== 'good') add('walls', 'filler', s.filler, netMm2, 1, 1, null);
   if (s.primer) add('walls', 'primer', s.primer, netMm2, 1, k, null);
   else if (s.support !== 'painted') alerts.push({ code: 'primer-missing', target: 'walls' });
-  add('walls', 'finish', s.finish, netMm2, s.coats, k, 'walls');
+  add('walls', 'finish', s.finish, netMm2, s.coats, k, 'walls', s.color);
   const finish = paintOf(s.finish);
-  if (finish?.tint === 'dark' && s.support === 'painted') alerts.push({ code: 'dark-tint-coat', paint: finish.id });
+  const tint = s.color ? tintOf(s.color.hex) : finish?.tint;
+  if (finish && tint === 'dark' && s.support === 'painted') alerts.push({ code: 'dark-tint-coat', paint: finish.id });
 
   // boiseries : coefficient de support 1
   if (woodMm2 > 0) {
     if (w.primer) add('woodwork', 'primer', w.primer, woodMm2, 1, 1, null);
-    add('woodwork', 'finish', w.finish, woodMm2, w.coats, 1, 'woodwork');
+    add('woodwork', 'finish', w.finish, woodMm2, w.coats, 1, 'woodwork', w.color);
   }
 
   // consommables

@@ -113,7 +113,7 @@ export function writePeintureResults(d: Doc, input: ResultInput<PeintureResult>)
         r.products.map((p) => {
           const kg = p.role === 'filler' ? 'kg' : 'L';
           return [
-            `${paintName(p.paint)} (${p.target === 'woodwork' ? 'boiseries, ' : ''}${ROLE_LABEL[p.role].toLowerCase()})`,
+            `${paintName(p.paint)}${p.color ? ' — ' + p.color.name : ''} (${p.target === 'woodwork' ? 'boiseries, ' : ''}${ROLE_LABEL[p.role].toLowerCase()})`,
             `${fr(p.need / 1000, 1)} ${kg}`,
             p.packs.map((k) => `${k.count} × ${fr(k.size, 2)} ${kg}`).join(' + ') || 'aucun pot',
             p.cost == null ? '' : euro(p.cost),

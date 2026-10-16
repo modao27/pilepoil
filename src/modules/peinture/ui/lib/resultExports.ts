@@ -4,13 +4,11 @@ import type { Zone } from '../../../../core/coverage/types';
 import { buildWallPaint, type WallPaint } from '../../../../render/scene3d/paint';
 import type { MeshData } from '../../../../render/scene3d/types';
 import type { ResultExports, ResultInput } from '../../../types';
+import { shownColor } from '../../core/colors';
 import type { Paint } from '../../core/paint';
 import type { PeintureResult } from '../../core/types';
 import { layoutsOf } from '../../state/poses';
 import { writePeintureResults } from './pdf';
-
-/** Blanc cassé des modèles types : couleur d'une pose dont la peinture n'a pas de teinte. */
-const FALLBACK = '#f4f1ea';
 
 /** Zones de murs peintes de la portée. */
 function scopedZones(input: Pick<ResultInput, 'project' | 'scope'>): { zone: Zone; color: string }[] {
@@ -19,7 +17,7 @@ function scopedZones(input: Pick<ResultInput, 'project' | 'scope'>): { zone: Zon
   return layoutsOf(project)
     .filter((l) => (scope.kind === 'pose' ? l.id === scope.pose : true))
     .flatMap((l) => {
-      const color = paints?.find((p) => p.id === l.settings.finish)?.color?.hex ?? FALLBACK;
+      const color = shownColor(l.settings.color, paints?.find((p) => p.id === l.settings.finish)?.color);
       return l.zones
         .filter((z) => scope.kind !== 'room' || z.surface.room === scope.room)
         .map((zone) => ({ zone, color }));
