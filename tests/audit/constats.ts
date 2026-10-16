@@ -99,7 +99,7 @@ export const FINDINGS: Finding[] = [
     steps: 'Projet maison → calepinage du sol de la salle de bain → Pose → Vannerie → Achats.',
     cause:
       'Règle voulue (docs/carrelage/DOMAIN.md:20 : largeur ramenée à S/n − j) mais les achats regroupent par taille posée (src/modules/carrelage/core/shopping/items.ts:48, clé tile|<taille>) au lieu du produit de la bibliothèque. Moteur sous parité legacy.',
-    reco: 'Regrouper les achats par carreau de la bibliothèque (tileId) ; la largeur ramenée devient une coupe (recoupe de 1 mm) dans la fiche de coupe. Vérifier le cas dans les tests de parité.',
+    reco: 'Regrouper les lignes par carreau de la bibliothèque dans l’adaptateur d’achats (src/modules/carrelage/state/module.ts:117-141), sans toucher au moteur : la parité (tests/parity/parity.test.ts:216) compare les clés du moteur. La largeur ramenée reste une recoupe, à signaler dans la fiche de coupe.',
   },
   {
     id: 'ROB-01',

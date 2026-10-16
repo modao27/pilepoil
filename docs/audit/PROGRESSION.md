@@ -18,8 +18,14 @@ recréer : affiche `notes` d'un JSON).
 - [x] 3a. Analyse sur les appareils de référence ; constats saisis dans `tests/audit/constats.ts`
       (`npx tsx tests/audit/constats.ts` → `constats.csv`, `CONSTATS.md`)
 - [x] 4a. `A_TESTER_SUR_TELEPHONE.md`
-- [ ] 3b. Constats propres aux autres appareils (paysage, tablettes, Firefox, WebKit) après la matrice
-- [ ] 4b. `RAPPORT.md` (synthèse), `MATRICE.md`, captures de preuve copiées dans `captures/`
+- [x] 4b. `RAPPORT.md` (brouillon complet, couverture à compléter), `PROPOSITIONS.md` (étape 5, maquettes dans
+      `maquettes/`)
+- [ ] 3b. À la fin de la matrice : `--last-failed`, `npx tsx tests/audit/aggregate.ts`, lire `mesures/couverture.md`,
+      `controles.md`, `echecs.md` ; regarder les captures paysage, tablettes, Firefox, WebKit (`captures-local/<écran>/`)
+      ; ajouter les constats propres à ces appareils dans `tests/audit/constats.ts` et régénérer
+- [ ] 4c. `MATRICE.md` (couverture réelle + non testé), chiffres de la synthèse de `RAPPORT.md` mis à jour, captures de
+      preuve hors référence copiées dans `captures/`, commit
+- [ ] Fin : résumé en 10 lignes (couverture, constats par gravité, 5 actions, non testé), attendre les choix
 - [ ] 3. Analyse des captures (Nielsen, UX.md, identité, WCAG 2.2, mobile, textes, parcours, métier)
 - [ ] 4. Rapport : `RAPPORT.md`, `constats.csv`, `MATRICE.md`, `A_TESTER_SUR_TELEPHONE.md`
 - [ ] 5. `PROPOSITIONS.md` (corrections par lots, améliorations, fonctionnalités, classement)
@@ -32,6 +38,8 @@ recréer : affiche `notes` d'un JSON).
   (Lighthouse hors Chromium, CDP réseau/CPU hors Chromium) est sauté et noté dans `MATRICE.md` ;
 - captures commitées : celles citées par un constat, plus une par écran sur les deux appareils de référence
   (390 Chromium, 1280 Chromium), en JPEG ; les autres dans `docs/audit/captures-local/` (ignoré par git).
+- matrice complète gardée malgré sa durée (12 à 16 h estimées, 5 workers, mémoire saturée au-delà) ; rapport rédigé
+  pendant le passage puis complété.
 
 ## Constats confirmés en test (brouillon, à reprendre dans constats.csv)
 - B6 : projet sans carrelage → aucune action (renommer, dupliquer, supprimer) sur l'accueil ; aucun autre écran ne

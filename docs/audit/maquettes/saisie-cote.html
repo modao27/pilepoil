@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette — saisie d’une cote</title>
+<style>
+  :root { --bg:#FAF1E9; --ink:#252D2D; --muted:#5C6666; --pet:#174F50; --err:#A4502F; --field:#8A9692; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 Inter, system-ui, sans-serif; }
+  .wrap { max-width:390px; margin:0 auto; padding:16px; display:grid; gap:20px; }
+  .f { display:grid; gap:4px; }
+  label { font-weight:500; font-size:14px; }
+  .row { display:grid; grid-template-columns:48px 1fr 48px; gap:6px; }
+  .row button { min-height:48px; border:1px solid var(--field); border-radius:8px; background:#fff; font-size:22px; }
+  .in { display:flex; align-items:center; border:1px solid var(--field); border-radius:8px; background:#fff; padding:0 12px; min-height:48px; }
+  .in input { border:0; outline:0; flex:1; font:600 20px Inter, system-ui, sans-serif; font-variant-numeric:tabular-nums; min-width:0; }
+  .in span { color:var(--muted); }
+  .ok { color:var(--pet); font-size:14px; }
+  .bad .in { border:2px solid var(--err); }
+  .bad .msg { color:var(--err); font-size:14px; }
+  .warn { color:#7E6020; font-size:14px; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chips button { min-height:44px; padding:0 12px; border:1px solid var(--field); border-radius:999px; background:#fff; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="f">
+    <label for="a">Mur 1</label>
+    <div class="row"><button aria-label="Diminuer de 1 cm">−</button>
+      <div class="in"><input id="a" inputmode="decimal" value="2,4 m"><span>cm</span></div>
+      <button aria-label="Augmenter de 1 cm">+</button></div>
+    <p class="ok">= 240 cm. Entrée accepte « 2,4 m », « 240 », « 2400 mm », « 240+60 ».</p>
+  </div>
+
+  <div class="f bad">
+    <label for="b">Mur 2</label>
+    <div class="row"><button aria-label="Diminuer">−</button>
+      <div class="in"><input id="b" inputmode="decimal" value="abc" aria-invalid="true" aria-describedby="bm"><span>cm</span></div>
+      <button aria-label="Augmenter">+</button></div>
+    <p class="msg" id="bm">« abc » n’est pas une longueur. Tapez un nombre, par exemple 240 ou 2,4 m. Valeur gardée : 300 cm.</p>
+  </div>
+
+  <div class="f">
+    <label for="c">Mur 3</label>
+    <div class="row"><button aria-label="Diminuer">−</button>
+      <div class="in"><input id="c" inputmode="decimal" value="2,4"><span>cm</span></div>
+      <button aria-label="Augmenter">+</button></div>
+    <p class="warn">2,4 cm : très court pour un mur. Vouliez-vous 2,4 m ?</p>
+    <div class="chips"><button>Mettre 240 cm</button><button>Garder 2,4 cm</button></div>
+  </div>
+  <p style="font-size:14px;color:#5C6666">PLAN-04, UI-01 : unités acceptées, refus expliqué sans perdre l’ancienne valeur,
+  alerte de vraisemblance, champ en 16 px au moins.</p>
+</div>
+</body>
+</html>

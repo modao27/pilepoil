@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette — carte de projet commune</title>
+<style>
+  :root { --bg:#FAF1E9; --sheet:#fff; --ink:#252D2D; --muted:#5C6666; --line:#C9D3CE; --pet:#174F50; --ter:#D17A59; --ocre:#C7A45A; --sauge:#7CC4A0; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 Inter, system-ui, sans-serif; }
+  .wrap { max-width:390px; margin:0 auto; padding:16px; }
+  h1 { font:700 24px Manrope, system-ui, sans-serif; margin:8px 0 16px; }
+  .bar { display:flex; gap:8px; margin-bottom:12px; }
+  .search { flex:1; min-height:44px; border:1px solid #8A9692; border-radius:8px; padding:0 12px; font-size:16px; background:#fff; }
+  select { min-height:44px; border:1px solid #8A9692; border-radius:8px; font-size:16px; background:#fff; padding:0 8px; }
+  .card { display:grid; grid-template-columns:104px 1fr 44px; gap:12px; align-items:start; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--sheet); margin-bottom:12px; }
+  .thumb { width:104px; height:78px; border-radius:8px; background:#F3E9E0; }
+  .name { font-weight:600; margin:0; }
+  .muted { color:var(--muted); font-size:14px; margin:2px 0 6px; }
+  .tools { display:flex; flex-wrap:wrap; gap:6px; margin:0; padding:0; list-style:none; font-size:14px; }
+  .tools li { border:1px solid var(--line); border-radius:999px; padding:2px 8px; }
+  .cost { font:700 18px Manrope, system-ui, sans-serif; margin-top:6px; }
+  .more { width:44px; height:44px; border:0; background:none; font-size:22px; color:var(--ink); }
+  .note { font-size:14px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mes projets</h1>
+  <div class="bar">
+    <input class="search" type="search" placeholder="Chercher un projet ou un client" aria-label="Chercher un projet">
+    <select aria-label="Trier"><option>Récents</option><option>Nom</option></select>
+  </div>
+
+  <article class="card">
+    <svg class="thumb" viewBox="0 0 104 78" role="img" aria-label="Plan : séjour, chambre, salle de bain">
+      <rect x="10" y="14" width="40" height="50" fill="#E8C3A3" stroke="#252D2D" stroke-width="1.5"/>
+      <rect x="50" y="14" width="22" height="50" fill="#F6EFE8" stroke="#252D2D" stroke-width="1.5"/>
+      <path d="M78 14h18v26h-8v10H78z" fill="#EFD9A0" stroke="#252D2D" stroke-width="1.5"/>
+    </svg>
+    <div>
+      <p class="name">Maison Dupont</p>
+      <p class="muted">3 pièces · modifié aujourd’hui à 16 h 58</p>
+      <ul class="tools" aria-label="Outils">
+        <li>Carrelage 23,4 m²</li><li>Parquet 11,7 m²</li><li>Peinture 11 m²</li><li>1 cloison</li>
+      </ul>
+      <p class="cost">585 € <span class="note">· 17 prix à saisir</span></p>
+    </div>
+    <button class="more" aria-label="Actions pour Maison Dupont">⋯</button>
+  </article>
+
+  <article class="card">
+    <svg class="thumb" viewBox="0 0 104 78" role="img" aria-label="Plan : une pièce">
+      <rect x="22" y="12" width="60" height="54" fill="#E8C3A3" stroke="#252D2D" stroke-width="1.5"/>
+    </svg>
+    <div>
+      <p class="name">Chambre parquet</p>
+      <p class="muted">1 pièce · modifié hier</p>
+      <ul class="tools" aria-label="Outils"><li>Parquet 12 m²</li></ul>
+      <p class="cost"><span class="note">Prix à saisir</span></p>
+    </div>
+    <button class="more" aria-label="Actions pour Chambre parquet">⋯</button>
+  </article>
+
+  <p class="note">Même carte pour tous les projets, quel que soit l’outil (PRJ-01, PRJ-02) : vignette du plan, résumé par
+  outil, coût, menu Renommer / Dupliquer / Exporter / Supprimer. Recherche et tri au-delà de 6 projets.</p>
+</div>
+</body>
+</html>
