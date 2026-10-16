@@ -6,7 +6,7 @@ import type { Polygon } from '../../../core/geometry/types';
 import type { Id } from '../../../core/plan/types';
 
 export type PaintRole = 'finish' | 'primer' | 'filler';
-export type PaintSheen = 'mat' | 'satin' | 'gloss';
+export type PaintSheen = 'mat' | 'velvet' | 'satin' | 'gloss';
 /** Ancien peint, plâtre ou placo neuf, béton ou crépi. */
 export type Support = 'painted' | 'plaster' | 'concrete';
 /** État du support, pour l'enduit. */

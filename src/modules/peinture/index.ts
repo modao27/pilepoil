@@ -4,6 +4,7 @@
  */
 import type { LibraryDefinition, ModuleManifest } from '../types';
 import { PAINT_SCHEMA, PAINT_TEMPLATES } from './core/paint';
+import { PAINT_CATALOG } from './core/catalog';
 import type { PeintureResult, PeintureSpec } from './core/types';
 import type { Action } from './state/actions';
 import { PEINTURE_RULES } from './state/ids';
@@ -21,7 +22,12 @@ export const library: LibraryDefinition = {
     list: () => import('./ui/screens/PaintLibrary.svelte').then((m) => m.default),
     edit: () => import('./ui/screens/PaintEdit.svelte').then((m) => m.default),
   },
-  templates: () => PAINT_TEMPLATES.map((p) => ({ ...p, packs: p.packs.map((k) => ({ ...k })) })),
+  templates: () =>
+    [...PAINT_TEMPLATES, ...PAINT_CATALOG].map((p) => ({
+      ...p,
+      uses: [...p.uses],
+      packs: p.packs.map((k) => ({ ...k })),
+    })),
   usedIn: usesPaint,
 };
 

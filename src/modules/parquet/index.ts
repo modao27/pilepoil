@@ -4,6 +4,7 @@
  */
 import type { LibraryDefinition, ModuleManifest } from '../types';
 import { BOARD_SCHEMA, BOARD_TEMPLATES } from './core/board';
+import { BOARD_CATALOG } from './core/catalog';
 import type { ParquetResult, ParquetSpec } from './core/types';
 import type { Action } from './state/actions';
 import { PARQUET_ID, PARQUET_MIGRATIONS, PARQUET_SCHEMA, type ParquetData } from './state/model';
@@ -21,7 +22,7 @@ export const library: LibraryDefinition = {
     list: () => import('./ui/screens/BoardLibrary.svelte').then((m) => m.default),
     edit: () => import('./ui/screens/BoardEdit.svelte').then((m) => m.default),
   },
-  templates: () => BOARD_TEMPLATES.map((b) => ({ ...b })),
+  templates: () => [...BOARD_TEMPLATES, ...BOARD_CATALOG].map((b) => ({ ...b, lengths: [...b.lengths] })),
   usedIn: usesBoard,
 };
 

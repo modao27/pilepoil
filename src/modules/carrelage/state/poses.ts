@@ -16,7 +16,7 @@ import type { CarrelagePose, Tile } from './model';
 export { TILE_RULES };
 /**
  * Réglages d'une nouvelle pose : ceux de la pose `like` (bandes copiées avec de nouveaux identifiants), sinon une
- * bande du premier carreau de la bibliothèque.
+ * bande du premier carreau de la bibliothèque (hors références du catalogue, `lm-…`, qui ne servent pas de défaut).
  */
 export function newPoseSettings(
   data: CarrelageData | null,
@@ -25,7 +25,7 @@ export function newPoseSettings(
   like?: Id,
 ): CarrelagePose {
   const base = like && data && Object.hasOwn(data.poses, like) ? data.poses[like]! : null;
-  if (!base) return createPoseSettings(tiles[0]?.id ?? '');
+  if (!base) return createPoseSettings((tiles.find((t) => !t.id.startsWith('lm-')) ?? tiles[0])?.id ?? '');
   const bands = base.bands.map((b) => ({ ...b, id: newId() }));
   return createPoseSettings(bands[0]!.tileId, {
     joint: base.joint,

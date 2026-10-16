@@ -1,0 +1,326 @@
+/**
+ * Lames de référence relevées sur leroymerlin.fr le 16/10/2026 (caractéristiques techniques seulement : ni photo
+ * ni prix). Posées une fois comme modèles types ; l'identifiant `lm-<réf>` renvoie à la fiche produit. Unités : mm.
+ *
+ * Quand la fiche ne donnait pas le nombre de lames par paquet, il est déduit de la surface du paquet. Profil :
+ * clipsable pour stratifiés, vinyles et contrecollés droits, rainure et languette pour le massif et les bâtons
+ * rompus ou points de Hongrie (lames A/B, nombre de lames de la fiche compté par paquet).
+ */
+import { BOARD_SCHEMA, type Board, type BoardKind } from './board';
+
+const T0 = Date.UTC(2026, 9, 16);
+
+interface Fields {
+  name: string;
+  kind: BoardKind;
+  length: number;
+  width: number;
+  thickness: number;
+  boardsPerPack: number;
+  m2PerPack: number;
+  color: string;
+  handed?: boolean;
+}
+
+function lm(ref: string, f: Fields): Board {
+  const handed = f.handed ?? false;
+  return {
+    schemaVersion: BOARD_SCHEMA,
+    id: 'lm-' + ref,
+    name: f.name,
+    kind: f.kind,
+    lengths: [f.length],
+    lengthMix: null,
+    width: f.width,
+    thickness: f.thickness,
+    profile: handed || f.kind === 'solid' ? 'tongue-groove' : 'click',
+    handed,
+    color: f.color,
+    photoId: null,
+    boardsPerPack: f.boardsPerPack,
+    m2PerPack: f.m2PerPack,
+    pricePerPack: null,
+    createdAt: T0,
+    updatedAt: T0,
+  };
+}
+
+const laminate = 'laminate',
+  engineered = 'engineered',
+  solid = 'solid',
+  vinyl = 'vinyl';
+
+export const BOARD_CATALOG: readonly Board[] = [
+  // Stratifiés
+  lm('92014738', {
+    name: 'Creativ’ Oléron stratifié 1290 × 214, 8 mm',
+    kind: laminate,
+    length: 1290,
+    width: 214,
+    thickness: 8,
+    boardsPerPack: 9,
+    m2PerPack: 2.485,
+    color: '#c49a62',
+  }),
+  lm('92014724', {
+    name: 'Creativ’ Miami stratifié 1290 × 214, 8 mm',
+    kind: laminate,
+    length: 1290,
+    width: 214,
+    thickness: 8,
+    boardsPerPack: 9,
+    m2PerPack: 2.485,
+    color: '#d2b48a',
+  }),
+  lm('92014744', {
+    name: 'Creativ’ Austin stratifié 1290 × 172, 8 mm',
+    kind: laminate,
+    length: 1290,
+    width: 172,
+    thickness: 8,
+    boardsPerPack: 9,
+    m2PerPack: 1.997,
+    color: '#d2b48a',
+  }),
+  lm('88972562', {
+    name: 'Sens by Quick-Step Odéon stratifié 1261 × 192, 8 mm',
+    kind: laminate,
+    length: 1261,
+    width: 192,
+    thickness: 8,
+    boardsPerPack: 9,
+    m2PerPack: 2.179,
+    color: '#cdb594',
+  }),
+  lm('88972567', {
+    name: 'Sens by Quick-Step Avron stratifié 1257 × 192, 8 mm',
+    kind: laminate,
+    length: 1257,
+    width: 192,
+    thickness: 8,
+    boardsPerPack: 9,
+    m2PerPack: 2.172,
+    color: '#d2b48a',
+  }),
+  lm('85086562', {
+    name: 'Artens Intenso Malte stratifié 1257 × 192, 10 mm',
+    kind: laminate,
+    length: 1257,
+    width: 192,
+    thickness: 10,
+    boardsPerPack: 7,
+    m2PerPack: 1.689,
+    color: '#8a5f3c',
+  }),
+  lm('87909696', {
+    name: 'Artens Intenso Malte light stratifié 1257 × 192, 10 mm',
+    kind: laminate,
+    length: 1257,
+    width: 192,
+    thickness: 10,
+    boardsPerPack: 7,
+    m2PerPack: 1.69,
+    color: '#cdb594',
+  }),
+  lm('92014740', {
+    name: 'Creativ’ Amarante stratifié bâton rompu 644 × 143 (lames A/B)',
+    kind: laminate,
+    length: 644,
+    width: 143,
+    thickness: 8,
+    boardsPerPack: 20,
+    m2PerPack: 1.842,
+    color: '#b48a5e',
+    handed: true,
+  }),
+  // Contrecollés et plaqués
+  lm('72452352', {
+    name: 'Barlinek contrecollé chêne blond 1092 × 130, 14 mm',
+    kind: engineered,
+    length: 1092,
+    width: 130,
+    thickness: 14,
+    boardsPerPack: 7,
+    m2PerPack: 0.99,
+    color: '#d1b183',
+  }),
+  lm('69126806', {
+    name: 'Barlinek contrecollé chêne 3 frises 1092 × 207, 10 mm',
+    kind: engineered,
+    length: 1092,
+    width: 207,
+    thickness: 10,
+    boardsPerPack: 9,
+    m2PerPack: 2.03,
+    color: '#d1b183',
+  }),
+  lm('92245930', {
+    name: 'Beaulieu contrecollé chêne naturel 1180 × 164, 14 mm',
+    kind: engineered,
+    length: 1180,
+    width: 164,
+    thickness: 14,
+    boardsPerPack: 8,
+    m2PerPack: 1.548,
+    color: '#c49a62',
+  }),
+  lm('74778012', {
+    name: 'Lamett contrecollé chêne Porto 1200 × 190, 14 mm',
+    kind: engineered,
+    length: 1200,
+    width: 190,
+    thickness: 14,
+    boardsPerPack: 8,
+    m2PerPack: 1.824,
+    color: '#a77b52',
+  }),
+  lm('83006265', {
+    name: 'Barlinek contrecollé bâton rompu 725 × 130 (lames A/B)',
+    kind: engineered,
+    length: 725,
+    width: 130,
+    thickness: 14,
+    boardsPerPack: 7,
+    m2PerPack: 0.65,
+    color: '#d1b183',
+    handed: true,
+  }),
+  lm('92083124', {
+    name: 'Homflor plaqué chêne bâton rompu 595 × 126 (lames A/B)',
+    kind: engineered,
+    length: 595,
+    width: 126,
+    thickness: 10,
+    boardsPerPack: 11,
+    m2PerPack: 0.825,
+    color: '#d6b98f',
+    handed: true,
+  }),
+  lm('95239131', {
+    name: 'Contrecollé chêne fumé bâton rompu 610 × 120 (lames A/B)',
+    kind: engineered,
+    length: 610,
+    width: 120,
+    thickness: 15,
+    boardsPerPack: 12,
+    m2PerPack: 0.89,
+    color: '#6b4a32',
+    handed: true,
+  }),
+  lm('93180820', {
+    name: 'DS Parquet Manchester point de Hongrie 780 × 125 (lames A/B)',
+    kind: engineered,
+    length: 780,
+    width: 125,
+    thickness: 15,
+    boardsPerPack: 16,
+    m2PerPack: 1.56,
+    color: '#b48a5e',
+    handed: true,
+  }),
+  // Massifs
+  lm('92208100', {
+    name: 'Fairfloor massif chêne blond 1200 × 150, 15 mm',
+    kind: solid,
+    length: 1200,
+    width: 150,
+    thickness: 15,
+    boardsPerPack: 7,
+    m2PerPack: 1.26,
+    color: '#d1b183',
+  }),
+  lm('85372756', {
+    name: 'Protac plancher massif épicéa 2050 × 140, 20 mm',
+    kind: solid,
+    length: 2050,
+    width: 140,
+    thickness: 20,
+    boardsPerPack: 5,
+    m2PerPack: 1.435,
+    color: '#e3c99d',
+  }),
+  lm('85335291', {
+    name: 'Fairfloor massif chêne bâton rompu 600 × 120 (lames A/B)',
+    kind: solid,
+    length: 600,
+    width: 120,
+    thickness: 15,
+    boardsPerPack: 24,
+    m2PerPack: 1.728,
+    color: '#d1b183',
+    handed: true,
+  }),
+  lm('71709866', {
+    name: 'Deschaumes massif chêne bâton rompu 300 × 85 (lames A/B)',
+    kind: solid,
+    length: 300,
+    width: 85,
+    thickness: 13,
+    boardsPerPack: 20,
+    m2PerPack: 0.51,
+    color: '#c49a62',
+    handed: true,
+  }),
+  lm('85335290', {
+    name: 'Fairfloor massif chêne point de Hongrie 502 × 90 (lames A/B)',
+    kind: solid,
+    length: 502,
+    width: 90,
+    thickness: 15,
+    boardsPerPack: 32,
+    m2PerPack: 1.446,
+    color: '#d1b183',
+    handed: true,
+  }),
+  // Vinyles
+  lm('90975646', {
+    name: 'Artens Intenso Malte vinyle clipsable 1253 × 189',
+    kind: vinyl,
+    length: 1253,
+    width: 189,
+    thickness: 5.2,
+    boardsPerPack: 9,
+    m2PerPack: 2.13,
+    color: '#8a5f3c',
+  }),
+  lm('95102155', {
+    name: 'Artens Forte Lissandra vinyle clipsable 1220 × 180',
+    kind: vinyl,
+    length: 1220,
+    width: 180,
+    thickness: 5,
+    boardsPerPack: 8,
+    m2PerPack: 1.76,
+    color: '#c49a62',
+  }),
+  lm('84509639', {
+    name: 'Artens Medio Old XL vinyle clipsable 1220 × 180',
+    kind: vinyl,
+    length: 1220,
+    width: 180,
+    thickness: 4,
+    boardsPerPack: 8,
+    m2PerPack: 1.76,
+    color: '#b38d66',
+  }),
+  lm('87943162', {
+    name: 'Narita vinyle clipsable 935 × 150',
+    kind: vinyl,
+    length: 935,
+    width: 150,
+    thickness: 3.2,
+    boardsPerPack: 16,
+    m2PerPack: 2.24,
+    color: '#c49a62',
+  }),
+  lm('98185527', {
+    name: 'Cubox Colonia vinyle SPC clipsable 1220 × 180, 5 mm',
+    kind: vinyl,
+    length: 1220,
+    width: 180,
+    thickness: 5,
+    boardsPerPack: 10,
+    m2PerPack: 2.2,
+    color: '#b38d66',
+  }),
+];
