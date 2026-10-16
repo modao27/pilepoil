@@ -10,13 +10,23 @@
   import PhotoPicker from '../../../../ui/components/PhotoPicker.svelte';
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import TextField from '../../../../ui/components/TextField.svelte';
+  import PasteSheet from '../../../../ui/components/PasteSheet.svelte';
+  import { tileFromSheet } from '../../state/fromSheet';
 
   let {
     tile = $bindable(),
     submitLabel,
     onsubmit,
     extra,
-  }: { tile: Tile; submitLabel: string; onsubmit: (t: Tile) => void; extra?: Snippet } = $props();
+    sheet = null,
+  }: {
+    tile: Tile;
+    submitLabel: string;
+    onsubmit: (t: Tile) => void;
+    extra?: Snippet;
+    /** Fiche produit reçue du favori, appliquée à l'ouverture. */
+    sheet?: string | null;
+  } = $props();
 
   const regular = $derived(tile.shape === 'hex' || tile.shape === 'octo');
   /** Formats courants (repris de legacy), en mm. */
@@ -32,6 +42,22 @@
   let price = $state(tile.pricePerM2 ?? 0);
   let error = $state('');
   $effect(() => app.loadPhoto(tile.photoId));
+
+  const SHEET_LABELS = {
+    name: 'nom',
+    shape: 'forme',
+    length: 'longueur',
+    width: 'largeur',
+    thickness: 'épaisseur',
+    color: 'couleur',
+    m2PerBox: 'surface par carton',
+    pricePerM2: 'prix',
+  } as const;
+
+  function applySheet(f: Partial<Tile>) {
+    Object.assign(tile, f);
+    if (f.pricePerM2 != null) price = f.pricePerM2;
+  }
 
   function setShape(s: TileShape) {
     tile.shape = s;
@@ -53,6 +79,7 @@
 </script>
 
 <form class="tf" onsubmit={submit} novalidate>
+  <PasteSheet read={tileFromSheet} labels={SHEET_LABELS} onapply={applySheet} pending={sheet} />
   <TextField
     label="Nom"
     bind:value={tile.name}

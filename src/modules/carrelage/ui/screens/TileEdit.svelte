@@ -18,6 +18,7 @@
   // Valeur initiale voulue : l'écran est recréé à chaque changement d'id ({#key} dans App.svelte).
   const existing = untrack(() => (id ? carrelage.tile(id) : undefined));
   let tile = $state<Tile>(existing ? { ...existing } : createTile({ name: '' }));
+  const sheet = untrack(() => (existing ? null : app.takePendingSheet(TILES_LIB)));
   let blocked = $state<string | null>(null);
 
   function save(t: Tile) {
@@ -42,7 +43,7 @@
   </Screen>
 {:else}
   <Screen title={existing ? existing.name : 'Nouveau carreau'} backHref="#/library/tiles" backLabel="Carreaux">
-    <TileForm bind:tile submitLabel={existing ? 'Enregistrer' : 'Ajouter le carreau'} onsubmit={save}>
+    <TileForm bind:tile {sheet} submitLabel={existing ? 'Enregistrer' : 'Ajouter le carreau'} onsubmit={save}>
       {#snippet extra()}
         {#if existing}<Button variant="danger" icon="trash" onclick={remove}>Supprimer le carreau</Button>{/if}
       {/snippet}

@@ -78,6 +78,11 @@ describe('routes', () => {
     ['#/library/tiles/abc', { name: 'libraryItem', lib: 'tiles', id: 'abc' }],
     ['#/library/abc/def', { name: 'notFound', path: '/library/abc/def' }],
     ['#/settings', { name: 'settings' }],
+    ['#/import', { name: 'import', text: '' }],
+    [
+      '#/import/Carreau%2060%20x%2060%2Fgris%0AEpaisseur%099',
+      { name: 'import', text: 'Carreau 60 x 60/gris\nEpaisseur\t9' },
+    ],
     ['#/p/x1', { name: 'project', id: 'x1' }],
     ['#/p/x1/plan', { name: 'plan', id: 'x1' }],
     ['#/p/x1/achats', { name: 'shopping', id: 'x1' }],

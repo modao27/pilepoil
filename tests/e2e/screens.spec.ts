@@ -62,7 +62,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await check(page);
   await shot(page, info, '12-nouveau-carreau');
   await tileDialog.getByRole('button', { name: 'Ajouter et utiliser' }).click();
-  await expect(page.getByRole('radio', { name: /60 × 20 cm/ })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: /60 × 20 cm · ép\. 9 mm/ })).toHaveAttribute('aria-checked', 'true');
 
   // 4. motif
   await page.getByRole('tab', { name: 'Pose', exact: true }).click();
@@ -119,9 +119,9 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
 test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', async ({ page }, info) => {
   await page.goto('/#/library');
-  // modèles types posés au premier lancement
+  // modèles types posés au premier lancement : 4 génériques et 24 références
   const list = page.getByRole('list', { name: 'Carreaux' });
-  await expect(list.getByRole('listitem')).toHaveCount(4);
+  await expect(list.getByRole('listitem')).toHaveCount(28);
   await expect(list.getByRole('link', { name: /Grès cérame 60 × 60 cm/ })).toContainText('prix non saisi');
   await check(page);
   await shot(page, info, '40-bibliotheque-modeles');

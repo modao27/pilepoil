@@ -9,6 +9,8 @@
   import Screen from '../../../../ui/components/Screen.svelte';
   import Select from '../../../../ui/components/Select.svelte';
   import TextField from '../../../../ui/components/TextField.svelte';
+  import PasteSheet from '../../../../ui/components/PasteSheet.svelte';
+  import { paintFromSheet } from '../../core/fromSheet';
   import { app } from '../../../../ui/lib/app.svelte';
   import { go } from '../../../../ui/lib/router.svelte';
   import { toast } from '../../../../ui/lib/toasts.svelte';
@@ -28,6 +30,24 @@
   let colorName = $state(existing?.color?.name ?? '');
   // Prix vide = 0 dans le champ ; remis à null à l'enregistrement.
   let prices = $state(paint.packs.map((k) => k.price ?? 0));
+  const sheet = untrack(() => (existing ? null : app.takePendingSheet('paints')));
+  const SHEET_LABELS = {
+    name: 'nom',
+    brand: 'marque',
+    role: 'rôle',
+    sheen: 'aspect',
+    color: 'teinte',
+    uses: 'usages',
+    yield: 'rendement',
+    coats: 'couches',
+    packs: 'pot',
+  } as const;
+
+  function applySheet(f: Partial<Paint>) {
+    Object.assign(paint, f);
+    if (f.color) colorName = f.color.name;
+    if (f.packs) prices = f.packs.map((k) => k.price ?? 0);
+  }
 
   const errors = $derived(validatePaint(paint));
   const finish = $derived(paint.role === 'finish');
@@ -102,6 +122,7 @@
 {:else}
   <Screen title={existing ? existing.name : 'Nouvelle peinture'} backHref="#/library/paints" backLabel="Peintures">
     <form class="form" onsubmit={save} novalidate>
+      <PasteSheet read={paintFromSheet} labels={SHEET_LABELS} onapply={applySheet} pending={sheet} />
       <TextField label="Nom" bind:value={paint.name} maxlength={60} placeholder="Blanc mat murs et plafonds" />
       <TextField label="Marque" bind:value={paint.brand} maxlength={40} />
       <Select

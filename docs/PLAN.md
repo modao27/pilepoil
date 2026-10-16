@@ -308,6 +308,21 @@ Décidé le 2026-10-15, après une revue des quatre outils. Branche `phase/f1-fi
   outils dans un projet, achats et dossier PDF) et la peinture au-dessus d'une crédence (`peinture.spec.ts`).
 - Fait (2026-10-15).
 
+## Bibliothèques pré-remplies et import de fiches (B1)
+
+Décidé le 2026-10-16. Branche `b1-bibliotheques`.
+
+- Modèles types posés un par un, par identifiant (`state/seeding.ts`, préférence `templatesSeeded`) : un modèle
+  ajouté par une mise à jour apparaît, un modèle supprimé ne revient pas.
+- Catalogues : 24 carreaux et 26 lames relevés sur leroymerlin.fr le 2026-10-16 (caractéristiques techniques, ni
+  photo ni prix ; lames par paquet déduites de la surface quand la fiche ne les donne pas), 4 peintures Leroy Merlin
+  et 20 génériques. Bâtons rompus et points de Hongrie : nombre de lames de la fiche compté par paquet, à vérifier
+  (on ne sait pas si un paquet mélange les lames A et B).
+- Lecture d'une fiche collée (`src/core/sheet`, `fromSheet.ts` par module) ; « Coller une fiche produit » dans les
+  formulaires ; `#/import` et favori « Envoyer à PilePoil » (Réglages).
+- Fini quand : tests unitaires (catalogues, amorçage, lecture, correspondances, routes, favori) et e2e
+  (`import.spec.ts`, bibliothèques) verts sur téléphone et ordinateur.
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

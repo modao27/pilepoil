@@ -4,7 +4,12 @@ import type { PaintAlert, PaintRole, PaintSheen, Support, SupportState, Tint } f
 
 export const ROLE_LABEL: Record<PaintRole, string> = { finish: 'Finition', primer: 'Apprêt', filler: 'Enduit' };
 
-export const SHEEN_LABEL: Record<PaintSheen, string> = { mat: 'Mat', satin: 'Satiné', gloss: 'Brillant' };
+export const SHEEN_LABEL: Record<PaintSheen, string> = {
+  mat: 'Mat',
+  velvet: 'Velours',
+  satin: 'Satiné',
+  gloss: 'Brillant',
+};
 
 export const TINT_LABEL: Record<Tint, string> = { light: 'Claire', medium: 'Moyenne', dark: 'Foncée' };
 

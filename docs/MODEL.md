@@ -78,8 +78,13 @@ interface Tile {               // bibliothèque « tiles », partagée entre pro
   createdAt; updatedAt;
 }
 interface Photo { id; blob: Blob; width; height; createdAt }
-type Pref = palette | theme | lastProjectId | showCutNumbers | librarySeeded;
+type Pref = palette | theme | lastProjectId | showCutNumbers | librarySeeded | templatesSeeded | wallThickness;
 ```
+
+Modèles types : chaque modèle est posé une seule fois, noté `<bibliothèque>:<modèle>` dans `templatesSeeded`
+(`state/seeding.ts`). Un modèle supprimé ne revient pas, un modèle ajouté par une mise à jour apparaît. Une base
+amorcée avant B1 (`librarySeeded`, lu seulement) compte ses modèles `modele-…` comme posés ; les modèles ajoutés
+depuis sont préfixés `lm-` (références Leroy Merlin) ou `type-` (génériques).
 
 Lames du parquet : bibliothèque « boards » (`modules/parquet/core/board.ts`). Une photo est supprimée quand plus
 aucun carreau, lame ni scénario ne la référence.

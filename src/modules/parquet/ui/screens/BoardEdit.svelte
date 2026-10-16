@@ -10,6 +10,8 @@
   import Segmented from '../../../../ui/components/Segmented.svelte';
   import Select from '../../../../ui/components/Select.svelte';
   import TextField from '../../../../ui/components/TextField.svelte';
+  import PasteSheet from '../../../../ui/components/PasteSheet.svelte';
+  import { boardFromSheet } from '../../core/fromSheet';
   import { app } from '../../../../ui/lib/app.svelte';
   import { formatNumber } from '../../../../ui/lib/calc';
   import { go } from '../../../../ui/lib/router.svelte';
@@ -27,6 +29,26 @@
   );
   let tried = $state(false);
   let price = $state(existing?.pricePerPack ?? 0);
+  const sheet = untrack(() => (existing ? null : app.takePendingSheet('boards')));
+  const SHEET_LABELS = {
+    name: 'nom',
+    kind: 'type',
+    lengths: 'longueur',
+    width: 'largeur utile',
+    thickness: 'épaisseur',
+    profile: 'assemblage',
+    handed: 'lames A/B',
+    boardsPerPack: 'lames par paquet',
+    m2PerPack: 'surface annoncée',
+    pricePerPack: 'prix du paquet',
+    color: 'couleur',
+  } as const;
+
+  function applySheet(f: Partial<Board>) {
+    Object.assign(board, f);
+    if (f.lengths) board.lengthMix = null;
+    if (f.pricePerPack != null) price = f.pricePerPack;
+  }
 
   const errors = $derived(validateBoard(board));
   const mismatch = $derived(packMismatch(board));
@@ -87,6 +109,7 @@
 {:else}
   <Screen title={existing ? existing.name : 'Nouvelle lame'} backHref="#/library/boards" backLabel="Lames">
     <form class="form" onsubmit={save} novalidate>
+      <PasteSheet read={boardFromSheet} labels={SHEET_LABELS} onapply={applySheet} pending={sheet} />
       <TextField label="Nom" bind:value={board.name} maxlength={60} placeholder="Chêne naturel 1285 × 192" />
       <Select
         label="Type de lame"

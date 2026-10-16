@@ -129,7 +129,8 @@ affiche une alerte (code `pack-mismatch`), sans bloquer l'enregistrement.
 Modèles types : au premier lancement, la bibliothèque contient 5 à 10 lames génériques sans marque, à
 dupliquer et ajuster : stratifié 1285 × 192, vinyle clipsable, contrecollé 1900 × 190, massif à
 longueurs mixtes, bâton rompu 600 × 100 (lames A/B), point de Hongrie 45° et 60°. Prix vides. Un modèle
-supprimé ne revient pas.
+supprimé ne revient pas. Depuis B1, s'y ajoutent 26 lames relevées sur leroymerlin.fr (`core/catalog.ts`, marque
+dans le nom, prix vides), et une lame se pré-remplit d'après une fiche produit collée (`core/fromSheet.ts`).
 
 ### Valeurs par défaut
 

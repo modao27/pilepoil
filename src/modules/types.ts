@@ -107,6 +107,12 @@ export interface LibraryDefinition {
   /** Modèles types posés une seule fois dans la bibliothèque (un modèle supprimé ne revient pas). */
   templates?: () => LibraryItem[];
   /**
+   * Mots d'une fiche produit (texte en minuscules, sans accents ; drapeau `g`, les occurrences sont comptées) qui
+   * désignent ce type de produit. Présent : le
+   * formulaire « nouveau » de la bibliothèque sait lire une fiche, et l'import du favori (#/import) la propose.
+   */
+  importHint?: RegExp;
+  /**
    * Le produit `itemId` sert-il au projet ? Un produit utilisé ne se supprime pas (les quantités ne changent jamais
    * en silence). Léger : chargé avec le manifeste.
    */

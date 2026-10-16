@@ -22,9 +22,9 @@ test('bibliothèque de lames : modèles types, une lame se crée et s’enregist
   await page.getByRole('navigation', { name: 'Bibliothèques' }).getByRole('link', { name: 'Lames' }).click();
   await expect(page).toHaveURL(/#\/library\/boards$/);
 
-  // 7 modèles types posés au premier lancement
+  // modèles types posés au premier lancement : 7 génériques et 26 références
   const list = page.getByRole('list', { name: 'Lames' });
-  await expect(list.getByRole('listitem')).toHaveCount(7);
+  await expect(list.getByRole('listitem')).toHaveCount(33);
   await expect(list.getByRole('link', { name: /Point de Hongrie 45°/ })).toContainText('lames A/B');
   await check(page);
   await shot(page, info, '80-lames');
@@ -50,23 +50,23 @@ test('bibliothèque de lames : modèles types, une lame se crée et s’enregist
   await page.getByRole('button', { name: 'Ajouter la lame' }).click();
 
   await expect(list.getByRole('link', { name: /Chêne rustique/ })).toContainText('64,90 €/paquet');
-  await expect(list.getByRole('listitem')).toHaveCount(8);
+  await expect(list.getByRole('listitem')).toHaveCount(34);
 
   // un modèle supprimé ne revient pas ; la lame créée est toujours là après rechargement
-  await list.getByRole('link', { name: /Vinyle clipsable/ }).click();
+  await list.getByRole('link', { name: /^Vinyle clipsable/ }).click();
   await page.getByRole('button', { name: 'Supprimer la lame' }).click();
-  await expect(list.getByRole('listitem')).toHaveCount(7);
+  await expect(list.getByRole('listitem')).toHaveCount(33);
   await page.reload();
   await expect(list.getByRole('link', { name: /Chêne rustique/ })).toBeVisible();
-  await expect(list.getByRole('link', { name: /Vinyle clipsable/ })).toHaveCount(0);
-  await expect(list.getByRole('listitem')).toHaveCount(7);
+  await expect(list.getByRole('link', { name: /^Vinyle clipsable/ })).toHaveCount(0);
+  await expect(list.getByRole('listitem')).toHaveCount(33);
 });
 
 test('bibliothèque de peintures : modèles types, une peinture se crée avec ses pots', async ({ page }, info) => {
   await page.goto('/#/library/paints');
   const list = page.getByRole('list', { name: 'Peintures' });
-  await expect(list.getByRole('listitem')).toHaveCount(5);
-  await expect(list.getByRole('link', { name: /Enduit de rebouchage/ })).toContainText('Enduit');
+  await expect(list.getByRole('listitem')).toHaveCount(29);
+  await expect(list.getByRole('link', { name: /Enduit de rebouchage en poudre/ })).toContainText('Enduit');
   await check(page);
   await shot(page, info, '82-peintures');
 
@@ -80,7 +80,7 @@ test('bibliothèque de peintures : modèles types, une peinture se crée avec se
   await page.getByRole('button', { name: 'Ajouter la peinture' }).click();
 
   await expect(list.getByRole('link', { name: /Vert sauge mat/ })).toContainText('39,90');
-  await expect(list.getByRole('listitem')).toHaveCount(6);
+  await expect(list.getByRole('listitem')).toHaveCount(30);
   await page.reload();
   await expect(list.getByRole('link', { name: /Vert sauge mat/ })).toBeVisible();
 });
