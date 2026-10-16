@@ -36,7 +36,14 @@ async function recompute(
   const t0 = Date.now();
   await panel(page).getByRole('radiogroup', { name: group }).getByRole('radio', { name: option, exact: true }).click();
   await page
-    .waitForFunction((b) => document.querySelector('a.summary')?.textContent !== b, before, { timeout: 60_000 })
+    .waitForFunction(
+      (b) => {
+        const t = document.querySelector('a.summary')?.textContent ?? '';
+        return t !== b && !t.includes('Calcul');
+      },
+      before,
+      { timeout: 60_000 },
+    )
     .catch(() => undefined);
   const ms = Date.now() - t0;
   const lt = await page.evaluate(() => (window as unknown as { __lt: number[] }).__lt);

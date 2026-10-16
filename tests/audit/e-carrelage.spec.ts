@@ -54,7 +54,14 @@ test('E1 étape Produit : carreau, joint, couleurs', async ({ page, au }) => {
       .first()
       .click();
     await page
-      .waitForFunction((b) => document.querySelector('a.summary')?.textContent !== b, before, { timeout: 15_000 })
+      .waitForFunction(
+        (b) => {
+          const t = document.querySelector('a.summary')?.textContent ?? '';
+          return t !== b && !t.includes('Calcul');
+        },
+        before,
+        { timeout: 15_000 },
+      )
       .catch(() => undefined);
   });
   au.note('changer-carreau', { avant: before, apres: await summary(page), ms: t });
@@ -91,7 +98,14 @@ test('E2 chaque motif, orientation, départ, décalage', async ({ page, au }) =>
     const ms = await timed(async () => {
       await r.click();
       await page
-        .waitForFunction((b) => document.querySelector('a.summary')?.textContent !== b, before, { timeout: 10_000 })
+        .waitForFunction(
+          (b) => {
+            const t = document.querySelector('a.summary')?.textContent ?? '';
+            return t !== b && !t.includes('Calcul');
+          },
+          before,
+          { timeout: 10_000 },
+        )
         .catch(() => undefined);
     });
     res[name] = { resume: await summary(page), ms };

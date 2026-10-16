@@ -462,6 +462,8 @@ test('C9 zoom, déplacement, voir tout', async ({ page, au }) => {
 
 test('C10 panneau tiré : crans, clavier', async ({ page, au }) => {
   await seed(page, 'maison', `/#/p/${maison().id}/plan`);
+  await page.getByRole('application').first().waitFor();
+  await page.waitForTimeout(800);
   const sheet = page.locator('.sheet');
   if (!(await sheet.count())) {
     au.note('panneau', 'inspecteur latéral (pas de panneau tiré)');

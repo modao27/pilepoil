@@ -27,7 +27,14 @@ async function stepTab(page: Page, name: string) {
 
 async function waitChange(page: Page, before: string) {
   await page
-    .waitForFunction((b) => document.querySelector('a.summary')?.textContent !== b, before, { timeout: 20_000 })
+    .waitForFunction(
+      (b) => {
+        const t = document.querySelector('a.summary')?.textContent ?? '';
+        return t !== b && !t.includes('Calcul');
+      },
+      before,
+      { timeout: 20_000 },
+    )
     .catch(() => undefined);
 }
 

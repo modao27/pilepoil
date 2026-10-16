@@ -13,7 +13,13 @@ recréer : affiche `notes` d'un JSON).
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)
 - [x] 1. Matrice : `playwright.audit.config.ts` (29 projets, 5 workers), script `npm run test:audit`, navigateurs
 - [x] 2a. Scénarios A à N écrits (`tests/audit/*.spec.ts`), verts sur 390 Chromium et 1280 Chromium
-- [ ] 2b. Passage complet sur les 29 appareils
+- [ ] 2b. Passage complet sur les 29 appareils (lancé, log : `docs/audit/captures-local/run-complet.log` ; ensuite
+      `npx playwright test -c playwright.audit.config.ts --last-failed` puis `npx tsx tests/audit/aggregate.ts`)
+- [x] 3a. Analyse sur les appareils de référence ; constats saisis dans `tests/audit/constats.ts`
+      (`npx tsx tests/audit/constats.ts` → `constats.csv`, `CONSTATS.md`)
+- [x] 4a. `A_TESTER_SUR_TELEPHONE.md`
+- [ ] 3b. Constats propres aux autres appareils (paysage, tablettes, Firefox, WebKit) après la matrice
+- [ ] 4b. `RAPPORT.md` (synthèse), `MATRICE.md`, captures de preuve copiées dans `captures/`
 - [ ] 3. Analyse des captures (Nielsen, UX.md, identité, WCAG 2.2, mobile, textes, parcours, métier)
 - [ ] 4. Rapport : `RAPPORT.md`, `constats.csv`, `MATRICE.md`, `A_TESTER_SUR_TELEPHONE.md`
 - [ ] 5. `PROPOSITIONS.md` (corrections par lots, améliorations, fonctionnalités, classement)
