@@ -16,6 +16,7 @@ import { DEFAULT_PALETTE } from './palette';
 import { createWorkerClient, type ComputeClient } from '../../workers/client';
 import { toast } from './toasts.svelte';
 import { canUndo } from '../../state/undo';
+import { templatesToSeed } from '../../state/seeding';
 
 export const SAVE_FAILED =
   'Enregistrement impossible : stockage plein ou indisponible. Vos changements sont gardés ici ; réessayez.';
@@ -234,9 +235,10 @@ export class AppState {
   /** Incrémenté à chaque modification d'une bibliothèque (clés de cache des calculs). */
   libraryVersion = 0;
 
-  /** Charge chaque bibliothèque déclarée par les modules ; pose ses modèles types une seule fois. */
+  /** Charge chaque bibliothèque déclarée par les modules ; pose chaque modèle type une seule fois. */
   private async loadLibraries(): Promise<void> {
-    const seeded = [...((await repo.getPref(this.db, 'librarySeeded')) ?? [])];
+    const legacy = (await repo.getPref(this.db, 'librarySeeded')) ?? [];
+    let seeded: readonly string[] = (await repo.getPref(this.db, 'templatesSeeded')) ?? [];
     const next: Record<string, readonly LibraryItem[]> = {};
     let seededNow = false;
     for (const def of libraryDefs) {
@@ -247,18 +249,24 @@ export class AppState {
         if (changed) void repo.putItem(this.db, store, doc);
         items = upsertItem(items, doc);
       }
-      if (def.templates && !seeded.includes(def.id)) {
-        for (const t of def.templates())
-          if (!items.some((x) => x.id === t.id)) {
+      if (def.templates) {
+        const templates = def.templates();
+        const plan = templatesToSeed(
+          def.id,
+          templates.map((t) => t.id),
+          { legacy, seeded },
+        );
+        for (const t of templates)
+          if (plan.pose.includes(t.id) && !items.some((x) => x.id === t.id)) {
             await repo.putItem(this.db, store, t);
             items = upsertItem(items, t);
           }
-        seeded.push(def.id);
-        seededNow = true;
+        if (plan.seeded.length !== seeded.length) seededNow = true;
+        seeded = plan.seeded;
       }
       next[def.id] = items;
     }
-    if (seededNow) await repo.setPref(this.db, 'librarySeeded', seeded);
+    if (seededNow) await repo.setPref(this.db, 'templatesSeeded', [...seeded]);
     this.libraries = next;
     this.libraryVersion++;
   }

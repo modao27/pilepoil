@@ -76,8 +76,10 @@ export type Pref =
   | { key: 'theme'; value: 'auto' | 'light' | 'dark' }
   | { key: 'lastProjectId'; value: Id }
   | { key: 'showCutNumbers'; value: boolean }
-  /** Bibliothèques dont les modèles types ont été posés (une seule fois). */
+  /** Bibliothèques dont les modèles types ont été posés, avant B1 (lu seulement, voir state/seeding.ts). */
   | { key: 'librarySeeded'; value: string[] }
+  /** Modèles types posés, `<bibliothèque>:<modèle>` : chacun une seule fois. */
+  | { key: 'templatesSeeded'; value: string[] }
   | { key: 'wallThickness'; value: number };
 
 export type PrefKey = Pref['key'];
