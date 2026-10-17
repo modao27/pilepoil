@@ -7,6 +7,7 @@
   import { onMount } from 'svelte';
   import type { Point } from '../../core/geometry/types';
   import { area } from '../../core/geometry/polygon';
+  import { EQUIPMENT, floorUnder } from '../../core/plan/equipment';
   import { labelPoint, planBounds, snapPartitionPoint, snapPoint, GRID } from '../../core/plan/snap';
   import { absWallBands, demolitionBand, partitionBand } from '../../core/plan/works';
   import { lostByPose } from '../../core/coverage';
@@ -292,6 +293,9 @@
     return snapPartitionPoint(w, start, st.plan, tol());
   }
 
+  const centroidX = (poly: Point[]) => (Math.min(...poly.map((p) => p[0])) + Math.max(...poly.map((p) => p[0]))) / 2;
+  const centroidY = (poly: Point[]) => (Math.min(...poly.map((p) => p[1])) + Math.max(...poly.map((p) => p[1]))) / 2;
+
   /** Nom d'une pièce à la taille de son contour : réduit jusqu'à 9 px, puis abrégé (« Salle de b… »). */
   function fitName(name: string, outline: Point[]): { text: string; size: number } {
     const xs = outline.map((p) => p[0]);
@@ -470,11 +474,16 @@
         <polygon
           class="obstacle"
           class:sel={isSel('obstacle', r.id, o.id)}
+          class:under={floorUnder(o)}
           points={pts(r, o.outline)}
           data-k="obstacle"
           data-room={r.id}
           data-id={o.id}
         />
+        {#if o.kind !== 'post' && o.kind !== 'other'}
+          {@const c = S(r.origin[0] + centroidX(o.outline), r.origin[1] + centroidY(o.outline))}
+          <text class="eq" x={c[0]} y={c[1]}>{EQUIPMENT[o.kind].label.split(',')[0]}</text>
+        {/if}
       {/each}
       {#each r.openings as o (o.id)}
         {@const i = wallIndex(r, o.wall)}
@@ -800,6 +809,17 @@
     stroke-width: 1.5;
     stroke-dasharray: 4 3;
     cursor: move;
+  }
+  .obstacle.under {
+    fill: transparent;
+  }
+  .eq {
+    font-size: 11px;
+    font-weight: 600;
+    fill: var(--ink);
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
   }
   .obstacle.sel {
     stroke: var(--accent);

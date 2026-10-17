@@ -18,6 +18,7 @@ propositions. Reste : attendre les choix de l'utilisateur sur `PROPOSITIONS.md` 
 - Relevé rapide sur place (branche `releve-rapide`, 2026-10-17) : forme « Relevé » dans « Ajouter une pièce ».
 - Aide et prise en main (branche `aide`, 2026-10-17) : AIDE-01 corrigé (sans projet d'exemple).
 - N1 (branche `n1-largeur-mur`, 2026-10-17) : largeur d'un mur carrelée.
+- N5 (branche `n5-equipements`, 2026-10-17) : équipements fixes du plan (WC, receveur, lavabo, baignoire, évier, lave-linge).
 
 ## Étapes
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)

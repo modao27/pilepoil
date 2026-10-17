@@ -9,6 +9,7 @@ import { DEFAULT_PARTITION_THICKNESS, MIN_PARTITION_LENGTH, type WorksIssue } fr
 import type { PlanAction } from '../../core/plan/reduce';
 import { doorBetween, facingWalls, placeAgainst, type FacingWalls } from '../../core/plan/neighbors';
 import { signedArea } from '../../core/geometry/polygon';
+import { EQUIPMENT } from '../../core/plan/equipment';
 import { clockwise, placeNewRoom } from '../../core/plan/snap';
 import type {
   Demolition,
@@ -608,15 +609,20 @@ export class PlanEditorState {
     this.sel = { kind: 'room', room: roomId };
   }
 
-  /** Obstacle carré de 300 mm au centre de la boîte de la pièce. */
-  addObstacle(roomId: Id): void {
+  /** Obstacle ou équipement à sa taille usuelle (`core/plan/equipment`), au centre de la boîte de la pièce. */
+  addObstacle(roomId: Id, kind: Obstacle['kind'] = 'post'): void {
     const r = this.room(roomId);
     if (!r) return;
     const xs = r.outline.map((p) => p[0]),
       ys = r.outline.map((p) => p[1]);
     const cx = Math.round((Math.min(...xs) + Math.max(...xs)) / 2 / 10) * 10,
       cy = Math.round((Math.min(...ys) + Math.max(...ys)) / 2 / 10) * 10;
-    const obstacle: Obstacle = { id: newId(), kind: 'post', outline: rectAt(cx - 150, cy - 150, 300, 300) };
+    const { width, depth } = EQUIPMENT[kind];
+    const obstacle: Obstacle = {
+      id: newId(),
+      kind,
+      outline: rectAt(cx - Math.round(width / 20) * 10, cy - Math.round(depth / 20) * 10, width, depth),
+    };
     this.dispatch({ type: 'plan/obstacle/add', roomId, obstacle });
     this.sel = { kind: 'obstacle', room: roomId, obstacle: obstacle.id };
   }

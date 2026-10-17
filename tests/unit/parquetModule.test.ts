@@ -331,3 +331,46 @@ describe('plusieurs pièces (P3)', () => {
     expect(lines.find((x) => x.key === 'parquet:threshold')!.detail).toBe('1 seuil, barres de 93 cm');
   });
 });
+
+describe('équipements fixes et parquet (N5)', () => {
+  it('le parquet contourne un receveur mais pas un WC (sol dessous)', () => {
+    const p = project();
+    const room = p.plan.rooms[0]!;
+    const withEquipment = {
+      ...p,
+      plan: {
+        ...p.plan,
+        rooms: [
+          {
+            ...room,
+            obstacles: [
+              {
+                id: 'w',
+                kind: 'toilet' as const,
+                outline: [
+                  [0, 0],
+                  [400, 0],
+                  [400, 700],
+                  [0, 700],
+                ] as [number, number][],
+              },
+              {
+                id: 's',
+                kind: 'shower' as const,
+                outline: [
+                  [1000, 0],
+                  [1900, 0],
+                  [1900, 900],
+                  [1000, 900],
+                ] as [number, number][],
+              },
+            ],
+          },
+          ...p.plan.rooms.slice(1),
+        ],
+      },
+    };
+    const obstacles = specOf(withEquipment).layouts[0]!.rooms[0]!.obstacles;
+    expect(obstacles).toHaveLength(1);
+  });
+});

@@ -42,9 +42,11 @@ export interface Wall {
 
 export interface Obstacle {
   id: Id;
-  kind: 'post' | 'island' | 'duct' | 'other';
+  kind: 'post' | 'island' | 'duct' | 'other' | 'toilet' | 'basin' | 'shower' | 'bath' | 'sink' | 'washer';
   /** Repère de la pièce. */
   outline: Polygon;
+  /** Le revêtement du sol passe dessous (choix de l'utilisateur) ; absent : l'usage de son type (`equipment.ts`). */
+  floorUnder?: boolean;
 }
 
 export interface WallOpening {

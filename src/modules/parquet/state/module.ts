@@ -1,6 +1,7 @@
 /** Fonctions du contrat de module (docs/BOITE.md §2) propres au parquet, hors écrans. */
 import type { Point, Polygon, Segment } from '../../../core/geometry/types';
 import type { Plan, PlanRoom } from '../../../core/plan/types';
+import { floorHoles } from '../../../core/plan/equipment';
 import type { Zone } from '../../../core/coverage/types';
 import { basesOf, floorSpans, NO_CONTEXT, type ProjectContext, type WallBase } from '../../../core/coverage/wallBase';
 import { wallDirection, wallLength, wallSegment } from '../../../core/plan/walls';
@@ -80,7 +81,7 @@ function layoutSpec(l: Layout, plan: Plan, board: Board | null, context: Project
     rooms: rooms.map((r) => ({
       id: r.id,
       outline: r.outline.map((p) => at(r, p)),
-      obstacles: r.obstacles.map((o): Polygon => o.outline.map((p) => at(r, p))),
+      obstacles: floorHoles(r).map((o): Polygon => o.outline.map((p) => at(r, p))),
       openings: r.openings.flatMap((o) => {
         const i = r.walls.findIndex((w) => w.id === o.wall);
         if (i < 0) return [];

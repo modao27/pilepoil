@@ -3,6 +3,7 @@ import { difference, intersection, regionArea } from '../geometry/boolean';
 import { signedArea } from '../geometry/polygon';
 import type { Point, Polygon } from '../geometry/types';
 import type { Plan, PlanRoom } from '../plan/types';
+import { floorHoles } from '../plan/equipment';
 import { wallIndex, wallLength } from '../plan/walls';
 import type { Cut, SurfaceRef, Zone } from './types';
 
@@ -33,7 +34,7 @@ export function findRoom(plan: Plan, id: string): PlanRoom | undefined {
 export function surfacePolygon(plan: Plan, s: SurfaceRef): Polygon[] | null {
   const room = findRoom(plan, s.room);
   if (!room) return null;
-  if (s.wall == null) return [ring(room.outline, 1), ...room.obstacles.map((o) => ring(o.outline, -1))];
+  if (s.wall == null) return [ring(room.outline, 1), ...floorHoles(room).map((o) => ring(o.outline, -1))];
   const i = wallIndex(room, s.wall);
   if (i < 0) return null;
   const L = wallLength(room, i),

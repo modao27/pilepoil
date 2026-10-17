@@ -450,6 +450,17 @@ Branche `n1-largeur-mur` (`docs/audit/PROPOSITIONS.md` §3 bis).
 - Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/wall-width.spec.ts`).
 - Fait (2026-10-17).
 
+## N5 — Équipements fixes du plan
+
+Branche `n5-equipements` (`docs/audit/PROPOSITIONS.md` §3 bis).
+
+- Six équipements s'ajoutent aux obstacles (WC, lavabo, receveur de douche, baignoire, évier / meuble, lave-linge) avec
+  leur taille usuelle (`core/plan/equipment.ts`), placés en cotes depuis les murs (PLAN-05).
+- Sol dessous : par défaut selon le type (WC, lavabo, lave-linge : le revêtement passe dessous ; receveur, baignoire,
+  meuble : le sol est découpé), réglable par élément (`Obstacle.floorUnder`). Carrelage et parquet lisent `floorHoles`.
+- Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/equipment.spec.ts`, `tests/unit/equipment.test.ts`).
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

@@ -8,6 +8,8 @@
   import NumberField from '../components/NumberField.svelte';
   import Segmented from '../components/Segmented.svelte';
   import Select from '../components/Select.svelte';
+  import Checkbox from '../components/Checkbox.svelte';
+  import { EQUIPMENT, EQUIPMENT_KINDS, floorUnder, type ObstacleKind } from '../../core/plan/equipment';
   import TextField from '../components/TextField.svelte';
   import { formatNumber } from '../lib/calc';
   import { PLAN_MESSAGES, WORKS_MESSAGES } from '../lib/planMessages';
@@ -22,12 +24,13 @@
     { value: 'french-window', label: 'Baie' },
     { value: 'window', label: 'Fenêtre' },
   ];
-  const OBSTACLES = [
-    { value: 'post' as const, label: 'Poteau' },
-    { value: 'island' as const, label: 'Îlot' },
-    { value: 'duct' as const, label: 'Conduit' },
-    { value: 'other' as const, label: 'Autre' },
-  ];
+  const OBSTACLES = (Object.keys(EQUIPMENT) as ObstacleKind[]).map((value) => ({
+    value,
+    label: EQUIPMENT[value].label,
+  }));
+  /** Équipement à ajouter (WC, receveur…). */
+  let equipment = $state<ObstacleKind>('toilet');
+  const EQUIPMENTS = EQUIPMENT_KINDS.map((value) => ({ value, label: EQUIPMENT[value].label }));
   const cm = (mm: number) => formatNumber(mm / 10, 1) + ' cm';
   const kindLabel = (k: OpeningKind) => KINDS.find((x) => x.value === k)!.label;
   /** Portes des autres pièces, pour relier la porte choisie (mode liaison). */
@@ -392,6 +395,18 @@
       onchange={(kind) =>
         st.dispatch({ type: 'plan/obstacle/update', roomId: room.id, obstacleId: obstacle.id, patch: { kind } })}
     />
+    <Checkbox
+      label="Le revêtement du sol passe dessous"
+      hint="Décoché : le sol est découpé autour de l’élément (receveur, baignoire, meuble)."
+      checked={floorUnder(obstacle)}
+      onchange={(v) =>
+        st.dispatch({
+          type: 'plan/obstacle/update',
+          roomId: room.id,
+          obstacleId: obstacle.id,
+          patch: { floorUnder: v },
+        })}
+    />
     <NumberField
       label="Largeur"
       unit="cm"
@@ -560,6 +575,12 @@
     {/if}
     <div class="row">
       <Button icon="plus" onclick={() => st.addObstacle(room.id)}>Ajouter un obstacle</Button>
+    </div>
+    <div class="equip">
+      <Select label="Équipement" bind:value={equipment} options={EQUIPMENTS} />
+      <Button icon="plus" onclick={() => st.addObstacle(room.id, equipment)}>Ajouter l’équipement</Button>
+    </div>
+    <div class="row">
       <Button variant="danger" icon="trash" onclick={() => st.askRemoveRoom(room.id)}>Supprimer la pièce</Button>
     </div>
   {:else}
@@ -634,6 +655,10 @@
 </Dialog>
 
 <style>
+  .equip {
+    display: grid;
+    gap: var(--space-2);
+  }
   .words {
     display: flex;
     flex-wrap: wrap;
