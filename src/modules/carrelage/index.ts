@@ -53,6 +53,5 @@ export const module: ModuleManifest<CarrelageData, ProjectSpec, ProjectResult, A
       { path: 's/:surfaceId', load: editor },
       { path: 'compare', load: () => import('./ui/screens/Compare.svelte').then((m) => m.default) },
     ],
-    card: () => import('./ui/components/ProjectCard.svelte').then((m) => m.default),
   },
 };

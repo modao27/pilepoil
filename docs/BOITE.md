@@ -65,7 +65,6 @@ export interface ToolModule<Data, Spec, Result> {
     editor: () => Promise<Component>;
     routes?: ModuleRoute[];                    // écrans propres sous #/p/:id/m/<id>/…
     create?: () => Promise<Component>;         // #/new/<id> : assistant de création
-    card?: () => Promise<Component>;           // carte du projet sur l'accueil
     settings?: () => Promise<Component>;       // section des Réglages
   };
   /** Démarrage, base ouverte, avant le chargement des projets. Facultatif. */

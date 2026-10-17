@@ -154,8 +154,6 @@ export interface ModuleScreens {
   routes?: ModuleRoute[];
   /** #/new : assistant de création d'un projet avec cet outil. */
   create?: ScreenLoader<Record<string, never>>;
-  /** Carte d'un projet sur l'accueil (vignette, chiffres), si le projet a cet outil. */
-  card?: ScreenLoader<{ project: Project }>;
   /** Section du module dans les Réglages (données, import…). */
   settings?: ScreenLoader<Record<string, never>>;
 }
