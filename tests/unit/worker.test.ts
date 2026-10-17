@@ -7,7 +7,7 @@ import {
   type ProjectSpec,
 } from '../../src/modules/carrelage/core';
 import type { AnyEngine } from '../../src/modules/engines';
-import { createComputeClient, SupersededError, type Port } from '../../src/workers/client';
+import { createComputeClient, SupersededError, WorkerDownError, type Port } from '../../src/workers/client';
 import { createHandler } from '../../src/workers/handler';
 import type { Request, Response } from '../../src/workers/protocol';
 import { surface, zone } from './fixtures';
@@ -126,6 +126,25 @@ function fakePort(): Port {
     addEventListener: (_t, f) => void listeners.push(f),
   };
 }
+
+describe('client : worker tombé', () => {
+  it('rejette les demandes en attente et les suivantes, et prévient', async () => {
+    let fail = () => {};
+    const port: Port = {
+      postMessage: () => {},
+      addEventListener: () => {},
+      onFailure: (fn) => (fail = fn),
+    };
+    let told = 0;
+    const c = createComputeClient(port, () => told++);
+    const waiting = c.compute('carrelage', spec(1000));
+    fail();
+    await expect(waiting).rejects.toBeInstanceOf(WorkerDownError);
+    await expect(c.compute('carrelage', spec(1000))).rejects.toBeInstanceOf(WorkerDownError);
+    await expect(c.optimize('carrelage', {})).rejects.toBeInstanceOf(WorkerDownError);
+    expect(told).toBe(1);
+  });
+});
 
 describe('client', () => {
   it('une demande dépassée est rejetée, la dernière aboutit', async () => {

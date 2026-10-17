@@ -45,3 +45,16 @@ test('deux onglets : le nom changé dans l’un survit au prix saisi dans l’au
   expect(await savedProjectNames(page)).toContain('Studio');
   expect(await savedProjectNames(page)).not.toContain('Écrasé');
 });
+
+test('moteur de calcul introuvable : message avec « Recharger l’application » au lieu de « Calcul… » sans fin', async ({
+  page,
+  context,
+}) => {
+  const id = await newWall(page);
+  const broken = await context.newPage();
+  await broken.route(/compute\.worker/, (r) => r.abort());
+  await broken.goto(`/#/p/${id}/achats`);
+  const alert = broken.getByRole('alert').filter({ hasText: 'Le moteur de calcul ne répond pas' });
+  await expect(alert).toBeVisible();
+  await expect(alert.getByRole('button', { name: 'Recharger l’application' })).toBeVisible();
+});

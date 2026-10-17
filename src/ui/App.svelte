@@ -141,9 +141,32 @@
   </Screen>
 {/if}
 
+{#if app.workerDown}
+  <div class="down" role="alert">
+    <p>Le moteur de calcul ne répond pas : les chiffres ne se mettent plus à jour. Rechargez l’application.</p>
+    <Button variant="primary" onclick={() => location.reload()}>Recharger l’application</Button>
+  </div>
+{/if}
+
 <ToastHost />
 
 <style>
+  .down {
+    position: fixed;
+    inset: auto var(--gutter) var(--space-4);
+    z-index: 50;
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-error-bg);
+    color: var(--color-error);
+    box-shadow: var(--shadow-2);
+  }
+  .down p {
+    margin: 0;
+  }
   .loading {
     padding: var(--space-6);
     text-align: center;

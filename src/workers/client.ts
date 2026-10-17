@@ -5,6 +5,8 @@ import type { Request, Response } from './protocol';
 export interface Port {
   postMessage(msg: Request): void;
   addEventListener(type: 'message', fn: (e: { data: Response }) => void): void;
+  /** Le canal est tombé (fichier du worker introuvable ou abîmé, erreur non rattrapée) : plus rien ne répondra. */
+  onFailure?(fn: () => void): void;
 }
 
 /** Calcul remplacé par une demande plus récente : l'interface l'ignore. */
@@ -41,11 +43,27 @@ interface Waiting {
 
 const abortError = () => new DOMException('Optimisation annulée.', 'AbortError');
 
-export function createComputeClient(port: Port): ComputeClient {
+/** Le moteur de calcul ne répond plus : l'interface propose de recharger l'application. */
+export class WorkerDownError extends Error {
+  constructor() {
+    super('Le moteur de calcul ne répond pas.');
+    this.name = 'WorkerDownError';
+  }
+}
+
+export function createComputeClient(port: Port, onFatal: () => void = () => {}): ComputeClient {
   let seq = 0;
   /** Dernière demande de calcul de chaque module. */
   const latest = new Map<ModuleId, number>();
   const waiting = new Map<number, Waiting>();
+  let down = false;
+
+  port.onFailure?.(() => {
+    for (const w of [...waiting.values()]) w.reject(new WorkerDownError());
+    waiting.clear();
+    down = true;
+    onFatal();
+  });
 
   port.addEventListener('message', ({ data: m }) => {
     const w = waiting.get(m.id);
@@ -76,6 +94,7 @@ export function createComputeClient(port: Port): ComputeClient {
 
   return {
     compute<R>(module: ModuleId, spec: unknown) {
+      if (down) return Promise.reject(new WorkerDownError());
       const id = ++seq;
       latest.set(module, id);
       return new Promise<R>((resolve, reject) => {
@@ -84,6 +103,7 @@ export function createComputeClient(port: Port): ComputeClient {
       });
     },
     optimize<R>(module: ModuleId, spec: unknown, opts: OptimizeOptions = {}) {
+      if (down) return Promise.reject(new WorkerDownError());
       const id = ++seq;
       return new Promise<R>((resolve, reject) => {
         if (opts.signal?.aborted) return reject(abortError());
@@ -110,7 +130,15 @@ export function createComputeClient(port: Port): ComputeClient {
 }
 
 /** Client branché sur le worker de l'application. */
-export function createWorkerClient(): ComputeClient {
+export function createWorkerClient(onFatal?: () => void): ComputeClient {
   const worker = new Worker(new URL('./compute.worker.ts', import.meta.url), { type: 'module' });
-  return createComputeClient(worker as unknown as Port);
+  const port: Port = {
+    postMessage: (m) => worker.postMessage(m),
+    addEventListener: (_t, fn) => worker.addEventListener('message', fn as unknown as EventListener),
+    onFailure: (fn) => {
+      worker.addEventListener('error', fn);
+      worker.addEventListener('messageerror', fn);
+    },
+  };
+  return createComputeClient(port, onFatal);
 }

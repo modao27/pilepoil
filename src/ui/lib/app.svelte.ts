@@ -32,6 +32,8 @@ export type Theme = 'auto' | 'light' | 'dark';
 export class AppState {
   ready = $state(false);
   fatal = $state<string | null>(null);
+  /** Le worker de calcul est tombé : les calculs ne reviendront pas avant un rechargement. */
+  workerDown = $state(false);
   // Données immuables, remplacées à chaque modification : $state.raw évite les proxys, que ni IndexedDB
   // ni postMessage ne savent cloner.
   projects = $state.raw<Project[]>([]);
@@ -65,8 +67,9 @@ export class AppState {
   async init(): Promise<void> {
     try {
       this._db = await openDb();
-      this.live = createWorkerClient();
-      this.batch = createWorkerClient();
+      const down = () => (this.workerDown = true);
+      this.live = createWorkerClient(down);
+      this.batch = createWorkerClient(down);
       // démarrage des modules (base ouverte) avant le chargement des projets
       for (const m of modules) await m.start?.(this.db);
       await this.reload();
