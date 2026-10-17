@@ -147,15 +147,25 @@
   };
   /** Zones dont la dernière saisie de hauteur est refusée (message sous les champs, effacé dès qu'elle est correcte). */
   let spanErrors = $state<Record<string, string>>({});
-  function setSpan(z: Zone, from: number, to: number) {
-    if (!project || !room) return;
-    if (!(to > from)) {
-      spanErrors[z.id] =
-        'Le haut de la zone doit être au-dessus du bas : corrigez l’une des deux hauteurs (rien n’est enregistré tant que c’est incohérent).';
-      return;
-    }
-    spanErrors[z.id] = '';
-    void dispatch(spanAction(project, z, from > 0 ? from : null, to < room.height ? Math.min(to, room.height) : null));
+  /** Saisies de hauteur mises en file : chacune part de l'état enregistré par la précédente, jamais d'un état périmé. */
+  let spanQueue: Promise<void> = Promise.resolve();
+  /** `from` ou `to` : la hauteur modifiée (mm) ; l'autre reste celle de la zone au moment où la saisie est traitée. */
+  function setSpan(z: Zone, change: { from?: number; to?: number }) {
+    spanQueue = spanQueue.then(async () => {
+      const p = project;
+      if (!p || !room) return;
+      const now = p.zones.find((x) => x.id === z.id) ?? z;
+      const [from0, to0] = span(now);
+      const from = change.from ?? from0,
+        to = change.to ?? to0;
+      if (!(to > from)) {
+        spanErrors[z.id] =
+          'Le haut de la zone doit être au-dessus du bas : corrigez l’une des deux hauteurs (rien n’est enregistré tant que c’est incohérent).';
+        return;
+      }
+      spanErrors[z.id] = '';
+      await dispatch(spanAction(p, now, from > 0 ? from : null, to < room.height ? Math.min(to, room.height) : null));
+    });
   }
 
   /** Découpe d'une zone de sol : par une ligne (deux points) ou par un contour (points aimantés, refermé). */
@@ -314,7 +324,7 @@
                           min={0}
                           max={room.height / 10}
                           value={from}
-                          onchange={(v) => setSpan(z, v, to)}
+                          onchange={(v) => setSpan(z, { from: v })}
                         />
                         <NumberField
                           label="Jusqu’à"
@@ -323,7 +333,7 @@
                           min={1}
                           max={room.height / 10}
                           value={to}
-                          onchange={(v) => setSpan(z, from, v)}
+                          onchange={(v) => setSpan(z, { to: v })}
                         />
                       </div>
                       {#if spanErrors[z.id]}<p class="span-err" role="alert">{spanErrors[z.id]}</p>{/if}
