@@ -19,6 +19,7 @@ import {
   libraryStore,
   putItem,
   saveProject,
+  ConflictError,
   savePhoto,
   setPref,
 } from '../../src/storage/repo';
@@ -104,6 +105,22 @@ describe('base IndexedDB', () => {
     await saveScenario(db, scenario(old as Project, 'A'));
     const [s] = await listScenarios(db, p.id);
     expect(s!.snapshot.project.site.existing).toEqual(p.plan);
+  });
+
+  it('écriture périmée refusée : un autre onglet a enregistré entre-temps', async () => {
+    const db = await fresh();
+    const t = createTile();
+    const base = createProject(t.id, { name: 'Séjour' }, 1000);
+    await saveProject(db, base);
+    // l'autre onglet renomme (updatedAt 2000) ; cet onglet, resté sur la version 1000, veut enregistrer un prix
+    await saveProject(db, { ...base, name: 'Salon', updatedAt: 2000 }, 1000);
+    await expect(saveProject(db, { ...base, updatedAt: 3000 }, 1000)).rejects.toBeInstanceOf(ConflictError);
+    expect((await getProject(db, base.id))!.name).toBe('Salon');
+    // connaissant la version 2000, l'écriture passe ; sans version connue, écriture libre (nouveau projet)
+    await saveProject(db, { ...base, name: 'Salon 2', updatedAt: 3000 }, 2000);
+    expect((await getProject(db, base.id))!.name).toBe('Salon 2');
+    await saveProject(db, { ...base, name: 'Libre', updatedAt: 4000 });
+    expect((await getProject(db, base.id))!.name).toBe('Libre');
   });
 
   it('projets : enregistrement, liste du plus récent au plus ancien, suppression avec scénarios', async () => {

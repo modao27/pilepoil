@@ -14,6 +14,7 @@ import { background, brand } from '../brand';
 import { upsertItem } from './library';
 import { DEFAULT_PALETTE } from './palette';
 import { createWorkerClient, type ComputeClient } from '../../workers/client';
+import { router } from './router.svelte';
 import { toast } from './toasts.svelte';
 import { canUndo } from '../../state/undo';
 import { templatesToSeed } from '../../state/seeding';
@@ -22,6 +23,9 @@ export const SAVE_FAILED =
   'Enregistrement impossible : stockage plein ou indisponible. Vos changements sont gardés ici ; réessayez.';
 export const UNDO_STALE = 'Impossible d’annuler : le projet a été modifié depuis.';
 export const WRITE_FAILED = 'Enregistrement impossible : stockage plein ou indisponible. Réessayez.';
+
+export const CONFLICT =
+  'Ce projet a été modifié dans un autre onglet. Rechargez pour voir ses changements : vos dernières modifications ici ne sont pas enregistrées.';
 
 export type Theme = 'auto' | 'light' | 'dark';
 
@@ -48,6 +52,15 @@ export class AppState {
   private batch!: ComputeClient;
   private queue: Promise<unknown> = Promise.resolve();
   private _db!: Db;
+  /** `updatedAt` de chaque projet tel que cet onglet l'a lu ou écrit en dernier (contrôle à l'écriture). */
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  private known = new Map<Id, number>();
+  /** Projets modifiés ailleurs pendant qu'un éditeur les tient ouverts : plus d'écriture avant rechargement. */
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity
+  private conflicted = new Set<Id>();
+  /** Écritures de projet, l'une après l'autre. */
+  private writes: Promise<unknown> = Promise.resolve();
+  private channel: BroadcastChannel | null = null;
 
   async init(): Promise<void> {
     try {
@@ -57,6 +70,7 @@ export class AppState {
       // démarrage des modules (base ouverte) avant le chargement des projets
       for (const m of modules) await m.start?.(this.db);
       await this.reload();
+      this.listen();
       this.theme = (await repo.getPref(this.db, 'theme')) ?? 'auto';
       this.palette = (await repo.getPref(this.db, 'palette')) ?? DEFAULT_PALETTE;
       this.showCutNumbers = (await repo.getPref(this.db, 'showCutNumbers')) ?? true;
@@ -75,6 +89,37 @@ export class AppState {
   async reload(): Promise<void> {
     await this.loadLibraries();
     this.projects = await repo.listProjects(this.db);
+    for (const p of this.projects) this.known.set(p.id, p.updatedAt);
+  }
+
+  /** Les enregistrements des autres onglets arrivent ici (BroadcastChannel). */
+  private listen(): void {
+    if (typeof BroadcastChannel === 'undefined') return;
+    this.channel = new BroadcastChannel('pilepoil-projects');
+    this.channel.onmessage = (e: MessageEvent<{ type: 'saved' | 'deleted'; id: Id }>) => void this.onOtherTab(e.data);
+  }
+
+  /** Message « modifié ailleurs », une seule fois par projet ; les écritures de ce projet s'arrêtent. */
+  private conflictNotice(id: Id): void {
+    if (this.conflicted.has(id)) return;
+    this.conflicted.add(id);
+    toast(CONFLICT, { tone: 'error', timeout: null, action: { label: 'Recharger', run: () => location.reload() } });
+  }
+
+  private async onOtherTab({ type, id }: { type: 'saved' | 'deleted'; id: Id }): Promise<void> {
+    if (type === 'deleted') {
+      this.projects = this.projects.filter((x) => x.id !== id);
+      this.known.delete(id);
+      return;
+    }
+    const fresh = await repo.getProject(this.db, id);
+    if (!fresh) return;
+    this.projects = [fresh, ...this.projects.filter((x) => x.id !== id)].sort((a, b) => b.updatedAt - a.updatedAt);
+    // un éditeur de ce projet est ouvert ici : il garde sa copie, qui n'a plus le droit d'écraser l'autre
+    const r = router.route;
+    if ((r.name === 'plan' || r.name === 'module') && r.id === id) {
+      this.conflictNotice(id);
+    } else this.known.set(id, fresh.updatedAt);
   }
 
   /* ---------- projets ---------- */
@@ -83,8 +128,24 @@ export class AppState {
     return this.projects.find((p) => p.id === id);
   }
 
-  async saveProject(p: Project): Promise<void> {
-    await repo.saveProject(this.db, p);
+  /** Écritures mises en file ; refusée (message et plus d'écriture) si un autre onglet a modifié le projet. */
+  saveProject(p: Project): Promise<void> {
+    const run = this.writes.then(() => this.write(p));
+    this.writes = run.catch(() => undefined);
+    return run;
+  }
+
+  private async write(p: Project): Promise<void> {
+    if (this.conflicted.has(p.id)) return;
+    try {
+      await repo.saveProject(this.db, p, this.known.get(p.id));
+    } catch (e) {
+      if (!(e instanceof repo.ConflictError)) throw e;
+      this.conflictNotice(p.id);
+      return;
+    }
+    this.known.set(p.id, p.updatedAt);
+    this.channel?.postMessage({ type: 'saved', id: p.id });
     this.projects = [p, ...this.projects.filter((x) => x.id !== p.id)].sort((a, b) => b.updatedAt - a.updatedAt);
     await repo.setPref(this.db, 'lastProjectId', p.id);
   }
@@ -96,7 +157,7 @@ export class AppState {
   async trySaveProject(p: Project): Promise<boolean> {
     try {
       await this.saveProject(p);
-      return true;
+      return !this.conflicted.has(p.id);
     } catch {
       toast(SAVE_FAILED, {
         tone: 'error',
@@ -157,6 +218,8 @@ export class AppState {
     if (!p) return;
     this.projects = this.projects.filter((x) => x.id !== id);
     await repo.deleteProject(this.db, id);
+    this.known.delete(id);
+    this.channel?.postMessage({ type: 'deleted', id });
     const timer = setTimeout(() => this.collectPhotos(), 6500);
     toast(`Projet « ${p.name} » supprimé.`, {
       action: {

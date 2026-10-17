@@ -32,8 +32,27 @@ function readProject(db: Db, raw: unknown): Project {
   return hydrate(doc);
 }
 
-export async function saveProject(db: Db, p: Project): Promise<void> {
-  await db.put('projects', dehydrate(p));
+/** Le projet enregistré n'est plus celui que l'appelant a lu : un autre onglet l'a modifié. */
+export class ConflictError extends Error {
+  constructor() {
+    super('Projet modifié ailleurs.');
+    this.name = 'ConflictError';
+  }
+}
+
+/**
+ * Enregistre le projet. `known` : `updatedAt` du projet tel que l'appelant l'a lu ou écrit en dernier ; si la
+ * base en contient une autre version, rien n'est écrit (ConflictError). Sans `known`, écriture sans contrôle.
+ */
+export async function saveProject(db: Db, p: Project, known?: number): Promise<void> {
+  const tx = db.transaction('projects', 'readwrite');
+  const stored = await tx.store.get(p.id);
+  if (known !== undefined && stored && stored.updatedAt !== known) {
+    await tx.done;
+    throw new ConflictError();
+  }
+  await tx.store.put(dehydrate(p));
+  await tx.done;
 }
 
 /** Supprime le projet, ses scénarios et les photos devenues orphelines. */
