@@ -96,7 +96,10 @@ test('bibliothèque : une lame utilisée par un projet ne se supprime pas', asyn
   await expect(dialog).toContainText('« Appartement »');
   await check(page);
   await shot(page, info, '83-lame-utilisee');
-  await dialog.getByRole('button', { name: 'Compris' }).click();
+  // le lien mène au projet qui utilise la lame
+  await dialog.getByRole('link', { name: 'Ouvrir le projet' }).click();
+  await expect(page).toHaveURL(new RegExp(`#/p/${id}$`));
+  await expect(page.getByRole('heading', { name: 'Appartement' })).toBeVisible();
   await page.goto('/#/library/boards');
   await expect(list.getByRole('link', { name: /Stratifié 1285 × 192/ })).toBeVisible();
 });

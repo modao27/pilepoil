@@ -200,6 +200,13 @@ test('finitions : bords visibles, plinthes du sol, alerte actionnable', async ({
   await expect(page.getByRole('tab', { name: 'Finitions' })).toHaveAttribute('aria-selected', 'true');
 });
 
+test('résumé : cette pose d’un côté, à commander pour tout le projet de l’autre', async ({ page }) => {
+  await newWall(page);
+  const summary = page.getByRole('link', { name: /Cette pose :/ });
+  await expect(summary).toContainText(/Cette pose : [\d\s]+ carreaux? posés?/);
+  await expect(summary).toContainText(/À commander, tout le projet : [\d\s]+ (cartons?|carreaux?)/);
+});
+
 test('optimisation : progression, résultat, annulation', async ({ page }, info) => {
   await newWall(page);
   await dragPlan(page, 0.5, 0.4, 37, 23);

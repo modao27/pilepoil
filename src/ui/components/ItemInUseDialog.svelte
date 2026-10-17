@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Suppression refusée d'un produit de bibliothèque utilisé par un projet (lame, carreau, peinture, système). */
   import Button from './Button.svelte';
+  import { app } from '../lib/app.svelte';
   import Dialog from './Dialog.svelte';
 
   let {
@@ -15,9 +16,15 @@
     /** Phrase à partir du nom du projet. */
     message: (project: string) => string;
   } = $props();
+
+  /** Le projet nommé (le premier de ce nom) : pour aller y changer de produit. */
+  const link = $derived(app.projects.find((p) => p.name === project));
 </script>
 
 <Dialog open={project != null} {title} onclose={() => (project = null)}>
   <p>{message(project ?? '')}</p>
-  {#snippet actions()}<Button variant="primary" onclick={() => (project = null)}>Compris</Button>{/snippet}
+  {#snippet actions()}
+    {#if link}<Button variant="primary" href="#/p/{link.id}">Ouvrir le projet</Button>{/if}
+    <Button variant={link ? 'ghost' : 'primary'} onclick={() => (project = null)}>Compris</Button>
+  {/snippet}
 </Dialog>

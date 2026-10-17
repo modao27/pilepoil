@@ -391,6 +391,19 @@ Branche `lot-d-donnees`. Corrige ROB-01, ROB-02, ROB-04 et la moitié de PLAN-07
 - Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur.
 - Fait (2026-10-17).
 
+## Lot F — Lire une pose (audit UI/UX)
+
+Branche `lot-f-lire-pose`. Corrige UX-01, UX-02, UX-05, PAR-03, TXT-01, CAR-04, CAR-05, BIB-01 (`docs/audit/PROPOSITIONS.md`).
+
+- Résumé du carrelage en deux parties (« Cette pose » / « À commander, tout le projet »).
+- Nom de pose proposé d'après ce qu'elle couvre (« Salle de bain, sol ») et suivi quand elle s'étend ; l'outil est
+  toujours dit devant le nom (`defaultPoseName`, `core/coverage/names.ts`).
+- Détail des résultats repliable par outil avec sommaire ; « chutes de coupe » et « morceaux posés » au parquet.
+- Textes (« PDF de la pose »), tailles de carreau en cm, bouton Optimiser avec le zoom et « déjà optimal » dit.
+- Produit utilisé : lien « Ouvrir le projet » (le remplacement est écarté).
+- Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur.
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 
