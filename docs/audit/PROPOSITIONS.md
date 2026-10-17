@@ -71,6 +71,68 @@ rails, montants, plaques) ; les propositions portent sur ses suites.
 | **Prix fournisseur** (import d'une liste de prix CSV, prix par magasin, date du prix) | Les prix sont saisis un par un à chaque projet | artisan | moyen | M | bibliothèques, achats | après B1 | coquille et bibliothèques ; `priceAction` inchangé |
 | **Partage en lecture** (lien ou PDF interactif pour le client, sans compte) | Montrer le projet au client | artisan | faible à moyen | L (serveur) ou S (PDF) | synchronisation hors périmètre (`docs/PLAN.md`) | plus tard | — |
 
+## 3 bis. Fonctionnalités relevées par l'utilisateur (17 octobre 2026)
+
+Cinq idées de l'utilisateur, hors constats de l'audit, analysées d'après le code. Décisions prises : (1) deux pièces
+peuvent avoir **un niveau de sol différent** ; (2) des **matériaux préenregistrés** (une vingtaine) avec leur technique
+de pose, et la possibilité d'ajouter de nouvelles dimensions rattachées à une technique.
+
+| Idée | État actuel du code | Effort | Risque parité carrelage |
+|---|---|---|---|
+| **N1. Carreler une largeur seulement d'un mur** | `Zone` (`core/coverage/types.ts`) a déjà des coupes et un contour ; l'écran Pièce ne propose pour un mur que les hauteurs. | S à M | faible |
+| **N2. Hauteurs propres et niveaux** : murs bas, marches, pièces à niveaux différents | `Wall` et `Partition` n'ont pas de hauteur propre (tout monte à la hauteur de la pièce) ; une seule altitude de sol dans tout le plan. | L | **moyen** : surfaces des murs, ouvertures, 3D, dérivation du plan v3, plinthes, seuils du parquet |
+| **N3. Cloisons de hauteur propre, rattachées ou non à un mur** | Hauteur réglable côté module, mais le plan les dessine pleine hauteur ; pas de rattachement à un mur. | M (après N2) | aucun |
+| **N4. Murets multi-matériaux superposés** (ex. béton cellulaire jusqu'à x, brique de verre jusqu'à y) | Le module cloisons ne connaît que ossature + plaques. | L | aucun |
+| **N5. Équipements fixes du plan** (WC, receveur, lavabo, baignoire…) | Obstacles à 4 types (poteau, îlot, conduit, autre), sans position en cotes (PLAN-05). | M | faible |
+
+### Niveaux de sol différents (décision 1)
+
+- Donnée : une **altitude de sol par pièce** (`PlanRoom.floor`, mm, 0 par défaut) et, entre deux pièces reliées, la
+  **différence de niveau** qui en résulte (marche, rampe, sans seuil). Une marche **dans** une pièce = une estrade
+  (zone du plan avec sa hauteur), traitée comme un volume : contremarche et giron carrelables ou parquetables.
+- Conséquences à traiter en une seule phase : hauteur des murs de chaque pièce depuis son propre sol ; une pose continue
+  entre deux sols de niveaux différents est refusée ou coupée (règle de `core/coverage`), avec le message dit en
+  clair ; plinthe et barre de seuil au droit de la marche ; 3D (sol à l'altitude, murs coupés) ; peinture (hauteur nette
+  du mur) ; PDF (cotes de niveau).
+- Migration : champ facultatif, 0 si absent ; aucun projet existant n'est modifié ; invariants à écrire (un plan sans
+  niveau donne exactement les mêmes surfaces qu'avant, tests de propriétés).
+
+### Matériaux et techniques de pose (décision 2)
+
+- **Bibliothèque « Matériaux »** de plus, comme les carreaux, lames, peintures et systèmes : une vingtaine de modèles
+  types posés un par un (mécanisme de B1), chacun avec : dimensions du bloc ou de l'élément, masse volumique si utile,
+  **technique de pose** rattachée, consommables (mortier-colle ou mortier, joints, armatures, enduit), perte, hauteur
+  maximale conseillée sans chaînage.
+- **Technique de pose** = objet à part (`MasonryTechnique`) : appareillage (à joints décalés, à joints droits),
+  épaisseur de joint, règles de liaison aux murs et au plafond, raidisseurs et chaînages au-delà d'une hauteur ou
+  d'une longueur, consommables au mètre carré. Un matériau pointe vers une technique ; **ajouter une dimension**
+  = dupliquer le matériau avec de nouvelles cotes, sans toucher à la technique.
+- Modèles à préenregistrer (liste de départ, à valider) : béton cellulaire (plusieurs épaisseurs), carreau de plâtre,
+  brique creuse, brique de verre, parpaing, brique pleine, brique de terre cuite alvéolaire, bloc à bancher, pavé de
+  verre, etc. **Les règles de chaque technique viendront des DTU et des notices fabricants ; elles devront être
+  vérifiées une à une dans une spécification avant d'être codées** (comme `docs/cloisons/SPEC.md`), l'audit n'en a
+  vérifié aucune.
+- Murets multi-matériaux (N4) : un **muret = suite de tronçons en hauteur** (matériau, de h1 à h2), chacun calculé avec
+  sa technique ; achat par matériau, consommables regroupés, alerte si la jonction de deux matériaux n'a pas de règle
+  connue.
+
+### Contrat de module (`docs/BOITE.md` §2)
+
+- N1 : aucun changement de contrat (écran Pièce et zones).
+- N2 : nouveau champ de plan (`floor` de la pièce, hauteurs de murs et de cloisons), donc une version de modèle et de
+  base (migration sans conversion) ; les modules lisent déjà les surfaces par la coquille (`coverage`), seul le calcul
+  des hauteurs et des plinthes change.
+- N3, N4 : dans le module cloisons, qui devient « ossatures et murets » (ou un module « maçonnerie » séparé si l'on
+  préfère ne pas gonfler celui-ci) ; nouvelle bibliothèque déclarée par le module (`LibraryDefinition`), aucun import
+  entre modules.
+- N5 : bibliothèque d'éléments rangée dans la coquille (le plan est commun) ; les modules lisent leur emprise comme
+  une réservation (carrelage), un évitement (parquet) ou une surface déduite (peinture).
+
+### Place dans l'ordre
+
+Après le lot B (plan précis au doigt) et le relevé rapide : **N1** (petit) → **N5** → **phase « T1 — Niveaux et
+hauteurs » (N2)** → **N3** → **matériaux et techniques, puis N4**. Sans N2, ni N3 ni N4 ne sont possibles.
+
 ## 4. Classement impact / effort et ordre proposé
 
 | Rang | Proposition | Impact | Effort | Pourquoi maintenant |
