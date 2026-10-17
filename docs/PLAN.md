@@ -458,6 +458,11 @@ Branche `n5-equipements` (`docs/audit/PROPOSITIONS.md` §3 bis).
   leur taille usuelle (`core/plan/equipment.ts`), placés en cotes depuis les murs (PLAN-05).
 - Sol dessous : par défaut selon le type (WC, lavabo, lave-linge : le revêtement passe dessous ; receveur, baignoire,
   meuble : le sol est découpé), réglable par élément (`Obstacle.floorUnder`). Carrelage et parquet lisent `floorHoles`.
+- 3D : un volume net par type (`render/scene3d/equipment.ts` : WC avec réservoir et abattant, meuble sous vasque avec
+  vasque et robinet, receveur et son évacuation, baignoire à cuve, meuble d'évier avec cuve, lave-linge à hublot,
+  poteau et conduit pleine hauteur, îlot), tourné dos au mur le plus proche, jamais coupé avec les murs. Hauteurs de
+  modèles courants du catalogue Leroy Merlin (WC 78 cm réservoir compris, meuble simple vasque 84 cm, receveur 5 cm,
+  baignoire 58 cm, plan de travail 90 cm ; lave-linge 85 cm, usage courant). Sources dans `core/plan/equipment.ts`.
 - Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/equipment.spec.ts`, `tests/unit/equipment.test.ts`).
 - Fait (2026-10-17).
 

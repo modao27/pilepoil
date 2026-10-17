@@ -11,12 +11,15 @@ import type { Project } from '../../state/model';
 export interface Model3DLibs {
   envelope: typeof import('../../render/scene3d/envelope');
   cutaway: typeof import('../../render/scene3d/cutaway');
+  equipment: typeof import('../../render/scene3d/equipment');
 }
 
 export const loadModel3D = (): Promise<Model3DLibs> =>
-  Promise.all([import('../../render/scene3d/envelope'), import('../../render/scene3d/cutaway')]).then(
-    ([envelope, cutaway]) => ({ envelope, cutaway }),
-  );
+  Promise.all([
+    import('../../render/scene3d/envelope'),
+    import('../../render/scene3d/cutaway'),
+    import('../../render/scene3d/equipment'),
+  ]).then(([envelope, cutaway, equipment]) => ({ envelope, cutaway, equipment }));
 
 /** Revêtements d'un module calculé : le projet calculé, son résultat, ses exports (maillages). */
 export interface ModelEntry {
@@ -39,7 +42,7 @@ export function modelMeshes(
   entries: readonly ModelEntry[],
   libraries: Libraries,
 ): MeshData[] {
-  const { envelope, cutaway } = libs;
+  const { envelope, cutaway, equipment } = libs;
   const rooms = scopeRooms(p.plan, p, scope);
   // parties de murs revêtues par un module calculé : il les dessine (plâtre compris) ; le reste est dans l'enveloppe
   const drawn = new Set(entries.filter((e) => !e.exports.overlay).map((e) => e.module));
@@ -54,5 +57,10 @@ export function modelMeshes(
     cutaway.buildSections(p.plan, rooms),
     ...entries.flatMap((e) => e.exports.meshes({ project: e.project, libraries, result: e.result, scope })),
   ]);
-  return [...cutaway.tagWalls(merged, p.plan, rooms), cutaway.buildSite(envelope.planFrame(p.plan, rooms))];
+  // les équipements ne passent pas par tagWalls : posés contre un mur, ils ne seraient pas coupés avec lui
+  return [
+    ...cutaway.tagWalls(merged, p.plan, rooms),
+    cutaway.buildSite(envelope.planFrame(p.plan, rooms)),
+    ...equipment.buildEquipment(p.plan, rooms),
+  ];
 }

@@ -48,3 +48,28 @@ test('salle de bain : receveur et WC ajoutés à leur taille, placés en cotes, 
   await expectNoHorizontalScroll(page);
   await shot(page, info, '71-equipements');
 });
+
+test('équipements en 3D : chaque type est dessiné dans la maquette de la pièce', async ({ page }, info) => {
+  const id = await createProject(page, { project: 'Appartement', name: 'Salle d’eau', size: [320, 260] });
+  const p = panel(page);
+  // un de chaque, posés l'un après l'autre contre des murs différents
+  const place: [string, string, string][] = [
+    ['Receveur de douche', '0', '0'],
+    ['WC', '240', '0'],
+    ['Lavabo', '100', '0'],
+    ['Lave-linge', '0', '200'],
+    ['Baignoire', '0', '90'],
+  ];
+  for (const [kind, left, top] of place) {
+    await p.getByLabel('Équipement', { exact: true }).selectOption({ label: kind });
+    await p.getByRole('button', { name: 'Ajouter l’équipement' }).click();
+    await fillNumber(p, 'Distance au mur de gauche', left);
+    await fillNumber(p, 'Distance au mur du haut', top);
+    await p.getByRole('button', { name: 'Retour à Salle d’eau' }).click();
+  }
+  await page.goto(`/#/p/${id}/3d`);
+  const view = page.locator('[data-draw-calls]');
+  await expect(view).not.toHaveAttribute('data-draw-calls', '0', { timeout: 20_000 });
+  await page.waitForTimeout(800);
+  await shot(page, info, '72-equipements-3d');
+});
