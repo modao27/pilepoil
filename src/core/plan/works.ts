@@ -22,6 +22,7 @@ export const CONTACT_AREA = 100;
 
 export type WorksErrorCode =
   | 'partition/too-short'
+  | 'partition/height'
   | 'partition/outside'
   | 'partition/crosses-wall'
   | 'partition/crosses-locked'
@@ -311,6 +312,10 @@ export function validateWorks(site: Site): WorksIssue[] {
     const f = partitionFrame(q);
     if (f.length < MIN_PARTITION_LENGTH || !(q.thickness > 0)) {
       err('partition/too-short', q.id);
+      continue;
+    }
+    if (q.height != null && !(q.height > 0)) {
+      err('partition/height', q.id);
       continue;
     }
     if (!insideSomeRoom(site, q)) {

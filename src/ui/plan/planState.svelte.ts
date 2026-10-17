@@ -103,6 +103,8 @@ export class PlanEditorState {
   errors = $derived<PlanError[]>(validatePlan(this.doc.site.existing));
   /** Problèmes des cloisons et démolitions. */
   issues = $derived<WorksIssue[]>(deriveSite(this.doc.site).issues);
+  /** Cloisons basses qui ne traversent pas la pièce : des murets, obstacles dans le sol. */
+  lowObstacles = $derived<Id[]>(deriveSite(this.doc.site).lowObstacles);
 
   constructor(p: Project, o: { isNew?: boolean } = {}) {
     this.isNew = o.isNew ?? false;

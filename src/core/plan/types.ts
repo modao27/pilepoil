@@ -49,6 +49,8 @@ export interface Obstacle {
   kind: 'post' | 'island' | 'duct' | 'other' | 'toilet' | 'basin' | 'shower' | 'bath' | 'sink' | 'washer';
   /** Repère de la pièce. */
   outline: Polygon;
+  /** Hauteur en 3D, mm (absent : celle du type). Posée par les travaux pour un muret. */
+  height?: number;
   /** Le revêtement du sol passe dessous (choix de l'utilisateur) ; absent : l'usage de son type (`equipment.ts`). */
   floorUnder?: boolean;
 }
@@ -93,6 +95,11 @@ export interface Partition {
   /** Épaisseur centrée sur l'axe, ou d'un seul côté (gauche : côté de la normale (dy, −dx), à l'écran). */
   align: 'center' | 'left' | 'right';
   openings: PartitionOpening[];
+  /**
+   * Hauteur propre de la cloison, mm (absent : jusqu'au plafond). Plus basse que la pièce, elle sépare la pièce en deux
+   * si elle la traverse de part en part ; sinon c'est un muret, obstacle dans le sol (docs/cloisons/SPEC.md).
+   */
+  height?: number;
 }
 
 export interface PartitionOpening {

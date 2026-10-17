@@ -23,6 +23,7 @@ export const PLAN_MESSAGES: Record<PlanErrorCode, string> = {
 
 /** Textes des problèmes des travaux (codes de core/plan/works.ts) : ce qui ne va pas, puis comment corriger. */
 export const WORKS_MESSAGES: Record<WorksErrorCode, string> = {
+  'partition/height': 'Une cloison a une hauteur nulle. Indiquez sa hauteur ou laissez-la jusqu’au plafond.',
   'partition/too-short': 'Une cloison est trop courte. Allongez-la ou supprimez-la.',
   'partition/outside': 'Une cloison sort des pièces. Ses deux bouts doivent toucher une pièce.',
   'partition/crosses-wall': 'Une cloison traverse un mur. Arrêtez-la contre le mur, ou démolissez le mur d’abord.',

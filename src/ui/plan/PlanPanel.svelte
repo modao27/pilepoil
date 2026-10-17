@@ -42,6 +42,8 @@
     bar: 'Une barre de seuil de rattrapage finit la jonction des deux sols (vérifier la notice du fabricant).',
     nosing: 'Un nez de marche finit la jonction : la différence est trop grande pour une barre de seuil.',
   } as const;
+  /** Hauteur affichée tant que la cloison n'a pas la sienne : la plus basse hauteur sous plafond du plan. */
+  const partitionRoomHeight = (_q: Partition) => Math.min(...st.doc.site.existing.rooms.map((r) => r.height), 2500);
   const cm = (mm: number) => formatNumber(mm / 10, 1) + ' cm';
   const kindLabel = (k: OpeningKind) => KINDS.find((x) => x.value === k)!.label;
   /** Portes des autres pièces, pour relier la porte choisie (mode liaison). */
@@ -235,6 +237,30 @@
     <h2>{st.partitionName(partition.id)}</h2>
     {@render worksIssues([partition.id])}
     <p class="num">Longueur {cm(length(partition))}</p>
+    <NumberField
+      label="Hauteur de la cloison"
+      unit="cm"
+      factor={10}
+      min={1}
+      max={1000}
+      soft={{ min: 30, max: 400 }}
+      value={partition.height ?? partitionRoomHeight(partition)}
+      hint="Jusqu’au plafond par défaut."
+      onchange={(height) => st.updatePartition(partition.id, { height })}
+    />
+    {#if partition.height != null}
+      <Button variant="ghost" onclick={() => st.updatePartition(partition.id, { height: undefined })}
+        >Remettre jusqu’au plafond</Button
+      >
+    {/if}
+    {#if st.lowObstacles.includes(partition.id)}
+      <p class="muted" data-testid="muret">
+        Cloison plus basse que la pièce et qui ne la traverse pas : c’est un muret, un obstacle. Le sol est découpé
+        autour, aucune pièce n’est séparée.
+      </p>
+    {:else if partition.height != null}
+      <p class="muted">Plus basse que la pièce, elle la sépare tout de même puisqu’elle la traverse.</p>
+    {/if}
     <NumberField
       label="Épaisseur"
       unit="mm"

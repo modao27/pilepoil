@@ -481,6 +481,17 @@ Branche `t1-niveaux` ; spécification `docs/niveaux/SPEC.md` (validée le 2026-1
 - Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/levels.spec.ts`, `tests/unit/levels*.test.ts`).
 - Fait (2026-10-17).
 
+## N3 — Cloisons de hauteur propre
+
+Branche `n3-cloisons-hauteur` ; règles dans `docs/cloisons/SPEC.md` (§ N3). Décisions du 2026-10-17 : une cloison basse
+sépare la pièce seulement si elle la traverse, sinon c'est un muret (obstacle) ; hauteur réglée dans le plan.
+
+- `Partition.height?`, `Obstacle.height?` ; `derive` : faces à la hauteur de la cloison, murets en obstacles
+  (`Derived.lowObstacles`) ; signature du cache de groupe corrigée (la hauteur compte).
+- Plan : champ « Hauteur de la cloison » et explication ; module cloisons : même valeur ; 3D : muret à sa hauteur.
+- Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/partition-height.spec.ts`, `partitionHeight.test.ts`).
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

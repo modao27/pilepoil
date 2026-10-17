@@ -8,6 +8,7 @@ import {
   CLOISONS_ID,
   CLOISONS_SCHEMA,
   createCloisonsData,
+  defaultPartitionSettings,
   type CloisonsData,
 } from '../../src/modules/cloisons/state/model';
 import { create, priceAction, shopping, summary, toSpec } from '../../src/modules/cloisons/state/module';
@@ -255,5 +256,30 @@ describe('achats et résumé', () => {
     const r = toSpec(project([cloison('c1', [2000, 0], [2000, 3000])]), { systems: [custom] });
     if ('errors' in r) throw new Error('attendu : une entrée');
     expect(r.spec.partitions[0]!.system).toBe('mine');
+  });
+});
+
+describe('toSpec : hauteur propre du plan (N3)', () => {
+  it('la hauteur de la cloison du plan est celle du module, y compris pour un muret sans faces', () => {
+    // traverse la pièce : séparée en deux, hauteur du plan
+    const full = specOf(project([cloison('c1', [2000, 0], [2000, 3000], { height: 900 })]));
+    expect(full.partitions[0]!.height).toBe(900);
+    // muret qui ne traverse pas : un obstacle, mais toujours chiffré, à sa hauteur
+    const low = specOf(project([cloison('c1', [2000, 0], [2000, 1500], { height: 900 })]));
+    expect(low.partitions).toHaveLength(1);
+    expect(low.partitions[0]!.height).toBe(900);
+    expect(low.partitions[0]!.length).toBeCloseTo(1500, 0);
+  });
+
+  it('sans hauteur dans le plan : l’ancien réglage du module, puis les pièces voisines', () => {
+    const p = project([cloison('c1', [2000, 0], [2000, 3000])]);
+    expect(specOf(p).partitions[0]!.height).toBe(2500);
+    const data = create() as CloisonsData;
+    data.partitions.c1 = { ...defaultPartitionSettings(), height: 1800 };
+    expect(specOf(project([cloison('c1', [2000, 0], [2000, 3000])], { data })).partitions[0]!.height).toBe(1800);
+    // le plan l'emporte sur l'ancien réglage
+    expect(
+      specOf(project([cloison('c1', [2000, 0], [2000, 3000], { height: 900 })], { data })).partitions[0]!.height,
+    ).toBe(900);
   });
 });

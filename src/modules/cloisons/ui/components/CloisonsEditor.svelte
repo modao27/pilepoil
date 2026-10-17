@@ -69,6 +69,9 @@
   ];
 
   const parts = $derived('spec' in ed.spec ? ed.spec.spec.partitions : []);
+  /** Hauteur propre : celle du plan, ou l'ancien réglage du module. */
+  const ownHeight = (id: string) =>
+    ed.doc.site.partitions.find((q) => q.id === id)?.height != null || ed.settingsOf(id).height != null;
   const resultOf = (id: string) => ed.result?.partitions.find((p) => p.id === id);
   const text = $derived(ed.result ? summary(ed.result).text : 'Calcul…');
   const fr = (v: number, d = 1) => v.toLocaleString('fr-FR', { maximumFractionDigits: d });
@@ -122,18 +125,19 @@
           onchange={(v) => v && ed.setSystem(p.id, v)}
         />
         <Checkbox
-          label="Hauteur des pièces voisines"
-          checked={s.height == null}
-          onchange={(c) => ed.update(p.id, { height: c ? null : p.height })}
+          label="Jusqu’au plafond"
+          checked={!ownHeight(p.id)}
+          onchange={(c) => ed.setHeight(p.id, c ? null : p.height)}
         />
-        {#if s.height != null}
+        {#if ownHeight(p.id)}
           <NumberField
             label="Hauteur de la cloison"
             unit="cm"
             factor={10}
             min={10}
-            value={s.height}
-            onchange={(height) => ed.update(p.id, { height }, `h:${p.id}`)}
+            value={p.height}
+            hint="Une cloison plus basse que la pièce la sépare si elle la traverse ; sinon c’est un muret, un obstacle."
+            onchange={(height) => ed.setHeight(p.id, height)}
           />
         {/if}
         <Segmented

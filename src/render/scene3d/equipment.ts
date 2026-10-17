@@ -283,7 +283,8 @@ function build(body: MeshData, kind: Obstacle['kind'], f: Frame, h: number) {
 }
 
 /** Hauteur d'un élément, mm : celle de son type, ou celle de la pièce pour un poteau ou un conduit. */
-export function equipmentHeight(o: Pick<Obstacle, 'kind'>, room: Pick<PlanRoom, 'height'>): number {
+export function equipmentHeight(o: Pick<Obstacle, 'kind' | 'height'>, room: Pick<PlanRoom, 'height'>): number {
+  if (o.height != null && o.height > 0) return Math.min(o.height, room.height);
   const h = EQUIPMENT[o.kind].height;
   return h === 'room' ? room.height : h;
 }

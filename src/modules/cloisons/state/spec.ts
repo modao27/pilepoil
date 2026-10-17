@@ -3,14 +3,22 @@
  * passé la validation des travaux ; chacune est mise dans son repère (x le long de l'axe depuis la face d'appui du
  * départ) : longueur du corps, appuis des deux bouts, liaisons en T, portes, hauteur, faces carrelées. Pur ; mm.
  */
-import { intersection } from '../../../core/geometry/boolean';
+import { intersection, regionArea } from '../../../core/geometry/boolean';
 import { pointInPolygon } from '../../../core/geometry/polygon';
 import type { Point, Polygon } from '../../../core/geometry/types';
 import { deriveSite } from '../../../core/plan/derive';
 import type { Demolition, Id, Partition } from '../../../core/plan/types';
 import { wallIndex } from '../../../core/plan/walls';
 import { wallHeightOf } from '../../../core/plan/levels';
-import { absOutline, absWallBands, partitionBand, partitionFrame, segDistance, SNAP } from '../../../core/plan/works';
+import {
+  absOutline,
+  absWallBands,
+  CONTACT_AREA,
+  partitionBand,
+  partitionFrame,
+  segDistance,
+  SNAP,
+} from '../../../core/plan/works';
 import type { Project } from '../../../state/model';
 import type { Libraries, ModuleError } from '../../types';
 import type { CloisonsSpec, End, PartitionSystem, SpecPartition } from '../core/types';
@@ -152,7 +160,18 @@ export function toSpec(project: Project, libraries: Libraries): { spec: Cloisons
     const s = own ?? defaultPartitionSettings();
     const b = body.get(q.id)!;
     const rooms = project.plan.rooms.filter((r) => r.walls.some((w) => w.of?.partition === q.id));
-    const height = s.height ?? (rooms.length ? Math.min(...rooms.map((r) => r.height)) : DEFAULT_HEIGHT);
+    // hauteur du plan d'abord ; sinon l'ancien réglage du module, puis les pièces voisines (un muret n'en a pas de face)
+    const under = project.site.existing.rooms.filter(
+      (r) => Math.abs(regionArea(intersection([absOutline(r)], [partitionBand(q)]))) > CONTACT_AREA,
+    );
+    const height =
+      q.height ??
+      s.height ??
+      (rooms.length
+        ? Math.min(...rooms.map((r) => r.height))
+        : under.length
+          ? Math.min(...under.map((r) => r.height))
+          : DEFAULT_HEIGHT);
     const length = Math.max(0, b.s1 - b.s0);
     return {
       id: q.id,

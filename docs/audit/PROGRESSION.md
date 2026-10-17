@@ -20,6 +20,7 @@ propositions. Reste : attendre les choix de l'utilisateur sur `PROPOSITIONS.md` 
 - N1 (branche `n1-largeur-mur`, 2026-10-17) : largeur d'un mur carrelée.
 - N5 (branche `n5-equipements`, 2026-10-17) : équipements fixes du plan (WC, receveur, lavabo, baignoire, évier, lave-linge).
 - T1 (branche `t1-niveaux`, 2026-10-17) : niveaux de sol, marches, hauteurs propres des murs (estrades : T1b).
+- N3 (branche `n3-cloisons-hauteur`, 2026-10-17) : cloisons de hauteur propre, murets.
 
 ## Étapes
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)

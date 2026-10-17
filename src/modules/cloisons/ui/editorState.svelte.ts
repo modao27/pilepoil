@@ -103,6 +103,19 @@ export class CloisonsEditorState {
     });
   }
 
+  /** Hauteur de la cloison : c'est celle du plan (null : jusqu'au plafond), les pièces et le module la lisent. */
+  setHeight(id: string, height: number | null): void {
+    // l'ancien réglage du module est effacé : une seule valeur, celle du plan
+    const clearLegacy: Action = { type: 'cloisons/partition/update', partitionId: id, patch: { height: null } };
+    this.dispatch({
+      type: 'batch',
+      actions: [
+        { type: 'plan/partition/update', partitionId: id, patch: { height: height ?? undefined } },
+        clearLegacy,
+      ],
+    });
+  }
+
   updateSettings(patch: Partial<CloisonsSettings>, key?: string): void {
     this.dispatch({ type: 'cloisons/settings/update', patch }, key);
   }

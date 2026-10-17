@@ -26,7 +26,8 @@ maximales, les entraxes, les fixations et les performances (feu, acoustique, hum
 | Élévation par cloison, nomenclature, achats, PDF | Oui |
 | Démolitions : surface de mur démolie en information (pas d'achat, pas de gravats) | Oui |
 | Doublages de murs, contre-cloisons, plafonds suspendus | Non |
-| Cloisons courbes ou inclinées en hauteur, hauteurs partielles, cloisons vitrées | Non |
+| Hauteur propre d'une cloison (cloison basse, muret) : réglée dans le plan, lue par le module (N3) | Oui |
+| Cloisons courbes ou inclinées en hauteur, cloisons vitrées | Non |
 | Croisement de deux cloisons (une doit s'arrêter sur l'autre) | Non |
 | Renforts pour charges lourdes (lavabo, placard) | Non |
 | Plaques en montage horizontal | Non |
@@ -439,3 +440,14 @@ murs de leurs pièces.
   glisse une cloison (les groupes de pièces que le geste ne touche pas sont repris tels quels), pour tenir 60 i/s.
 - Calcul des cloisons d'un appartement (20 cloisons) : < 100 ms.
 - Élévation : dessin fluide (60 i/s) pour une cloison de 8 m avec deux couches.
+
+## N3 — Hauteur propre d'une cloison (ajout du 17 octobre 2026)
+
+- `Partition.height?` (plan, mm, absent = jusqu'au plafond) est la **seule** hauteur : le champ du plan et celui du module
+  écrivent la même valeur. Ordre de lecture du module : plan, puis l'ancien réglage `PartitionSettings.height`, puis la
+  plus basse des pièces voisines.
+- Une cloison plus basse que les pièces qu'elle touche et qui **traverse** une pièce de part en part la sépare comme une
+  cloison pleine ; ses faces sont des murs de la hauteur de la cloison (`Wall.height`, surfaces, 3D, PDF suivent).
+- Une cloison basse qui **ne traverse pas** (bout libre, ou bouts sur un seul côté) est un **muret** : un obstacle dans
+  le sol de la pièce (`Obstacle.height`), aucune pièce séparée, pas de faces à revêtir. Le module la chiffre quand même.
+- Seule la cloison est regardée pour décider si elle traverse (pas les autres cloisons).

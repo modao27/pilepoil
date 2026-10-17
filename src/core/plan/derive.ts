@@ -37,6 +37,8 @@ import { DEFAULT_WALL_THICKNESS, wallDirection, wallIndex, wallSegment } from '.
 export interface Derived {
   plan: Plan;
   issues: WorksIssue[];
+  /** Cloisons basses qui ne traversent pas la pièce : des murets, obstacles dans le sol (pas de pièce séparée). */
+  lowObstacles: Id[];
 }
 
 /** Écart toléré entre une arête de sortie et sa source, mm (arrondis des booléens : 0,01). */
@@ -71,6 +73,57 @@ export function deriveSite(site: Site): Derived {
   return d;
 }
 
+/* ---------- cloisons basses : murets ---------- */
+
+/** Pièces de l'état existant que la bande de la cloison touche. */
+const roomsUnder = (site: Site, q: Partition) =>
+  site.existing.rooms.filter((r) => area(intersection([absOutline(r)], [partitionBand(q)])) > CONTACT_AREA);
+
+/**
+ * Cloison plus basse que les pièces qu'elle touche et qui ne sépare aucune d'elles en deux : un muret. Seule la
+ * pièce seule compte (les autres cloisons ne sont pas regardées).
+ */
+function isLowObstacle(site: Site, q: Partition): boolean {
+  if (q.height == null) return false;
+  const under = roomsUnder(site, q);
+  if (!under.length || q.height >= Math.min(...under.map((r) => r.height))) return false;
+  const band = partitionBand(q);
+  const splits = under.some(
+    (r) =>
+      components(difference([absOutline(r)], [band])).filter((c) => area([c.outer, ...c.holes]) >= SLIVER).length > 1,
+  );
+  return !splits;
+}
+
+/** Les murets deviennent des obstacles (trous dans le sol) des pièces qu'ils touchent, à leur hauteur. */
+function withLowObstacles(plan: Plan, lows: readonly Partition[]): Plan {
+  if (!lows.length) return plan;
+  return {
+    ...plan,
+    rooms: plan.rooms.map((r) => {
+      const found: Obstacle[] = [];
+      for (const q of lows) {
+        const hit = intersection([absOutline(r)], [partitionBand(q)]);
+        components(hit).forEach((c, k) => {
+          if (area([c.outer]) < CONTACT_AREA) return;
+          const o = r.origin;
+          const ring = c.outer.map((p): Point => [
+            Math.round((p[0] - o[0]) * 100) / 100,
+            Math.round((p[1] - o[1]) * 100) / 100,
+          ]);
+          found.push({
+            id: `${q.id}~low${k + 1}`,
+            kind: 'other',
+            height: q.height!,
+            outline: signedArea(ring) < 0 ? [...ring].reverse() : ring,
+          });
+        });
+      }
+      return found.length ? { ...r, obstacles: [...r.obstacles, ...found] } : r;
+    }),
+  };
+}
+
 /* ---------- aides ---------- */
 
 const sub = (p: Point, q: Point): Point => [p[0] - q[0], p[1] - q[1]];
@@ -98,6 +151,8 @@ interface Src {
   thickness: number;
   locked?: Wall['locked'];
   of?: Wall['of'];
+  /** Hauteur propre de la cloison dont c'est une face. */
+  height?: number;
   /** Mur existant : ses ouvertures. */
   room?: PlanRoom;
   wall?: Wall;
@@ -172,13 +227,18 @@ interface Piece {
 export function derive(site: Site): Derived {
   const issues = validateWorks(site);
   const dropped = new Set(issues.filter((i) => i.severity === 'error').map((i) => i.id));
-  const partitions = site.partitions
+  const valid = site.partitions
     .filter((q) => !dropped.has(q.id))
     .map((q) =>
       q.openings.some((o) => dropped.has(o.id)) ? { ...q, openings: q.openings.filter((o) => !dropped.has(o.id)) } : q,
     );
+  // une cloison plus basse que la pièce qui ne la traverse pas est un muret : un obstacle, pas une séparation
+  const lows = valid.filter((q) => isLowObstacle(site, q));
+  const partitions = valid.filter((q) => !lows.includes(q));
+  const lowObstacles = lows.map((q) => q.id);
   const demolitions = site.demolitions.filter((d) => !dropped.has(d.id));
-  if (!partitions.length && !demolitions.length) return { plan: site.existing, issues };
+  if (!partitions.length && !demolitions.length)
+    return { plan: withLowObstacles(site.existing, lows), issues, lowObstacles };
 
   const rooms = site.existing.rooms;
   const outIssues: WorksIssue[] = [...issues];
@@ -221,7 +281,7 @@ export function derive(site: Site): Derived {
     // le gros du calcul (booléens, arêtes) ne dépend que des pièces du groupe, des bandes voisines et des
     // démolitions : inchangé, il est repris tel quel (glisser une cloison ne recalcule que son groupe)
     const sig = JSON.stringify([
-      cand.map((c) => [c.q.id, c.band]),
+      cand.map((c) => [c.q.id, c.band, c.q.height ?? null]),
       dems.map((x) => [x.d.id, x.d.from, x.d.to, x.room.id, x.i]),
     ]);
     let hit = groupMemo.get(members[0]!);
@@ -272,7 +332,7 @@ export function derive(site: Site): Derived {
   for (const r of outRooms)
     if (!rooms.includes(r) && validateRoom(r).length)
       outIssues.push({ code: 'derive/invalid-room', id: r.id, severity: 'error' });
-  return { plan, issues: dedupe(outIssues) };
+  return { plan: withLowObstacles(plan, lows), issues: dedupe(outIssues), lowObstacles };
 
   function computeGroup(
     members: PlanRoom[],
@@ -317,6 +377,7 @@ export function derive(site: Site): Derived {
         key: `${q.id}:${face}`,
         baseId: `${q.id}:${face}`,
         thickness: q.thickness,
+        ...(q.height != null ? { height: q.height } : {}),
         of: { partition: q.id, face },
       });
       out.push(mk('a', [aa, ab]), mk('b', [ba, bb]), mk('start', [ba, aa]), mk('end', [bb, ab]));
@@ -466,6 +527,7 @@ function nameWalls(pieces: Piece[], partitions: Partition[], issues: WorksIssue[
         thickness: src.thickness,
         ...(src.locked ? { locked: src.locked } : {}),
         ...(src.of ? { of: src.of } : {}),
+        ...(src.height != null ? { height: src.height } : {}),
       });
     });
   }
