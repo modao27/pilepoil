@@ -76,6 +76,11 @@ test('projet mixte : parquet, carrelage, peinture et cloison se lisent, achats e
   await expect(page.getByRole('heading', { name: 'Cloisons' })).toBeVisible();
   await check(page);
 
+  // accueil : une ligne par outil sur la carte du projet
+  await page.goto('/#/');
+  const card = page.getByRole('article').filter({ hasText: 'Maison' });
+  for (const tool of ['Carrelage', 'Parquet', 'Peinture', 'Cloisons']) await expect(card).toContainText(tool + ' :');
+
   // achats du projet : les quatre outils dans une seule liste
   await page.goto(`/#/p/${id}/achats`);
   await expect(page.getByRole('heading', { name: /^Achats — / })).toBeVisible();
