@@ -5,7 +5,7 @@
    * 3D (enveloppe des pièces et revêtements ensemble) ; export PDF (calepinage, pièce, dossier du projet).
    * L'écran ne calcule rien de métier : il demande le calcul au worker et le rapport aux modules.
    */
-  import { untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { poseWhere, type Pose } from '../../core/coverage';
   import { poseArea, scopePoses, type ResultScope } from '../../core/coverage/scope';
   import { moduleById, modules } from '../../modules/registry';
@@ -129,6 +129,14 @@
         ? `#/p/${id}/r/${scope.room}`
         : (poseModule && pose && poseModule.poseHref?.(id, pose.id)) || `#/p/${id}`,
   );
+
+  /** Outils dont le détail est ouvert (clé absente : seul le premier, pour le projet entier). */
+  let opened = $state<Record<string, boolean>>({});
+  /** Ouvre l'outil et y amène la vue (pas de lien `#` : l'adresse sert au routeur). */
+  function goToDetail(module: string) {
+    opened[module] = true;
+    void tick().then(() => document.getElementById('d-' + module)?.scrollIntoView({ block: 'start' }));
+  }
 
   type Tab = 'summary' | 'detail' | '3d';
   let tab = $state<Tab>('summary');
@@ -393,22 +401,36 @@
               </section>
             {/if}
           {:else if t === 'detail'}
-            {#each reports as g (g.module.id)}
+            {@const shown = reports.filter((g) => g.module.coverage || !g.reports || g.reports.length)}
+            <!-- projet entier : un repli par outil et un sommaire ; une pose ou une pièce : tout ouvert -->
+            {#if scope.kind === 'project' && shown.length > 1}
+              <nav class="toc" aria-label="Aller à">
+                {#each shown as g (g.module.id)}
+                  <button type="button" onclick={() => goToDetail(g.module.id)}>{g.module.label}</button>
+                {/each}
+              </nav>
+            {/if}
+            {#each shown as g, i (g.module.id)}
               {@const c = results[g.module.id]}
-              {#if g.module.coverage || !g.reports || g.reports.length}
-                <section class="module" aria-labelledby="d-{g.module.id}">
-                  <h2 id="d-{g.module.id}">{g.module.label}</h2>
-                  {#if c === undefined}
-                    <p class="muted" role="status">Calcul…</p>
-                  {:else if c === null}
-                    <p class="muted">À compléter dans le calepinage.</p>
-                  {:else}
-                    {#await g.module.results().then((r) => r.section()) then Section}
-                      <Section project={c.project} {scope} result={c.result} />
-                    {/await}
-                  {/if}
-                </section>
-              {/if}
+              <details
+                class="module fold"
+                id="d-{g.module.id}"
+                open={scope.kind !== 'project' ||
+                  opened[g.module.id] === true ||
+                  (opened[g.module.id] === undefined && i === 0)}
+                ontoggle={(e) => (opened[g.module.id] = e.currentTarget.open)}
+              >
+                <summary><h2>{g.module.label}</h2></summary>
+                {#if c === undefined}
+                  <p class="muted" role="status">Calcul…</p>
+                {:else if c === null}
+                  <p class="muted">À compléter dans le calepinage.</p>
+                {:else}
+                  {#await g.module.results().then((r) => r.section()) then Section}
+                    <Section project={c.project} {scope} result={c.result} />
+                  {/await}
+                {/if}
+              </details>
             {/each}
           {:else}
             <div class="v3d">
@@ -436,6 +458,33 @@
 {/if}
 
 <style>
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+  .toc button {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-field);
+    background: var(--sheet);
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+  }
+  .fold > summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--touch);
+    cursor: pointer;
+  }
+  .fold > summary > h2 {
+    margin: 0;
+  }
   .crumbs ol {
     display: flex;
     flex-wrap: wrap;

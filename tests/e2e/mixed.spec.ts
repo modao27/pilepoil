@@ -93,8 +93,17 @@ test('projet mixte : parquet, carrelage, peinture et cloison se lisent, achats e
   await check(page);
   await shot(page, info, 'F1-achats-mixte');
 
-  // dossier PDF du projet
+  // détail du projet : un repli par outil, le premier ouvert, un sommaire pour aller aux autres
   await page.goto(`/#/p/${id}/resultats`);
+  await page.getByRole('tab', { name: 'Détail' }).click();
+  const folds = page.locator('details.fold');
+  expect(await folds.count()).toBeGreaterThan(2);
+  await expect(page.locator('details.fold[open]')).toHaveCount(1);
+  await page.getByRole('navigation', { name: 'Aller à' }).getByRole('button', { name: 'Parquet' }).click();
+  await expect(page.locator('details#d-parquet')).toHaveAttribute('open', '');
+  await expect(page).toHaveURL(new RegExp(`#/p/${id}/resultats$`));
+
+  // dossier PDF du projet
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Dossier du projet (PDF)' }).click(),
