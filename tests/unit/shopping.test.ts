@@ -139,15 +139,15 @@ describe('regroupement par rayon', () => {
 });
 
 describe('exports et saisie', () => {
-  it('prix saisi : virgule, euros, vide ou invalide = effacer', () => {
-    expect(['12,5', '12.50 €', ' 7 ', '', 'abc', '-3', '0'].map(parsePrice)).toEqual([
+  it('prix saisi : virgule, euros, 0 accepté, vide = effacer, texte ou négatif refusé', () => {
+    expect(['12,5', '12.50 €', ' 7 ', '0', '', 'abc', '-3'].map(parsePrice)).toEqual([
       12.5,
       12.5,
       7,
+      0,
       null,
-      null,
-      null,
-      null,
+      'invalid',
+      'invalid',
     ]);
   });
 

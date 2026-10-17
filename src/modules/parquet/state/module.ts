@@ -208,7 +208,7 @@ export function shopping(r: ParquetResult, d: ParquetData, libraries: Libraries)
       const key = `parquet:board:${id}${suffix}`;
       const packs = Math.ceil((n * (1 + margin)) / b.boardsPerPack);
       const own = d.prices[key];
-      const price = own != null && own > 0 ? own : b.pricePerPack;
+      const price = own != null ? own : b.pricePerPack;
       lines.push({
         module: PARQUET_ID,
         key,
@@ -218,7 +218,7 @@ export function shopping(r: ParquetResult, d: ParquetData, libraries: Libraries)
         unit: 'pack',
         detail: `${n} lame${n > 1 ? 's' : ''} + ${Math.round(margin * 100)} % (${b.boardsPerPack} par paquet)`,
         unitPrice: price ?? null,
-        priceFromLibrary: price != null && !(own != null && own > 0),
+        priceFromLibrary: price != null && !(own != null),
         color: b.color,
       });
     }
@@ -247,7 +247,7 @@ function accessoryLines(r: ParquetResult, d: ParquetData): ShoppingLine[] {
       quantity,
       unit,
       detail,
-      unitPrice: own != null && own > 0 ? own : null,
+      unitPrice: own != null ? own : null,
     };
   };
   return accessoryNeeds(r, methods, d.accessories).map((n) => {

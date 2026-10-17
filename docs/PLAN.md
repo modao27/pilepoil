@@ -346,6 +346,19 @@ Branche `lot-a-projets`. Corrige PRJ-01, PRJ-02, PRJ-03, UX-04, NOU-01 (`docs/au
 - Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur (`tests/e2e/projects.spec.ts`), parité intacte.
 - Fait (2026-10-17).
 
+## Lot C — Liste d'achat juste (audit UI/UX)
+
+Branche `lot-c-achats`. Corrige ACH-01, CAR-01, PAR-01, ACH-02, ROB-03 (`docs/audit/PROPOSITIONS.md`).
+
+- Quantité et unité d'achat devant chaque ligne (écran, PDF) ; rails et montants avec leur longueur à couper.
+- Carrelage : les tailles posées d'un même carreau de la bibliothèque (vannerie) forment une ligne, cartons recalculés
+  sur le total (adaptateur `mergeTileItems`, moteur et parité inchangés).
+- Parquet : une lame sans lames A et B reste une seule ligne.
+- Prix : une saisie invalide garde l'ancien prix et le dit ; 0 € est un prix ; un seul message de confirmation.
+- Export PDF verrouillé pendant la création.
+- Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur, parité intacte.
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

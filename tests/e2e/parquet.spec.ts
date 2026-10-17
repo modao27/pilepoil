@@ -122,9 +122,9 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   expect((await download).suggestedFilename()).toMatch(/^calepinage-.+\.pdf$/);
   await check(page);
   await page.goto(`/#/p/${id}/achats`);
-  await expect(page.getByText('Stratifié 1285 × 192', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Stratifié 1285 × 192$/).first()).toBeVisible();
   await expect(page.getByText(/52 lames \+ 5 %/)).toBeVisible();
-  await expect(page.getByText('Sous-couche', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Sous-couche$/).first()).toBeVisible();
 });
 
 test('parquet : bâton rompu et point de Hongrie, axe du motif, lames A et B', async ({ page }, info) => {

@@ -12,7 +12,7 @@
   import { euros } from '../lib/format';
   import { projectOutputs } from '../lib/moduleOutputs';
   import { consolidate, GROUP_LABEL, lineCost, parsePrice, PRICE_LABEL, quantityText, toCsv } from '../lib/shopping';
-  import { toast } from '../lib/toasts.svelte';
+  import { dismiss, toast } from '../lib/toasts.svelte';
 
   let { id }: { id: string } = $props();
 
@@ -32,16 +32,28 @@
   const several = $derived((c?.byModule.length ?? 0) > 1);
   const priceText = (v: number) => String(v).replace('.', ',');
 
-  async function setPrice(l: ShoppingLine, text: string) {
+  /** Saisies refusées, par ligne : le champ garde l'ancien prix et le dit. */
+  let priceErrors = $state<Record<string, string>>({});
+  let priceToast = 0;
+  const lineId = (l: ShoppingLine) => l.module + l.key;
+
+  async function setPrice(l: ShoppingLine, input: HTMLInputElement) {
     const p = project;
     const m = moduleById(l.module);
     if (!p || !m) return;
-    const value = parsePrice(text);
+    const value = parsePrice(input.value);
+    if (value === 'invalid') {
+      input.value = l.unitPrice != null && !l.priceFromLibrary ? priceText(l.unitPrice) : '';
+      priceErrors[lineId(l)] = 'Saisissez un prix en euros, par exemple 12,50. Le prix précédent est conservé.';
+      return;
+    }
+    priceErrors[lineId(l)] = '';
     const next = reduceProject(p, m.priceAction(l.key, value));
     if (next === p) return;
     const after = { ...next, updatedAt: Date.now() };
     if (!(await app.trySaveProject(after))) return;
-    toast(value == null ? `Prix de « ${l.label} » effacé.` : `Prix de « ${l.label} » enregistré.`, {
+    dismiss(priceToast);
+    priceToast = toast(value == null ? `Prix de « ${l.label} » effacé.` : `Prix de « ${l.label} » enregistré.`, {
       action: { label: 'Annuler', run: () => void app.restoreIfUnchanged(after, p) },
     });
   }
@@ -55,14 +67,18 @@
     toast('Tableau enregistré dans vos téléchargements.');
   }
 
+  let pdfBusy = $state(false);
   async function exportPdf() {
-    if (!c || !project) return;
+    if (!c || !project || pdfBusy) return;
+    pdfBusy = true;
     try {
       const { shoppingPdf } = await import('../lib/shoppingPdf');
       save(shoppingPdf(c, project.name, Date.now(), label), fileBase(project) + '.pdf');
       toast('PDF enregistré dans vos téléchargements.');
     } catch {
       toast('Création du PDF impossible. Réessayez.', { tone: 'error' });
+    } finally {
+      pdfBusy = false;
     }
   }
 </script>
@@ -83,7 +99,7 @@
       />
     {:else}
       <div class="actions">
-        <Button icon="download" onclick={exportPdf}>Exporter en PDF</Button>
+        <Button icon="download" disabled={pdfBusy} onclick={exportPdf}>Exporter en PDF</Button>
         <Button icon="download" onclick={exportCsv}>Exporter pour un tableur</Button>
       </div>
       {#each c.groups as g (g.group)}
@@ -109,11 +125,16 @@
                     inputmode="decimal"
                     value={l.unitPrice != null && !l.priceFromLibrary ? priceText(l.unitPrice) : ''}
                     placeholder={l.unitPrice != null && l.priceFromLibrary ? priceText(l.unitPrice) : 'prix'}
-                    onchange={(e) => setPrice(l, e.currentTarget.value)}
+                    aria-invalid={priceErrors[lineId(l)] ? 'true' : undefined}
+                    aria-describedby={priceErrors[lineId(l)] ? 'err-' + lineId(l) : undefined}
+                    onchange={(e) => setPrice(l, e.currentTarget)}
                   />
                   <span class="u">{PRICE_LABEL[l.unit]}</span>
                 </label>
                 <span class="cost num">{cost != null ? euros(cost) : '–'}</span>
+                {#if priceErrors[lineId(l)]}
+                  <p class="err" id="err-{lineId(l)}" role="alert">{priceErrors[lineId(l)]}</p>
+                {/if}
               </li>
             {/each}
           </ul>
@@ -217,6 +238,12 @@
   }
   .u {
     color: var(--muted);
+    font-size: var(--fs-sm);
+  }
+  .err {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--color-error);
     font-size: var(--fs-sm);
   }
   .cost {

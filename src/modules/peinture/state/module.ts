@@ -155,7 +155,7 @@ export function shopping(r: PeintureResult, d: PeintureData, libraries: Librarie
       // sans teinte choisie : clé d'origine (les prix déjà saisis tiennent) ; une teinte : ses propres pots
       const key = `${PEINTURE_ID}:${n.paint.id}:${n.role}:${pack.size}${n.color ? ':' + n.color.hex.replace('#', '').toLowerCase() : ''}`;
       const own = d.prices[key];
-      const price = own != null && own > 0 ? own : pack.price;
+      const price = own != null ? own : pack.price;
       lines.push({
         module: PEINTURE_ID,
         key,
@@ -165,7 +165,7 @@ export function shopping(r: PeintureResult, d: PeintureData, libraries: Librarie
         unit: 'pot',
         detail: `${fr(n.need / 1000)} ${kg ? 'kg' : 'L'} pour ${fr(n.surface)} m², marge comprise`,
         unitPrice: price ?? null,
-        priceFromLibrary: price != null && !(own != null && own > 0),
+        priceFromLibrary: price != null && !(own != null),
         ...(n.color ? { color: n.color.hex } : paint?.color ? { color: paint.color.hex } : {}),
       });
     }
@@ -182,7 +182,7 @@ export function shopping(r: PeintureResult, d: PeintureData, libraries: Librarie
       label: CONSUMABLE[id].label,
       quantity,
       unit: CONSUMABLE[id].unit,
-      unitPrice: own != null && own > 0 ? own : null,
+      unitPrice: own != null ? own : null,
     });
   }
   return lines;

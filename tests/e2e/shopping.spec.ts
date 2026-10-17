@@ -36,6 +36,21 @@ test('achats du projet : même total que la vue globale, prix modifiable et annu
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
   await expect(page.getByText(`Total estimé : ${carrelageTotal.trim()}`)).toBeVisible();
 
+  // saisie refusée : l'ancien prix reste, le champ le dit ; 0 € est un prix
+  await glue.fill('18,90');
+  await glue.press('Enter');
+  await expect(glue).toHaveValue('18,9');
+  await glue.fill('abc');
+  await glue.press('Enter');
+  await expect(page.getByRole('alert').filter({ hasText: 'Saisissez un prix' })).toBeVisible();
+  await expect(glue).toHaveValue('18,9');
+  await glue.fill('0');
+  await glue.press('Enter');
+  await expect(glue).toHaveValue('0');
+  await expect(page.getByRole('status')).toHaveCount(1);
+  await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
+  await expect(page.getByText(`Total estimé : ${carrelageTotal.trim()}`)).toBeVisible();
+
   // exports
   const csv = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exporter pour un tableur' }).click();
@@ -45,6 +60,8 @@ test('achats du projet : même total que la vue globale, prix modifiable et annu
   expect(text).toContain('Rayon;Outil;Article');
   expect(text).toContain('Revêtements;Carrelage;');
   const pdf = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Exporter en PDF' }).click();
+  const pdfButton = page.getByRole('button', { name: 'Exporter en PDF' });
+  await pdfButton.dblclick();
   expect((await pdf).suggestedFilename()).toBe('achats-piece-300-240.pdf');
+  await expect(pdfButton).toBeEnabled();
 });

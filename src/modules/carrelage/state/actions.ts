@@ -131,7 +131,7 @@ export function reduce<P extends CarrelageData>(d: P, a: Action | PoseEvent): P 
     }
     case 'carrelage/price': {
       const rest = without(d.prices, a.key);
-      return { ...d, prices: a.value != null && a.value > 0 ? { ...rest, [a.key]: a.value } : rest };
+      return { ...d, prices: a.value != null && a.value >= 0 ? { ...rest, [a.key]: a.value } : rest };
     }
     case 'carrelage/replace':
       return { ...d, ...dataOf(a.data) };

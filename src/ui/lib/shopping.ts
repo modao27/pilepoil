@@ -86,10 +86,15 @@ export function quantityText(l: Pick<ShoppingLine, 'quantity' | 'unit'>): string
   return `${n} ${l.quantity > 1 ? many : one}`;
 }
 
-/** Prix saisi (« 12,5 », « 12.50 € ») ; null si vide ou invalide (revenir au prix de la bibliothèque). */
-export function parsePrice(text: string): number | null {
-  const v = Number(text.replace(/[\s€]/g, '').replace(',', '.'));
-  return text.trim() && Number.isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : null;
+/**
+ * Prix saisi (« 12,5 », « 12.50 € », « 0 ») ; null si vide (revenir au prix de la bibliothèque), 'invalid' si ce
+ * n'est pas un prix (texte, négatif).
+ */
+export function parsePrice(text: string): number | null | 'invalid' {
+  const t = text.replace(/[\s€]/g, '').replace(',', '.');
+  if (!t) return null;
+  const v = Number(t);
+  return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : 'invalid';
 }
 
 const csvNum = (v: number | null, d = 2) =>

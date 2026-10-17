@@ -49,7 +49,7 @@ const barsDetail = (bars: BarsResult['bars']) =>
  */
 export function shopping(r: CloisonsResult, d: CloisonsData): ShoppingLine[] {
   const lines: ShoppingLine[] = [];
-  const price = (key: string) => (d.prices[key] != null && d.prices[key]! > 0 ? d.prices[key]! : null);
+  const price = (key: string) => d.prices[key] ?? null;
   const add = (l: Omit<ShoppingLine, 'module' | 'unitPrice'> & { key: string }) =>
     lines.push({ module: CLOISONS_ID, unitPrice: price(l.key), ...l });
 

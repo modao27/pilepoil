@@ -36,7 +36,7 @@ export function reduce(d: CloisonsData, a: Action | PoseEvent): CloisonsData {
     }
     case 'cloisons/price': {
       const rest = Object.fromEntries(Object.entries(d.prices).filter(([k]) => k !== a.key));
-      return { ...d, prices: a.value != null && a.value > 0 ? { ...rest, [a.key]: a.value } : rest };
+      return { ...d, prices: a.value != null && a.value >= 0 ? { ...rest, [a.key]: a.value } : rest };
     }
     default:
       return d;

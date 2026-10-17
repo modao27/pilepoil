@@ -14,7 +14,7 @@ export function itemPrice(
   result: ProjectResult,
 ): number | undefined {
   const own = project.prices[item.key];
-  if (own != null && own > 0) return own;
+  if (own != null) return own;
   if (item.kind !== 'tile') return undefined;
   const ref = result.plan.groups[item.group]?.zones[0];
   const zone = ref && project.surfaces[ref.surface]?.bands[ref.zone];

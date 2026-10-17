@@ -88,7 +88,7 @@ test('parcours : deux pièces, point de Hongrie, achats', async ({ page }, info)
   await page.getByRole('tab', { name: 'Détail' }).click();
   await expect(page.getByText(/Seuils : 1 barre de seuil/)).toBeVisible();
   await page.goto(`/#/p/${id}/achats`);
-  await expect(page.getByText('Sous-couche', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Sous-couche$/).first()).toBeVisible();
   await check(page);
   await shot(page, info, 'P3-parcours-achats');
 });

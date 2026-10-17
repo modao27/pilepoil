@@ -145,7 +145,7 @@ export function shopping(
       unit: it.unit,
       detail: text.qty,
       unitPrice: price ?? null,
-      priceFromLibrary: price != null && !(own != null && own > 0),
+      priceFromLibrary: price != null && !(own != null),
     };
     if (text.dot) line.color = text.dot;
     return line;
