@@ -99,10 +99,12 @@
 <div class="editor" class:desktop>
   <header class="bar">
     <IconButton icon="back" label="Pièce" href={backHref} />
-    <button type="button" class="title" aria-haspopup="dialog" onclick={() => ontitle?.()}>
-      <span class="context">{context}</span>
-      <span class="name">{title} <Icon name="down" size={16} /></span>
-    </button>
+    <h1 class="heading">
+      <button type="button" class="title" aria-haspopup="dialog" onclick={() => ontitle?.()}>
+        <span class="context">{context}</span>
+        <span class="name">{title} <Icon name="down" size={16} /></span>
+      </button>
+    </h1>
     <IconButton icon="undo" label="Annuler" disabled={!canUndo} onclick={onundo} />
     <IconButton icon="redo" label="Rétablir" disabled={!canRedo} onclick={onredo} />
     {@render header?.()}
@@ -142,6 +144,13 @@
     padding: env(safe-area-inset-top) 6px 0;
     border-bottom: 1px solid var(--line);
     background: var(--paper);
+  }
+  .heading {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    margin: 0;
+    font: inherit;
   }
   .title {
     flex: 1;

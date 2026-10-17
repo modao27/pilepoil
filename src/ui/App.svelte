@@ -19,6 +19,40 @@
   });
 
   const route = $derived(router.route);
+
+  /** Titre de l'onglet : « Achats — Maison · PilePoil » (l'écran, son projet, l'application). */
+  const pageTitle = $derived.by(() => {
+    const r = route;
+    const proj = 'id' in r && r.name !== 'libraryItem' ? (app.project(r.id)?.name ?? '') : '';
+    const screen =
+      r.name === 'home'
+        ? 'Mes projets'
+        : r.name === 'new'
+          ? 'Nouveau projet'
+          : r.name === 'library' || r.name === 'libraryItem'
+            ? 'Bibliothèque'
+            : r.name === 'settings'
+              ? 'Réglages'
+              : r.name === 'import'
+                ? 'Fiche produit'
+                : r.name === 'plan'
+                  ? 'Plan'
+                  : r.name === 'model3d'
+                    ? 'Maquette 3D'
+                    : r.name === 'room'
+                      ? 'Pièce'
+                      : r.name === 'results'
+                        ? 'Résultats'
+                        : r.name === 'shopping'
+                          ? 'Achats'
+                          : r.name === 'module'
+                            ? (moduleById(r.module)?.label ?? 'Outil')
+                            : '';
+    return [screen && proj ? `${screen} — ${proj}` : screen || proj, 'PilePoil'].filter(Boolean).join(' · ');
+  });
+  $effect(() => {
+    document.title = pageTitle;
+  });
   /** Assistant de création d'un outil (#/new/<module>). */
   const creator = $derived(route.name === 'new' && route.module ? moduleById(route.module) : undefined);
   const screen = $derived.by(() => {
