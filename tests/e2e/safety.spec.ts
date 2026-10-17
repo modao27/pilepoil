@@ -39,6 +39,17 @@ test('pièce revêtue : la suppression détaille ce qui sera perdu, et se confir
   await expect(wallButton(page, 1, 'Pose 1')).toBeVisible();
 });
 
+test('pièce revêtue : la touche Suppr demande la même confirmation', async ({ page }) => {
+  const id = await newWall(page);
+  await selectRoom(page, id);
+  await page.getByRole('application', { name: /1 pièce/ }).focus();
+  await page.keyboard.press('Delete');
+  const dialog = page.getByRole('dialog', { name: 'Supprimer la pièce ?' });
+  await expect(dialog).toContainText('Carrelage : « Pose 1 » est supprimée.');
+  await dialog.getByRole('button', { name: 'Garder la pièce' }).click();
+  await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
+});
+
 test('annuler après un changement fait ailleurs : refusé, rien n’est écrasé', async ({ page }) => {
   const id = await newWall(page);
   await selectRoom(page, id);

@@ -300,7 +300,7 @@
       else st.select(null);
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && st.sel) {
       const s = st.sel;
-      if (s.kind === 'room') st.removeRoom(s.room);
+      if (s.kind === 'room') st.askRemoveRoom(s.room);
       else if (s.kind === 'opening') st.removeOpening(s.room, s.opening);
       else if (s.kind === 'point') st.removePoint(s.room, s.index);
       else if (s.kind === 'obstacle')

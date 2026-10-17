@@ -77,6 +77,8 @@ export class PlanEditorState {
   linkFrom = $state.raw<{ room: Id; opening: Id } | null>(null);
   /** Contour dessiné fermé et valide : en attente de son nom. */
   naming = $state(false);
+  /** Pièce à supprimer qui porte des revêtements : en attente de confirmation. */
+  removing = $state.raw<{ room: PlanRoom; usage: string[] } | null>(null);
   /** Projet neuf (#/new) : rien n'est enregistré tant qu'il n'a pas de pièce (pas de projet vide). */
   isNew = $state(false);
 
@@ -444,6 +446,15 @@ export class PlanEditorState {
       const elsewhere = p.zones.some((z) => z.pose === pose.id && z.surface.room !== id);
       return `${label} : « ${pose.name} » ${elsewhere ? 'perd cette pièce' : 'est supprimée'}.`;
     });
+  }
+
+  /** Suppression demandée (bouton, touche Suppr) : confirmée d'abord si la pièce porte des revêtements. */
+  askRemoveRoom(id: Id): void {
+    const room = this.room(id);
+    if (!room) return;
+    const usage = this.roomUsage(id);
+    if (usage.length) this.removing = { room, usage };
+    else this.removeRoom(id);
   }
 
   removeRoom(id: Id): void {

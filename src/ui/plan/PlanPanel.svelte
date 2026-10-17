@@ -15,13 +15,6 @@
   let { st, onaddroom }: { st: PlanEditorState; onaddroom: () => void } = $props();
 
   /** Pièce à supprimer en attente de confirmation (elle porte des revêtements). */
-  let removing = $state<{ room: PlanRoom; usage: string[] } | null>(null);
-
-  function askRemove(room: PlanRoom) {
-    const usage = st.roomUsage(room.id);
-    if (usage.length) removing = { room, usage };
-    else st.removeRoom(room.id);
-  }
 
   const KINDS: { value: OpeningKind; label: string }[] = [
     { value: 'door', label: 'Porte' },
@@ -537,7 +530,7 @@
     {/if}
     <div class="row">
       <Button icon="plus" onclick={() => st.addObstacle(room.id)}>Ajouter un obstacle</Button>
-      <Button variant="danger" icon="trash" onclick={() => askRemove(room)}>Supprimer la pièce</Button>
+      <Button variant="danger" icon="trash" onclick={() => st.askRemoveRoom(room.id)}>Supprimer la pièce</Button>
     </div>
   {:else}
     <h2>Pièces</h2>
@@ -588,22 +581,22 @@
   {/if}
 </div>
 
-<Dialog open={removing != null} title="Supprimer la pièce ?" onclose={() => (removing = null)}>
-  {#if removing}
-    <p>« {removing.room.name} » a des revêtements qui seront perdus avec elle :</p>
+<Dialog open={st.removing != null} title="Supprimer la pièce ?" onclose={() => (st.removing = null)}>
+  {#if st.removing}
+    <p>« {st.removing.room.name} » a des revêtements qui seront perdus avec elle :</p>
     <ul class="usage">
-      {#each removing.usage as u (u)}<li>{u}</li>{/each}
+      {#each st.removing.usage as u (u)}<li>{u}</li>{/each}
     </ul>
     <p class="muted">Vous pourrez encore annuler juste après, tant que rien d’autre n’a changé.</p>
   {/if}
   {#snippet actions()}
-    <Button onclick={() => (removing = null)}>Garder la pièce</Button>
+    <Button onclick={() => (st.removing = null)}>Garder la pièce</Button>
     <Button
       variant="danger"
       icon="trash"
       onclick={() => {
-        const id = removing!.room.id;
-        removing = null;
+        const id = st.removing!.room.id;
+        st.removing = null;
         st.removeRoom(id);
       }}>Supprimer la pièce</Button
     >
