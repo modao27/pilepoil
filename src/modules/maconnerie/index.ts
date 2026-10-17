@@ -3,7 +3,7 @@
  * La face moteur est engine.ts (importée par modules/engines.ts).
  */
 import type { LibraryDefinition, ModuleManifest } from '../types';
-import type { MaconnerieResult, MaconnerieSpec } from './core/compute';
+import type { MaconnerieResult, MaconnerieSpec } from './core/types';
 import { MATERIAL_SCHEMA, templateMaterials } from './core/defaults';
 import type { Action } from './state/actions';
 import { MACONNERIE_ID, MACONNERIE_SCHEMA, type MaconnerieData } from './state/model';
