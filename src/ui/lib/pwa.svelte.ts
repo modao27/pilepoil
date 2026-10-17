@@ -3,6 +3,7 @@
  * message quand une nouvelle version est prête, état de connexion et stockage persistant.
  */
 import { registerSW } from 'virtual:pwa-register';
+import { app } from './app.svelte';
 import { toast } from './toasts.svelte';
 
 /** Vérification des mises à jour pendant une longue session (l'appli reste souvent ouverte sur le chantier). */
@@ -57,7 +58,7 @@ class PwaState {
       },
       onOfflineReady: () => {
         this.offlineReady = true;
-        toast('PilePoil fonctionne maintenant sans connexion.');
+        if (!app.fatal) toast('PilePoil fonctionne maintenant sans connexion.');
       },
       onRegisteredSW: (_url, reg) => {
         this.registration = reg;

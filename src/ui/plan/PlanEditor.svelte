@@ -88,6 +88,11 @@
     mq.addEventListener('change', upd);
     const flush = () => void st.flush();
     window.addEventListener('pagehide', flush);
+    // page mise en arrière-plan (changement d'application sur téléphone) : pagehide n'est pas toujours émis
+    const hide = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', hide);
     // mêmes raccourcis que le calepinage : Ctrl+Z annule, Ctrl+Y ou Ctrl+Maj+Z rétablit
     const keys = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
@@ -104,6 +109,7 @@
       window.removeEventListener('keydown', keys);
       mq.removeEventListener('change', upd);
       window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', hide);
       flush();
     };
   });

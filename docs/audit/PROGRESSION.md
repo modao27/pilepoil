@@ -12,6 +12,7 @@ propositions. Reste : attendre les choix de l'utilisateur sur `PROPOSITIONS.md` 
 - Lot C (branche `lot-c-achats`, 2026-10-17) : ACH-01, CAR-01, PAR-01, ACH-02, ROB-03 corrigés.
 - Lot B (branche `lot-b-plan`, 2026-10-17) : PLAN-01, 02, 03 (à confirmer sur téléphone), 05, 06, 08, 09, 10 corrigés.
 - Lot E (branche `lot-e-nombres`, 2026-10-17) : PLAN-04, UI-01, CAR-06, PIE-03 corrigés.
+- Lot D (branche `lot-d-donnees`, 2026-10-17) : ROB-01, ROB-02, ROB-04 corrigés ; PLAN-07 en partie (enregistrement à la mise en arrière-plan ; historique non conservé, décision de l'utilisateur).
 
 ## Étapes
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)

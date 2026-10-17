@@ -26,3 +26,17 @@ test('nouveau projet : annuler ramène à l’accueil', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
   await expect(page).toHaveURL(/#\/$/);
 });
+
+test('stockage indisponible : un seul message, sans « fonctionne sans connexion »', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'indexedDB', {
+      get() {
+        throw new DOMException('Navigation privée', 'InvalidStateError');
+      },
+    });
+  });
+  await page.goto('/#/');
+  await expect(page.getByRole('heading', { name: 'Impossible d’ouvrir vos données' })).toBeVisible();
+  await page.waitForTimeout(1500);
+  await expect(page.getByText('fonctionne maintenant sans connexion')).toHaveCount(0);
+});

@@ -43,8 +43,14 @@
   onMount(() => {
     const flush = () => void ed.flush();
     window.addEventListener('pagehide', flush);
+    // page mise en arrière-plan (changement d'application sur téléphone) : pagehide n'est pas toujours émis
+    const hide = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', hide);
     return () => {
       window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', hide);
       flush();
     };
   });

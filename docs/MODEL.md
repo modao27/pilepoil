@@ -122,9 +122,14 @@ Migrations à deux niveaux :
 - `state/history.ts` : passé / futur de 100 états ; les actions d'un même geste (clé de fusion, ex. glissement
   d'un motif, saisie d'un champ) fusionnent si elles arrivent à moins de 800 ms.
 - Bibliothèques : hors historique du projet ; un carreau utilisé par un projet ne se supprime pas.
+- Plusieurs onglets : chaque onglet retient l'`updatedAt` du projet qu'il a lu ou écrit ; `repo.saveProject` refuse
+  (`ConflictError`) d'écraser une version plus récente. Les enregistrements sont diffusés aux autres onglets
+  (`BroadcastChannel` `pilepoil-projects`) ; un éditeur ouvert sur le projet est prévenu et n'écrit plus avant
+  rechargement. L'historique d'annulation reste en mémoire (perdu au rechargement).
 
 ## Worker de calcul
 
 `workers/compute.worker.ts` aiguille chaque demande vers le moteur du module (`modules/engines.ts`) :
 `compute(spec)`, `optimize(spec)` par tranches avec progression et annulation. Deux clients : aperçu en direct
-(seule la dernière demande compte) et file des vignettes et résumés.
+(seule la dernière demande compte) et file des vignettes et résumés. Si le worker tombe (`error`), les demandes
+en attente sont rejetées (`WorkerDownError`) et l'interface affiche « Recharger l'application ».

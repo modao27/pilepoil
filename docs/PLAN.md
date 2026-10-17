@@ -380,6 +380,17 @@ Branche `lot-e-nombres`. Corrige PLAN-04, UI-01, CAR-06, PIE-03 (`docs/audit/PRO
 - Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur (`tests/e2e/numbers.spec.ts`).
 - Fait (2026-10-17).
 
+## Lot D — Données entre onglets et calcul bloqué (audit UI/UX)
+
+Branche `lot-d-donnees`. Corrige ROB-01, ROB-02, ROB-04 et la moitié de PLAN-07 (`docs/audit/PROPOSITIONS.md`).
+
+- Écriture périmée refusée entre onglets, enregistrements diffusés, éditeur ouvert prévenu (`tests/e2e/tabs.spec.ts`).
+- Worker tombé : demandes rejetées, bannière « Recharger l'application ».
+- Enregistrement des éditeurs aussi à la mise en arrière-plan ; plus de toast « sans connexion » sur l'écran d'erreur.
+- Écarté : historique d'annulation conservé après rechargement (PLAN-07, seconde partie).
+- Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur.
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

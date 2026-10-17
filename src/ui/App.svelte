@@ -9,8 +9,14 @@
   import { matchScreen } from './lib/moduleRoutes';
   import { newProject } from './lib/newProject';
   import { router } from './lib/router.svelte';
+  import { toasts } from './lib/toasts.svelte';
   import type { Project as ProjectDoc } from '../state/model';
   import Home from './screens/Home.svelte';
+
+  // l'écran « Impossible d'ouvrir vos données » ne s'accompagne d'aucun autre message (« fonctionne sans connexion »…)
+  $effect(() => {
+    if (app.fatal) toasts.splice(0);
+  });
 
   const route = $derived(router.route);
   /** Assistant de création d'un outil (#/new/<module>). */

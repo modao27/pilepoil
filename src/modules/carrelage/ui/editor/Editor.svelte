@@ -82,6 +82,11 @@
   onMount(() => {
     const flush = () => void ed.flush();
     window.addEventListener('pagehide', flush);
+    // page mise en arrière-plan (changement d'application sur téléphone) : pagehide n'est pas toujours émis
+    const hide = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', hide);
     const offUpdate = pwa.beforeUpdate(() => ed.flush());
     const keys = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
@@ -98,6 +103,7 @@
     window.addEventListener('keydown', keys);
     return () => {
       window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', hide);
       window.removeEventListener('keydown', keys);
       offUpdate();
       void ed.flush();
