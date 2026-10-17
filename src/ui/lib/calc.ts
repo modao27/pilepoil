@@ -1,10 +1,23 @@
+/** Millimètres dans chaque unité de longueur acceptée à la saisie. */
+const MM: Record<string, number> = { mm: 1, cm: 10, m: 1000 };
+
 /**
  * Évalue une saisie numérique avec calcul simple : « 240-12 », « 2 × 60 + 3 », « 120,5 / 2 », « (300+3)*4 ».
  * Virgule ou point décimal, espaces ignorés. Renvoie null si la saisie n'est pas valide. Sans eval.
+ *
+ * Un nombre peut porter une unité de longueur (« 2,4 m », « 240 cm », « 1 m + 20 cm ») : il est converti dans
+ * `unit`, l'unité du champ. Sans unité, le nombre est déjà dans celle du champ. Une unité de longueur dans un
+ * champ qui n'est pas une longueur (%, °) est refusée.
  */
-export function evaluate(input: string): number | null {
-  const src = input.replace(/\s+/g, '').replace(/,/g, '.').replace(/[×x]/gi, '*').replace(/÷/g, '/').replace(/−/g, '-');
-  if (!src) return null;
+export function evaluate(input: string, unit = ''): number | null {
+  let src = input.replace(/\s+/g, '').replace(/,/g, '.').replace(/[×x]/gi, '*').replace(/÷/g, '/').replace(/−/g, '-');
+  let refused = false;
+  src = src.replace(/(\d+(?:\.\d*)?|\.\d+)(mm|cm|m)(?![a-z])/gi, (_, n: string, u: string) => {
+    const to = MM[unit.toLowerCase()];
+    if (!to) refused = true;
+    return `(${(parseFloat(n) * MM[u.toLowerCase()]!) / (to ?? 1)})`;
+  });
+  if (refused || !src) return null;
   let i = 0;
 
   const peek = () => src[i];

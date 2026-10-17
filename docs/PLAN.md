@@ -371,6 +371,15 @@ Branche `lot-b-plan`. Corrige PLAN-01, 02, 03, 05, 06, 08, 09, 10 (`docs/audit/P
 - Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur, parité intacte.
 - Fait (2026-10-17).
 
+## Lot E — Saisie des nombres (audit UI/UX)
+
+Branche `lot-e-nombres`. Corrige PLAN-04, UI-01, CAR-06, PIE-03 (`docs/audit/PROPOSITIONS.md`).
+
+- Champs en 16 px réels (`--text-input` en px) ; unités de longueur dans les saisies ; refus et bornes expliqués
+  sous le champ ; `soft` pour les valeurs inhabituelles ; hauteurs de zone incohérentes expliquées sous le champ.
+- Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur (`tests/e2e/numbers.spec.ts`).
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

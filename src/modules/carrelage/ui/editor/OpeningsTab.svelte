@@ -81,6 +81,7 @@
             unit="cm"
             factor={10}
             min={1}
+            soft={{ max: ed.surface.width / 10 }}
             onchange={(v) => ed.updateOpening({ width: v })}
           />
           <NumberField
@@ -89,6 +90,7 @@
             unit="cm"
             factor={10}
             min={1}
+            soft={{ max: ed.surface.height / 10 }}
             onchange={(v) => ed.updateOpening({ height: v })}
           />
           <NumberField

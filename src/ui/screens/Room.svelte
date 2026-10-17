@@ -140,12 +140,16 @@
     const b = project ? zoneBox(project.plan, z) : null;
     return b ? [b[2], b[3]] : [0, room?.height ?? 0];
   };
+  /** Zones dont la dernière saisie de hauteur est refusée (message sous les champs, effacé dès qu'elle est correcte). */
+  let spanErrors = $state<Record<string, string>>({});
   function setSpan(z: Zone, from: number, to: number) {
     if (!project || !room) return;
     if (!(to > from)) {
-      toast('Le haut de la zone doit être au-dessus du bas.', { tone: 'error' });
+      spanErrors[z.id] =
+        'Le haut de la zone doit être au-dessus du bas : corrigez l’une des deux hauteurs (rien n’est enregistré tant que c’est incohérent).';
       return;
     }
+    spanErrors[z.id] = '';
     void dispatch(spanAction(project, z, from > 0 ? from : null, to < room.height ? Math.min(to, room.height) : null));
   }
 
@@ -317,6 +321,7 @@
                           onchange={(v) => setSpan(z, from, v)}
                         />
                       </div>
+                      {#if spanErrors[z.id]}<p class="span-err" role="alert">{spanErrors[z.id]}</p>{/if}
                     {/if}
                     <div class="row">
                       {#if m}<Button variant="primary" href={m.poseHref?.(id, z.pose)}
@@ -460,6 +465,11 @@
     border-radius: 3px;
     background: var(--pose);
     border: 1px solid var(--ink);
+  }
+  .span-err {
+    margin: var(--space-1) 0 0;
+    color: var(--color-error);
+    font-size: var(--fs-sm);
   }
   .grid {
     display: grid;

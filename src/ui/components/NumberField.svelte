@@ -16,6 +16,8 @@
     step?: number;
     decimals?: number;
     hint?: string;
+    /** Plage vraisemblable (unité affichée) : hors de cette plage, la valeur est acceptée mais signalée. */
+    soft?: { min?: number; max?: number };
     id?: string;
     onchange?: (v: number) => void;
   };
@@ -29,6 +31,7 @@
     step = 1,
     decimals = 1,
     hint,
+    soft,
     id = 'nf-' + Math.random().toString(36).slice(2),
     onchange,
   }: Props = $props();
@@ -50,22 +53,41 @@
       value = next;
       onchange?.(next);
     }
+    return clamped;
   }
+
+  const withUnit = (v: number) => formatNumber(v) + (unit ? ' ' + unit : '');
+  /** « entre 1 et 250 cm », « au moins 1 cm », « au plus 250 cm ». */
+  const range = () =>
+    Number.isFinite(min) && Number.isFinite(max)
+      ? `entre ${formatNumber(min)} et ${withUnit(max)}`
+      : Number.isFinite(min)
+        ? `au moins ${withUnit(min)}`
+        : `au plus ${withUnit(max)}`;
 
   function apply() {
     editing = false;
-    const v = evaluate(text);
+    const v = evaluate(text, unit);
     if (v == null) {
-      error = 'Saisissez un nombre, par exemple 240 ou 240-12.';
+      // refus : la valeur d'avant revient, et le message dit laquelle
+      text = shown(value);
+      error = `Saisie non comprise, valeur conservée : ${withUnit(value / factor)}. Exemples : 240, 240-12${unit === 'cm' || unit === 'mm' || unit === 'm' ? ', 2,4 m' : ''}.`;
       return;
     }
-    if (v < min || v > max) {
-      error = `Valeur entre ${formatNumber(min)} et ${formatNumber(max)}${unit ? ' ' + unit : ''}.`;
-      commit(v);
-      return;
-    }
-    commit(v);
+    const kept = commit(v);
+    if (kept !== v) error = `Ramené à ${withUnit(kept)} : la valeur doit être ${range()}.`;
   }
+
+  /** Valeur hors de la plage vraisemblable (acceptée, mais à vérifier). */
+  const unusual = $derived.by(() => {
+    if (!soft) return '';
+    const d = value / factor;
+    const low = soft.min != null && d < soft.min,
+      high = soft.max != null && d > soft.max;
+    return low || high
+      ? `${withUnit(d)} est inhabituel${low ? ' (très petit)' : ' (très grand)'} : vérifiez la saisie.`
+      : '';
+  });
 
   const bump = (d: number) => commit(Math.round((value / factor + d * step) * 1e6) / 1e6);
 </script>
@@ -92,7 +114,7 @@
         bind:value={text}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby="{id}-msg"
-        onfocus={() => (editing = true)}
+        onfocus={() => ((editing = true), (error = ''))}
         onblur={apply}
         onkeydown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
@@ -114,7 +136,9 @@
       <Icon name="plus" size={20} />
     </button>
   </div>
-  <p id="{id}-msg" class="msg" class:err={!!error} aria-live="polite">{error || hint || ''}</p>
+  <p id="{id}-msg" class="msg" class:err={!!error} class:warn={!error && !!unusual} aria-live="polite">
+    {error || unusual || hint || ''}
+  </p>
 </div>
 
 <style>
@@ -195,5 +219,9 @@
   }
   .msg.err {
     color: var(--thin-ink);
+  }
+  .msg.warn {
+    color: var(--color-warning, var(--thin-ink));
+    font-weight: 500;
   }
 </style>

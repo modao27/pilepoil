@@ -26,7 +26,7 @@ test('composants : saisie calculée, onglets, liste, dialogue, panneau, message'
   await expect(width).toHaveValue('229');
   await width.fill('abc');
   await width.blur();
-  await expect(page.getByText('Saisissez un nombre, par exemple 240 ou 240-12.')).toBeVisible();
+  await expect(page.getByText(/Saisie non comprise, valeur conservée : 229 cm/)).toBeVisible();
 
   await page.getByRole('tab', { name: 'Motif' }).click();
   await expect(page.getByRole('tabpanel')).toContainText('Contenu de l’onglet « Motif »');

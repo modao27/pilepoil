@@ -94,11 +94,17 @@ le plan coté. Le reste reste sobre.
 --status-thin     terracotta              coupe fine / apparente ; erreur en texte : --color-error
 ```
 Typo : Manrope (titres, chiffres clés), Inter (interface, cotes en `tabular-nums`). Échelle 11/12/14/16/20/24/32.
-Champs de saisie en 16 px minimum (sinon Safari iOS zoome au focus). Contraste AA vérifié par
+Champs de saisie en 16 px minimum (sinon Safari iOS zoome au focus ; le jeton `--text-input` est en px, car 1 rem
+vaut 14 px ici ; `expectInputFonts` le vérifie dans les e2e). Contraste AA vérifié par
 `tests/unit/contrast.test.ts`, en clair et en sombre.
 Rayons : 8 px (champs, boutons), 12 px (panneaux). Pas d'ombres décoratives ; élévation seulement pour
 le panneau tiré et les menus. Icônes 24 × 24 en trait 1,75 (`src/ui/icons.ts`), icônes de module 34 × 24.
 Logo horizontal dans la coquille (couleur en clair, mono blanc en sombre) et en en-tête des PDF.
+
+Saisie des nombres (`NumberField`, `ui/lib/calc.ts`) : calcul simple et unités de longueur (« 2,4 m », « 240 cm »,
+« 1 m + 20 cm »), converties dans l'unité du champ ; un nombre sans unité reste dans celle du champ. Une saisie
+incompréhensible garde l'ancienne valeur et le dit ; une valeur hors bornes est ramenée à la borne avec la raison ;
+`soft` signale sans refuser une valeur inhabituelle (mur < 20 cm ou > 30 m, hauteur > 6 m).
 
 Composants : Button, IconButton, Segmented, NumberField (unité, +/−, calcul), ColorSwatch, PhotoPicker
 (fichier + coller + glisser, message d'état), BottomSheet (3 crans, clavier accessible), Tabs, ListReorder,

@@ -98,8 +98,24 @@
     {:else}
       <TextField label="Nom" bind:value={name} maxlength={40} />
       <div class="grid">
-        <NumberField label="Longueur" unit="cm" factor={10} min={10} bind:value={length} />
-        <NumberField label="Largeur" unit="cm" factor={10} min={10} bind:value={width} />
+        <NumberField
+          label="Longueur"
+          unit="cm"
+          factor={10}
+          min={10}
+          max={10000}
+          soft={{ min: 50, max: 3000 }}
+          bind:value={length}
+        />
+        <NumberField
+          label="Largeur"
+          unit="cm"
+          factor={10}
+          min={10}
+          max={10000}
+          soft={{ min: 50, max: 3000 }}
+          bind:value={width}
+        />
         {#if kind === 'l'}
           <NumberField label="Retrait en longueur" unit="cm" factor={10} min={1} bind:value={cutLength} />
           <NumberField label="Retrait en largeur" unit="cm" factor={10} min={1} bind:value={cutWidth} />

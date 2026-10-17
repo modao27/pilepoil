@@ -438,6 +438,8 @@
       unit="cm"
       factor={10}
       min={1}
+      max={10000}
+      soft={{ min: 20, max: 3000 }}
       value={wallLength(room, wallI)}
       hint="Les murs suivants se déplacent pour garder les angles."
       onchange={(length) => st.dispatch({ type: 'plan/wall/length', roomId: room.id, wallId: wall.id, length })}
@@ -495,6 +497,8 @@
       unit="cm"
       factor={10}
       min={1}
+      max={2000}
+      soft={{ min: 100, max: 600 }}
       value={room.height}
       onchange={(height) => st.dispatch({ type: 'plan/room/update', roomId: room.id, patch: { height } })}
     />
