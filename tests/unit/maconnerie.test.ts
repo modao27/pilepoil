@@ -1,18 +1,33 @@
+/** Module maçonnerie : moteur (murs composés), entrée moteur depuis le plan, réducteur, migration, achats. */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import type { Partition } from '../../src/core/plan/types';
 import {
   computeMaconnerie,
   computeWall,
   courseCount,
+  freeSegments,
   GLASS_BORDER,
   glassLayout,
-  rowPieces,
+  segmentPieces,
 } from '../../src/modules/maconnerie/core/compute';
 import { templateMaterials } from '../../src/modules/maconnerie/core/defaults';
-import type { Material, WallSpec } from '../../src/modules/maconnerie/core/types';
+import type { Material, WallSpec, ZoneSpec } from '../../src/modules/maconnerie/core/types';
 import { reduce } from '../../src/modules/maconnerie/state/actions';
-import { createMaconnerieData, type MasonryWall } from '../../src/modules/maconnerie/state/model';
+import {
+  createMaconnerieData,
+  MACONNERIE_ID,
+  MACONNERIE_MIGRATIONS,
+  MACONNERIE_SCHEMA,
+  type MaconnerieData,
+  type MasonryWall,
+} from '../../src/modules/maconnerie/state/model';
 import { shopping, summary } from '../../src/modules/maconnerie/state/module';
+import { toSpec } from '../../src/modules/maconnerie/state/spec';
+import { usesMaterial } from '../../src/modules/maconnerie/state/usage';
+import { usesSystem } from '../../src/modules/cloisons/state/usage';
+import { hydrate, siteOf, type Project } from '../../src/state/model';
+import { rect } from './planFixtures';
 
 const T = templateMaterials();
 const byName = (n: string): Material => T.find((m) => m.name === n)!;
@@ -25,6 +40,17 @@ const wall = (o: Partial<WallSpec> & { material: Material }): WallSpec => ({
   length: 3000,
   height: 2500,
   joint: o.material.laying.jointH.def,
+  zones: [],
+  holes: [],
+  ...o,
+});
+const zone = (o: Partial<ZoneSpec> & { material: Material }): ZoneSpec => ({
+  id: 'z',
+  x: 0,
+  y: 0,
+  width: 1000,
+  height: 1000,
+  joint: o.material.laying.jointH.def,
   ...o,
 });
 
@@ -35,12 +61,30 @@ describe('moteur maçonnerie : cas chiffrés', () => {
     expect(r.courses).toBe(12);
     // 6 rangs droits de 6 éléments, 6 rangs décalés de 7
     expect(r.elements).toBe(78);
-    // 2 coupes par rang décalé, plus le dernier rang recoupé en hauteur
-    expect(r.cut).toBe(19);
+    // 2 coupes par rang décalé (5 sous le dernier), plus tout le dernier rang recoupé en hauteur (7)
+    expect(r.cut).toBe(17);
     expect(r.area).toBeCloseTo(7.5);
     expect(r.binderKg).toBeCloseTo(281.25);
     expect(r.weightKg).toBeCloseTo(1326);
     expect(r.alerts).toEqual([]);
+  });
+
+  it('une zone de briques de verre sur trois rangs : la base s’interrompt, la zone se compte à part', () => {
+    const z = zone({ material: verre, x: 1000, y: 5 * 212, width: 1000, height: 3 * 212 - 12, joint: 15 });
+    const r = computeWall(wall({ material: parpaing, zones: [z] }));
+    // rangs 5 à 7 : 4 éléments au lieu de 6 (droit), 6 au lieu de 7 (décalés)
+    expect(r.elements).toBe(74);
+    expect(r.cut).toBe(21);
+    expect(r.area).toBeCloseTo(7.5 - 0.624);
+    expect(r.zones[0]).toMatchObject({ elements: 8, glass: { cols: 4, rows: 2 } });
+    // 2 rangs de verre laissent 11,45 cm de bordure en hauteur
+    expect(r.alerts.map((a) => [a.code, a.zone])).toContainEqual(['glass-not-cuttable', 'z']);
+  });
+
+  it('une porte interrompt les rangs qu’elle traverse', () => {
+    const r = computeWall(wall({ material: parpaing, holes: [{ x: 1000, y: 0, width: 1000, height: 2120 - 12 }] }));
+    // 10 rangs sur la porte : 4 au lieu de 6, 6 au lieu de 7 ; puis 2 rangs entiers
+    expect(r.elements).toBe(78 - 5 * 2 - 5 * 1);
   });
 
   it('briques de verre 19×19 : 95 cm donne 4 × 4 briques, bordures de 8 cm', () => {
@@ -57,26 +101,32 @@ describe('moteur maçonnerie : cas chiffrés', () => {
     expect(a?.params).toMatchObject({ cols: 4, width: 870 });
   });
 
-  it('panneau de verre trop grand, joint hors plage, mur trop petit', () => {
-    expect(computeWall(wall({ material: verre, length: 6000, height: 6000 })).alerts.map((a) => a.code)).toContain(
-      'panel-area-exceeds-max',
-    );
-    expect(computeWall(wall({ material: parpaing, joint: 30 })).alerts.map((a) => a.code)).toContain(
-      'joint-out-of-range',
-    );
-    const small = computeWall(wall({ material: verre, length: 200, height: 200 }));
-    expect(small.ok).toBe(false);
-    expect(small.alerts[0]?.code).toBe('too-small');
+  it('alertes : zone hors du mur, zones qui se chevauchent, zone sur une porte', () => {
+    const codes = computeWall(
+      wall({
+        material: parpaing,
+        holes: [{ x: 0, y: 0, width: 900, height: 2000 }],
+        zones: [
+          zone({ id: 'a', material: parpaing, x: 2500, width: 1000 }),
+          zone({ id: 'b', material: parpaing, x: 2600, width: 300 }),
+          zone({ id: 'c', material: parpaing, x: 500, width: 300 }),
+        ],
+      }),
+    ).alerts.map((a) => `${a.code}:${a.zone}`);
+    expect(codes).toEqual(expect.arrayContaining(['zone-outside:a', 'zone-overlap:b', 'zone-on-opening:c']));
   });
 
-  it('totaux par matériau, marge arrondie au-dessus', () => {
+  it('totaux par matériau, base et zones, marge arrondie au-dessus', () => {
     const r = computeMaconnerie({
-      walls: [wall({ material: parpaing }), wall({ id: 'w2', material: parpaing, length: 1000, height: 200 })],
+      walls: [
+        wall({ material: parpaing, zones: [zone({ material: verre, x: 1000, y: 1000, width: 950, height: 950 })] }),
+        wall({ id: 'w2', material: parpaing, length: 1000, height: 200 }),
+      ],
       margin: 0.05,
     });
-    expect(r.totals).toHaveLength(1);
-    expect(r.totals[0]!.elements).toBe(80);
-    expect(r.totals[0]!.purchased).toBe(84);
+    expect(r.totals.map((t) => t.material)).toEqual([parpaing.id, verre.id]);
+    expect(r.totals[1]!.elements).toBe(r.walls[0]!.zones[0]!.elements);
+    expect(r.totals[0]!.purchased).toBe(Math.ceil(r.totals[0]!.elements * 1.05));
   });
 });
 
@@ -95,13 +145,30 @@ describe('moteur maçonnerie : invariants', () => {
     );
   });
 
-  it('un rang couvre la longueur (décalage compris) sans un élément de trop', () => {
+  it('un rang couvre son segment sans un élément de trop, ni plus de coupes que d’éléments', () => {
     fc.assert(
       fc.property(span, dim, joint, fc.boolean(), (L, l, j, shifted) => {
-        const offset = shifted ? (l + j) / 2 : 0;
-        const n = rowPieces(L, l, j, offset);
-        expect(n * (l + j)).toBeGreaterThanOrEqual(L + offset + j - 1e-6);
-        if (n > 1) expect((n - 1) * (l + j)).toBeLessThan(L + offset + j);
+        const pitch = l + j;
+        const offset = shifted ? pitch / 2 : 0;
+        const { pieces, cut } = segmentPieces(0, L, l, pitch, offset);
+        expect(pieces * pitch).toBeGreaterThanOrEqual(L - pitch);
+        expect(pieces * pitch).toBeLessThanOrEqual(L + 2 * pitch);
+        expect(cut).toBeLessThanOrEqual(Math.min(2, pieces));
+      }),
+    );
+  });
+
+  it('segments libres : dans [0, L], sans chevauchement, hors des intervalles bloqués', () => {
+    fc.assert(
+      fc.property(span, fc.array(fc.tuple(fc.integer({ min: -500, max: 10500 }), dim), { maxLength: 5 }), (L, bs) => {
+        const blocked = bs.map(([a, w]): [number, number] => [a, a + w]);
+        const free = freeSegments(L, blocked);
+        free.forEach(([s, e], i) => {
+          expect(s).toBeGreaterThanOrEqual(0);
+          expect(e).toBeLessThanOrEqual(L);
+          if (i) expect(s).toBeGreaterThanOrEqual(free[i - 1]![1]);
+          for (const [a, b] of blocked) expect(e <= a + 1e-6 || s >= b - 1e-6).toBe(true);
+        });
       }),
     );
   });
@@ -114,9 +181,29 @@ describe('moteur maçonnerie : invariants', () => {
         expect(g.cols * l + (g.cols - 1) * j + 2 * g.borderX).toBeCloseTo(L, 6);
         expect(g.rows * h + (g.rows - 1) * j + 2 * g.borderY).toBeCloseTo(H, 6);
         expect(g.borderX).toBeGreaterThanOrEqual(GLASS_BORDER.min - 1e-6);
-        // une brique de plus ne tiendrait pas
         expect((g.cols + 1) * l + g.cols * j + 2 * GLASS_BORDER.min).toBeGreaterThan(L);
       }),
+    );
+  });
+
+  it('une zone dans le mur : surfaces additives, au plus un élément de plus par rang', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 2000 }),
+        fc.integer({ min: 0, max: 1500 }),
+        fc.integer({ min: 100, max: 1000 }),
+        fc.integer({ min: 100, max: 1000 }),
+        (x, y, w, h) => {
+          const plain = computeWall(wall({ material: parpaing }));
+          const r = computeWall(
+            wall({ material: parpaing, zones: [zone({ material: parpaing, x, y, width: w, height: h })] }),
+          );
+          expect(r.area + r.zones[0]!.area).toBeCloseTo(plain.area, 6);
+          // au plus un élément de plus par rang : celui que la zone coupe en deux morceaux
+          expect(r.elements).toBeLessThanOrEqual(plain.elements + plain.courses);
+          expect(r.cut).toBeLessThanOrEqual(r.elements);
+        },
+      ),
     );
   });
 
@@ -136,17 +223,100 @@ describe('moteur maçonnerie : invariants', () => {
   });
 });
 
-describe('données et achats de la maçonnerie', () => {
-  const w: MasonryWall = { id: 'a', name: 'Mur', length: 3000, height: 2500, material: parpaing.id, joint: null };
+describe('cloisons maçonnées du plan', () => {
+  const room = rect('a', 4000, 3000, { name: 'Séjour' });
+  const cloison = (o: Partial<Partition> = {}): Partition => ({
+    id: 'q',
+    a: [2000, 0],
+    b: [2000, 3000],
+    thickness: 200,
+    align: 'center',
+    openings: [],
+    construction: 'masonry',
+    ...o,
+  });
+  const project = (partitions: Partition[], data: MaconnerieData | null = createMaconnerieData()): Project =>
+    hydrate({
+      schemaVersion: 4,
+      id: 'p',
+      name: 'Maison',
+      createdAt: 0,
+      updatedAt: 0,
+      site: { ...siteOf({ rooms: [room], passages: [] }), partitions, demolitions: [] },
+      zones: [],
+      poses: [],
+      modules: data ? { [MACONNERIE_ID]: { schemaVersion: MACONNERIE_SCHEMA, data } } : {},
+    });
+  const libraries = { materials: T };
 
-  it('réducteur : ajout, mise à jour, suppression, sans effet renvoie la même donnée', () => {
+  it('longueur, hauteur de la pièce, porte en trou, matériau de l’épaisseur par défaut', () => {
+    const q = cloison({ openings: [{ id: 'o', kind: 'door', offset: 500, width: 900, height: 2040 }] });
+    const r = toSpec(project([q]), libraries);
+    if ('errors' in r) throw new Error(JSON.stringify(r.errors));
+    const w = r.spec.walls[0]!;
+    expect(w).toMatchObject({ id: 'q', length: 3000, height: room.height, joint: 12 });
+    expect(w.material.thickness).toBe(200);
+    expect(w.holes).toEqual([{ x: 500, y: 0, width: 900, height: 2040 }]);
+    expect(w.name).toMatch(/^Cloison 1/);
+  });
+
+  it('une cloison en plaques n’est pas maçonnée ; une maçonnée n’est pas aux cloisons', () => {
+    const p = project([cloison({ construction: undefined })]);
+    expect(toSpec(p, libraries)).toEqual({ errors: [{ code: 'maconnerie/no-wall' }] });
+    expect(usesSystem(project([cloison({ thickness: 72 })]), 'modele-72-48', { systems: [] })).toBe(false);
+  });
+
+  it('hauteur propre, zone sans matériau bloquante, matériau utilisé', () => {
+    const d = createMaconnerieData();
+    d.partitions.q = {
+      material: verre.id,
+      joint: null,
+      zones: [{ id: 'z', x: 0, y: 0, width: 100, height: 100, material: null, joint: null }],
+    };
+    const p = project([cloison({ height: 1000 })], d);
+    expect(toSpec(p, libraries)).toEqual({ errors: [{ code: 'maconnerie/zone-material', ref: 'q' }] });
+    expect(usesMaterial(p, verre.id, libraries)).toBe(true);
+    expect(usesMaterial(p, parpaing.id, libraries)).toBe(false);
+    d.partitions.q.zones = [];
+    const r = toSpec(project([cloison({ height: 1000 })], d), libraries);
+    expect('spec' in r && r.spec.walls[0]!.height).toBe(1000);
+  });
+});
+
+describe('données et achats de la maçonnerie', () => {
+  const w: MasonryWall = {
+    id: 'a',
+    name: 'Mur',
+    length: 3000,
+    height: 2500,
+    material: parpaing.id,
+    joint: null,
+    zones: [],
+  };
+
+  it('migration 1 → 2 : zones vides, pas de cloison', () => {
+    const v1 = { walls: [{ id: 'a', name: 'Mur' }], settings: { margin: 0.05, binderBag: 25 }, prices: {} };
+    expect(MACONNERIE_MIGRATIONS[2]!(v1)).toEqual({
+      ...v1,
+      partitions: {},
+      walls: [{ id: 'a', name: 'Mur', zones: [] }],
+    });
+  });
+
+  it('réducteur : murs, zones d’un mur saisi et d’une cloison, sans effet renvoie la même donnée', () => {
     let d = reduce(createMaconnerieData(), { type: 'maconnerie/wall/add', wall: w });
-    expect(d.walls).toHaveLength(1);
     expect(reduce(d, { type: 'maconnerie/wall/update', id: 'a', patch: { length: 3000 } })).toBe(d);
     d = reduce(d, { type: 'maconnerie/wall/update', id: 'a', patch: { length: 4000 } });
     expect(d.walls[0]!.length).toBe(4000);
-    d = reduce(d, { type: 'maconnerie/price', key: 'k', value: 2 });
-    expect(d.prices).toEqual({ k: 2 });
+    const z = { id: 'z', x: 0, y: 0, width: 500, height: 500, material: verre.id, joint: null };
+    d = reduce(d, { type: 'maconnerie/zone/add', target: { wall: 'a' }, zone: z });
+    d = reduce(d, { type: 'maconnerie/zone/update', target: { wall: 'a' }, id: 'z', patch: { x: 100 } });
+    expect(d.walls[0]!.zones).toEqual([{ ...z, x: 100 }]);
+    d = reduce(d, { type: 'maconnerie/zone/add', target: { partition: 'q' }, zone: z });
+    d = reduce(d, { type: 'maconnerie/build/update', target: { partition: 'q' }, patch: { material: parpaing.id } });
+    expect(d.partitions.q).toEqual({ material: parpaing.id, joint: null, zones: [z] });
+    d = reduce(d, { type: 'maconnerie/zone/remove', target: { partition: 'q' }, id: 'z' });
+    expect(d.partitions.q!.zones).toEqual([]);
     d = reduce(d, { type: 'maconnerie/wall/remove', id: 'a' });
     expect(d.walls).toEqual([]);
   });

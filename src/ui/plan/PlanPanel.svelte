@@ -64,6 +64,10 @@
     { value: 'center', label: 'Centrée' },
     { value: 'left', label: 'À gauche' },
   ];
+  const BUILDS = [
+    { value: 'plaster', label: 'Plaques' },
+    { value: 'masonry', label: 'Maçonnerie' },
+  ];
   const LOCKS = [
     { value: '', label: 'Libre' },
     { value: 'exterior', label: 'Extérieur' },
@@ -261,13 +265,26 @@
     {:else if partition.height != null}
       <p class="muted">Plus basse que la pièce, elle la sépare tout de même puisqu’elle la traverse.</p>
     {/if}
+    <Segmented
+      label="Construction"
+      value={partition.construction ?? 'plaster'}
+      options={BUILDS}
+      onchange={(v) => st.updatePartition(partition.id, { construction: v === 'masonry' ? 'masonry' : undefined })}
+    />
+    {#if partition.construction === 'masonry'}
+      <p class="muted">
+        Matériau, panneaux et quantités : <a href="#/p/{st.doc.id}/m/maconnerie">maçonnerie</a>.
+      </p>
+    {/if}
     <NumberField
       label="Épaisseur"
       unit="mm"
       min={20}
-      max={300}
+      max={500}
       value={partition.thickness}
-      hint="Placo 72/48 : 72 mm ; 98/48 : 98 mm ; 100/70 : 100 mm."
+      hint={partition.construction === 'masonry'
+        ? 'Celle du matériau de base : parpaing de 20 cm, 200 mm.'
+        : 'Placo 72/48 : 72 mm ; 98/48 : 98 mm ; 100/70 : 100 mm.'}
       onchange={(thickness) => st.updatePartition(partition.id, { thickness })}
     />
     <Segmented

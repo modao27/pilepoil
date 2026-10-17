@@ -27,6 +27,7 @@ export function usesSystem(project: Project, id: Id, libraries: Libraries): bool
   if (!d) return false;
   const systems = (libraries.systems ?? []) as readonly PartitionSystem[];
   return project.site.partitions.some((q) => {
+    if (q.construction === 'masonry') return false;
     const own = Object.hasOwn(d.partitions, q.id) ? d.partitions[q.id] : undefined;
     return (own?.system ?? systemFor(own, q, systems)?.id) === id;
   });

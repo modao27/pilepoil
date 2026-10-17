@@ -53,15 +53,34 @@ export interface Material {
 
 /* ---------------------------------------------------------------- moteur */
 
+/** Rectangle dans l'élévation d'un mur (mm) : x depuis le début du mur, y depuis le sol. */
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Zone d'un autre matériau dans un mur (panneau de briques de verre, bande…), prête pour le calcul. */
+export interface ZoneSpec extends Rect {
+  id: string;
+  material: Material;
+  joint: number;
+}
+
 /** Un mur ou un panneau à monter, prêt pour le calcul. Dimensions en mm. */
 export interface WallSpec {
   id: string;
   name: string;
   length: number;
   height: number;
+  /** Matériau de base : il remplit le mur autour des zones et des ouvertures. */
   material: Material;
   /** Joint retenu (mm), horizontal et vertical quand il y en a. */
   joint: number;
+  zones: ZoneSpec[];
+  /** Portes et baies : rien n'y est monté. */
+  holes: Rect[];
 }
 
 export interface MaconnerieSpec {
@@ -71,11 +90,20 @@ export interface MaconnerieSpec {
 }
 
 export type AlertCode =
-  'glass-not-cuttable' | 'panel-area-exceeds-max' | 'joint-out-of-range' | 'binder-unknown' | 'too-small';
+  | 'glass-not-cuttable'
+  | 'panel-area-exceeds-max'
+  | 'joint-out-of-range'
+  | 'binder-unknown'
+  | 'too-small'
+  | 'zone-outside'
+  | 'zone-overlap'
+  | 'zone-on-opening';
 
 export interface MasonryAlert {
   code: AlertCode;
   wall: string;
+  /** Zone concernée ; absent : le matériau de base. */
+  zone?: string;
   params?: Record<string, number>;
 }
 
@@ -90,19 +118,31 @@ export interface GlassLayout {
   reinforcement: number;
 }
 
-export interface WallResult {
-  id: string;
+/** Quantités d'une surface d'un seul matériau (la base d'un mur, ou une zone). */
+export interface SurfaceResult {
+  /** Matériau. */
+  material: string;
   ok: boolean;
   courses: number;
   /** Éléments posés, coupés compris. */
   elements: number;
   /** Éléments coupés. */
   cut: number;
-  /** Surface du mur (m²). */
+  /** Surface montée (m²), trous déduits. */
   area: number;
   binderKg: number | null;
   weightKg: number | null;
   glass: GlassLayout | null;
+}
+
+export interface ZoneResult extends SurfaceResult {
+  id: string;
+}
+
+export interface WallResult extends SurfaceResult {
+  id: string;
+  zones: ZoneResult[];
+  /** Alertes du mur, base et zones. */
   alerts: MasonryAlert[];
 }
 

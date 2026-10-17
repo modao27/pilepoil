@@ -139,8 +139,9 @@ export function toSpec(project: Project, libraries: Libraries): { spec: Cloisons
       .issues.filter((i) => i.severity === 'error')
       .map((i) => i.id),
   );
+  // les cloisons maçonnées sont chiffrées par la maçonnerie
   const list = project.site.partitions
-    .filter((q) => !failed.has(q.id))
+    .filter((q) => !failed.has(q.id) && q.construction !== 'masonry')
     .map((q) =>
       q.openings.some((o) => failed.has(o.id)) ? { ...q, openings: q.openings.filter((o) => !failed.has(o.id)) } : q,
     );
