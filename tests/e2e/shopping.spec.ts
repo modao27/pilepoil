@@ -48,8 +48,9 @@ test('achats du projet : même total que la vue globale, prix modifiable et annu
   await glue.press('Enter');
   await expect(glue).toHaveValue('0');
   await expect(page.getByRole('status')).toHaveCount(1);
+  // annuler le 0 € rend le prix d'avant
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
-  await expect(page.getByText(`Total estimé : ${carrelageTotal.trim()}`)).toBeVisible();
+  await expect(glue).toHaveValue('18,9');
 
   // exports
   const csv = page.waitForEvent('download');

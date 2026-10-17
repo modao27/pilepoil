@@ -112,8 +112,7 @@
     border-radius: var(--r-field);
     background: var(--sheet);
     color: var(--ink);
-    font: inherit;
-    font-size: var(--fs-sm);
+    font: var(--text-input);
     resize: vertical;
   }
   textarea[aria-invalid='true'] {

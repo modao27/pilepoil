@@ -63,7 +63,7 @@
   --text-small: 400 0.75rem/1rem var(--font-ui); /* 12/16 */
   --text-caption: 400 0.6875rem/0.875rem var(--font-ui); /* 11/14, cotes */
   --text-metric: 600 1.25rem/1.75rem var(--font-display);
-  --text-input: 400 1rem/1.5rem var(--font-ui); /* 16 px mini : évite le zoom auto d'iOS */
+  --text-input: 400 16px/24px var(--font-ui); /* 16 px mini : évite le zoom auto d’iOS (en px : 1rem vaut 14 px ici) */
 
   /* Espacements (base 4) */
   --space-1: 4px;

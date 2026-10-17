@@ -241,6 +241,25 @@ export async function expectTouchTargets(page: Page): Promise<void> {
       ),
   );
   expect(small, small.join('\n')).toEqual([]);
+  await expectInputFonts(page);
+}
+
+/** Champs de saisie en 16 px au moins : en dessous, Safari iOS zoome la page au focus. */
+export async function expectInputFonts(page: Page): Promise<void> {
+  const small = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('input:not([type=hidden]), select, textarea')]
+      .filter((el) => {
+        if (el instanceof HTMLInputElement && ['checkbox', 'radio', 'file', 'color', 'range'].includes(el.type))
+          return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && parseFloat(getComputedStyle(el).fontSize) < 16;
+      })
+      .map(
+        (el) =>
+          `${el.tagName.toLowerCase()} ${el.getAttribute('aria-label') || el.id} ${getComputedStyle(el).fontSize}`,
+      ),
+  );
+  expect(small, small.join('\n')).toEqual([]);
 }
 
 /** Pas de défilement horizontal de la page. */
