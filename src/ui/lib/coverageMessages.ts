@@ -16,5 +16,7 @@ export function coverageText(e: CoverageError): string {
       return 'Une même pose ne couvre pas à la fois un sol et un mur.';
     case 'pose-extent':
       return 'Cette pose ne peut pas s’étendre à cette surface (pièce non reliée par un passage, ou autre surface).';
+    case 'level-step':
+      return `Les deux sols ne sont pas au même niveau (marche de ${Math.round(e.step / 10)} cm) : posez chaque pièce séparément.`;
   }
 }

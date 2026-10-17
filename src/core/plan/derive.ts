@@ -572,6 +572,7 @@ function toRoom(p: Piece, members: PlanRoom[], issues: WorksIssue[]): PlanRoom {
     obstacles,
     openings: p.openings,
     height: p.base.height,
+    ...(p.base.floor != null ? { floor: p.base.floor } : {}),
     origin: o,
   };
 }

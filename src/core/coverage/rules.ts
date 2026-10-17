@@ -4,6 +4,7 @@
  * ne mélange pas sols et murs, étendue d'une pose permise par le module. Pur.
  */
 import { intersection, regionArea } from '../geometry/boolean';
+import { roomFloor, STEP_MIN } from '../plan/levels';
 import type { Plan, PlanRoom } from '../plan/types';
 import { sameSurface, surfaceKey, surfacePolygon, zoneRegion } from './geometry';
 import type { CoverageRules, Pose, SurfaceRef, Zone } from './types';
@@ -18,7 +19,9 @@ export type CoverageError =
   | { code: 'zone-empty' }
   | { code: 'zone-overlap'; zone: Id }
   | { code: 'pose-mixed' }
-  | { code: 'pose-extent' };
+  | { code: 'pose-extent' }
+  /** Les sols de la pose ne sont pas au même niveau : `step` mm entre le plus haut et le plus bas. */
+  | { code: 'level-step'; step: number };
 
 export interface Coverage {
   zones: readonly Zone[];
@@ -128,8 +131,14 @@ export function checkZone(plan: Plan, cov: Coverage, z: Zone, rules: CoverageRul
   if (kinds.size > 1) return { code: 'pose-mixed' };
   const surfaces = new Set(pose.map((o) => surfaceKey(o.surface)));
   if (rules.extent === 'surface' && surfaces.size > 1) return { code: 'pose-extent' };
-  if (rules.extent === 'connected-floors' && !roomsConnected(plan, [...new Set(pose.map((o) => o.surface.room))]))
-    return { code: 'pose-extent' };
+  if (rules.extent === 'connected-floors') {
+    const rooms = [...new Set(pose.map((o) => o.surface.room))];
+    if (!roomsConnected(plan, rooms)) return { code: 'pose-extent' };
+    // un sol continu est à un seul niveau : une marche entre deux pièces de la pose la refuse
+    const floors = plan.rooms.filter((r) => rooms.includes(r.id)).map(roomFloor);
+    const step = Math.max(...floors) - Math.min(...floors);
+    if (step >= STEP_MIN) return { code: 'level-step', step };
+  }
   if (rules.extent === 'continuous' && !continuous(plan, pose)) return { code: 'pose-extent' };
   return null;
 }

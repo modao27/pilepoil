@@ -8,6 +8,7 @@ import type { BBox, Point, Polygon } from '../geometry/types';
 import { reducePlan, type PlanAction } from './reduce';
 import type { Demolition, Id, Partition, PartitionOpening, PlanRoom, Site } from './types';
 import { wallBands, wallDirection, wallIndex, wallLength, wallSegment, outwardNormal } from './walls';
+import { sameLevel } from './levels';
 
 export const DEFAULT_PARTITION_THICKNESS = 72;
 /** Une cloison plus courte que ça n'en est pas une, mm. */
@@ -34,6 +35,8 @@ export type WorksErrorCode =
   | 'demolition/locked'
   | 'demolition/range'
   | 'demolition/no-neighbour'
+  /** Les pièces de part et d'autre du mur ne sont pas au même niveau de sol. */
+  | 'demolition/level-mismatch'
   | 'derive/sliver'
   | 'derive/invalid-room'
   | 'derive/passage-lost';
@@ -357,7 +360,9 @@ function demolitionIssue(site: Site, d: Demolition): WorksErrorCode | null {
   if (r.walls[i]!.locked) return 'demolition/locked';
   if (!(d.from >= 0) || !(d.to <= wallLength(r, i) + 0.5) || d.to - d.from < MIN_DEMOLITION_LENGTH)
     return 'demolition/range';
-  return neighborRooms(site, r, i, d).length ? null : 'demolition/no-neighbour';
+  const next = neighborRooms(site, r, i, d);
+  if (!next.length) return 'demolition/no-neighbour';
+  return next.some((n) => !sameLevel(r, n)) ? 'demolition/level-mismatch' : null;
 }
 
 /** Pièces de l'état existant de l'autre côté du mur i, sur l'intervalle de la démolition (tolérance du plan). */

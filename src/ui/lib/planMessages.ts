@@ -37,6 +37,8 @@ export const WORKS_MESSAGES: Record<WorksErrorCode, string> = {
   'demolition/wall-missing': 'Une démolition vise un mur qui n’existe plus. Supprimez-la.',
   'demolition/locked': 'Une démolition vise un mur verrouillé. Déverrouillez le mur ou supprimez la démolition.',
   'demolition/range': 'Une démolition sort de son mur ou est trop courte. Corrigez ses bornes.',
+  'demolition/level-mismatch':
+    'Une démolition réunit deux pièces de niveaux de sol différents. Alignez leurs niveaux avant de démolir le mur.',
   'demolition/no-neighbour': 'Une démolition vise un mur sans pièce en face. Vérifiez que le mur sépare deux pièces.',
   'derive/sliver': 'Un travail laisse un morceau de pièce minuscule. Déplacez la cloison.',
   'derive/invalid-room': 'Une pièce après travaux n’est pas valide. Modifiez la cloison ou la démolition en cause.',
