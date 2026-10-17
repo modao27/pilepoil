@@ -12,7 +12,6 @@
   import { roomLayout, surfaceLayout } from '../../render/scene3d/placement';
   import { roomShape } from '../../state/surfaces';
   import { scenePhoto } from '../lib/photos';
-  import Icon from '../../../../ui/icons/Icon.svelte';
   import { app } from '../../../../ui/lib/app.svelte';
   import { carrelage } from '../state.svelte';
   import { euros } from '../../../../ui/lib/format';
@@ -135,7 +134,25 @@
       <IconButton icon="plus" variant="outline" label="Zoomer" onclick={() => canvas?.zoomBy(1.25)} />
       <IconButton icon="minus" variant="outline" label="Dézoomer" onclick={() => canvas?.zoomBy(0.8)} />
       <IconButton icon="fit" variant="outline" label="Ajuster à l’écran" onclick={() => canvas?.fit()} />
+      {#if ed.optimizing}
+        <IconButton
+          icon="close"
+          variant="outline"
+          label="Arrêter la recherche du meilleur départ"
+          onclick={() => ed.cancelOptimize()}
+        />
+      {:else}
+        <IconButton
+          icon="sparkle"
+          variant="outline"
+          label="Optimiser le départ de toutes les bandes"
+          onclick={() => ed.optimize(ed.surface.bands.map((_, i) => i))}
+        />
+      {/if}
     </div>
+    <span class="visually-hidden" role="status"
+      >{ed.optimizing ? `Recherche du meilleur départ : ${ed.optimizing.percent} %` : ''}</span
+    >
   {:else}
     <Segmented
       label="Contenu de la vue 3D"
@@ -164,22 +181,6 @@
     />
   {:else if ed.mode !== '3d'}
     <PlanCanvas bind:this={canvas} {ed} label="Plan de {ed.surface.name}, {summary}" />
-  {/if}
-  {#if ed.mode === '3d'}
-    <!-- pas d'optimisation en 3D : la vue reste dégagée -->
-  {:else if !ed.optimizing}
-    <button
-      type="button"
-      class="optim"
-      aria-label="Optimiser le départ de toutes les bandes"
-      onclick={() => ed.optimize(ed.surface.bands.map((_, i) => i))}
-    >
-      <Icon name="sparkle" size={20} /> Optimiser
-    </button>
-  {:else}
-    <button type="button" class="optim" onclick={() => ed.cancelOptimize()}>
-      Recherche {ed.optimizing.percent} % — Arrêter
-    </button>
   {/if}
 {/snippet}
 
@@ -229,23 +230,6 @@
   }
   :global(.desktop) .zoom {
     flex-direction: column;
-  }
-  .optim {
-    position: absolute;
-    right: var(--space-2);
-    bottom: var(--space-2);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-height: var(--touch);
-    padding: 0 var(--space-4);
-    border: 0;
-    border-radius: 22px;
-    background: var(--accent);
-    color: var(--on-accent);
-    font-weight: 600;
-    box-shadow: var(--shadow);
-    cursor: pointer;
   }
   .steps {
     display: grid;

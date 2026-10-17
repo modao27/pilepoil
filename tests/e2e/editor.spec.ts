@@ -202,13 +202,23 @@ test('finitions : bords visibles, plinthes du sol, alerte actionnable', async ({
 
 test('optimisation : progression, résultat, annulation', async ({ page }, info) => {
   await newWall(page);
-  await dragPlan(page, 0.5, 0.4, 25, 15);
+  await dragPlan(page, 0.5, 0.4, 37, 23);
   await page.getByRole('button', { name: 'Optimiser le départ de toutes les bandes' }).click();
-  await expect(page.getByText(/^Départ optimisé\./)).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText(/^Départ optimisé\. .* en moins\./)).toBeVisible({ timeout: 20000 });
   await shot(page, info, '68-optimise');
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
   await tab(page, info, 'Pose');
   await expect(page.getByRole('button', { name: 'Optimiser le départ', exact: true })).toBeVisible();
+});
+
+test('optimisation : un départ déjà optimal le dit, la progression est annoncée', async ({ page }) => {
+  await newWall(page);
+  await dragPlan(page, 0.5, 0.4, 37, 23);
+  const optimize = page.getByRole('button', { name: 'Optimiser le départ de toutes les bandes' });
+  await optimize.click();
+  await expect(page.getByText(/^Départ optimisé\./)).toBeVisible({ timeout: 20000 });
+  await optimize.click();
+  await expect(page.getByText('Départ déjà optimal : rien n’a changé.')).toBeVisible({ timeout: 20000 });
 });
 
 test('surfaces : sol et murs revêtus sur l’écran Pièce, puis résultats et plan de découpe', async ({ page }, info) => {

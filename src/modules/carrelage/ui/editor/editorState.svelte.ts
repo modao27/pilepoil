@@ -17,6 +17,7 @@ import { carrelageView, type CarrelageProject } from '../../state/data';
 import { reduceProject, type ProjectAction } from '../../../../state/project';
 import { createSaver, type Saver } from '../../../../storage/autosave';
 import { app } from '../../../../ui/lib/app.svelte';
+import { count } from '../../../../ui/lib/format';
 import { toast } from '../../../../ui/lib/toasts.svelte';
 import { undoAction } from '../../../../ui/lib/undoToast';
 
@@ -318,13 +319,25 @@ export class EditorState {
             ]
           : [];
       });
-      this.dispatch({ type: 'batch', actions });
       const b = res.before,
         a = res.after;
-      toast(
-        `Départ optimisé. Carreaux ${b.needed} → ${a.needed}, coupes fines ${b.thin} → ${a.thin}, coupes apparentes ${b.vis} → ${a.vis}.`,
-        { action: actions.length ? undoAction(this.store) : undefined, timeout: 8000 },
-      );
+      const gains = [
+        b.thin > a.thin && `${count(b.thin - a.thin, 'coupe fine', 'coupes fines')} en moins`,
+        b.needed > a.needed && `${count(b.needed - a.needed, 'carreau', 'carreaux')} en moins`,
+        b.vis > a.vis && `${count(b.vis - a.vis, 'coupe apparente', 'coupes apparentes')} en moins`,
+      ].filter(Boolean);
+      const moved = res.zones.some((r) => {
+        const z = s.bands[r.zone];
+        return z && (z.offsetX !== r.offsetX || z.offsetY !== r.offsetY || z.start !== r.start);
+      });
+      if (!moved && !gains.length) toast('Départ déjà optimal : rien n’a changé.');
+      else {
+        this.dispatch({ type: 'batch', actions });
+        toast(gains.length ? `Départ optimisé. ${gains.join(', ')}.` : 'Départ ajusté.', {
+          action: actions.length ? undoAction(this.store) : undefined,
+          timeout: 8000,
+        });
+      }
     } catch (e) {
       if (!(e instanceof DOMException && e.name === 'AbortError')) toast('Optimisation impossible.', { tone: 'error' });
       else toast('Optimisation arrêtée, rien n’a changé.');
