@@ -502,8 +502,12 @@ sans source (parpaing plein, brique de cloison, carreau 50 mm, poids béton cell
   modèles types.
 - Étape 2 : moteur pur dans `core` (éléments, liant, alertes), tests unitaires, `fast-check` et cas chiffrés.
 - Étape 3 : écran de la bibliothèque, technique visible sur la fiche, lignes d'achat consolidées.
-- Fini quand : `npm run check`, parité et e2e verts.
-- Suite : murets multi-matériaux.
+- Décision du 2026-10-17 : la bibliothèque est portée par un module « maçonnerie » sans pose ; en attendant les
+  murets du plan, les murs et panneaux se saisissent par leurs dimensions dans le module (`MasonryWall`).
+- Fini quand : `npm run check`, parité et e2e verts (`tests/unit/maconnerie.test.ts`, `materials.test.ts`,
+  `tests/e2e/maconnerie.spec.ts`).
+- Fait (2026-10-17).
+- Suite : murets multi-matériaux (murets tracés dans le plan, plusieurs matériaux dans un mur).
 
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.

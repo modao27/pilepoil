@@ -22,6 +22,8 @@ export interface PilepoilDB extends DBSchema {
   paints: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
   /** Bibliothèque de systèmes de cloison du module cloisons. */
   systems: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
+  /** Bibliothèque de matériaux du module maçonnerie. */
+  materials: { key: string; value: LibraryItem; indexes: { name: string; updatedAt: number } };
 }
 
 export type Db = IDBPDatabase<PilepoilDB>;
@@ -66,6 +68,12 @@ const UPGRADES: ((db: Db, tx: UpgradeTx) => void)[] = [
     const systems = db.createObjectStore('systems', { keyPath: 'id' });
     systems.createIndex('name', 'name');
     systems.createIndex('updatedAt', 'updatedAt');
+  },
+  // v7 (N6) : bibliothèque de matériaux de maçonnerie.
+  (db) => {
+    const materials = db.createObjectStore('materials', { keyPath: 'id' });
+    materials.createIndex('name', 'name');
+    materials.createIndex('updatedAt', 'updatedAt');
   },
 ];
 

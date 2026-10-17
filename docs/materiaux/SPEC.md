@@ -66,6 +66,15 @@ de plâtre sur ossature reste couverte par le module cloisons, pas par cette bib
 Reprendre le plan de `docs/PLAN.md` (à ajouter après validation de cette spec) : modèle et stockage, moteur,
 interface, achats. Fini quand `npm run check`, la parité carrelage et les e2e sont verts.
 
+## Moteur (fait en N6)
+- Mur saisi par longueur × hauteur et matériau ; joint par défaut : valeur usuelle de la technique.
+- Rangs : `ceil((H + j) / (h + j))` ; éléments par rang : `ceil((L + décalage + jv) / (l + jv))`, décalage d'une
+  demi-longueur un rang sur deux (pose à demi-longueur) ; joints verticaux secs : `jv = 0`.
+- Coupes : bouts des rangs décalés ou non multiples, et tout le dernier rang s'il est recoupé en hauteur.
+- Briques de verre : le plus grand nombre de briques qui laisse 4 cm de bordure ; au-delà de 10 cm, alerte avec
+  l'ouverture proposée. Fers : un par joint et un par bordure, dans les deux sens.
+- Achats : éléments + marge (5 % par défaut), liant en sacs (25 kg par défaut), fers d'armature en mètres.
+
 ## Décisions du 2026-10-17
 - Pas d'extrait du DTU disponible : toutes les valeurs sont affichées « à titre indicatif (estimation) » dans
   l'interface ; la fiabilité S / C de cette spec sert de base à ce libellé.

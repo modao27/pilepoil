@@ -158,6 +158,10 @@
         </ul>
         <div class="row">
           <Button icon="plus" href="#/p/{project.id}/plan">Ajouter une pièce</Button>
+          <!-- outils de travaux pas encore utilisés (sans pose : ils s'ouvrent depuis le projet) -->
+          {#each modules.filter((m) => !m.coverage && !Object.hasOwn(project!.modules, m.id)) as m (m.id)}
+            <Button icon="plus" href="#/p/{project.id}/m/{m.id}">{m.label}</Button>
+          {/each}
         </div>
 
         {#snippet toolCard(m: (typeof modules)[number])}
