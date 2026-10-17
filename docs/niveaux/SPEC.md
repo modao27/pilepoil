@@ -1,6 +1,6 @@
 # Niveaux de sol et hauteurs propres (phase T1, N2) — spécification
 
-Statut : **à valider** (aucun code). Origine : décision de l'utilisateur du 17 octobre 2026 (`docs/audit/PROPOSITIONS.md`
+Statut : **validée le 17 octobre 2026** (décisions § 9) ; en cours de réalisation. Origine : décision de l'utilisateur du 17 octobre 2026 (`docs/audit/PROPOSITIONS.md`
 §3 bis) : deux pièces peuvent avoir un niveau de sol différent ; une marche dans une pièce est une estrade ; des murs
 peuvent être plus bas que le plafond. Sans cette phase, ni les cloisons de hauteur propre (N3) ni les murets (N4) ne sont
 possibles.
@@ -94,3 +94,10 @@ plinthes) ; `render/scene3d/envelope.ts`, `cutaway.ts`, `equipment.ts` ; `ui/pla
 - **B. Estrades** : dans cette phase (effort L au lieu de M, nouvelles surfaces revêtables) ou **phase suivante** (T1b) ?
 - **C. Seuil de marche** : une différence de moins de 5 mm compte-t-elle comme « sans marche » ?
 - **D. Niveau** : saisi comme **altitude du sol fini** (recommandé), ou du support avant revêtement ?
+
+## 9. Décisions (17 octobre 2026)
+
+- A. Hauteur sous plafond **depuis le sol de chaque pièce**.
+- B. Estrades : **phase suivante (T1b)** ; T1 livre les niveaux entre pièces et les hauteurs propres des murs.
+- C. Moins de 5 mm : pas de marche.
+- D. Niveau saisi comme **altitude du sol fini** (l'épaisseur du revêtement n'est pas déduite).

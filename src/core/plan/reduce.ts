@@ -13,7 +13,7 @@ export type PlanAction =
   | { type: 'plan/room/add'; room: PlanRoom }
   /** Retire aussi les passages qui la touchent. */
   | { type: 'plan/room/remove'; roomId: Id }
-  | { type: 'plan/room/update'; roomId: Id; patch: Partial<Pick<PlanRoom, 'name' | 'height' | 'origin'>> }
+  | { type: 'plan/room/update'; roomId: Id; patch: Partial<Pick<PlanRoom, 'name' | 'height' | 'origin' | 'floor'>> }
   | { type: 'plan/point/move'; roomId: Id; index: number; point: Point }
   /** Ajoute un point sur un mur : le mur est coupé en deux, la seconde moitié prend `newWallId`. */
   | { type: 'plan/point/insert'; roomId: Id; wallId: Id; point: Point; newWallId: Id }

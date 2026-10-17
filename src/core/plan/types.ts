@@ -23,8 +23,10 @@ export interface PlanRoom {
   obstacles: Obstacle[];
   /** Portes, baies, fenêtres, sur un segment du contour. */
   openings: WallOpening[];
-  /** Hauteur sous plafond, pour la 3D. */
+  /** Hauteur sous plafond, depuis le sol de la pièce. */
   height: number;
+  /** Niveau du sol fini par rapport au niveau 0 du plan, mm (absent : 0). Voir `levels.ts`. */
+  floor?: number;
   /** Position de la pièce dans le plan d'ensemble. */
   origin: Point;
 }
@@ -34,6 +36,8 @@ export interface Wall {
   id: Id;
   /** Épaisseur du mur (passages, 3D). */
   thickness: number;
+  /** Hauteur propre du mur depuis le sol de la pièce, mm (absent : celle de la pièce) ; mur bas, allège. */
+  height?: number;
   /** Mur qu'on ne démolit pas : extérieur ou porteur (docs/BOITE.md §3 bis). Absent : libre. */
   locked?: 'exterior' | 'bearing';
   /** Mur dérivé : face d'une cloison neuve. Posé par `planAfter`, jamais saisi ni enregistré. */

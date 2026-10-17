@@ -12,7 +12,10 @@ export type PlanErrorCode =
   /** Aire nulle, ou contour en sens antihoraire à l'écran. */
   | 'room/area'
   | 'room/height'
+  | 'room/floor'
   | 'wall/thickness'
+  /** Hauteur propre nulle, négative ou au-dessus du plafond. */
+  | 'wall/height'
   | 'obstacle/outside'
   | 'opening/wall-missing'
   | 'opening/size'
@@ -47,7 +50,11 @@ export function validateRoom(room: PlanRoom): PlanError[] {
   if (selfIntersecting(pts)) err('room/self-intersecting');
   else if (signedArea(pts) <= 0) err('room/area');
   if (!(room.height > 0)) err('room/height');
-  for (const w of room.walls) if (!(w.thickness > 0)) err('wall/thickness', w.id);
+  if (room.floor != null && !Number.isFinite(room.floor)) err('room/floor');
+  for (const w of room.walls) {
+    if (!(w.thickness > 0)) err('wall/thickness', w.id);
+    if (w.height != null && !(w.height > 0 && w.height <= room.height)) err('wall/height', w.id);
+  }
   for (const o of room.obstacles)
     if (o.outline.length < 3 || !o.outline.every((p) => pointInPolygon(p, pts))) err('obstacle/outside', o.id);
 
