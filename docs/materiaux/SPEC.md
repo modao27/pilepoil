@@ -72,3 +72,31 @@ interface, achats. Fini quand `npm run check`, la parité carrelage et les e2e s
 - Prix saisis dans le projet (comme les cloisons), pas de prix préremplis dans la bibliothèque.
 - La plaque de plâtre reste hors de cette bibliothèque (module cloisons).
 - Reste à faire : relever les formats exacts, poids et consommations sur fiches fabricants avant implémentation.
+
+## Relevé fabricants (2026-10-17, indicatif)
+Poids et consommations relevés par recherche web ; les cases « — » sont sans source trouvée (valeur à saisir par
+l'utilisateur, pas de valeur inventée). Tout est affiché « à titre indicatif (estimation) ».
+
+| Modèle | Dimensions (mm) | Poids | Liant | Source |
+|---|---|---|---|---|
+| Parpaing creux B40 20×20×50 | 500×200×200 (fabrication 491×195×190) | 17 kg | mortier 35–40 kg/m² | [Samse](https://medias.groupe-samse.fr/Fiche_technique/Fiche_technique_19568.pdf) |
+| Parpaing creux B40 15×20×50 | 500×200×150 | 13,8 kg | idem | [Samse](https://medias.groupe-samse.fr/Fiche_technique/Fiche_technique_1339.pdf) (ligne à recouper) |
+| Parpaing creux B40 10×20×50 | 500×200×100 | 9,9 kg | idem | idem |
+| Parpaing creux B40 7,5×20×50 | 500×200×75 | 8,3 kg | idem | idem |
+| Parpaing plein | — | — | — | non trouvé |
+| Béton cellulaire 600×250, 50/70/100 mm | 600×250×e | — | colle joint 3 mm : 1,3 / 1,8 / 2,6 kg/m² | [Coeck](https://shop.adammateriaux.be/storage/products/6091/doc/fiche-technique-colle-pour-bloc-105-coeck-fr.pdf) |
+| Béton cellulaire 150–250 mm | 600×250×e | — | mortier-colle 4,5–6 (15 cm) à 8–10 (25 cm) kg/m² | [Samse](https://private.samse.fr/catalogueWs/Fiche_technique/Fiche_technique_357991.pdf) |
+| Carreau de plâtre plein 70 mm | 660×500×70 | 23,15 kg (≈ 70 kg/m²) | Placol 1,1–2,5 kg/m² | [Bricomarché/Placo](https://www.bricomarche.com/p/carreau-de-platre-plein-hydrofuge-joker-66x50cm-epaisseur-70mm/3496252010183) |
+| Carreau de plâtre plein 100 mm | 660×500×100 | ≈ 33 kg (≈ 100 kg/m²) | idem | [Placo](https://www.placo.fr/documents/fiche-produit/ficheproduit-placol-1-heure-25kg.pdf) |
+| Carreau de plâtre 50 mm | 660×500×50 | — | ≥ 1,1 kg/m² | non trouvé |
+| Brique alvéolaire 20 cm (Calibric Th Max) | 500 × 200 × h variable | 7,9–22,5 kg | — | [Batiproduits](https://www.batiproduits.com/amp/fiche/produits/brique-alveolaire-de-11-a-31-4-cm-de-hauteur-p69321718.html) |
+| Monomur 37,5 | 250 × 164–249 × 375 | 13,4–20,3 kg | — | [Batiproduits](https://www.batiproduits.com/amp/fiche/produits/brique-isolante-monomur-de-37-5-cm-de-hauteur-p69321428.html) |
+| Brique de verre 190×190×80 | 190×190×80 | ≈ 2,4 kg (léger) à 4,5 kg (plein) | mortier armé | [Dakota](https://www.dakota.eu/hubfs/site-content/FR__0-st-111_5ea14b2fad4ce%20-%202df6501cb-1.pdf) |
+| Brique de verre 240×240×80 | 240×240×80 | ≈ 2,4 kg (même fiche, à recouper) | idem | idem |
+
+**Corrections à la liste** : les carreaux de plâtre sont en 660×500 (pas 666×500) ; l'épaisseur de 50 mm n'a aucune
+source ; le format 300×300×100 du verre n'est pas confirmé. Fabricants Seves / Vitrablok : pas de joint en mm
+publié dans les fiches trouvées (l'intervalle 10–30 mm vient de la fiche La Roche).
+
+**Non couvert** : brique de cloison 5 cm et plâtrière 7 cm, parpaing plein, poids du béton cellulaire en 75/100/150/
+200 mm. Ces fiches sont à compléter à la main dans la bibliothèque, ou par une seconde recherche si tu veux.
