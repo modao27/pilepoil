@@ -84,11 +84,11 @@ test('projet mixte : parquet, carrelage, peinture et cloison se lisent, achats e
   // achats du projet : les quatre outils dans une seule liste
   await page.goto(`/#/p/${id}/achats`);
   await expect(page.getByRole('heading', { name: /^Achats — / })).toBeVisible();
-  await expect(page.getByText(/^Stratifié 1285 × 192/).first()).toBeVisible();
-  await expect(page.getByText('Plinthes', { exact: true })).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Stratifié 1285 × 192/).first()).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Plinthes$/)).toBeVisible();
   await expect(page.getByText(/ — pot de /).first()).toBeVisible();
-  await expect(page.getByText(/^Plaque de plâtre standard/)).toBeVisible();
-  await expect(page.getByText(/^Mortier-colle/).first()).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Plaque de plâtre standard/)).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Mortier-colle/).first()).toBeVisible();
   await expect(page.getByText(/1 sac de 25 kg/)).toBeVisible();
   await check(page);
   await shot(page, info, 'F1-achats-mixte');

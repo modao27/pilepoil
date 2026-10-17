@@ -14,7 +14,7 @@ import { wallHeightCuts } from '../../src/modules/carrelage/state/poses';
 import { shoppingLabel } from '../../src/modules/carrelage/ui/lib/labels';
 import type { Tile } from '../../src/modules/carrelage/state/model';
 import type { Project } from '../../src/state/model';
-import { consolidate, parsePrice, toCsv } from '../../src/ui/lib/shopping';
+import { consolidate, parsePrice, quantityText, toCsv } from '../../src/ui/lib/shopping';
 import { floorOnly, rect, tiledProject, tilePose, view, wallOnly, withOpening } from './planFixtures';
 
 /** Le module tel que le registre le donne une fois sa logique chargée. */
@@ -180,5 +180,14 @@ describe('exports et saisie', () => {
       'Consommables;Carrelage;Mortier-colle C2;;2;;€/sac;',
       'Total estimé;;;1 article(s) sans prix;;;;140,4',
     ]);
+  });
+});
+
+describe('quantité d’une ligne', () => {
+  it('donne le nombre et l’unité d’achat, au pluriel dès 2', () => {
+    expect(quantityText({ quantity: 1, unit: 'bar' })).toBe('1 barre');
+    expect(quantityText({ quantity: 3, unit: 'bar' })).toBe('3 barres');
+    expect(quantityText({ quantity: 12.5, unit: 'm2' })).toBe('12,5 m²');
+    expect(quantityText({ quantity: 2, unit: 'roll' })).toBe('2 rouleaux');
   });
 });

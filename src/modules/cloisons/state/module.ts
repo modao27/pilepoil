@@ -1,4 +1,5 @@
 /** Fonctions du contrat de module (docs/BOITE.md §2) propres aux cloisons, hors écrans. */
+import type { BarsResult } from '../../../core/cutting/bars';
 import type { ShoppingLine } from '../../../core/shopping/types';
 import type { ModuleSummary } from '../../types';
 import type { CloisonsResult, ConsumableLine, PlateType } from '../core/types';
@@ -38,6 +39,10 @@ const CONSUMABLE: Record<
   woodInsert: { label: 'Tasseau de renfort', unit: 'm', detail: (c) => `${fr(c.need)} m` },
 };
 
+/** « 8 m à couper » : longueur utile des morceaux d'un lot de barres. */
+const barsDetail = (bars: BarsResult['bars']) =>
+  `${fr(bars.reduce((t, b) => t + b.cuts.reduce((u, c) => u + c.length, 0), 0) / 1000, 2)} m à couper`;
+
 /**
  * Lignes d'achat (docs/cloisons/SPEC.md §5) : rails, montants, plaques et isolant dans le groupe `structure`, le reste
  * en consommables. Prix saisis dans le projet seulement (pas de bibliothèque de plaques).
@@ -55,6 +60,7 @@ export function shopping(r: CloisonsResult, d: CloisonsData): ShoppingLine[] {
       label: `Rail R${width} — barre de ${fr(d.settings.railBar / 1000, 2)} m`,
       quantity: bars.bars.length,
       unit: 'bar',
+      detail: barsDetail(bars.bars),
     });
   for (const [key, bars] of Object.entries(r.totals.studs)) {
     const [width, length] = key.split(':');
@@ -64,6 +70,7 @@ export function shopping(r: CloisonsResult, d: CloisonsData): ShoppingLine[] {
       label: `Montant M${width} — barre de ${fr(Number(length) / 1000, 2)} m`,
       quantity: bars.bars.length,
       unit: 'bar',
+      detail: barsDetail(bars.bars),
     });
   }
   for (const lot of r.totals.plates)

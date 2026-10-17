@@ -74,10 +74,10 @@ test('cloisons : une cloison du plan se chiffre, ses lignes arrivent dans les ac
   await page.getByRole('link', { name: 'Liste d’achat' }).click();
   await expect(page.getByRole('heading', { name: /^Achats — / })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Ossature et plaques' })).toBeVisible();
-  await expect(page.getByText(/^Rail R48/)).toBeVisible();
-  await expect(page.getByText(/^Montant M48/)).toBeVisible();
-  await expect(page.getByText(/^Plaque de plâtre standard/)).toBeVisible();
-  await expect(page.getByText(/^Plaque de plâtre hydrofuge/)).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Rail R48/)).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Montant M48/)).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Plaque de plâtre standard/)).toBeVisible();
+  await expect(page.getByText(/^[\d,]+ \S+ · Plaque de plâtre hydrofuge/)).toBeVisible();
   await expect(page.getByText('Vis à plaque 25 mm').first()).toBeVisible();
   await check(page);
   await shot(page, info, '75-achats-cloisons');

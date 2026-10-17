@@ -62,6 +62,30 @@ export const PRICE_LABEL: Record<ShoppingLine['unit'], string> = {
   pot: '€/pot',
 };
 
+/** Unité d'achat au singulier et au pluriel (« 3 barres »). */
+const UNIT_NAME: Record<ShoppingLine['unit'], [string, string]> = {
+  pack: ['paquet', 'paquets'],
+  box: ['carton', 'cartons'],
+  roll: ['rouleau', 'rouleaux'],
+  bar: ['barre', 'barres'],
+  bag: ['sac', 'sacs'],
+  sachet: ['sachet', 'sachets'],
+  tube: ['tube', 'tubes'],
+  cartridge: ['cartouche', 'cartouches'],
+  litre: ['L', 'L'],
+  piece: ['pièce', 'pièces'],
+  m2: ['m²', 'm²'],
+  m: ['m', 'm'],
+  pot: ['pot', 'pots'],
+};
+
+/** Quantité à acheter avec son unité : « 3 barres », « 12,5 m² ». */
+export function quantityText(l: Pick<ShoppingLine, 'quantity' | 'unit'>): string {
+  const [one, many] = UNIT_NAME[l.unit];
+  const n = l.quantity.toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+  return `${n} ${l.quantity > 1 ? many : one}`;
+}
+
 /** Prix saisi (« 12,5 », « 12.50 € ») ; null si vide ou invalide (revenir au prix de la bibliothèque). */
 export function parsePrice(text: string): number | null {
   const v = Number(text.replace(/[\s€]/g, '').replace(',', '.'));

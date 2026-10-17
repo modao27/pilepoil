@@ -11,7 +11,7 @@
   import { fileSlug, saveBlob } from '../lib/files';
   import { euros } from '../lib/format';
   import { projectOutputs } from '../lib/moduleOutputs';
-  import { consolidate, GROUP_LABEL, lineCost, parsePrice, PRICE_LABEL, toCsv } from '../lib/shopping';
+  import { consolidate, GROUP_LABEL, lineCost, parsePrice, PRICE_LABEL, quantityText, toCsv } from '../lib/shopping';
   import { toast } from '../lib/toasts.svelte';
 
   let { id }: { id: string } = $props();
@@ -95,7 +95,10 @@
               <li class="line">
                 <div class="what">
                   <span class="label"
-                    >{#if l.color}<span class="dot" style="background: {l.color}"></span>{/if}{l.label}</span
+                    >{#if l.color}<span class="dot" style="background: {l.color}"></span>{/if}<span class="qty num"
+                      >{quantityText(l)}</span
+                    >
+                    · {l.label}</span
                   >
                   <span class="muted">{several ? label(l.module) + ' · ' : ''}{l.detail ?? ''}</span>
                 </div>
@@ -182,6 +185,9 @@
   }
   .label {
     font-weight: 600;
+  }
+  .qty {
+    white-space: nowrap;
   }
   .dot {
     display: inline-block;
