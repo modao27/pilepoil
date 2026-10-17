@@ -48,6 +48,8 @@
 <style>
   .seg {
     display: inline-flex;
+    /* texte agrandi ou écran étroit : les choix passent à la ligne au lieu de défiler */
+    flex-wrap: wrap;
     padding: 0;
     gap: 0;
     /* bord en ombre intérieure : les boutons gardent 44 px pleins */
@@ -56,7 +58,6 @@
     background: var(--sheet);
     width: fit-content;
     max-width: 100%;
-    overflow-x: auto;
   }
   button {
     display: inline-flex;
