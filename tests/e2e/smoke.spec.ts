@@ -6,6 +6,7 @@ test('accueil vide : invitation à créer un projet', async ({ page }, info) => 
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Aucun projet pour l’instant' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Nouveau projet' })).toBeVisible();
+  await expect(page.getByText('Importez vos données')).toHaveCount(0);
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);
   await shot(page, info, '01-accueil-vide');
@@ -16,4 +17,12 @@ test('page introuvable', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Cette page n’existe pas' })).toBeVisible();
   await page.getByRole('link', { name: 'Voir mes projets' }).click();
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
+});
+
+test('nouveau projet : annuler ramène à l’accueil', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Nouveau projet' }).click();
+  await page.getByRole('dialog', { name: 'Nouveau projet' }).getByRole('button', { name: 'Annuler' }).click();
+  await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
+  await expect(page).toHaveURL(/#\/$/);
 });

@@ -20,10 +20,7 @@
       text="Préparez votre premier chantier : un mur, un sol ou une pièce entière. Les quantités et les coupes se calculent toutes seules."
     >
       {#snippet action()}
-        <div class="first">
-          <Button variant="primary" icon="plus" href="#/new">Nouveau projet</Button>
-          <p class="muted">Vous utilisiez l’ancienne version ? <a href="#/settings">Importez vos données</a>.</p>
-        </div>
+        <Button variant="primary" icon="plus" href="#/new">Nouveau projet</Button>
       {/snippet}
     </EmptyState>
   {:else}
@@ -39,14 +36,6 @@
 </Screen>
 
 <style>
-  .first {
-    display: grid;
-    gap: var(--space-4);
-    justify-items: center;
-  }
-  .first p {
-    font-size: var(--fs-sm);
-  }
   .top {
     display: flex;
     margin-bottom: var(--space-4);

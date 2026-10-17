@@ -6,6 +6,7 @@
   import Segmented from '../components/Segmented.svelte';
   import Select from '../components/Select.svelte';
   import TextField from '../components/TextField.svelte';
+  import { go } from '../lib/router.svelte';
   import type { PlanEditorState } from './planState.svelte';
 
   let { st, open = $bindable(false) }: { st: PlanEditorState; open: boolean } = $props();
@@ -46,6 +47,12 @@
         (kind !== 'l' || (cutLength < length && cutWidth < width)) &&
         (kind !== 'u' || (2 * arm < length && depth < width))),
   );
+
+  /** Projet neuf sans pièce : rien n'est créé, on revient à l'accueil. */
+  function cancel() {
+    open = false;
+    if (first) go({ name: 'home' });
+  }
 
   function create() {
     if (!valid) return;
@@ -99,7 +106,7 @@
     {/if}
   </div>
   {#snippet actions()}
-    <Button variant="ghost" onclick={() => (open = false)}>Annuler</Button>
+    <Button variant="ghost" onclick={cancel}>Annuler</Button>
     <Button variant="primary" disabled={!valid} onclick={create}
       >{kind === 'draw' ? 'Commencer le dessin' : 'Ajouter'}</Button
     >
