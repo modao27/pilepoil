@@ -247,3 +247,25 @@ test('plan : renommer le projet avec un nom vide est refusé et expliqué', asyn
   await expect(rename.getByText('Le nom ne peut pas être vide.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Maison/ })).toBeVisible();
 });
+
+test('plan : raccourcis du calepinage (Ctrl+Z, Ctrl+Y, + − 0)', async ({ page }) => {
+  await createProject(page, { name: 'Séjour', size: [400, 300] });
+  const plan = page.getByRole('application', { name: /1 pièce/ });
+  const width = async () => (await page.locator('[data-k="room"]').first().boundingBox())!.width;
+
+  // zoom au clavier
+  await plan.focus();
+  const w0 = await width();
+  await page.keyboard.press('+');
+  expect(await width()).toBeGreaterThan(w0);
+  await page.keyboard.press('0');
+  expect(await width()).toBeCloseTo(w0, 0);
+
+  // annuler / rétablir : un obstacle ajouté
+  await panel(page).getByRole('button', { name: 'Ajouter un obstacle' }).click();
+  await expect(page.locator('.obstacle')).toHaveCount(1);
+  await page.keyboard.press('Control+z');
+  await expect(page.locator('.obstacle')).toHaveCount(0);
+  await page.keyboard.press('Control+y');
+  await expect(page.locator('.obstacle')).toHaveCount(1);
+});

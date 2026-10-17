@@ -88,8 +88,20 @@
     mq.addEventListener('change', upd);
     const flush = () => void st.flush();
     window.addEventListener('pagehide', flush);
+    // mêmes raccourcis que le calepinage : Ctrl+Z annule, Ctrl+Y ou Ctrl+Maj+Z rétablit
+    const keys = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === 'z' && !e.shiftKey) st.undo();
+      else if (k === 'y' || (k === 'z' && e.shiftKey)) st.redo();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', keys);
     if (!st.plan.rooms.length) adding = true;
     return () => {
+      window.removeEventListener('keydown', keys);
       mq.removeEventListener('change', upd);
       window.removeEventListener('pagehide', flush);
       flush();

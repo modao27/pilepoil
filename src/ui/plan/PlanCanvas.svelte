@@ -292,8 +292,16 @@
     return snapPartitionPoint(w, start, st.plan, tol());
   }
 
+  function zoomBy(k: number) {
+    userView = zoomAt(view, k, size.w / 2, size.h / 2, base.sc);
+  }
+
   function onkeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === '+' || e.key === '=') zoomBy(1.25);
+    else if (e.key === '-') zoomBy(0.8);
+    else if (e.key === '0') fit();
+    else if (e.key === 'Escape') {
       if (st.mode === 'partition' || st.mode === 'demolish') st.cancelTool();
       else if (st.mode === 'draw') st.cancelDraw();
       else if (st.mode === 'link') st.cancelLink();
