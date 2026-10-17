@@ -16,16 +16,42 @@ export interface ModuleOutput {
 /** Outils activés du projet, dans l'ordre du registre. */
 export const activeModules = (p: Project): ToolModule[] => modules.filter((m) => Object.hasOwn(p.modules, m.id));
 
+/** Sorties déjà calculées, par état du projet (version enregistrée) et des bibliothèques. */
+const cache = new Map<string, ModuleOutput>();
+const CACHE_MAX = 200;
+
 export async function moduleOutput(p: Project, m: ToolModule): Promise<ModuleOutput> {
+  const key = `${p.id}|${p.updatedAt}|${app.libraryVersion}|${m.id}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
   const r = m.toSpec(p, app.libraries, projectContext(p, app.libraries));
   if ('errors' in r) return { module: m, summary: null, lines: [] };
   const result = await app.queued(m.id, r.spec);
-  return {
+  const out: ModuleOutput = {
     module: m,
     summary: m.summary(result),
     lines: m.shopping(result, p.modules[m.id]!.data, app.libraries, p),
   };
+  if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value!);
+  cache.set(key, out);
+  return out;
+}
+
+/**
+ * Comme `moduleOutput`, mais quand le navigateur est libre : les chiffres des cartes et de la vue globale ne
+ * retardent pas le premier affichage.
+ */
+export function deferredOutput(p: Project, m: ToolModule): Promise<ModuleOutput> {
+  return new Promise((resolve, reject) => {
+    const go = () => moduleOutput(p, m).then(resolve, reject);
+    if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 1500 });
+    else setTimeout(go, 50);
+  });
 }
 
 export const projectOutputs = (p: Project): Promise<ModuleOutput[]> =>
   Promise.all(activeModules(p).map((m) => moduleOutput(p, m)));
+
+/** Version différée de `projectOutputs` (accueil). */
+export const deferredProjectOutputs = (p: Project): Promise<ModuleOutput[]> =>
+  Promise.all(activeModules(p).map((m) => deferredOutput(p, m)));

@@ -3,7 +3,7 @@
   import type { Project } from '../../state/model';
   import { app } from '../lib/app.svelte';
   import { dateShort, euros } from '../lib/format';
-  import { activeModules, projectOutputs, type ModuleOutput } from '../lib/moduleOutputs';
+  import { activeModules, deferredProjectOutputs, type ModuleOutput } from '../lib/moduleOutputs';
   import { consolidate } from '../lib/shopping';
   import { go } from '../lib/router.svelte';
   import PlanThumb from '../plan/PlanThumb.svelte';
@@ -23,7 +23,7 @@
     const p = project;
     void app.libraries;
     let live = true;
-    void projectOutputs(p).then((o) => live && (outputs = o));
+    void deferredProjectOutputs(p).then((o) => live && (outputs = o));
     return () => (live = false);
   });
 

@@ -9,17 +9,33 @@
   import type { ModuleSummary } from '../../modules/types';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
+  import { onMount } from 'svelte';
+  import Icon from '../icons/Icon.svelte';
   import ProjectModel from '../components/ProjectModel.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
   import { euros } from '../lib/format';
-  import { moduleOutput } from '../lib/moduleOutputs';
+  import { deferredOutput } from '../lib/moduleOutputs';
   import { consolidate } from '../lib/shopping';
   import { moduleById } from '../../modules/registry';
   import { poseColor } from '../room/colors';
   import PlanMap from '../room/PlanMap.svelte';
 
   let { id }: { id: string } = $props();
+
+  /** L'aperçu 3D (three.js, lourd) ne se monte que quand le navigateur est libre : l'écran s'affiche avant. */
+  let previewReady = $state(false);
+  onMount(() => {
+    // téléphone : pas d'aperçu animé (three.js bloque plus d'une seconde) ; l'icône mène à la vue 3D
+    if (!matchMedia('(min-width: 720px)').matches) return;
+    const go = () => (previewReady = true);
+    if ('requestIdleCallback' in window) {
+      const h = requestIdleCallback(go, { timeout: 2500 });
+      return () => cancelIdleCallback(h);
+    }
+    const t = setTimeout(go, 800);
+    return () => clearTimeout(t);
+  });
 
   const project = $derived(app.project(id));
   const active = $derived(project ? modules.filter((m) => Object.hasOwn(project.modules, m.id)) : []);
@@ -36,7 +52,7 @@
     if (!p) return;
     let live = true;
     for (const m of active)
-      void moduleOutput(p, m).then(
+      void deferredOutput(p, m).then(
         (o) => {
           if (!live) return;
           summaries = { ...summaries, [m.id]: o.summary };
@@ -94,7 +110,9 @@
           <p class="muted">Touchez une pièce pour choisir ses revêtements.</p>
           <a class="card model" href="#/p/{project.id}/3d">
             <span class="preview" aria-hidden="true"
-              ><ProjectModel {project} label="Aperçu 3D du projet" preview /></span
+              >{#if previewReady}<ProjectModel {project} label="Aperçu 3D du projet" preview />{:else}<span class="ph"
+                  ><Icon name="view3d" size={40} /></span
+                >{/if}</span
             >
             <span class="text">
               <span class="title">Vue 3D</span>
@@ -275,6 +293,14 @@
     display: grid;
     gap: var(--space-2);
     margin-top: var(--space-3);
+  }
+  .ph {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    background: var(--paper);
   }
   .preview {
     position: relative;

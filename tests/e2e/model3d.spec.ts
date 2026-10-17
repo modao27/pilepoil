@@ -59,9 +59,11 @@ test('vue 3D : aperçu, murs pleins, bas et coupés, pièce touchée puis ouvert
   // écran Projet : aperçu 3D (image fixe) qui mène à la vue
   await page.goto(`/#/p/${id}`);
   const card = page.getByRole('link', { name: /^Vue 3D/ });
-  await expect(card.locator('[data-draw-calls]')).not.toHaveAttribute('data-draw-calls', '0', {
-    timeout: 15_000,
-  });
+  // l'aperçu animé n'est monté que sur grand écran (sur téléphone, une icône mène à la vue 3D)
+  if (info.project.name === 'desktop')
+    await expect(card.locator('[data-draw-calls]')).not.toHaveAttribute('data-draw-calls', '0', {
+      timeout: 15_000,
+    });
   await check(page);
   await shot(page, info, 'V3D-projet-apercu');
 
@@ -104,9 +106,11 @@ test('vue 3D : aperçu, murs pleins, bas et coupés, pièce touchée puis ouvert
   // mode sombre : mêmes écrans, mêmes contrastes
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto(`/#/p/${id}`);
-  await expect(card.locator('[data-draw-calls]')).not.toHaveAttribute('data-draw-calls', '0', {
-    timeout: 15_000,
-  });
+  // l'aperçu animé n'est monté que sur grand écran (sur téléphone, une icône mène à la vue 3D)
+  if (info.project.name === 'desktop')
+    await expect(card.locator('[data-draw-calls]')).not.toHaveAttribute('data-draw-calls', '0', {
+      timeout: 15_000,
+    });
   await expectAccessible(page);
   await shot(page, info, 'V3D-projet-apercu-sombre');
   await page.goto(`/#/p/${id}/3d`);

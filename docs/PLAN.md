@@ -404,6 +404,20 @@ Branche `lot-f-lire-pose`. Corrige UX-01, UX-02, UX-05, PAR-03, TXT-01, CAR-04, 
 - Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur.
 - Fait (2026-10-17).
 
+## Lot H — Accessibilité et chargement (audit UI/UX)
+
+Branche `lot-h-accessibilite`. Corrige A11Y-01, A11Y-02, A11Y-03, UI-04, PERF-01, PERF-02 (`docs/audit/PROPOSITIONS.md`).
+
+- Titre de page par écran (« Achats — Maison · PilePoil »), titre de niveau 1 dans les éditeurs de calepinage.
+- Texte à 200 % : les choix des `Segmented` passent à la ligne ; zones de toucher de 44 px sur les murs fins de l'écran
+  Pièce et les liens des résultats (`tests/e2e/a11y.spec.ts`).
+- Chargement : chiffres des cartes et de la vue globale calculés au repos du navigateur et gardés en cache par état du
+  projet ; aperçu 3D de l'écran Projet seulement sur grand écran (une icône sur téléphone) ; hauteur réservée dans les
+  résultats. Lighthouse mobile : toutes les notes ≥ 90 (projet 85 → 100, résultats du projet 84 → 90).
+- PERF-02 : `html2canvas` et `purify` n'étaient déjà plus précachés (190 fichiers, 2,1 Mo) ; rien d'autre à changer.
+- Fini quand : `npm run check`, e2e et `npm run lighthouse` verts.
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

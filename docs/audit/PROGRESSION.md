@@ -14,6 +14,7 @@ propositions. Reste : attendre les choix de l'utilisateur sur `PROPOSITIONS.md` 
 - Lot E (branche `lot-e-nombres`, 2026-10-17) : PLAN-04, UI-01, CAR-06, PIE-03 corrigés.
 - Lot D (branche `lot-d-donnees`, 2026-10-17) : ROB-01, ROB-02, ROB-04 corrigés ; PLAN-07 en partie (enregistrement à la mise en arrière-plan ; historique non conservé, décision de l'utilisateur).
 - Lot F (branche `lot-f-lire-pose`, 2026-10-17) : UX-01, UX-02, UX-05, PAR-03, TXT-01, CAR-04, CAR-05, BIB-01 corrigés (BIB-01 : lien vers le projet, pas de remplacement).
+- Lot H (branche `lot-h-accessibilite`, 2026-10-17) : A11Y-01, A11Y-02, A11Y-03, UI-04, PERF-01, PERF-02 corrigés.
 
 ## Étapes
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)
