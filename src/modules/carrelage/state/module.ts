@@ -121,9 +121,19 @@ export function shopping(
   project: Project,
 ): ShoppingLine[] {
   const tiles = new Map(((libraries.tiles ?? []) as readonly Tile[]).map((t) => [t.id, t]));
-  const priced = { prices: data.prices, surfaces: carrelageView(project)?.surfaces ?? [] };
-  return result.shopping.map((it) => {
-    const text = shoppingLabel(it, result.plan.groups);
+  const surfaces = carrelageView(project)?.surfaces ?? [];
+  const priced = { prices: data.prices, surfaces };
+  const groups = result.plan.groups;
+
+  /** Carreau de la bibliothèque d'un article carreau : la vannerie pose des tailles qu'on n'achète pas à part. */
+  const tileOf = (it: ShoppingItem) => {
+    const ref = it.kind === 'tile' ? groups[it.group]?.zones[0] : undefined;
+    return ref ? surfaces[ref.surface]?.bands[ref.zone]?.tileId : undefined;
+  };
+  const items = mergeTileItems(result.shopping, groups, tileOf);
+
+  return items.map((it) => {
+    const text = shoppingLabel(it, groups);
     const own = data.prices[it.key];
     const price = itemPrice(it, priced, tiles, result);
     const line: ShoppingLine = {
@@ -140,6 +150,40 @@ export function shopping(
     if (text.dot) line.color = text.dot;
     return line;
   });
+}
+
+type TileItem = Extract<ShoppingItem, { kind: 'tile' }>;
+
+/**
+ * Regroupe les articles carreaux d'un même carreau de la bibliothèque (et de même nature) en un seul : les m² à
+ * commander s'additionnent et les cartons sont recalculés une fois sur le total. L'article gardé est celui qui
+ * demande le plus de pièces (sa clé porte le prix, son nom la ligne). Le moteur n'est pas modifié (parité).
+ */
+export function mergeTileItems(
+  items: ShoppingItem[],
+  groups: ProjectResult['plan']['groups'],
+  tileOf: (it: ShoppingItem) => string | undefined,
+): ShoppingItem[] {
+  const buckets = new Map<string, TileItem[]>();
+  for (const it of items) {
+    const tile = tileOf(it);
+    if (it.kind !== 'tile' || !tile) continue;
+    const k = tile + '|' + groups[it.group]?.kind;
+    buckets.set(k, [...(buckets.get(k) ?? []), it]);
+  }
+  const drop = new Set<ShoppingItem>();
+  const merged = new Map<ShoppingItem, TileItem>();
+  for (const members of buckets.values()) {
+    if (members.length < 2) continue;
+    const main = members.reduce((a, b) => (b.order > a.order ? b : a));
+    const m2PerBox = groups[main.group]?.m2PerBox ?? 0;
+    const m2 = members.reduce((t, x) => t + x.m2, 0);
+    const boxes = m2PerBox > 0 ? Math.ceil(m2 / m2PerBox - 1e-9) : 0;
+    const buyM2 = boxes ? boxes * m2PerBox : m2;
+    merged.set(main, { ...main, m2, boxes, buyM2, mult: buyM2, order: members.reduce((t, x) => t + x.order, 0) });
+    for (const x of members) if (x !== main) drop.add(x);
+  }
+  return items.filter((it) => !drop.has(it)).map((it) => merged.get(it) ?? it);
 }
 
 /**

@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { module as carrelageManifest } from '../../src/modules/carrelage';
 import { logic as carrelageLogic } from '../../src/modules/carrelage/logic';
-import { computeProject, type ProjectResult } from '../../src/modules/carrelage/core';
+import { computeProject, type ProjectResult, type ShoppingItem } from '../../src/modules/carrelage/core';
 import { carrelageData, withCarrelage, type CarrelageData } from '../../src/modules/carrelage/state/data';
 import { createBand, createPoseSettings, createTile } from '../../src/modules/carrelage/state/factories';
 import { itemPrice, projectCost } from '../../src/modules/carrelage/state/pricing';
@@ -14,6 +14,7 @@ import { wallHeightCuts } from '../../src/modules/carrelage/state/poses';
 import { shoppingLabel } from '../../src/modules/carrelage/ui/lib/labels';
 import type { Tile } from '../../src/modules/carrelage/state/model';
 import type { Project } from '../../src/state/model';
+import { mergeTileItems } from '../../src/modules/carrelage/state/module';
 import { consolidate, parsePrice, quantityText, toCsv } from '../../src/ui/lib/shopping';
 import { floorOnly, rect, tiledProject, tilePose, view, wallOnly, withOpening } from './planFixtures';
 
@@ -189,5 +190,43 @@ describe('quantité d’une ligne', () => {
     expect(quantityText({ quantity: 3, unit: 'bar' })).toBe('3 barres');
     expect(quantityText({ quantity: 12.5, unit: 'm2' })).toBe('12,5 m²');
     expect(quantityText({ quantity: 2, unit: 'roll' })).toBe('2 rouleaux');
+  });
+});
+
+describe('regroupement des carreaux d’un même produit (vannerie)', () => {
+  const group = (kind: 'main' | 'cab') => ({ kind, m2PerBox: 1.2 }) as ProjectResult['plan']['groups'][number];
+  const tile = (g: number, order: number, m2: number): ShoppingItem => ({
+    kind: 'tile',
+    key: 'tile|' + g,
+    group: g,
+    boxes: Math.ceil(m2 / 1.2),
+    buyM2: Math.ceil(m2 / 1.2) * 1.2,
+    order,
+    m2,
+    unit: 'm2',
+    mult: Math.ceil(m2 / 1.2) * 1.2,
+  });
+
+  it('additionne les m² puis arrondit une fois au carton', () => {
+    const items = [tile(0, 100, 2), tile(1, 40, 1)];
+    const out = mergeTileItems(items, [group('main'), group('main')], () => 'a');
+    expect(out).toHaveLength(1);
+    const t = out[0]!;
+    // 3 m² → ⌈3 / 1,2⌉ = 3 cartons
+    expect(t.kind === 'tile' && t.boxes).toBe(3);
+    expect(t.kind === 'tile' && t.order).toBe(140);
+    expect(t.key).toBe('tile|0');
+  });
+
+  it('un seul arrondi : 1,0 + 1,0 m² tiennent dans 2 cartons, pas plus', () => {
+    const out = mergeTileItems([tile(0, 10, 1.1), tile(1, 10, 1.1)], [group('main'), group('main')], () => 'a');
+    expect(out[0]!.kind === 'tile' && out[0]!.boxes).toBe(2);
+  });
+
+  it('ne mélange pas deux carreaux, ni un carreau avec ses cabochons', () => {
+    const items = [tile(0, 10, 1), tile(1, 10, 1), tile(2, 10, 1)];
+    const groups = [group('main'), group('main'), group('cab')];
+    const out = mergeTileItems(items, groups, (it) => (it.kind === 'tile' && it.group === 1 ? 'b' : 'a'));
+    expect(out).toHaveLength(3);
   });
 });
