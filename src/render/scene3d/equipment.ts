@@ -6,6 +6,7 @@
  */
 import { EQUIPMENT } from '../../core/plan/equipment';
 import type { Point } from '../../core/geometry/types';
+import { roomFloor } from '../../core/plan/levels';
 import type { Id, Obstacle, Plan, PlanRoom } from '../../core/plan/types';
 import { emptyMesh, linear } from './envelope';
 import type { MeshData, Vec3 } from './types';
@@ -85,7 +86,11 @@ function frameOf(room: PlanRoom, box: { x0: number; x1: number; y0: number; y1: 
   const ex: Point = back === '-y' ? [1, 0] : back === '+y' ? [-1, 0] : back === '-x' ? [0, -1] : [0, 1];
   const ez: Point = back === '-y' ? [0, 1] : back === '+y' ? [0, -1] : back === '-x' ? [1, 0] : [-1, 0];
   return {
-    at: (x, y, z) => [m(ox + origin[0] + ex[0] * x + ez[0] * z), m(y), m(oy + origin[1] + ex[1] * x + ez[1] * z)],
+    at: (x, y, z) => [
+      m(ox + origin[0] + ex[0] * x + ez[0] * z),
+      m(y + roomFloor(room)),
+      m(oy + origin[1] + ex[1] * x + ez[1] * z),
+    ],
     dir: (x, y, z) => [ex[0] * x + ez[0] * z, y, ex[1] * x + ez[1] * z],
     width,
     depth,

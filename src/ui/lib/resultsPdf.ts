@@ -5,6 +5,7 @@
  */
 import { poseWhere } from '../../core/coverage';
 import { poseArea, type ResultScope } from '../../core/coverage/scope';
+import { passageStep, roomFloor } from '../../core/plan/levels';
 import type { Plan } from '../../core/plan/types';
 import { planBounds } from '../../core/plan/snap';
 import type { Libraries, ModuleResults, ResultExports, ToolModule } from '../../modules/types';
@@ -51,7 +52,7 @@ export function buildResultsPdf(input: ResultsPdfInput): Blob {
       const s: ResultScope = { kind: 'room', room: room.id };
       if (!reportRows(input, s).rows.length) continue;
       d.room(30);
-      d.text(room.name, 13, { bold: true, gap: 2 });
+      d.text(room.name + levelText(room), 13, { bold: true, gap: 2 });
       summary(d, input, s);
     }
   for (const e of input.entries) e.exports.pdf(d, { project, libraries: input.libraries, result: e.result, scope });
@@ -121,6 +122,12 @@ function summary(d: Doc, input: ResultsPdfInput, scope: ResultScope) {
   d.y += 3;
 }
 
+/** « — niveau −15 cm » quand le sol de la pièce n'est pas à 0, sinon rien. */
+function levelText(room: Plan['rooms'][number]): string {
+  const f = roomFloor(room);
+  return f === 0 ? '' : ` — niveau ${f > 0 ? '+' : '-'}${fr(Math.abs(f) / 10, 1)} cm`;
+}
+
 /** Plan d'ensemble : contour et nom de chaque pièce, à l'échelle de la largeur de la page. */
 function overview(d: Doc, plan: Plan) {
   const b = planBounds(plan);
@@ -142,10 +149,29 @@ function overview(d: Doc, plan: Plan) {
     const xs = pts.map((p) => p[0]),
       ys = pts.map((p) => p[1]);
     d.color(INK);
-    pdf.text(pdfText(r.name), (Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2, {
-      align: 'center',
-      baseline: 'middle',
-    });
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2,
+      cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    pdf.text(pdfText(r.name), cx, cy, { align: 'center', baseline: 'middle' });
+    // niveau de sol, sous le nom, quand il n'est pas à 0
+    if (roomFloor(r) !== 0) {
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(pdfText(levelText(r).replace(/^ — /, '')), cx, cy + 4, { align: 'center', baseline: 'middle' });
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+    }
   }
   d.y = oy + H * k + 8;
+  // marches aux passages entre deux niveaux
+  for (const p of plan.passages) {
+    const step = passageStep(plan, p);
+    if (!step) continue;
+    const from = plan.rooms.find((r) => r.id === p.a.room),
+      to = plan.rooms.find((r) => r.id === p.b.room);
+    d.text(
+      `Marche de ${fr(Math.abs(step) / 10, 1)} cm entre ${from?.name ?? '?'} et ${to?.name ?? '?'} (${step < 0 ? 'descendante' : 'montante'} vers ${to?.name ?? '?'}).`,
+      9,
+      { color: MUTED, gap: 1 },
+    );
+  }
 }

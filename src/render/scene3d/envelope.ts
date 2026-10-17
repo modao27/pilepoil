@@ -9,6 +9,7 @@ import { difference, offset } from '../../core/geometry/boolean';
 import { components } from '../../core/geometry/rings';
 import type { Point } from '../../core/geometry/types';
 import type { Id, Plan, PlanRoom } from '../../core/plan/types';
+import { roomFloor, wallHeight } from '../../core/plan/levels';
 import { outwardNormal, PASSAGE_TOLERANCE, wallBands, wallDirection, wallLength } from '../../core/plan/walls';
 import type { MeshData, SceneFrame, Vec3 } from './types';
 
@@ -78,7 +79,7 @@ export function wallHoles(room: PlanRoom, i: number): [number, number, number, n
       Math.max(1, o.offset),
       Math.min(len - 1, o.offset + o.width),
       Math.max(0, o.sill),
-      Math.min(room.height - 1, o.sill + o.height),
+      Math.min(wallHeight(room, w) - 1, o.sill + o.height),
     ])
     .filter(([x0, x1, y0, y1]) => x1 > x0 && y1 > y0);
 }
@@ -169,13 +170,14 @@ export function buildEnvelope(
   for (const room of plan.rooms.filter((r) => rooms.includes(r.id))) {
     const n = room.outline.length;
     if (n < 3) continue;
-    const h = room.height;
+    // niveau du sol de la pièce : tout ce qui la compose est décalé de `dy` (mm)
+    const dy = roomFloor(room);
     const bands = wallBands(room);
     shape(
       ground,
       room.outline.map((p) => abs(room, p)),
       [],
-      (p) => [m(p[0]), GROUND_Y, m(p[1])],
+      (p) => [m(p[0]), GROUND_Y + m(dy), m(p[1])],
       [0, 1, 0],
       G,
     );
@@ -189,9 +191,10 @@ export function buildEnvelope(
       const out = outwardNormal(u);
       const inward: Vec3 = [-out[0], 0, -out[1]];
       /** Point du mur (x le long, y depuis le sol, `depth` mm dans l'épaisseur) → 3D. */
+      const h = wallHeight(room, wall);
       const W = (x: number, y: number, depth = 0): Vec3 => [
         m(a[0] + u[0] * x + out[0] * depth),
-        m(y),
+        m(y + dy),
         m(a[1] + u[1] * x + out[1] * depth),
       ];
       const spans = skip.get(wall.id) ?? [];
@@ -227,13 +230,14 @@ export function buildEnvelope(
       }
     }
     // dessus des murs, avec leur épaisseur
-    for (const c of wallBands(room)) {
+    wallBands(room).forEach((c, i) => {
+      const top = wallHeight(room, room.walls[i]!);
       const q = c.map((p): Vec3 => {
         const s = abs(room, p);
-        return [m(s[0]), m(h), m(s[1])];
+        return [m(s[0]), m(top + dy), m(s[1])];
       });
       quad(plaster, q, [0, 1, 0], P);
-    }
+    });
   }
   return [plaster, ground].filter((d) => d.positions.length);
 }
@@ -250,7 +254,7 @@ export function planFrame(plan: Plan, rooms: readonly Id[]): SceneFrame {
     bounds: {
       x: [m(Math.min(...xs)), m(Math.max(...xs))],
       z: [m(Math.min(...zs)), m(Math.max(...zs))],
-      h: m(Math.max(...rs.map((r) => r.height))),
+      h: m(Math.max(...rs.map((r) => r.height + roomFloor(r)))),
     },
   };
 }

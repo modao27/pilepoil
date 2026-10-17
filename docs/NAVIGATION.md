@@ -114,6 +114,7 @@ Capacités des moteurs :
 | 8 | Achats du projet | `#/p/:id/achats` | [Existe] |
 | 9 | Chantier (parquet) | — | Retiré le 2026-10-15 |
 | 10 | Bibliothèques, Réglages | `#/library`, `#/settings` | [Existe] |
+| 10 ter | Niveau du sol d'une pièce et marche d'un passage (panneaux du plan), hauteur propre d'un mur | `#/p/:id/plan` | [Existe] (T1) |
 | 10 bis | **Comment ça marche** : trois étapes, mots du métier, présentation du premier lancement | `#/aide` | [Existe] |
 
 L'assistant carrelage est retiré : ses formes types existent dans « Ajouter une pièce », ses étapes Carreau et

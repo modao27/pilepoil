@@ -9,7 +9,7 @@
   import HelpTip from '../components/HelpTip.svelte';
   import type { Point } from '../../core/geometry/types';
   import { snapPoint } from '../../core/plan/snap';
-  import { wallHeightOf } from '../../core/plan/levels';
+  import { roomFloor, wallHeightOf } from '../../core/plan/levels';
   import { wallIndex, wallLength } from '../../core/plan/walls';
   import { moduleById } from '../../modules/registry';
   import type { ToolModule } from '../../modules/types';
@@ -281,6 +281,11 @@
   </Screen>
 {:else}
   <Screen title={room.name} backHref="#/p/{id}" backLabel="Projet">
+    {#if roomFloor(room) !== 0}
+      <p class="muted level">
+        Niveau du sol : {roomFloor(room) > 0 ? '+' : '−'}{cm(Math.abs(roomFloor(room)))}
+      </p>
+    {/if}
     {#snippet actions()}<Button variant="ghost" href="#/p/{id}/plan">Modifier le plan</Button>{/snippet}
     {#if project.zones.some((z) => z.surface.room === room.id)}
       <div class="results">

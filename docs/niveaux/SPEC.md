@@ -1,6 +1,6 @@
 # Niveaux de sol et hauteurs propres (phase T1, N2) — spécification
 
-Statut : **validée le 17 octobre 2026** (décisions § 9) ; en cours de réalisation. Origine : décision de l'utilisateur du 17 octobre 2026 (`docs/audit/PROPOSITIONS.md`
+Statut : **validée le 17 octobre 2026** (décisions § 9) ; réalisée (étapes 1 à 6, 8) ; reste T1b (estrades). Origine : décision de l'utilisateur du 17 octobre 2026 (`docs/audit/PROPOSITIONS.md`
 §3 bis) : deux pièces peuvent avoir un niveau de sol différent ; une marche dans une pièce est une estrade ; des murs
 peuvent être plus bas que le plafond. Sans cette phase, ni les cloisons de hauteur propre (N3) ni les murets (N4) ne sont
 possibles.

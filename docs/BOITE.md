@@ -119,7 +119,8 @@ export interface PlanRoom {
   walls: Wall[];
   obstacles: Obstacle[];             // trous dans le sol (poteau, îlot, conduit, trémie)
   openings: WallOpening[];           // portes, baies, fenêtres, sur un segment du contour
-  height: number;                    // hauteur sous plafond, pour la 3D
+  height: number;                    // hauteur sous plafond, depuis le sol de la pièce
+  floor?: number;                    // niveau du sol fini, mm (absent : 0) ; marche entre deux pièces : docs/niveaux/SPEC.md
   /** Position de la pièce dans le plan d'ensemble (les pièces se placent les unes par rapport aux autres). */
   origin: Point;
 }

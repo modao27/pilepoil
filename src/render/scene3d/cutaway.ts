@@ -9,6 +9,7 @@ import { pointInPolygon, signedArea } from '../../core/geometry/polygon';
 import { components } from '../../core/geometry/rings';
 import type { Point } from '../../core/geometry/types';
 import type { Id, Plan, PlanRoom } from '../../core/plan/types';
+import { roomFloor } from '../../core/plan/levels';
 import { outwardNormal, wallBands, wallDirection, wallLength } from '../../core/plan/walls';
 import { exposed } from './envelope';
 import type { MeshData, SceneFrame, Vec3 } from './types';
@@ -297,9 +298,10 @@ export function buildJoinery(plan: Plan, rooms: readonly Id[]): MeshData[] {
       const a = abs(room, room.outline[i]!);
       const u = wallDirection(room, i);
       const out = outwardNormal(u);
+      const dy = roomFloor(room);
       const at = (x: number, y: number, z: number): Vec3 => [
         m(a[0] + u[0] * x + out[0] * z),
-        m(y),
+        m(y + dy),
         m(a[1] + u[1] * x + out[1] * z),
       ];
       const U: Vec3 = [u[0], 0, u[1]],
@@ -342,9 +344,10 @@ export function buildJoinery(plan: Plan, rooms: readonly Id[]): MeshData[] {
 export function buildSections(plan: Plan, rooms: readonly Id[]): MeshData {
   const sec = mesh('section', { section: true, receiveShadow: false });
   const C = linear(brand.charbon);
-  const y = CUT_HEIGHT;
   const cutMm = CUT_HEIGHT * 1000;
   for (const room of plan.rooms.filter((r) => rooms.includes(r.id))) {
+    // la coupe est à 40 cm au-dessus du sol de chaque pièce
+    const y = CUT_HEIGHT + m(roomFloor(room));
     const bands = wallBands(room);
     room.walls.forEach((wall, i) => {
       const band = bands[i];
@@ -384,10 +387,11 @@ export function buildSections(plan: Plan, rooms: readonly Id[]): MeshData {
 }
 
 /** Sol extérieur sauge : la boîte du plan élargie de `margin` m, juste sous le sol brut. */
-export function buildSite(frame: SceneFrame, margin = 1): MeshData {
+export function buildSite(frame: SceneFrame, margin = 1, ground = 0): MeshData {
   const site = mesh('site');
   const { x, z } = frame.bounds;
-  const y = -0.004;
+  // juste sous le sol le plus bas du plan
+  const y = Math.min(0, ground) - 0.004;
   quad(
     site,
     [

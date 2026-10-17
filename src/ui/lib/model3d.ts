@@ -12,6 +12,7 @@ export interface Model3DLibs {
   envelope: typeof import('../../render/scene3d/envelope');
   cutaway: typeof import('../../render/scene3d/cutaway');
   equipment: typeof import('../../render/scene3d/equipment');
+  levels: typeof import('../../render/scene3d/levels');
 }
 
 export const loadModel3D = (): Promise<Model3DLibs> =>
@@ -19,7 +20,8 @@ export const loadModel3D = (): Promise<Model3DLibs> =>
     import('../../render/scene3d/envelope'),
     import('../../render/scene3d/cutaway'),
     import('../../render/scene3d/equipment'),
-  ]).then(([envelope, cutaway, equipment]) => ({ envelope, cutaway, equipment }));
+    import('../../render/scene3d/levels'),
+  ]).then(([envelope, cutaway, equipment, levels]) => ({ envelope, cutaway, equipment, levels }));
 
 /** Revêtements d'un module calculé : le projet calculé, son résultat, ses exports (maillages). */
 export interface ModelEntry {
@@ -42,7 +44,7 @@ export function modelMeshes(
   entries: readonly ModelEntry[],
   libraries: Libraries,
 ): MeshData[] {
-  const { envelope, cutaway, equipment } = libs;
+  const { envelope, cutaway, equipment, levels } = libs;
   const rooms = scopeRooms(p.plan, p, scope);
   // parties de murs revêtues par un module calculé : il les dessine (plâtre compris) ; le reste est dans l'enveloppe
   const drawn = new Set(entries.filter((e) => !e.exports.overlay).map((e) => e.module));
@@ -55,12 +57,21 @@ export function modelMeshes(
     ...envelope.buildEnvelope(p.plan, rooms, skip),
     ...cutaway.buildJoinery(p.plan, rooms),
     cutaway.buildSections(p.plan, rooms),
-    ...entries.flatMap((e) => e.exports.meshes({ project: e.project, libraries, result: e.result, scope })),
+    // les revêtements des modules sont dessinés à 0 : remontés du niveau de leur pièce
+    ...levels.shiftByLevel(
+      entries.flatMap((e) => e.exports.meshes({ project: e.project, libraries, result: e.result, scope })),
+      p.plan,
+      rooms,
+    ),
   ]);
   // les équipements ne passent pas par tagWalls : posés contre un mur, ils ne seraient pas coupés avec lui
   return [
     ...cutaway.tagWalls(merged, p.plan, rooms),
-    cutaway.buildSite(envelope.planFrame(p.plan, rooms)),
+    cutaway.buildSite(
+      envelope.planFrame(p.plan, rooms),
+      1,
+      Math.min(0, ...p.plan.rooms.filter((r) => rooms.includes(r.id)).map((r) => (r.floor ?? 0) / 1000)),
+    ),
     ...equipment.buildEquipment(p.plan, rooms),
   ];
 }

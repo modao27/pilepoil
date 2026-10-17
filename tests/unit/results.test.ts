@@ -342,3 +342,37 @@ describe('PDF des résultats', () => {
     expect(pages.at(-1)).toMatch(new RegExp(`${pages.length} / ${pages.length}`));
   });
 });
+
+describe('PDF du dossier et niveaux de sol', () => {
+  const base = project();
+  const rooms = base.plan.rooms;
+  const level = {
+    ...base,
+    plan: {
+      rooms: rooms.map((r) => (r.id === 'b' ? { ...r, floor: -150 } : r)),
+      passages: [{ id: 'p', a: { room: 'a', opening: 'oa' }, b: { room: 'b', opening: 'ob' } }],
+    },
+  };
+  const build = (pr: typeof base) =>
+    buildResultsPdf({
+      project: pr,
+      libraries,
+      scope: { kind: 'project' },
+      title: 'Dossier du projet',
+      entries: [],
+      shopping: null,
+      date: Date.UTC(2026, 9, 12),
+    });
+
+  it('le plan d’ensemble dit le niveau des pièces et la marche entre elles', async () => {
+    const text = (await pagesText(build(level))).join('\n');
+    expect(text).toMatch(/niveau -15 cm/);
+    expect(text).toMatch(/Marche de 15 cm entre Séjour et Bureau \(descendante vers Bureau\)/);
+  });
+
+  it('sans niveau : rien de plus qu’avant', async () => {
+    const text = (await pagesText(build(base))).join('\n');
+    expect(text).not.toMatch(/niveau/);
+    expect(text).not.toMatch(/Marche de/);
+  });
+});

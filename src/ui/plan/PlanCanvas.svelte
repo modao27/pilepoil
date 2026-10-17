@@ -8,6 +8,7 @@
   import type { Point } from '../../core/geometry/types';
   import { area } from '../../core/geometry/polygon';
   import { EQUIPMENT, floorUnder } from '../../core/plan/equipment';
+  import { passageStep, roomFloor } from '../../core/plan/levels';
   import { labelPoint, planBounds, snapPartitionPoint, snapPoint, GRID } from '../../core/plan/snap';
   import { absWallBands, demolitionBand, partitionBand } from '../../core/plan/works';
   import { lostByPose } from '../../core/coverage';
@@ -524,7 +525,9 @@
         y={S(r.origin[0] + c[0], r.origin[1] + c[1])[1]}
         >{nm.text}<title>{r.name}</title><tspan class="area" x={S(r.origin[0] + c[0], 0)[0]} dy="1.3em"
           >{formatNumber(area(r.outline) / 1e6, 2)} m²</tspan
-        ></text
+        >{#if roomFloor(r) !== 0}<tspan class="area" x={S(r.origin[0] + c[0], 0)[0]} dy="1.3em"
+            >niveau {roomFloor(r) > 0 ? '+' : '−'}{formatNumber(Math.abs(roomFloor(r)) / 10, 1)} cm</tspan
+          >{/if}</text
       >
 
       {#each r.walls as w, i (w.id)}
@@ -665,6 +668,7 @@
       {@const cb = openingCenter(rb, ob)!}
       <line
         class="passage"
+        class:stepped={passageStep(st.plan, p) !== 0}
         class:sel={sel?.kind === 'passage' && sel.passage === p.id}
         x1={S(...ca)[0]}
         y1={S(...ca)[1]}
@@ -856,6 +860,9 @@
     stroke-opacity: 0.85;
     stroke-linecap: butt;
     cursor: pointer;
+  }
+  .passage.stepped {
+    stroke-dasharray: 8 5;
   }
   .passage.sel {
     stroke: var(--accent);

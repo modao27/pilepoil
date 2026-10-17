@@ -65,6 +65,16 @@ export const GLOSSARY: readonly Term[] = [
     text: 'Ce qui change : cloisons neuves, murs démolis. Les revêtements se posent sur le plan après travaux.',
   },
   {
+    id: 'niveau',
+    word: 'Niveau du sol',
+    text: 'La hauteur du sol fini d’une pièce par rapport au niveau 0 du plan. Une pièce plus basse a un niveau négatif ; la différence entre deux pièces reliées est une marche.',
+  },
+  {
+    id: 'marche',
+    word: 'Marche',
+    text: 'La différence de niveau entre deux pièces reliées par un passage. À partir de 5 mm, une pose ne peut plus continuer d’une pièce à l’autre.',
+  },
+  {
     id: 'surface',
     word: 'Surface',
     text: 'Un sol ou un mur à revêtir. On touche une surface pour choisir ce qu’on y pose.',

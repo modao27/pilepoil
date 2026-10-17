@@ -37,3 +37,12 @@ export function passageStep(plan: Plan, p: Pick<Passage, 'a' | 'b'>): number {
 /** Les deux pièces ont-elles le même niveau de sol (à moins de `STEP_MIN`) ? */
 export const sameLevel = (a: Pick<PlanRoom, 'floor'>, b: Pick<PlanRoom, 'floor'>): boolean =>
   Math.abs(roomFloor(a) - roomFloor(b)) < STEP_MIN;
+
+/** Conseil de finition d'une marche : sol continu, barre de rattrapage ou nez de marche (texte dit par l'interface). */
+export type StepAdvice = 'flat' | 'bar' | 'nosing';
+
+/** Moins de `STEP_MIN` : sol plat ; jusqu'à 20 mm : barre de rattrapage ; au-delà : nez de marche. */
+export function stepAdvice(step: number): StepAdvice {
+  const h = Math.abs(step);
+  return h < STEP_MIN ? 'flat' : h <= 20 ? 'bar' : 'nosing';
+}

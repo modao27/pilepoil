@@ -466,6 +466,21 @@ Branche `n5-equipements` (`docs/audit/PROPOSITIONS.md` §3 bis).
 - Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/equipment.spec.ts`, `tests/unit/equipment.test.ts`).
 - Fait (2026-10-17).
 
+## T1 — Niveaux de sol et hauteurs propres des murs
+
+Branche `t1-niveaux` ; spécification `docs/niveaux/SPEC.md` (validée le 2026-10-17). Les estrades sont la phase T1b.
+
+- Modèle facultatif (`PlanRoom.floor`, `Wall.height`, `core/plan/levels.ts`) ; plan sans niveau = résultats d'avant.
+- Une marche (≥ 5 mm) refuse la pose continue (`level-step`) et la démolition d'un mur entre deux niveaux
+  (`demolition/level-mismatch`) ; les pièces dérivées gardent le niveau d'origine.
+- Surfaces des murs à leur hauteur propre (carrelage, peinture, cloisons, écran Pièce), ouvertures rognées.
+- Interface : niveau du sol, hauteur du mur, marche d'un passage avec conseil (barre de seuil / nez de marche), niveau
+  sur le plan ; 3D (sols et murs aux niveaux, modules remontés, marche visible) ; PDF (niveau des pièces, marches).
+- Limites notées : l'épaisseur des revêtements n'est pas déduite des niveaux ; la hauteur de coupe des murs de la 3D est
+  celle de chaque pièce ; pas de ligne d'achat pour les barres de seuil ni les nez de marche.
+- Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/levels.spec.ts`, `tests/unit/levels*.test.ts`).
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

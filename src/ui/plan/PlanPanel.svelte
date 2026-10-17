@@ -9,6 +9,7 @@
   import Segmented from '../components/Segmented.svelte';
   import Select from '../components/Select.svelte';
   import Checkbox from '../components/Checkbox.svelte';
+  import { passageStep, roomFloor, stepAdvice, wallHeight } from '../../core/plan/levels';
   import { EQUIPMENT, EQUIPMENT_KINDS, floorUnder, type ObstacleKind } from '../../core/plan/equipment';
   import TextField from '../components/TextField.svelte';
   import { formatNumber } from '../lib/calc';
@@ -31,6 +32,16 @@
   /** Équipement à ajouter (WC, receveur…). */
   let equipment = $state<ObstacleKind>('toilet');
   const EQUIPMENTS = EQUIPMENT_KINDS.map((value) => ({ value, label: EQUIPMENT[value].label }));
+  /** « Marche de 15 cm, descendante vers Séjour » ; « Sans marche » si les sols sont au même niveau. */
+  const stepText = (step: number, a?: string, b?: string) =>
+    step === 0
+      ? 'Sans marche : les deux sols sont au même niveau.'
+      : `Marche de ${formatNumber(Math.abs(step) / 10, 1)} cm, ${step < 0 ? 'descendante' : 'montante'} vers ${b ?? '?'} depuis ${a ?? '?'}.`;
+  const ADVICE = {
+    flat: '',
+    bar: 'Une barre de seuil de rattrapage finit la jonction des deux sols (vérifier la notice du fabricant).',
+    nosing: 'Un nez de marche finit la jonction : la différence est trop grande pour une barre de seuil.',
+  } as const;
   const cm = (mm: number) => formatNumber(mm / 10, 1) + ' cm';
   const kindLabel = (k: OpeningKind) => KINDS.find((x) => x.value === k)!.label;
   /** Portes des autres pièces, pour relier la porte choisie (mode liaison). */
@@ -326,6 +337,9 @@
     <Button variant="ghost" icon="back" onclick={() => st.select(null)}>Toutes les pièces</Button>
     <h2>Passage</h2>
     <p>Entre {a?.name ?? '?'} et {b?.name ?? '?'}.</p>
+    {@const step = passageStep(st.plan, passage)}
+    <p class="num" data-testid="step">{stepText(step, a?.name, b?.name)}</p>
+    {#if step !== 0}<p class="muted">{ADVICE[stepAdvice(step)]}</p>{/if}
     <Button
       variant="danger"
       icon="trash"
@@ -464,6 +478,22 @@
       onchange={(length) => st.dispatch({ type: 'plan/wall/length', roomId: room.id, wallId: wall.id, length })}
     />
     <NumberField
+      label="Hauteur du mur"
+      unit="cm"
+      factor={10}
+      min={1}
+      max={room.height / 10}
+      value={wallHeight(room, wall)}
+      hint="Jusqu’au plafond par défaut ; un mur bas ou une allège est plus court."
+      onchange={(height) =>
+        st.dispatch({
+          type: 'plan/wall/update',
+          roomId: room.id,
+          wallId: wall.id,
+          patch: { height: height >= room.height ? undefined : height },
+        })}
+    />
+    <NumberField
       label="Épaisseur"
       unit="cm"
       factor={10}
@@ -520,6 +550,17 @@
       soft={{ min: 100, max: 600 }}
       value={room.height}
       onchange={(height) => st.dispatch({ type: 'plan/room/update', roomId: room.id, patch: { height } })}
+    />
+    <NumberField
+      label="Niveau du sol"
+      unit="cm"
+      factor={10}
+      min={-300}
+      max={300}
+      soft={{ min: -100, max: 100 }}
+      value={roomFloor(room)}
+      hint="Par rapport au niveau 0 du plan : une pièce plus basse a un niveau négatif."
+      onchange={(floor) => st.dispatch({ type: 'plan/room/update', roomId: room.id, patch: { floor } })}
     />
     {@const mixed = room.walls.some((w) => w.thickness !== room.walls[0]!.thickness)}
     <NumberField
