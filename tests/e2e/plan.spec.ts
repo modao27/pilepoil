@@ -217,3 +217,33 @@ test('plan : glisser un coin suit le doigt, sans emballement du cadrage', async 
   // tiré vers l'extérieur de 33 × 21 px, le coin avance de moins d'un mètre (avant : 4 m de plus, le cadrage suivait)
   for (const l of lengths) expect(l).toBeLessThan(520);
 });
+
+test('plan : des messages propres à chaque erreur de saisie', async ({ page }) => {
+  await page.goto('/#/new');
+  const dialog = page.getByRole('dialog', { name: 'Nouveau projet' });
+  // forme en U trop étroite : on parle d'ailes et d'encoche
+  await dialog.getByRole('radio', { name: 'En U' }).click();
+  await setNumber(dialog, 'Largeur des ailes', '300');
+  await expect(dialog.getByRole('alert')).toContainText('Les ailes doivent laisser une encoche');
+
+  // trois points alignés : pas de surface
+  await dialog.getByRole('radio', { name: 'Dessin' }).click();
+  await dialog.getByRole('button', { name: 'Commencer le dessin' }).click();
+  const box = (await page.getByRole('application', { name: /dessin en cours/ }).boundingBox())!;
+  const at = (fx: number, fy: number) => page.mouse.click(box.x + box.width * fx, box.y + box.height * fy);
+  await at(0.2, 0.5);
+  await at(0.5, 0.5);
+  await at(0.8, 0.5);
+  await panel(page).getByRole('button', { name: 'Terminer la pièce' }).click();
+  await expect(page.getByText('Les points sont alignés')).toBeVisible();
+});
+
+test('plan : renommer le projet avec un nom vide est refusé et expliqué', async ({ page }) => {
+  await createProject(page, { project: 'Maison', name: 'Séjour', size: [400, 300] });
+  await page.getByRole('button', { name: 'Renommer le projet' }).click();
+  const rename = page.getByRole('dialog', { name: 'Renommer le projet' });
+  await rename.getByLabel('Nom du projet', { exact: true }).fill('   ');
+  await rename.getByRole('button', { name: 'Renommer' }).click();
+  await expect(rename.getByText('Le nom ne peut pas être vide.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Maison/ })).toBeVisible();
+});

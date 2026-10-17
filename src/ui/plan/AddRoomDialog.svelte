@@ -48,6 +48,15 @@
         (kind !== 'u' || (2 * arm < length && depth < width))),
   );
 
+  /** Pourquoi les cotes ne conviennent pas, selon la forme. */
+  const problem = $derived(
+    kind === 'u' && length > 0 && width > 0
+      ? 'Les ailes doivent laisser une encoche : deux ailes plus étroites que la longueur, une encoche moins profonde que la largeur.'
+      : kind === 'l'
+        ? 'Le retrait doit rester plus petit que la pièce.'
+        : 'Saisissez une longueur et une largeur.',
+  );
+
   /** Projet neuf sans pièce : rien n'est créé, on revient à l'accueil. */
   function cancel() {
     open = false;
@@ -99,7 +108,7 @@
           <NumberField label="Profondeur de l’encoche" unit="cm" factor={10} min={1} bind:value={depth} />
         {/if}
       </div>
-      {#if !valid}<p class="error" role="alert">Le retrait doit rester plus petit que la pièce.</p>{/if}
+      {#if !valid}<p class="error" role="alert">{problem}</p>{/if}
       {#if st.plan.rooms.length}
         <Select label="Emplacement" bind:value={place} options={places} />
       {/if}

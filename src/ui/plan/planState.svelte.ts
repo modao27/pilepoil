@@ -8,6 +8,7 @@ import { deriveSite } from '../../core/plan/derive';
 import { DEFAULT_PARTITION_THICKNESS, MIN_PARTITION_LENGTH, type WorksIssue } from '../../core/plan/works';
 import type { PlanAction } from '../../core/plan/reduce';
 import { doorBetween, facingWalls, placeAgainst, type FacingWalls } from '../../core/plan/neighbors';
+import { signedArea } from '../../core/geometry/polygon';
 import { clockwise, placeNewRoom } from '../../core/plan/snap';
 import type {
   Demolition,
@@ -505,6 +506,10 @@ export class PlanEditorState {
     const [ox, oy] = pts.reduce<Point>((m, p) => [Math.min(m[0], p[0]), Math.min(m[1], p[1])], [Infinity, Infinity]);
     const outline: Polygon = clockwise(pts.map(([x, y]) => [x - ox, y - oy]));
     const room = roomFromOutline(outline, { name, origin: [ox, oy], thickness: app.wallThickness }, newId);
+    if (Math.abs(signedArea(outline)) < 1) {
+      toast('Les points sont alignés : la pièce n’a pas de surface. Déplacez un point.', { tone: 'error' });
+      return null;
+    }
     if (validateRoom(room).length) {
       toast('Les murs se croisent : déplacez un point ou recommencez.', { tone: 'error' });
       return null;

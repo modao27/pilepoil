@@ -21,6 +21,7 @@
 
   const st = untrack(() => new PlanEditorState(project, { isNew }));
   let renaming = $state(false);
+  let renameError = $state('');
   let newName = $state('');
   let roomName = $state('');
 
@@ -38,7 +39,12 @@
 
   function rename() {
     const n = newName.trim();
-    if (n) st.dispatch({ type: 'project/rename', name: n });
+    if (!n) {
+      renameError = 'Le nom ne peut pas être vide.';
+      return;
+    }
+    renameError = '';
+    st.dispatch({ type: 'project/rename', name: n });
     renaming = false;
     // enregistré tout de suite : un nom ne doit pas attendre
     void st.flush();
@@ -107,7 +113,11 @@
         >{st.layer === 'works' ? 'Plan : travaux' : 'Plan des pièces'}</span
       >
     </h1>
-    <IconButton icon="edit" label="Renommer le projet" onclick={() => ((newName = st.doc.name), (renaming = true))} />
+    <IconButton
+      icon="edit"
+      label="Renommer le projet"
+      onclick={() => ((newName = st.doc.name), (renameError = ''), (renaming = true))}
+    />
     <IconButton icon="undo" label="Annuler" disabled={!st.canUndo} onclick={() => st.undo()} />
     <IconButton icon="redo" label="Rétablir" disabled={!st.canRedo} onclick={() => st.redo()} />
     <IconButton icon="plus" label="Ajouter une pièce" onclick={() => (adding = true)} />
@@ -157,7 +167,7 @@
       rename();
     }}
   >
-    <TextField label="Nom du projet" bind:value={newName} maxlength={60} />
+    <TextField label="Nom du projet" bind:value={newName} maxlength={60} error={renameError} />
   </form>
   {#snippet actions()}
     <Button variant="ghost" onclick={() => (renaming = false)}>Annuler</Button>
