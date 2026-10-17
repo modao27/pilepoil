@@ -9,6 +9,7 @@ import type { Point, Polygon } from '../../../core/geometry/types';
 import { deriveSite } from '../../../core/plan/derive';
 import type { Demolition, Id, Partition } from '../../../core/plan/types';
 import { wallIndex } from '../../../core/plan/walls';
+import { wallHeightOf } from '../../../core/plan/levels';
 import { absOutline, absWallBands, partitionBand, partitionFrame, segDistance, SNAP } from '../../../core/plan/works';
 import type { Project } from '../../../state/model';
 import type { Libraries, ModuleError } from '../../types';
@@ -118,7 +119,7 @@ function bodies(project: Project, list: Partition[]): Map<Id, Body> {
 const demolishedArea = (project: Project, ok: (d: Demolition) => boolean): number =>
   project.site.demolitions.filter(ok).reduce((sum, d) => {
     const room = project.site.existing.rooms.find((r) => r.id === d.room);
-    return room && wallIndex(room, d.wall) >= 0 ? sum + ((d.to - d.from) * room.height) / 1e6 : sum;
+    return room && wallIndex(room, d.wall) >= 0 ? sum + ((d.to - d.from) * wallHeightOf(room, d.wall)) / 1e6 : sum;
   }, 0);
 
 /** Projet → entrée du moteur ; erreurs bloquantes sans lever d'exception. */

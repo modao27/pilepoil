@@ -6,6 +6,7 @@ import { zoneRegion } from '../../../../core/coverage/geometry';
 import type { Zone } from '../../../../core/coverage/types';
 import type { Polygon } from '../../../../core/geometry/types';
 import { wallIndex, wallLength } from '../../../../core/plan/walls';
+import { wallHeightOf } from '../../../../core/plan/levels';
 import type { Id, Project } from '../../../../state/model';
 
 export interface ElevOpening {
@@ -60,7 +61,7 @@ export function elevationOf(project: Project, zones: readonly Zone[]): Elevation
       label: `${room.name}, mur ${i + 1}`,
       x0: x,
       length,
-      height: room.height,
+      height: wallHeightOf(room, z.surface.wall),
       painted: [...painted],
       openings: room.openings
         .filter((o) => o.wall === z.surface.wall)

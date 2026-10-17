@@ -9,6 +9,7 @@
   import HelpTip from '../components/HelpTip.svelte';
   import type { Point } from '../../core/geometry/types';
   import { snapPoint } from '../../core/plan/snap';
+  import { wallHeightOf } from '../../core/plan/levels';
   import { wallIndex, wallLength } from '../../core/plan/walls';
   import { moduleById } from '../../modules/registry';
   import type { ToolModule } from '../../modules/types';
@@ -144,8 +145,11 @@
   /** Hauteur d'une zone de mur, cm affichés (repère du mur : y vers le haut). */
   const span = (z: Zone): [number, number] => {
     const b = project ? zoneBox(project.plan, z) : null;
-    return b ? [b[2], b[3]] : [0, room?.height ?? 0];
+    return b ? [b[2], b[3]] : [0, wallTop(z)];
   };
+  /** Hauteur du mur d'une zone, mm : sa hauteur propre, sinon celle de la pièce. */
+  const wallTop = (z: Zone) =>
+    room && z.surface.wall != null ? wallHeightOf(room, z.surface.wall) : (room?.height ?? 0);
   /** Largeur couverte d'une zone de mur : [bord gauche, bord droit], mm. */
   const widthOf = (z: Zone): [number, number] => {
     const b = project ? zoneBox(project.plan, z) : null;
@@ -184,7 +188,7 @@
           x0: left > 0 ? left : null,
           x1: right < length ? Math.min(right, length) : null,
           y0: from > 0 ? from : null,
-          y1: to < room.height ? Math.min(to, room.height) : null,
+          y1: to < wallTop(z) ? Math.min(to, wallTop(z)) : null,
         }),
       );
     });
@@ -348,7 +352,7 @@
                           unit="cm"
                           factor={10}
                           min={0}
-                          max={room.height / 10}
+                          max={wallTop(z) / 10}
                           value={from}
                           onchange={(v) => setSpan(z, { from: v })}
                         />
@@ -357,7 +361,7 @@
                           unit="cm"
                           factor={10}
                           min={1}
-                          max={room.height / 10}
+                          max={wallTop(z) / 10}
                           value={to}
                           onchange={(v) => setSpan(z, { to: v })}
                         />

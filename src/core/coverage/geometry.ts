@@ -4,6 +4,7 @@ import { signedArea } from '../geometry/polygon';
 import type { Point, Polygon } from '../geometry/types';
 import type { Plan, PlanRoom } from '../plan/types';
 import { floorHoles } from '../plan/equipment';
+import { wallHeight } from '../plan/levels';
 import { wallIndex, wallLength } from '../plan/walls';
 import type { Cut, SurfaceRef, Zone } from './types';
 
@@ -29,7 +30,7 @@ export function findRoom(plan: Plan, id: string): PlanRoom | undefined {
 
 /**
  * Contour d'une surface : sol = contour de la pièce et obstacles en trous (repère de la pièce) ; mur = rectangle
- * longueur × hauteur de la pièce (repère du mur, y vers le haut). null si la pièce ou le mur n'existe plus.
+ * longueur × hauteur propre du mur, sinon celle de la pièce (repère du mur, y vers le haut). null si la pièce ou le mur n'existe plus.
  */
 export function surfacePolygon(plan: Plan, s: SurfaceRef): Polygon[] | null {
   const room = findRoom(plan, s.room);
@@ -38,7 +39,7 @@ export function surfacePolygon(plan: Plan, s: SurfaceRef): Polygon[] | null {
   const i = wallIndex(room, s.wall);
   if (i < 0) return null;
   const L = wallLength(room, i),
-    H = room.height;
+    H = wallHeight(room, room.walls[i]!);
   return [
     [
       [0, 0],

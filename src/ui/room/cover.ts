@@ -23,6 +23,7 @@ import {
   type Zone,
 } from '../../core/coverage';
 import { signedArea } from '../../core/geometry/polygon';
+import { wallHeightOf } from '../../core/plan/levels';
 import type { Polygon, Segment } from '../../core/geometry/types';
 import { selfIntersecting } from '../../core/plan/validate';
 import { modules } from '../../modules/registry';
@@ -70,7 +71,8 @@ export function freeWallSpans(p: Project, s: SurfaceRef): [number, number][] {
     if (lo - y >= 10) out.push([y, lo]);
     y = Math.max(y, hi);
   }
-  if (room.height - y >= 10) out.push([y, room.height]);
+  const top = wallHeightOf(room, s.wall);
+  if (top - y >= 10) out.push([y, top]);
   return out;
 }
 

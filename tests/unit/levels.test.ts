@@ -2,6 +2,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { passageStep, roomFloor, sameLevel, STEP_MIN, wallHeight, wallHeightOf } from '../../src/core/plan/levels';
+import { surfacePolygon, wallAreaCuts, zoneArea, zoneBox } from '../../src/core/coverage';
 import { reducePlan } from '../../src/core/plan/reduce';
 import type { Passage, Plan } from '../../src/core/plan/types';
 import { validatePlan } from '../../src/core/plan/validate';
@@ -91,5 +92,50 @@ describe('hauteur propre d’un mur', () => {
     expect(validatePlan({ rooms: [{ ...a, floor: Number.NaN }], passages: [] }).map((e) => e.code)).toEqual([
       'room/floor',
     ]);
+  });
+});
+
+describe('mur bas : la surface suit sa hauteur propre', () => {
+  const low = {
+    ...a,
+    walls: a.walls.map((w, i) => (i === 0 ? { ...w, height: 900 } : w)),
+  };
+  const p: Plan = { rooms: [low], passages: [] };
+  const wall = (i: number) => ({ room: 'a', wall: low.walls[i]!.id });
+
+  it('mur à 90 cm : 4 m × 90 cm, les autres murs gardent 2,5 m', () => {
+    expect(surfacePolygon(p, wall(0))).toEqual([
+      [
+        [0, 0],
+        [4000, 0],
+        [4000, 900],
+        [0, 900],
+      ],
+    ]);
+    expect(zoneArea(p, { surface: wall(0), cuts: [] })).toBeCloseTo(4000 * 900, 0);
+    expect(zoneArea(p, { surface: wall(1), cuts: [] })).toBeCloseTo(3000 * 2500, 0);
+  });
+
+  it('une zone « jusqu’au plafond » d’un mur bas s’arrête à son sommet', () => {
+    const cuts = wallAreaCuts(p, wall(0), { y0: 300 });
+    expect(zoneBox(p, { surface: wall(0), cuts })).toEqual([0, 4000, 300, 900]);
+  });
+
+  it('sans hauteur propre : exactement les surfaces d’avant (propriété sur des pièces quelconques)', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 500, max: 12000 }),
+        fc.integer({ min: 500, max: 12000 }),
+        fc.integer({ min: 1800, max: 4000 }),
+        (l, w, h) => {
+          const r = rect('r', l, w, { height: h });
+          const plan: Plan = { rooms: [r], passages: [] };
+          r.walls.forEach((wl, i) => {
+            const len = i % 2 ? w : l;
+            expect(zoneArea(plan, { surface: { room: 'r', wall: wl.id }, cuts: [] })).toBeCloseTo(len * h, 0);
+          });
+        },
+      ),
+    );
   });
 });

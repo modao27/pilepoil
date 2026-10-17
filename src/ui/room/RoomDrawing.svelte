@@ -10,6 +10,7 @@
   import type { Point, Polygon } from '../../core/geometry/types';
   import type { PlanRoom } from '../../core/plan/types';
   import { wallLength } from '../../core/plan/walls';
+  import { wallHeight } from '../../core/plan/levels';
   import { boxOf, unfoldWall } from '../../render/roomTop';
   import type { Project } from '../../state/model';
   import { poseColor } from './colors';
@@ -47,7 +48,7 @@
   const walls = $derived(
     room.walls.map((w, i) => {
       const L = wallLength(room, i),
-        H = room.height;
+        H = wallHeight(room, w);
       const ref = { room: room.id, wall: w.id };
       const zones = zonesOn(ref).map((z) => ({
         z,

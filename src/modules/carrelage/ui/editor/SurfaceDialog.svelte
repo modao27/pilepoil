@@ -4,6 +4,7 @@
   import NumberField from '../../../../ui/components/NumberField.svelte';
   import { cm } from '../../../../ui/lib/format';
   import { wallIndex } from '../../../../core/plan/walls';
+  import { wallHeightOf } from '../../../../core/plan/levels';
   import { tiledTop } from '../../state/surfaces';
   import type { EditorState } from './editorState.svelte';
 
@@ -20,7 +21,8 @@
             ed.surface.parts.length > 1
               ? `Hauteur carrelée, mur ${wallIndex(room, p.ref.wall!) + 1}`
               : 'Hauteur carrelée',
-          top: tiledTop(ed.project.plan, ed.project.zones, p.ref) ?? room.height,
+          top: tiledTop(ed.project.plan, ed.project.zones, p.ref) ?? wallHeightOf(room, p.ref.wall!),
+          full: wallHeightOf(room, p.ref.wall!),
         }))
       : [],
   );
@@ -56,8 +58,8 @@
           unit="cm"
           factor={10}
           min={1}
-          max={(room?.height ?? 0) / 10}
-          onchange={(v) => ed.setWallHeight(room && v >= room.height ? null : v, w.ref)}
+          max={w.full / 10}
+          onchange={(v) => ed.setWallHeight(v >= w.full ? null : v, w.ref)}
         />
       {/each}
     </section>

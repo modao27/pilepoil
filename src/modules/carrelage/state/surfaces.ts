@@ -12,6 +12,7 @@ import { signedArea } from '../../../core/geometry/polygon';
 import type { Point, Polygon } from '../../../core/geometry/types';
 import type { Plan, PlanRoom, WallOpening } from '../../../core/plan/types';
 import { passageBand, wallBands, wallDirection, wallIndex, wallLength } from '../../../core/plan/walls';
+import { wallHeightOf } from '../../../core/plan/levels';
 import type { RoomJointsSpec } from '../core';
 import type { RoomShape } from '../render/scene3d/placement';
 import type { Id } from '../../../state/model';
@@ -196,7 +197,9 @@ function wallsShape(plan: Plan, room: PlanRoom, zones: readonly Zone[], t: Carre
     const ref = { room: room.id, wall };
     return [
       ...room.openings
-        .filter((o) => o.wall === wall)
+        .filter((o) => o.wall === wall && o.sill < wallHeightOf(room, wall))
+        // une ouverture plus haute que le mur (mur bas) est rognée à son sommet
+        .map((o) => ({ ...o, height: Math.min(o.height, wallHeightOf(room, wall) - o.sill) }))
         .map((o) => planOpening(o, t.openings[o.id], dx, y0, room.walls[wallIndex(room, wall)]!.thickness)),
       ...reservationsOn(t, ref, dx, y0),
     ];
