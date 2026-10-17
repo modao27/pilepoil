@@ -200,7 +200,9 @@ export function shopping(r: ParquetResult, d: ParquetData, libraries: Libraries)
   for (const [id, u] of used) {
     const b = boards.find((x) => x.id === id);
     if (!b) continue;
-    for (const [variant, n] of Object.entries(u) as ['A' | 'B' | 'plain', number][]) {
+    // une lame sans lames A et B ne se commande pas en deux références : tout va sur la ligne unique
+    const counts = b.handed ? u : { A: 0, B: 0, plain: u.A + u.B + u.plain };
+    for (const [variant, n] of Object.entries(counts) as ['A' | 'B' | 'plain', number][]) {
       if (!n) continue;
       const suffix = variant === 'plain' ? '' : ':' + variant;
       const key = `parquet:board:${id}${suffix}`;

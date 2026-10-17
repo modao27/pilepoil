@@ -156,6 +156,18 @@ describe('module parquet', () => {
     ]);
   });
 
+  it('achats : une lame sans lames A et B reste une seule ligne, même posée en bâton rompu', () => {
+    const p = project();
+    const r = computeParquet(specOf(p));
+    const mixed: ParquetResult = {
+      ...r,
+      layouts: r.layouts.map((l) => ({ ...l, boards: l.boards.map((b, i) => ({ ...b, variant: i % 2 ? 'B' : 'A' })) })),
+    };
+    const lines = parquet.shopping(mixed, data(p), libraries, p).filter((x) => x.group === 'covering');
+    expect(lines.map((l) => l.key)).toEqual(['parquet:board:modele-stratifie']);
+    expect(lines[0]!.quantity).toBe(Math.ceil((r.totals.boards * 1.05) / 9));
+  });
+
   it('liste d’achat de R1 : 7 paquets, 1 rouleau de sous-couche, 6 barres de plinthe', () => {
     const p = project();
     const r = computeParquet(specOf(p));
