@@ -292,6 +292,16 @@
     return snapPartitionPoint(w, start, st.plan, tol());
   }
 
+  /** Nom d'une pièce à la taille de son contour : réduit jusqu'à 9 px, puis abrégé (« Salle de b… »). */
+  function fitName(name: string, outline: Point[]): { text: string; size: number } {
+    const xs = outline.map((p) => p[0]);
+    const room = (Math.max(...xs) - Math.min(...xs)) * view.sc * 0.9;
+    const perChar = 0.6;
+    const size = Math.min(14, Math.max(9, room / (name.length * perChar)));
+    const fits = Math.max(3, Math.floor(room / (size * perChar)));
+    return { text: name.length > fits ? name.slice(0, fits - 1).trimEnd() + '…' : name, size };
+  }
+
   function zoomBy(k: number) {
     userView = zoomAt(view, k, size.w / 2, size.h / 2, base.sc);
   }
@@ -440,6 +450,7 @@
   {#each st.plan.rooms as r (r.id)}
     {@const active = activeRoom === r.id}
     {@const c = labelPoint(r.outline)}
+    {@const nm = fitName(r.name, r.outline)}
     <g class="room" class:active>
       <polygon class="floor" points={pts(r, r.outline)} data-k="room" data-room={r.id} />
       {#each wallBands(r) as band, i (r.walls[i]!.id)}
@@ -499,9 +510,10 @@
       {/each}
       <text
         class="name"
+        style:font-size="{nm.size}px"
         x={S(r.origin[0] + c[0], r.origin[1] + c[1])[0]}
         y={S(r.origin[0] + c[0], r.origin[1] + c[1])[1]}
-        >{r.name}<tspan class="area" x={S(r.origin[0] + c[0], 0)[0]} dy="1.3em"
+        >{nm.text}<title>{r.name}</title><tspan class="area" x={S(r.origin[0] + c[0], 0)[0]} dy="1.3em"
           >{formatNumber(area(r.outline) / 1e6, 2)} m²</tspan
         ></text
       >

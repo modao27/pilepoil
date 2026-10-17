@@ -269,3 +269,12 @@ test('plan : raccourcis du calepinage (Ctrl+Z, Ctrl+Y, + − 0)', async ({ page 
   await page.keyboard.press('Control+y');
   await expect(page.locator('.obstacle')).toHaveCount(1);
 });
+
+test('plan : le nom d’une petite pièce tient dans son contour', async ({ page }) => {
+  await createProject(page, { name: 'Salle de bain', size: [150, 120] });
+  const room = (await page.locator('[data-k="room"]').first().boundingBox())!;
+  const name = (await page.locator('text.name').first().boundingBox())!;
+  expect(name.width).toBeLessThanOrEqual(room.width);
+  // le nom complet reste disponible
+  await expect(page.locator('text.name title').first()).toHaveText('Salle de bain');
+});
