@@ -49,7 +49,16 @@ export type PlanSelection =
 export type Shape =
   | { kind: 'rect'; length: number; width: number }
   | { kind: 'l'; length: number; width: number; cutLength: number; cutWidth: number }
-  | { kind: 'u'; length: number; width: number; arm: number; depth: number };
+  | { kind: 'u'; length: number; width: number; arm: number; depth: number }
+  /** Relevé mur après mur : contour déjà calculé (`core/plan/survey`). */
+  | { kind: 'survey'; outline: Polygon };
+
+/** Contour en sens horaire, coin haut gauche du rectangle englobant en (0, 0). */
+const normalizeOutline = (outline: Polygon): Polygon => {
+  const x0 = Math.min(...outline.map((p) => p[0])),
+    y0 = Math.min(...outline.map((p) => p[1]));
+  return clockwise(outline.map(([x, y]): Point => [x - x0, y - y0]));
+};
 
 export type OpeningKind = WallOpening['kind'];
 
@@ -405,7 +414,9 @@ export class PlanEditorState {
         ? rectRoom(shape.length, shape.width, opts, newId)
         : shape.kind === 'l'
           ? lRoom(shape.length, shape.width, shape.cutLength, shape.cutWidth, opts, newId)
-          : uRoom(shape.length, shape.width, shape.arm, shape.depth, opts, newId);
+          : shape.kind === 'u'
+            ? uRoom(shape.length, shape.width, shape.arm, shape.depth, opts, newId)
+            : roomFromOutline(normalizeOutline(shape.outline), opts, newId);
     if (against) {
       const origin = placeAgainst(this.plan, against, room.outline);
       if (origin) room = { ...room, origin };

@@ -7,11 +7,15 @@
   import Select from '../components/Select.svelte';
   import TextField from '../components/TextField.svelte';
   import { go } from '../lib/router.svelte';
+  import type { Polygon } from '../../core/geometry/types';
+  import SurveyForm from './SurveyForm.svelte';
   import type { PlanEditorState } from './planState.svelte';
 
   let { st, open = $bindable(false) }: { st: PlanEditorState; open: boolean } = $props();
 
-  type Kind = 'rect' | 'l' | 'u' | 'draw';
+  type Kind = 'rect' | 'l' | 'u' | 'survey' | 'draw';
+  /** Contour du relevé, quand il ferme. */
+  let surveyed = $state.raw<Polygon | null>(null);
   let kind = $state<Kind>('rect');
   let name = $state('');
   let length = $state(4000);
@@ -42,7 +46,9 @@
 
   const valid = $derived(
     kind === 'draw' ||
-      (length > 0 &&
+      (kind === 'survey' && surveyed != null) ||
+      (kind !== 'survey' &&
+        length > 0 &&
         width > 0 &&
         (kind !== 'l' || (cutLength < length && cutWidth < width)) &&
         (kind !== 'u' || (2 * arm < length && depth < width))),
@@ -70,6 +76,7 @@
     const [room, wall] = place.split('~');
     const against = room && wall ? { room, wall } : undefined;
     if (kind === 'draw') st.startDraw();
+    else if (kind === 'survey') st.addRoom({ kind, outline: surveyed! }, n, against);
     else if (kind === 'rect') st.addRoom({ kind, length, width }, n, against);
     else if (kind === 'l') st.addRoom({ kind, length, width, cutLength, cutWidth }, n, against);
     else st.addRoom({ kind, length, width, arm, depth }, n, against);
@@ -90,6 +97,7 @@
         { value: 'rect', label: 'Rectangle' },
         { value: 'l', label: 'En L' },
         { value: 'u', label: 'En U' },
+        { value: 'survey', label: 'Relevé' },
         { value: 'draw', label: 'Dessin' },
       ]}
     />
@@ -97,34 +105,38 @@
       <p class="muted">Vous placerez chaque coin sur le plan, puis vous fermerez la pièce sur le premier point.</p>
     {:else}
       <TextField label="Nom" bind:value={name} maxlength={40} />
-      <div class="grid">
-        <NumberField
-          label="Longueur"
-          unit="cm"
-          factor={10}
-          min={10}
-          max={10000}
-          soft={{ min: 50, max: 3000 }}
-          bind:value={length}
-        />
-        <NumberField
-          label="Largeur"
-          unit="cm"
-          factor={10}
-          min={10}
-          max={10000}
-          soft={{ min: 50, max: 3000 }}
-          bind:value={width}
-        />
-        {#if kind === 'l'}
-          <NumberField label="Retrait en longueur" unit="cm" factor={10} min={1} bind:value={cutLength} />
-          <NumberField label="Retrait en largeur" unit="cm" factor={10} min={1} bind:value={cutWidth} />
-        {:else if kind === 'u'}
-          <NumberField label="Largeur des ailes" unit="cm" factor={10} min={1} bind:value={arm} />
-          <NumberField label="Profondeur de l’encoche" unit="cm" factor={10} min={1} bind:value={depth} />
-        {/if}
-      </div>
-      {#if !valid}<p class="error" role="alert">{problem}</p>{/if}
+      {#if kind === 'survey'}
+        <SurveyForm onoutline={(o) => (surveyed = o)} />
+      {:else}
+        <div class="grid">
+          <NumberField
+            label="Longueur"
+            unit="cm"
+            factor={10}
+            min={10}
+            max={10000}
+            soft={{ min: 50, max: 3000 }}
+            bind:value={length}
+          />
+          <NumberField
+            label="Largeur"
+            unit="cm"
+            factor={10}
+            min={10}
+            max={10000}
+            soft={{ min: 50, max: 3000 }}
+            bind:value={width}
+          />
+          {#if kind === 'l'}
+            <NumberField label="Retrait en longueur" unit="cm" factor={10} min={1} bind:value={cutLength} />
+            <NumberField label="Retrait en largeur" unit="cm" factor={10} min={1} bind:value={cutWidth} />
+          {:else if kind === 'u'}
+            <NumberField label="Largeur des ailes" unit="cm" factor={10} min={1} bind:value={arm} />
+            <NumberField label="Profondeur de l’encoche" unit="cm" factor={10} min={1} bind:value={depth} />
+          {/if}
+        </div>
+        {#if !valid}<p class="error" role="alert">{problem}</p>{/if}
+      {/if}
       {#if st.plan.rooms.length}
         <Select label="Emplacement" bind:value={place} options={places} />
       {/if}

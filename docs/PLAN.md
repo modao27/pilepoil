@@ -418,6 +418,16 @@ Branche `lot-h-accessibilite`. Corrige A11Y-01, A11Y-02, A11Y-03, UI-04, PERF-01
 - Fini quand : `npm run check`, e2e et `npm run lighthouse` verts.
 - Fait (2026-10-17).
 
+## Relevé rapide sur place (audit UI/UX)
+
+Branche `releve-rapide`. Répond à PLAN-01 et PLAN-03 par le geste du métier (`docs/audit/PROPOSITIONS.md`).
+
+- Forme « Relevé » dans « Ajouter une pièce » : murs saisis un à un (longueur, puis coin droit, rentrant ou mesuré),
+  aperçu, écart de fermeture, pièce refusée au-delà de 5 cm d'écart, diagonale de contrôle (`ui/plan/SurveyForm.svelte`).
+- Noyau pur `core/plan/survey.ts` (`surveyOutline`, `diagonalGap`) avec tests dont une propriété (tout rectangle ferme).
+- Fini quand : `npm run check` et e2e verts (`tests/e2e/survey.spec.ts`).
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

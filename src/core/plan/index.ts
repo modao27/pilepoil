@@ -5,3 +5,4 @@ export * from './validate';
 export * from './reduce';
 export * from './factories';
 export * from './neighbors';
+export * from './survey';

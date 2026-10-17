@@ -187,7 +187,7 @@ sont pas gardés, l'application ne peut pas savoir s'ils sont à jour).
 
 | De | Action | Vers | Garde-fou |
 |---|---|---|---|
-| Mes projets | Nouveau projet : nom du projet, première pièce (forme et cotes, ou dessin nommé à la fermeture) | Plan, pièce sélectionnée | Projet enregistré avec sa première pièce, jamais vide ; revêtements choisis après le plan ; Annuler ramène à Mes projets |
+| Mes projets | Nouveau projet : nom du projet, première pièce (forme et cotes, relevé mur après mur, ou dessin nommé à la fermeture) | Plan, pièce sélectionnée | Projet enregistré avec sa première pièce, jamais vide ; revêtements choisis après le plan ; Annuler ramène à Mes projets |
 | Vue globale | Ajouter une pièce (forme, cotes) | Plan, pièce sélectionnée | Annuler |
 | Plan | « Revêtements de la pièce » | Pièce | Plan enregistré à la sortie |
 | Vue globale | Toucher une pièce | Pièce | — |
