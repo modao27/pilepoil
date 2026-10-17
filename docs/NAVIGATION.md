@@ -103,7 +103,7 @@ Capacités des moteurs :
 
 | # | Écran | Adresse | État |
 |---|---|---|---|
-| 1 | Mes projets | `#/` | [Existe] |
+| 1 | Mes projets : une carte commune par projet (plan, résumé par outil, coût, menu Renommer / Dupliquer / Supprimer) | `#/` | [Existe] (lot A) |
 | 2 | Nouveau projet : nom du projet et première pièce, sur le plan | `#/new` | [Existe] (N2) |
 | 3 | **Vue globale du projet** | `#/p/:id` | [Existe] (N3) |
 | 4 | Plan : dessin et cotes | `#/p/:id/plan` | [Existe] |
@@ -187,7 +187,7 @@ sont pas gardés, l'application ne peut pas savoir s'ils sont à jour).
 
 | De | Action | Vers | Garde-fou |
 |---|---|---|---|
-| Mes projets | Nouveau projet : nom du projet, première pièce (forme et cotes, ou dessin nommé à la fermeture) | Plan, pièce sélectionnée | Projet enregistré avec sa première pièce, jamais vide ; revêtements choisis après le plan |
+| Mes projets | Nouveau projet : nom du projet, première pièce (forme et cotes, ou dessin nommé à la fermeture) | Plan, pièce sélectionnée | Projet enregistré avec sa première pièce, jamais vide ; revêtements choisis après le plan ; Annuler ramène à Mes projets |
 | Vue globale | Ajouter une pièce (forme, cotes) | Plan, pièce sélectionnée | Annuler |
 | Plan | « Revêtements de la pièce » | Pièce | Plan enregistré à la sortie |
 | Vue globale | Toucher une pièce | Pièce | — |

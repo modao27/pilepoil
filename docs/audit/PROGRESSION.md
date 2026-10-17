@@ -7,6 +7,9 @@ Branche : `audit/ui-ux`. Règles : ne rien modifier dans `src/`, ne rien corrige
 **Terminée le 2026-10-17** : matrice complète passée (2 581 exécutions), 51 constats, rapport, matrice de couverture,
 propositions. Reste : attendre les choix de l'utilisateur sur `PROPOSITIONS.md` ; rien n'est mis en œuvre.
 
+## Corrections
+- Lot A (branche `lot-a-projets`, 2026-10-17) : PRJ-01, PRJ-02, PRJ-03, UX-04, NOU-01 corrigés.
+
 ## Étapes
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)
 - [x] 1. Matrice : `playwright.audit.config.ts` (29 projets, 5 workers), script `npm run test:audit`, navigateurs

@@ -335,6 +335,17 @@ Décidé le 2026-10-16. Branche `b2-teintes`.
 - Éditeur : sélecteur de teinte (murs, boiseries) ; élévation, 3D, PDF et résultats à la teinte de la pose.
 - Fini quand : tests unitaires (`peintureTints`) et e2e (même peinture, deux teintes, deux lignes de pots) verts.
 
+## Lot A — Projets fiables (audit UI/UX)
+
+Branche `lot-a-projets`. Corrige PRJ-01, PRJ-02, PRJ-03, UX-04, NOU-01 (`docs/audit/PROPOSITIONS.md`).
+
+- Carte de projet commune (`ui/components/ProjectCard.svelte`) : plan, résumé par outil, coût, menu pour tous ; le
+  contrat de module n'a plus `screens.card`.
+- Suppression écrite tout de suite, « Annuler » réenregistre le projet.
+- Accueil vide sans lien vers un import disparu ; « Annuler » d'un projet neuf ramène à l'accueil.
+- Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur (`tests/e2e/projects.spec.ts`), parité intacte.
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 
