@@ -100,6 +100,11 @@ export interface Partition {
    * si elle la traverse de part en part ; sinon c'est un muret, obstacle dans le sol (docs/cloisons/SPEC.md).
    */
   height?: number;
+  /**
+   * Construction : absent, plaques de plâtre sur ossature (module cloisons) ; `masonry`, maçonnée (module maçonnerie,
+   * matériau de base et zones). Même tracé, même découpe des pièces.
+   */
+  construction?: 'masonry';
 }
 
 export interface PartitionOpening {

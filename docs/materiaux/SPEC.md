@@ -75,6 +75,17 @@ interface, achats. Fini quand `npm run check`, la parité carrelage et les e2e s
   l'ouverture proposée. Fers : un par joint et un par bordure, dans les deux sens.
 - Achats : éléments + marge (5 % par défaut), liant en sacs (25 kg par défaut), fers d'armature en mètres.
 
+## N7 — Murets multi-matériaux
+- Une cloison du plan avec `construction: 'masonry'` est un mur de la maçonnerie : longueur de l'axe, hauteur du plan
+  (sinon la plus basse des pièces voisines), portes et baies en trous. Le module cloisons l'ignore.
+- Un mur = matériau de base + zones rectangulaires (x depuis le début, y depuis le sol, largeur, hauteur, matériau).
+- Base : rang par rang, la longueur libre est le mur moins les trous et zones qui couvrent tout le rang ; un trou sur
+  une partie du rang recoupe en hauteur les éléments au droit. Une zone peut couper un élément en deux morceaux :
+  au plus un élément de plus par rang (pas de réemploi de chute compté).
+- Zones : calculées dans leur matériau (briques de verre : éléments entiers, bordures). Alertes : zone hors du mur,
+  zones qui se chevauchent, zone sur une porte.
+- Matériau de base par défaut : celui de l'épaisseur de la cloison ; le choisir recopie son épaisseur dans le plan.
+
 ## Décisions du 2026-10-17
 - Pas d'extrait du DTU disponible : toutes les valeurs sont affichées « à titre indicatif (estimation) » dans
   l'interface ; la fiabilité S / C de cette spec sert de base à ce libellé.

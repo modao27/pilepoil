@@ -5,7 +5,12 @@
 import type { Point, Polygon } from '../../core/geometry/types';
 import { lRoom, rectRoom, roomFromOutline, uRoom } from '../../core/plan/factories';
 import { deriveSite } from '../../core/plan/derive';
-import { DEFAULT_PARTITION_THICKNESS, MIN_PARTITION_LENGTH, type WorksIssue } from '../../core/plan/works';
+import {
+  DEFAULT_PARTITION_THICKNESS,
+  MIN_PARTITION_LENGTH,
+  type WorksAction,
+  type WorksIssue,
+} from '../../core/plan/works';
 import type { PlanAction } from '../../core/plan/reduce';
 import { doorBetween, facingWalls, placeAgainst, type FacingWalls } from '../../core/plan/neighbors';
 import { signedArea } from '../../core/geometry/polygon';
@@ -231,11 +236,22 @@ export class PlanEditorState {
     return true;
   }
 
-  /** Tracer la première cloison active le module des cloisons (ses données sont créées hors du réducteur). */
+  /**
+   * Tracer la première cloison active le module des cloisons ; passer une cloison en maçonnerie active celui de la
+   * maçonnerie (leurs données sont créées hors du réducteur).
+   */
   private withTool(action: ProjectAction): ProjectAction {
-    const id = 'cloisons';
-    const m = action.type === 'plan/partition/add' && !Object.hasOwn(this.doc.modules, id) ? moduleById(id) : undefined;
-    if (!m) return action;
+    const w = action as WorksAction;
+    const id =
+      w.type === 'plan/partition/add'
+        ? w.partition.construction === 'masonry'
+          ? 'maconnerie'
+          : 'cloisons'
+        : w.type === 'plan/partition/update' && w.patch.construction === 'masonry'
+          ? 'maconnerie'
+          : null;
+    const m = id && !Object.hasOwn(this.doc.modules, id) ? moduleById(id) : undefined;
+    if (!id || !m) return action;
     const doc = { schemaVersion: m.schemaVersion, data: m.create(this.doc.plan) };
     return { type: 'batch', actions: [{ type: 'project/module/add', id, doc }, action] };
   }

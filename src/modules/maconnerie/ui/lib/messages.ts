@@ -10,6 +10,8 @@ export const SPEC_ERRORS: Record<string, string> = {
   'maconnerie/no-wall': 'Aucun mur de maçonnerie : ajoutez-en un.',
   'maconnerie/no-material': 'Un mur n’a pas de matériau : choisissez-en un dans la bibliothèque.',
   'maconnerie/size': 'Un mur n’a pas de longueur ou de hauteur : saisissez ses dimensions.',
+  'maconnerie/zone-material': 'Une zone n’a pas de matériau : choisissez-en un.',
+  'maconnerie/zone-size': 'Une zone n’a pas de largeur ou de hauteur : saisissez ses dimensions.',
 };
 
 export function alertText(a: MasonryAlert): string {
@@ -23,6 +25,12 @@ export function alertText(a: MasonryAlert): string {
       return `Joint de ${fr(p.joint)} mm : hors de la plage ${fr(p.min)} à ${fr(p.max)} mm du matériau.`;
     case 'binder-unknown':
       return 'Consommation de liant inconnue pour ce matériau : complétez sa fiche dans la bibliothèque.';
+    case 'zone-outside':
+      return 'Une zone dépasse du mur : rapprochez-la ou réduisez-la.';
+    case 'zone-overlap':
+      return 'Deux zones se chevauchent : déplacez l’une d’elles.';
+    case 'zone-on-opening':
+      return 'Une zone empiète sur une porte ou une baie : déplacez-la.';
     case 'too-small':
       return `Mur trop petit pour une brique de ${fr((p.length ?? 0) / 10)} × ${fr((p.height ?? 0) / 10)} cm et sa bordure.`;
   }

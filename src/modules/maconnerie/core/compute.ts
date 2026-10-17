@@ -1,13 +1,17 @@
 /**
- * Moteur de la maçonnerie (docs/materiaux/SPEC.md) : rangs, éléments, coupes, liant et poids d'un mur ; panneau
- * d'éléments entiers pour les briques de verre. Pur et déterministe. Valeurs indicatives (estimation).
+ * Moteur de la maçonnerie (docs/materiaux/SPEC.md) : un mur est un matériau de base monté rang par rang autour de ses
+ * ouvertures et de ses zones, chaque zone étant elle-même montée dans son matériau ; les briques de verre se posent
+ * en éléments entiers avec une bordure. Pur et déterministe. Valeurs indicatives (estimation).
  */
 import type {
   GlassLayout,
   MaconnerieResult,
   MaconnerieSpec,
   MasonryAlert,
+  Material,
   MaterialTotal,
+  Rect,
+  SurfaceResult,
   WallResult,
   WallSpec,
 } from './types';
@@ -22,11 +26,45 @@ export const glassMaxArea = (thickness: number): number => (thickness <= 60 ? 3 
 /** Nombre de rangs de hauteur `h` (joint `j`) pour couvrir `H`. */
 export const courseCount = (H: number, h: number, j: number): number => Math.max(1, Math.ceil((H + j) / (h + j) - EPS));
 
-/** Éléments d'un rang de longueur `L`, décalé de `offset` (le premier élément dépasse du bord). */
-export const rowPieces = (L: number, l: number, j: number, offset: number): number =>
-  Math.max(1, Math.ceil((L + offset + j) / (l + j) - EPS));
+type Interval = [number, number];
 
-const isMultiple = (x: number, p: number) => Math.abs(x / p - Math.round(x / p)) < 1e-6;
+/** [0, L] moins les intervalles bloqués (rognés, fusionnés), dans l'ordre. */
+export function freeSegments(L: number, blocked: Interval[]): Interval[] {
+  const bs = blocked
+    .map(([a, b]): Interval => [Math.max(0, a), Math.min(L, b)])
+    .filter(([a, b]) => b - a > EPS)
+    .sort((p, q) => p[0] - q[0]);
+  const out: Interval[] = [];
+  let x = 0;
+  for (const [a, b] of bs) {
+    if (a > x + EPS) out.push([x, a]);
+    x = Math.max(x, b);
+  }
+  if (L > x + EPS) out.push([x, L]);
+  return out;
+}
+
+/**
+ * Éléments d'un rang qui touchent [s, e] : longueur `l`, pas `pitch` (élément + joint), grille décalée de `offset`
+ * (l'élément k commence en k × pitch − offset). Coupés : ceux qui dépassent d'un bout.
+ */
+export function segmentPieces(s: number, e: number, l: number, pitch: number, offset: number) {
+  const kMax = Math.ceil((e + offset) / pitch - EPS) - 1;
+  const kMin = Math.floor((s + offset - l) / pitch + EPS) + 1;
+  const pieces = Math.max(0, kMax - kMin + 1);
+  if (!pieces) return { pieces: 0, cut: 0 };
+  const first = kMin * pitch - offset < s - EPS;
+  const last = kMax * pitch - offset + l > e + EPS;
+  return { pieces, cut: pieces === 1 ? (first || last ? 1 : 0) : (first ? 1 : 0) + (last ? 1 : 0) };
+}
+
+const overlaps = (a: Rect, b: Rect) =>
+  a.x < b.x + b.width - EPS && b.x < a.x + a.width - EPS && a.y < b.y + b.height - EPS && b.y < a.y + a.height - EPS;
+
+/** Aire de `r` dans le rectangle [0, L] × [0, H] (mm²). */
+const clippedArea = (r: Rect, L: number, H: number) =>
+  Math.max(0, Math.min(L, r.x + r.width) - Math.max(0, r.x)) *
+  Math.max(0, Math.min(H, r.y + r.height) - Math.max(0, r.y));
 
 /** Panneau d'éléments entiers : le plus grand nombre de colonnes et de rangs qui laisse la bordure mini. */
 export function glassLayout(L: number, H: number, l: number, h: number, j: number): GlassLayout | null {
@@ -40,75 +78,92 @@ export function glassLayout(L: number, H: number, l: number, h: number, j: numbe
   return { cols, rows, borderX, borderY, reinforcement };
 }
 
-export function computeWall(w: WallSpec): WallResult {
-  const m = w.material;
+/** Rangs, éléments et coupes d'un matériau qui se coupe, sur L × H moins `holes`. */
+function laid(L: number, H: number, m: Material, j: number, holes: Rect[]) {
   const t = m.laying;
-  const alerts: MasonryAlert[] = [];
-  const area = (w.length * w.height) / 1e6;
-  if (w.joint < t.jointH.min - EPS || w.joint > t.jointH.max + EPS)
-    alerts.push({
-      code: 'joint-out-of-range',
-      wall: w.id,
-      params: { joint: w.joint, min: t.jointH.min, max: t.jointH.max },
-    });
+  const jv = t.jointV ? j : 0;
+  const pitch = m.length + jv;
+  const courses = courseCount(H, m.height, j);
+  let elements = 0;
+  let cut = 0;
+  for (let c = 0; c < courses; c++) {
+    const y0 = c * (m.height + j);
+    const y1 = Math.min(y0 + m.height, H);
+    if (y1 <= y0 + EPS) continue;
+    const offset = t.bond === 'running' && c % 2 === 1 ? pitch / 2 : 0;
+    const over = holes.filter((o) => o.y < y1 - EPS && o.y + o.height > y0 + EPS);
+    // un trou sur toute la hauteur du rang l'interrompt ; sur une partie, les éléments au droit sont recoupés
+    const full = over.filter((o) => o.y <= y0 + EPS && o.y + o.height >= y1 - EPS);
+    const partial = over.filter((o) => !full.includes(o));
+    const lowered = y1 - y0 < m.height - EPS;
+    for (const [s, e] of freeSegments(
+      L,
+      full.map((o): Interval => [o.x, o.x + o.width]),
+    )) {
+      const r = segmentPieces(s, e, m.length, pitch, offset);
+      elements += r.pieces;
+      cut += lowered ? r.pieces : r.cut;
+    }
+    if (!lowered)
+      for (const o of partial)
+        cut += segmentPieces(Math.max(0, o.x), Math.min(L, o.x + o.width), m.length, pitch, offset).pieces;
+  }
+  return { courses, elements, cut: Math.min(cut, elements) };
+}
+
+/** Quantités d'une surface d'un seul matériau ; les alertes passent par `alert`. */
+function surface(
+  L: number,
+  H: number,
+  m: Material,
+  j: number,
+  holes: Rect[],
+  alert: (code: MasonryAlert['code'], params?: Record<string, number>) => void,
+): SurfaceResult {
+  const t = m.laying;
+  const area = (L * H - holes.reduce((s, o) => s + clippedArea(o, L, H), 0)) / 1e6;
+  if (j < t.jointH.min - EPS || j > t.jointH.max + EPS)
+    alert('joint-out-of-range', { joint: j, min: t.jointH.min, max: t.jointH.max });
+  const none = { material: m.id, courses: 0, elements: 0, cut: 0, area, binderKg: null, weightKg: null, glass: null };
 
   let courses: number;
   let elements: number;
   let cut = 0;
   let glass: GlassLayout | null = null;
-
   if (!t.cutAllowed) {
-    glass = glassLayout(w.length, w.height, m.length, m.height, w.joint);
+    glass = glassLayout(L, H, m.length, m.height, j);
     if (!glass) {
-      alerts.push({ code: 'too-small', wall: w.id, params: { length: m.length, height: m.height } });
-      return {
-        id: w.id,
-        ok: false,
-        courses: 0,
-        elements: 0,
-        cut: 0,
-        area,
-        binderKg: null,
-        weightKg: null,
-        glass,
-        alerts,
-      };
+      alert('too-small', { length: m.length, height: m.height });
+      return { ...none, ok: false };
     }
     courses = glass.rows;
-    elements = glass.cols * glass.rows;
+    elements = 0;
+    for (let r = 0; r < glass.rows; r++)
+      for (let c = 0; c < glass.cols; c++) {
+        const cell = {
+          x: glass.borderX + c * (m.length + j),
+          y: glass.borderY + r * (m.height + j),
+          width: m.length,
+          height: m.height,
+        };
+        if (!holes.some((o) => overlaps(o, cell))) elements++;
+      }
     if (glass.borderX > GLASS_BORDER.max + EPS || glass.borderY > GLASS_BORDER.max + EPS)
-      alerts.push({
-        code: 'glass-not-cuttable',
-        wall: w.id,
-        params: {
-          cols: glass.cols,
-          rows: glass.rows,
-          width: glass.cols * m.length + (glass.cols - 1) * w.joint + 2 * GLASS_BORDER.min,
-          height: glass.rows * m.height + (glass.rows - 1) * w.joint + 2 * GLASS_BORDER.min,
-        },
+      alert('glass-not-cuttable', {
+        cols: glass.cols,
+        rows: glass.rows,
+        width: glass.cols * m.length + (glass.cols - 1) * j + 2 * GLASS_BORDER.min,
+        height: glass.rows * m.height + (glass.rows - 1) * j + 2 * GLASS_BORDER.min,
       });
     const max = glassMaxArea(m.thickness);
-    if (area > max + EPS) alerts.push({ code: 'panel-area-exceeds-max', wall: w.id, params: { area, max } });
+    if (area > max + EPS) alert('panel-area-exceeds-max', { area, max });
   } else {
-    const jv = t.jointV ? w.joint : 0;
-    const pitch = m.length + jv;
-    const offsetOf = (c: number) => (t.bond === 'running' && c % 2 === 1 ? pitch / 2 : 0);
-    courses = courseCount(w.height, m.height, w.joint);
-    elements = 0;
-    for (let c = 0; c < courses; c++) {
-      const offset = offsetOf(c);
-      elements += rowPieces(w.length, m.length, jv, offset);
-      cut += (offset > 0 ? 1 : 0) + (isMultiple(w.length + offset + jv, pitch) ? 0 : 1);
-    }
-    // dernier rang recoupé en hauteur : tous ses éléments
-    if (!isMultiple(w.height + w.joint, m.height + w.joint))
-      cut += rowPieces(w.length, m.length, jv, offsetOf(courses - 1));
-    cut = Math.min(cut, elements);
+    ({ courses, elements, cut } = laid(L, H, m, j, holes));
   }
 
-  if (t.binderPerM2 == null) alerts.push({ code: 'binder-unknown', wall: w.id });
+  if (t.binderPerM2 == null) alert('binder-unknown');
   return {
-    id: w.id,
+    material: m.id,
     ok: true,
     courses,
     elements,
@@ -117,18 +172,41 @@ export function computeWall(w: WallSpec): WallResult {
     binderKg: t.binderPerM2 == null ? null : area * t.binderPerM2,
     weightKg: m.weight == null ? null : elements * m.weight,
     glass,
-    alerts,
   };
 }
 
-/** Totaux par matériau, dans l'ordre d'apparition des murs. */
+export function computeWall(w: WallSpec): WallResult {
+  const alerts: MasonryAlert[] = [];
+  const push = (zone?: string) => (code: MasonryAlert['code'], params?: Record<string, number>) =>
+    alerts.push({ code, wall: w.id, ...(zone ? { zone } : {}), ...(params ? { params } : {}) });
+
+  w.zones.forEach((z, i) => {
+    if (z.x < -EPS || z.y < -EPS || z.x + z.width > w.length + EPS || z.y + z.height > w.height + EPS)
+      push(z.id)('zone-outside');
+    if (w.zones.slice(0, i).some((o) => overlaps(o, z))) push(z.id)('zone-overlap');
+    if (w.holes.some((o) => overlaps(o, z))) push(z.id)('zone-on-opening');
+  });
+  const base = surface(w.length, w.height, w.material, w.joint, [...w.zones, ...w.holes], push());
+  const zones = w.zones.map((z) => ({
+    id: z.id,
+    ...surface(
+      z.width,
+      z.height,
+      z.material,
+      z.joint,
+      w.holes.map((o) => ({ ...o, x: o.x - z.x, y: o.y - z.y })),
+      push(z.id),
+    ),
+  }));
+  return { id: w.id, ...base, zones, alerts };
+}
+
+/** Totaux par matériau (base et zones), dans l'ordre d'apparition. */
 export function computeMaconnerie(spec: MaconnerieSpec): MaconnerieResult {
   const walls = spec.walls.map(computeWall);
   const totals = new Map<string, MaterialTotal>();
-  spec.walls.forEach((w, i) => {
-    const r = walls[i]!;
+  const add = (m: Material, r: SurfaceResult) => {
     if (!r.ok) return;
-    const m = w.material;
     const cur = totals.get(m.id) ?? {
       material: m.id,
       name: m.name,
@@ -144,6 +222,11 @@ export function computeMaconnerie(spec: MaconnerieSpec): MaconnerieResult {
     cur.weightKg = cur.weightKg == null || r.weightKg == null ? null : cur.weightKg + r.weightKg;
     cur.reinforcement += r.glass?.reinforcement ?? 0;
     totals.set(m.id, cur);
+  };
+  spec.walls.forEach((w, i) => {
+    const r = walls[i]!;
+    add(w.material, r);
+    w.zones.forEach((z, k) => add(z.material, r.zones[k]!));
   });
   for (const t of totals.values()) t.purchased = Math.ceil(t.elements * (1 + spec.margin) - EPS);
   return { walls, totals: [...totals.values()], alerts: walls.flatMap((w) => w.alerts) };

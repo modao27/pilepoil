@@ -6,7 +6,7 @@ import type { LibraryDefinition, ModuleManifest } from '../types';
 import type { MaconnerieResult, MaconnerieSpec } from './core/types';
 import { MATERIAL_SCHEMA, templateMaterials } from './core/defaults';
 import type { Action } from './state/actions';
-import { MACONNERIE_ID, MACONNERIE_SCHEMA, type MaconnerieData } from './state/model';
+import { MACONNERIE_ID, MACONNERIE_MIGRATIONS, MACONNERIE_SCHEMA, type MaconnerieData } from './state/model';
 import { usesMaterial } from './state/usage';
 
 /** Bibliothèque de matériaux de maçonnerie (#/library/materials). */
@@ -24,7 +24,8 @@ export const library: LibraryDefinition = {
   usedIn: usesMaterial,
 };
 
-/** Module maçonnerie (docs/materiaux/SPEC.md) : pas de pose ; les murets multi-matériaux viennent ensuite. */
+/** Module maçonnerie (docs/materiaux/SPEC.md) : pas de pose ; ses murs sont les cloisons maçonnées du plan
+ * et des murs saisis par leurs dimensions. */
 export const module: ModuleManifest<MaconnerieData, MaconnerieSpec, MaconnerieResult, Action> = {
   id: MACONNERIE_ID,
   label: 'Maçonnerie',
@@ -34,7 +35,7 @@ export const module: ModuleManifest<MaconnerieData, MaconnerieSpec, MaconnerieRe
   schemaVersion: MACONNERIE_SCHEMA,
   logic: () => import('./logic').then((m) => m.logic),
   results: () => import('./ui/lib/resultsModule').then((m) => m.results),
-  migrations: {},
+  migrations: MACONNERIE_MIGRATIONS,
   screens: {
     editor: () => import('./ui/screens/EditorScreen.svelte').then((m) => m.default),
   },
