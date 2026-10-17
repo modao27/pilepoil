@@ -7,7 +7,8 @@
 import {
   checkZone,
   continuablePoses,
-  nextPoseName,
+  defaultPoseName,
+  poseWhere,
   roomGroups,
   wallRuns,
   sameSurface,
@@ -96,8 +97,9 @@ export function newPoseAction(
   newId: () => Id,
   shape: Pick<Zone, 'cuts' | 'area' | 'holes'> = { cuts: [] },
 ): { action: ProjectAction; poseId: Id } | { error: CoverageError } {
-  const pose: Pose = { id: newId(), module: m.id, name: nextPoseName(p.poses) };
-  const zone: Zone = { ...shape, id: newId(), surface, pose: pose.id };
+  const poseId = newId();
+  const zone: Zone = { ...shape, id: newId(), surface, pose: poseId };
+  const pose: Pose = { id: poseId, module: m.id, name: defaultPoseName(p.plan, p.poses, [zone], poseId) };
   const error = checkZone(p.plan, p, zone, m.coverage!);
   if (error) return { error };
   const inRoom = new Set(p.zones.filter((z) => z.surface.room === surface.room).map((z) => z.pose));
@@ -125,7 +127,29 @@ export function continueAction(p: Project, surface: SurfaceRef, poseId: Id, newI
     const box = z && zoneBox(p.plan, z);
     if (box) cuts = wallSpanCuts(p.plan, surface, box[2], box[3]);
   }
-  return { type: 'zone/add', zone: { id: newId(), surface, cuts, pose: poseId } };
+  const zone: Zone = { id: newId(), surface, cuts, pose: poseId };
+  const add: ProjectAction = { type: 'zone/add', zone };
+  // le nom proposé suit la pose quand elle s'étend (« Cuisine, mur 1 » → « Cuisine, murs 1 et 2 ») ; un nom choisi reste
+  const pose = p.poses.find((x) => x.id === poseId);
+  const before = poseWhere(p.plan, p.zones, poseId);
+  const after = poseWhere(p.plan, [...p.zones, zone], poseId);
+  if (!pose || !before || pose.name.replace(/ \(\d+\)$/, '') !== before || before === after) return add;
+  return {
+    type: 'batch',
+    actions: [
+      add,
+      {
+        type: 'pose/rename',
+        poseId,
+        name: defaultPoseName(
+          p.plan,
+          p.poses.filter((x) => x.id !== poseId),
+          [...p.zones, zone],
+          poseId,
+        ),
+      },
+    ],
+  };
 }
 
 /**
@@ -184,7 +208,17 @@ export function removeZoneAction(p: Project, libraries: Libraries, zone: Zone, n
   const names = [...p.poses];
   for (const g of groups.slice(1)) {
     const moved = left.filter((z) => g.includes(walls ? z.surface.wall! : z.surface.room));
-    const added: Pose = { id: newId(), module: m.id, name: nextPoseName(names) };
+    const addedId = newId();
+    const added: Pose = {
+      id: addedId,
+      module: m.id,
+      name: defaultPoseName(
+        p.plan,
+        names,
+        moved.map((z) => ({ ...z, pose: addedId })),
+        addedId,
+      ),
+    };
     names.push(added);
     actions.push(...moved.map((z): ProjectAction => ({ type: 'zone/remove', zoneId: z.id })));
     actions.push({
@@ -213,7 +247,12 @@ export function contourAction(
   const pose = p.poses.find((x) => x.id === zone.pose);
   const m = pose && modules.find((x) => x.id === pose.module);
   if (!m) return null;
-  const added: Pose = { id: newId(), module: m.id, name: nextPoseName(p.poses) };
+  const addedId = newId();
+  const added: Pose = {
+    id: addedId,
+    module: m.id,
+    name: defaultPoseName(p.plan, p.poses, [{ ...zone, pose: addedId }], addedId),
+  };
   return {
     action: {
       type: 'zone/contour',

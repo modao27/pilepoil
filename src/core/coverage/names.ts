@@ -37,3 +37,16 @@ export function poseWhere(plan: Plan, zones: readonly Zone[], pose: Id, room?: I
   if (parts.length > 1 && parts.every((p) => p.what === 'sol')) return `${parts.map((p) => p.name).join(' + ')}, sol`;
   return parts.map((p) => `${p.name}, ${p.what}`).join(' ; ');
 }
+
+/**
+ * Nom proposé pour une nouvelle pose : ce qu'elle couvre (« Cuisine, sol »), suivi de (2), (3)… si ce nom existe déjà.
+ * `zones` : au moins la zone de la nouvelle pose (qui porte `poseId`).
+ */
+export function defaultPoseName(plan: Plan, poses: readonly Pose[], zones: readonly Zone[], poseId: Id): string {
+  const base = poseWhere(plan, zones, poseId) || 'Pose';
+  const taken = new Set(poses.map((p) => p.name));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base} (${n})`)) n++;
+  return `${base} (${n})`;
+}

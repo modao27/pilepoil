@@ -16,7 +16,7 @@ export async function newRoom(page: Page, tile?: [number, number]): Promise<stri
   await cover(page, 'Sol');
   for (const n of [1, 2, 3, 4]) await cover(page, `Mur ${n}`, 'carrelage', n > 1 ? 'new' : undefined);
   await expect(
-    page.getByRole('region', { name: 'Sol et murs' }).getByRole('button', { name: /^(Sol|Mur \d) .*Pose \d/ }),
+    page.getByRole('region', { name: 'Sol et murs' }).getByRole('button', { name: /^(Sol|Mur \d) .*Carrelage · / }),
   ).toHaveCount(5);
   return id;
 }

@@ -111,7 +111,7 @@ describe('module parquet', () => {
     );
     expect(layoutsOf(q).map((l) => [l.id, l.name, l.rooms])).toEqual([
       ['L1', 'Pose 1', [a!.id]],
-      ['L2', 'Pose 2', [b!.id]],
+      ['L2', 'Cuisine, sol', [b!.id]],
     ]);
     expect(toggleRoomAction(q, 'L2', a!.id, true, id)).toMatchObject({ error: { code: 'zone-overlap' } });
     // décocher la dernière pièce : la pose disparaît
@@ -277,7 +277,7 @@ describe('plusieurs pièces (P3)', () => {
     const p2 = reduceProject(p1, r.action);
     expect(layoutsOf(p2).map((l) => [l.id, l.name, l.rooms, l.breaks])).toEqual([
       ['L1', 'Pose 1', [a!.id], []],
-      ['L2', 'Pose 2', [b!.id], []],
+      ['L2', 'Bureau, sol', [b!.id], []],
     ]);
     // aucune zone coupée : chaque pièce entière
     expect(p2.zones.every((z) => z.cuts.length === 0)).toBe(true);

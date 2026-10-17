@@ -77,7 +77,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await expect(page.getByRole('heading', { name: 'Pièce 288 × 240' })).toBeVisible();
   await check(page);
   await shot(page, info, '15-vue-globale');
-  await page.getByRole('link', { name: /^Carrelage · Pose 1/ }).click();
+  await page.getByRole('link', { name: /^Carrelage · Pièce, mur 1/ }).click();
   await expect(page.getByRole('application', { name: /^Plan de Pièce, mur 1/ })).toBeVisible();
   await expect(page.getByText('Pièce 288 × 240')).toBeVisible();
   await page.getByRole('link', { name: /\d+ carreaux/ }).click();
@@ -87,7 +87,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
 
   // persistance
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Résultats — Carrelage · Pose 1' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Résultats — Carrelage · Pièce, mur 1' })).toBeVisible();
 
   // résultats → vue globale → accueil, carte, menu
   await page.getByRole('link', { name: 'Projet', exact: true }).click();
@@ -172,7 +172,9 @@ test('pièce en L : sol et murs revêtus sur l’écran Pièce', async ({ page }
   await check(page);
   await shot(page, info, '16-piece-L');
   await expect(
-    page.getByRole('region', { name: 'Sol et murs' }).getByRole('button', { name: /: Pose \d$/ }),
+    page
+      .getByRole('region', { name: 'Sol et murs' })
+      .getByRole('button', { name: /: (Carrelage|Parquet|Peinture) · / }),
   ).toHaveText([/Sol :/, /Mur 1 /, /Mur 2 /, /Mur 6 /]);
   await openPose(page, 'Sol');
   await expect(page.getByRole('application', { name: /^Plan de Pièce, sol/ })).toBeVisible();

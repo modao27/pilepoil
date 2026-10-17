@@ -225,19 +225,19 @@ test('parquet : deux pièces reliées par une porte, seuil conseillé, poses sé
 
   // séparer en deux poses au passage : le Bureau passe dans la nouvelle pose, affichée, son angle est libre
   await p.getByRole('button', { name: 'Séparer en deux poses' }).click();
-  await expect(page.getByRole('button', { name: /Pose 2 · Bureau/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Bureau, sol/ })).toBeVisible();
   await expect(p.getByRole('checkbox', { name: 'Bureau' })).toBeChecked();
-  await expect(p.getByRole('checkbox', { name: 'Séjour (Pose 1)' })).not.toBeChecked();
+  await expect(p.getByRole('checkbox', { name: 'Séjour, sol' })).not.toBeChecked();
   await step(page, 'Pose');
   await setNumber(p, 'Angle des lames', '90');
   await expect(page.locator('g.other polygon.piece').first()).toBeAttached();
   // la pose 1 depuis la liste des poses (titre)
-  await page.getByRole('button', { name: /Pose 2 · Bureau/ }).click();
+  await page.getByRole('button', { name: /Bureau, sol/ }).click();
   const poses = page.getByRole('dialog', { name: 'Poses de parquet' });
-  await poses.getByRole('button', { name: /^Pose 1/ }).click();
-  await expect(page.getByRole('button', { name: /Pose 1 · Séjour/ })).toBeVisible();
+  await poses.getByRole('button', { name: /^Séjour, sol/ }).click();
+  await expect(page.getByRole('button', { name: /Séjour, sol/ })).toBeVisible();
   await step(page, 'Découpage');
-  await expect(p.getByRole('checkbox', { name: 'Bureau (Pose 2)' })).not.toBeChecked();
+  await expect(p.getByRole('checkbox', { name: 'Bureau, sol' })).not.toBeChecked();
   await expect(p.getByText(/recouvre une autre pose/)).toHaveCount(0);
   await check(page);
   await shot(page, info, '98-parquet-poses-separees');

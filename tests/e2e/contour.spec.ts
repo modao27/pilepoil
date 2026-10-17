@@ -44,16 +44,20 @@ test('entrée carrelée tracée dans un séjour en parquet', async ({ page }, in
 
   // l'intérieur (nouvelle pose de parquet) passe en carrelage
   const list = page.getByRole('region', { name: 'Sol et murs' });
-  await expect(list.getByRole('button', { name: /^Sol : Pose 1, Pose 2$/ })).toBeVisible();
+  await expect(
+    list.getByRole('button', { name: /^Sol : Parquet · Séjour, sol, Parquet · Séjour, sol \(2\)$/ }),
+  ).toBeVisible();
   await page.locator('li', { hasText: 'contour dessiné' }).getByRole('button', { name: 'Passer en carrelage' }).click();
-  await expect(list.getByRole('button', { name: /^Sol : Pose 1, Pose 3$/ })).toBeVisible();
-  await expect(page.locator('li', { hasText: 'contour dessiné' })).toContainText('Carrelage · Pose 3');
+  await expect(
+    list.getByRole('button', { name: /^Sol : Parquet · Séjour, sol, Carrelage · Séjour, sol \(3\)$/ }),
+  ).toBeVisible();
+  await expect(page.locator('li', { hasText: 'contour dessiné' })).toContainText('Carrelage · Séjour, sol (3)');
   await check(page);
   await shot(page, info, 'N4-entree-carrelee');
 
   // les deux calepinages s'ouvrent : le parquet autour, le carrelage dans l'entrée
   await selectSurface(page, 'Sol');
-  await page.locator('li', { hasText: 'Parquet · Pose 1' }).getByRole('link', { name: 'Calepinage' }).click();
+  await page.locator('li', { hasText: 'Parquet · Séjour, sol' }).getByRole('link', { name: 'Calepinage' }).click();
   await expect(page.getByRole('application', { name: /^Plan des lames : \d+ lames/ })).toBeVisible();
   await expect(page.locator('line.threshold:not(.proposed)')).toHaveCount(4);
 });

@@ -66,10 +66,10 @@ describe('revêtir une surface', () => {
     expect(modulesFor(wall(0)).map((m) => m.id)).toEqual(['carrelage', 'peinture']);
   });
 
-  it('nouvelle pose de carrelage : « Pose 1 », une zone sur tout le sol, réglages au module', () => {
+  it('nouvelle pose de carrelage : « Pièce, sol », une zone sur tout le sol, réglages au module', () => {
     const p = project();
     const q = apply(p, newPoseAction(p, libraries, carrelage, floor, ids('n')));
-    expect(q.poses).toEqual([{ id: 'n0', module: 'carrelage', name: 'Pose 1' }]);
+    expect(q.poses).toEqual([{ id: 'n0', module: 'carrelage', name: 'Pièce, sol' }]);
     expect(q.zones).toEqual([{ id: 'n1', surface: floor, cuts: [], pose: 'n0' }]);
     expect(view(q).surfaces[0]).toMatchObject({ id: 'n0', kind: 'floor', width: 3000, height: 2000 });
     expect(carrelageData(q)!.poses.n0!.bands[0]!.tileId).toBe(tile.id);
@@ -108,7 +108,7 @@ describe('zones', () => {
       ['Pièce, mur 1', 1],
       ['Pièce, mur 3', 1],
     ]);
-    expect(q.poses.map((x) => x.name)).toEqual(['U', 'Pose 2']);
+    expect(q.poses.map((x) => x.name)).toEqual(['U', 'Pièce, mur 3']);
     const d = carrelageData(q)!;
     const [a, b] = q.poses.map((x) => d.poses[x.id]!);
     expect(b!.bands.map((x) => x.tileId)).toEqual(a!.bands.map((x) => x.tileId));
@@ -163,8 +163,8 @@ describe('contour sur un sol', () => {
     if (!c) throw new Error('contour');
     const p1 = reduceProject(wood, c.action);
     expect(p1.poses.map((x) => [x.module, x.name])).toEqual([
-      ['parquet', 'Pose 1'],
-      ['parquet', 'Pose 2'],
+      ['parquet', 'Pièce, sol'],
+      ['parquet', 'Pièce, sol (2)'],
     ]);
     const inner = p1.zones.find((z) => z.area)!;
     const r = switchAction(p1, libraries, inner, carrelage, ids('s'));

@@ -107,7 +107,10 @@
       }),
   );
   const roomName = (id: string) => ed.doc.plan.rooms.find((r) => r.id === id)?.name ?? 'pièce';
-  /** Autres poses sur le sol d'une pièce (parquet ou autre revêtement) : « Pose 2 », pour la case de la pièce. */
+  /** « Bureau (Peinture · Bureau, sol) » ; « Bureau, sol » seul quand le nom de la pose dit déjà la pièce. */
+  const roomLabel = (room: string, by: string) => (!by ? room : by.startsWith(room) ? by : `${room} (${by})`);
+
+  /** Autres poses sur le sol d'une pièce (parquet ou autre revêtement) : « Bureau, sol », pour la case de la pièce. */
   function coveredBy(roomId: string): string {
     const ids = new Set(
       ed.doc.zones
@@ -163,9 +166,11 @@
   /** Étape affichée, liste des poses (titre). */
   let step = $state<StepId>('product');
   let posesDialog = $state(false);
-  /** « Pose 2 · Séjour, Bureau ». */
-  const layoutTitle = (l: { name: string; rooms: string[] }) =>
-    l.rooms.length ? `${l.name} · ${l.rooms.map(roomName).join(', ')}` : l.name;
+  /** « Pose 2 · Séjour, Bureau » ; le nom seul quand il dit déjà les pièces (« Bureau, sol »). */
+  const layoutTitle = (l: { name: string; rooms: string[] }) => {
+    const names = l.rooms.map(roomName);
+    return names.length && !names.every((n) => l.name.includes(n)) ? `${l.name} · ${names.join(', ')}` : l.name;
+  };
 
   onMount(() => {
     const flush = () => void ed.flush();
@@ -341,7 +346,7 @@
           {#key refused}
             {#each ed.doc.plan.rooms as r (r.id)}
               <Checkbox
-                label={coveredBy(r.id) ? `${r.name} (${coveredBy(r.id)})` : r.name}
+                label={roomLabel(r.name, coveredBy(r.id))}
                 checked={layout.rooms.includes(r.id)}
                 onchange={(on) => ed.toggleRoom(r.id, on) || refused++}
               />

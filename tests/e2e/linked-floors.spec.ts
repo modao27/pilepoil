@@ -54,8 +54,8 @@ test('deux pièces collées, porte vers la voisine, carrelage puis parquet conti
   await selectSurface(page, 'Sol');
   await page.getByRole('button', { name: 'Revêtir : carrelage' }).click();
   const choose = page.getByRole('dialog', { name: 'Carrelage : sol' });
-  await choose.getByRole('button', { name: 'Continuer « Pose 1 »' }).click();
-  await expect(floorButton(page, /^Sol : Pose 1$/)).toBeVisible();
+  await choose.getByRole('button', { name: 'Continuer « Séjour, sol »' }).click();
+  await expect(floorButton(page, /^Sol : Carrelage · Séjour \+ Bureau, sol$/)).toBeVisible();
   await check(page);
   await shot(page, info, 'N3-sols-relies');
   await openPose(page, 'Sol');
@@ -65,7 +65,7 @@ test('deux pièces collées, porte vers la voisine, carrelage puis parquet conti
   await openRoom(page, id, 'Bureau');
   await selectSurface(page, 'Sol');
   await page.getByRole('button', { name: 'Passer en parquet' }).click();
-  await expect(floorButton(page, /^Sol : Pose 2$/)).toBeVisible();
+  await expect(floorButton(page, /^Sol : Parquet · (Séjour \+ )?Bureau, sol$/)).toBeVisible();
   await openRoom(page, id, 'Séjour');
   await selectSurface(page, 'Sol');
   await page.getByRole('button', { name: 'Retirer' }).click();
@@ -73,9 +73,9 @@ test('deux pièces collées, porte vers la voisine, carrelage puis parquet conti
   await page.getByRole('button', { name: 'Revêtir : parquet' }).click();
   await page
     .getByRole('dialog', { name: 'Parquet : sol' })
-    .getByRole('button', { name: 'Continuer « Pose 2 »' })
+    .getByRole('button', { name: 'Continuer « Bureau, sol »' })
     .click();
-  await expect(floorButton(page, /^Sol : Pose 2$/)).toBeVisible();
+  await expect(floorButton(page, /^Sol : Parquet · (Séjour \+ )?Bureau, sol$/)).toBeVisible();
   await openPose(page, 'Sol');
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
   await step(page, 'Découpage');
@@ -93,7 +93,12 @@ test('deux pièces collées, porte vers la voisine, carrelage puis parquet conti
   await expect(page.getByText('Sol découpé en deux zones.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Passer en carrelage' })).toHaveCount(2);
   await page.getByRole('button', { name: 'Passer en carrelage' }).first().click();
-  await expect(floorButton(page, /^Sol : Pose 2, Pose 3$|^Sol : Pose 3, Pose 2$/)).toBeVisible();
+  await expect(
+    floorButton(
+      page,
+      /^Sol : (Parquet · Séjour \+ Bureau, sol, Carrelage · Séjour, sol|Carrelage · Séjour, sol(?: \(\d\))?, Parquet · Séjour \+ Bureau, sol)$/,
+    ),
+  ).toBeVisible();
   await check(page);
   await shot(page, info, 'N3-sol-partage');
 });

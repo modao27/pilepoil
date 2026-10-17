@@ -65,6 +65,11 @@
   const nameOf = (s: SurfaceRef) => surfaces.find((x) => sameSurface(x.ref, s))?.name ?? '';
   const pose = (pid: string): Pose | undefined => project?.poses.find((p) => p.id === pid);
   const poseIndex = (pid: string) => project?.poses.findIndex((p) => p.id === pid) ?? 0;
+  /** « Carrelage · Salle de bain, sol » : l'outil est toujours dit devant le nom de la pose. */
+  const poseLabel = (pid: string) => {
+    const p = pose(pid);
+    return p ? `${moduleOf(pid)?.label ?? p.module} · ${p.name}` : '';
+  };
   const moduleOf = (pid: string): ToolModule | undefined => moduleById(pose(pid)?.module ?? '');
   const zones = $derived(project && selected ? zonesOn(project, selected) : []);
 
@@ -377,9 +382,7 @@
                   variant={selected && sameSurface(selected, s.ref) ? 'secondary' : 'ghost'}
                   onclick={() => select(s.ref)}
                   >{s.name}{s.detail ? ` (${s.detail})` : ''} :
-                  {zs.length
-                    ? [...new Set(zs.map((z) => pose(z.pose)?.name ?? ''))].join(', ')
-                    : 'sans revêtement'}</Button
+                  {zs.length ? [...new Set(zs.map((z) => poseLabel(z.pose)))].join(', ') : 'sans revêtement'}</Button
                 >
               </li>
             {/each}

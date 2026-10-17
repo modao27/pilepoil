@@ -65,7 +65,7 @@ test('résultats d’une pose : chiffres, commande, découpe, encollage ; fil ve
 
   // fil : la pièce, puis le projet
   const crumbs = page.getByRole('navigation', { name: 'Fil de navigation' });
-  await crumbs.getByRole('link', { name: 'Pièce' }).click();
+  await crumbs.getByRole('link', { name: 'Pièce', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`#/p/${id}/r/`));
   await page.getByRole('link', { name: 'Résultats de la pièce (3D, PDF)' }).click();
   await expect(page.getByRole('heading', { name: 'Résultats — Pièce' })).toBeVisible();

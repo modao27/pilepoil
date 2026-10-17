@@ -67,7 +67,7 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   await cover(page, 'Mur 1');
   await cover(page, 'Mur 6', 'carrelage', 'new');
   const list = page.getByRole('region', { name: 'Sol et murs' });
-  await expect(list.getByRole('button', { name: /: Pose \d$/ })).toHaveCount(3);
+  await expect(list.getByRole('button', { name: /: Carrelage · / })).toHaveCount(3);
   await check(page);
   await shot(page, info, 'C2-parcours-carrelage');
   const roomId = new URL(page.url()).hash.split('/')[4];
@@ -83,10 +83,10 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   const p = page.getByRole('complementary', { name: 'Réglages du parquet' }).or(page.locator('.sheet'));
   await step(page, 'Découpage');
   await expect(p.getByRole('checkbox', { name: 'Chambre' })).toBeChecked();
-  await expect(p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' })).not.toBeChecked();
-  await p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' }).click();
+  await expect(p.getByRole('checkbox', { name: 'Salle de bain, sol' })).not.toBeChecked();
+  await p.getByRole('checkbox', { name: 'Salle de bain, sol' }).click();
   await expect(page.getByText('Cette surface a déjà un autre revêtement. Retirez-le d’abord.')).toBeVisible();
-  await expect(p.getByRole('checkbox', { name: 'Salle de bain (Pose 1)' })).not.toBeChecked();
+  await expect(p.getByRole('checkbox', { name: 'Salle de bain, sol' })).not.toBeChecked();
   await expect(page.getByRole('link', { name: /lames · \d+ paquets/ }).first()).toBeVisible();
 
   // 5. acheter : carrelage et parquet sur la même liste

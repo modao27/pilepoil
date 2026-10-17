@@ -33,12 +33,12 @@ test('murs 1 et 2 en une pose, hauteur par mur, puis séparés', async ({ page }
   await selectSurface(page, 'Mur 2');
   await page.getByRole('button', { name: 'Revêtir : carrelage' }).click();
   const dialog = page.getByRole('dialog', { name: 'Carrelage : mur 2' });
-  await expect(dialog.getByRole('button', { name: 'Continuer « Pose 1 »' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Continuer « Cuisine, mur 1 »' })).toBeVisible();
   await check(page);
   await shot(page, info, 'N2-continuer');
-  await dialog.getByRole('button', { name: 'Continuer « Pose 1 »' }).click();
-  await expect(page.getByRole('button', { name: /^Mur 2 \(.*: Pose 1$/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Mur 1 \(.*: Pose 1$/ })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Continuer « Cuisine, mur 1 »' }).click();
+  await expect(page.getByRole('button', { name: /^Mur 2 \(.*: Carrelage · Cuisine, murs 1 et 2$/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Mur 1 \(.*: Carrelage · Cuisine, murs 1 et 2$/ })).toBeVisible();
 
   // calepinage : une surface de 5 m, hauteur carrelée réglable mur par mur
   await openPose(page, 'Mur 1');
@@ -69,5 +69,5 @@ test('murs 1 et 2 en une pose, hauteur par mur, puis séparés', async ({ page }
   await selectSurface(page, 'Mur 1');
   await page.getByRole('button', { name: 'Retirer' }).click();
   await expect(page.getByRole('button', { name: /^Mur 1 \(.*: sans revêtement$/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Mur 2 \(.*: Pose 1$/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Mur 2 \(.*: Carrelage · Cuisine, murs? 1( et 2)?$/ })).toBeVisible();
 });

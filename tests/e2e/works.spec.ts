@@ -157,7 +157,7 @@ test('travaux : la face d’une cloison neuve se carrèle comme un mur, avec le 
   await cover(page, 'Sol');
   for (const n of [1, 2, 3, 4]) await cover(page, `Mur ${n}`, 'carrelage', n > 1 ? 'new' : undefined);
   await expect(
-    page.getByRole('region', { name: 'Sol et murs' }).getByRole('button', { name: /^(Sol|Mur \d) .*Pose \d/ }),
+    page.getByRole('region', { name: 'Sol et murs' }).getByRole('button', { name: /^(Sol|Mur \d) .*Carrelage · / }),
   ).toHaveCount(5);
 
   // retirer la cloison : la pièce d'origine retrouve son sol entier, le sol carrelé de la pièce (2) n'est plus compté
@@ -167,7 +167,7 @@ test('travaux : la face d’une cloison neuve se carrèle comme un mur, avec le 
   await p.getByRole('button', { name: 'Supprimer la cloison' }).click();
   // la pièce (2) disparaît avec ses revêtements : confirmation qui détaille la perte, rien n'est supprimé avant
   const loss = page.getByRole('dialog', { name: 'Des revêtements seront réduits' });
-  await expect(loss.getByText(/Carrelage, « Pose \d » : −/).first()).toBeVisible();
+  await expect(loss.getByText(/Carrelage, « .+ » : −/).first()).toBeVisible();
   await expect(page.getByRole('application', { name: /2 pièces/ })).toBeVisible();
   await loss.getByRole('button', { name: 'Valider' }).click();
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();

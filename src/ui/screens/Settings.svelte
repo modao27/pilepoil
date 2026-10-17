@@ -82,7 +82,8 @@
     <section aria-labelledby="s-data">
       <h2 id="s-data">Données</h2>
       <p>
-        {count(app.projects.length, 'projet', 'projets')}, enregistré{app.projects.length > 1 ? 's' : ''} sur cet appareil uniquement. Bibliothèques :
+        {count(app.projects.length, 'projet', 'projets')}, enregistré{app.projects.length > 1 ? 's' : ''} sur cet appareil
+        uniquement. Bibliothèques :
         {libraries.map((l) => `${l.label.toLowerCase()} ${app.libraries[l.id]?.length ?? 0}`).join(', ')}.
       </p>
       {#each modules.filter((m) => m.screens.settings) as m (m.id)}

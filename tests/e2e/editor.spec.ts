@@ -217,7 +217,7 @@ test('surfaces : sol et murs revêtus sur l’écran Pièce, puis résultats et 
   await cover(page, 'Sol');
   for (const n of [2, 3, 4]) await cover(page, `Mur ${n}`, 'carrelage', 'new');
   await expect(
-    page.getByRole('region', { name: 'Sol et murs' }).getByRole('button', { name: /^(Sol|Mur \d) .*Pose \d/ }),
+    page.getByRole('region', { name: 'Sol et murs' }).getByRole('button', { name: /^(Sol|Mur \d) .*Carrelage · / }),
   ).toHaveCount(5);
   await openPose(page, 'Mur 1');
   await page.getByRole('button', { name: /Pièce 300 × 240/ }).click();

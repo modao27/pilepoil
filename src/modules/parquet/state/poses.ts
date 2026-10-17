@@ -4,7 +4,7 @@
  */
 import { PARQUET_RULES } from './ids';
 import { halfPlane, zoneRegion } from '../../../core/coverage/geometry';
-import { nextPoseName } from '../../../core/coverage/names';
+import { defaultPoseName } from '../../../core/coverage/names';
 import { checkZone, type CoverageError } from '../../../core/coverage/rules';
 import type { Pose, Zone } from '../../../core/coverage/types';
 import { intersection, regionArea } from '../../../core/geometry/boolean';
@@ -61,8 +61,13 @@ export function addPoseAction(
   settings: ParquetPose,
   newId: () => Id,
 ): Extract<ProjectAction, { type: 'pose/add' }> {
-  const pose: Pose = { id: newId(), module: PARQUET_ID, name: nextPoseName(project.poses) };
-  const zone: Zone = { id: newId(), surface: { room, wall: null }, cuts: [], pose: pose.id };
+  const poseId = newId();
+  const zone: Zone = { id: newId(), surface: { room, wall: null }, cuts: [], pose: poseId };
+  const pose: Pose = {
+    id: poseId,
+    module: PARQUET_ID,
+    name: defaultPoseName(project.plan, project.poses, [zone], poseId),
+  };
   return { type: 'pose/add', pose, zones: [zone], settings };
 }
 
@@ -110,7 +115,7 @@ export function splitPoseAction(
   const moved: Zone[] = [];
   const kept: ProjectAction[] = [];
   let stays = false;
-  const pose: Pose = { id: newId(), module: PARQUET_ID, name: nextPoseName(project.poses) };
+  const pose: Pose = { id: newId(), module: PARQUET_ID, name: '' };
   for (const z of project.zones) {
     if (z.pose !== poseId || z.surface.wall != null) continue;
     const room = project.plan.rooms.find((r) => r.id === z.surface.room);
@@ -132,6 +137,7 @@ export function splitPoseAction(
     }
   }
   if (!stays || !moved.length) return null;
+  pose.name = defaultPoseName(project.plan, project.poses, moved, pose.id);
   const same = (s: Segment) =>
     s.every((p, i) => Math.abs(p[0] - line[i]![0]) < 0.5 && Math.abs(p[1] - line[i]![1]) < 0.5);
   const breaks = settings.breaks.filter((s) => !same(s));

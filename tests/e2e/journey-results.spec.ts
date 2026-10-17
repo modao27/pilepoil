@@ -91,6 +91,6 @@ test('nouveau projet → pièce → poses → résultats → PDF → vue globale
 
   await page.getByRole('navigation', { name: 'Fil de navigation' }).getByRole('link', { name: 'Projet' }).click();
   await expect(page.getByRole('heading', { name: 'Maison' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Carrelage · Pose 1/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Parquet · Pose 2/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Carrelage · / })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Parquet · / })).toBeVisible();
 });

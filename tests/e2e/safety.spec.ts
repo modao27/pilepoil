@@ -24,7 +24,7 @@ test('pièce revêtue : la suppression détaille ce qui sera perdu, et se confir
   await selectRoom(page, id);
   await panel(page).getByRole('button', { name: 'Supprimer la pièce' }).click();
   const dialog = page.getByRole('dialog', { name: 'Supprimer la pièce ?' });
-  await expect(dialog).toContainText('Carrelage : « Pose 1 » est supprimée.');
+  await expect(dialog).toContainText('Carrelage : « Pièce, mur 1 » est supprimée.');
   await dialog.getByRole('button', { name: 'Garder la pièce' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
@@ -36,7 +36,7 @@ test('pièce revêtue : la suppression détaille ce qui sera perdu, et se confir
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
   await openRoom(page, id);
-  await expect(wallButton(page, 1, 'Pose 1')).toBeVisible();
+  await expect(wallButton(page, 1, 'Carrelage · Pièce, mur 1')).toBeVisible();
 });
 
 test('pièce revêtue : la touche Suppr demande la même confirmation', async ({ page }) => {
@@ -45,7 +45,7 @@ test('pièce revêtue : la touche Suppr demande la même confirmation', async ({
   await page.getByRole('application', { name: /1 pièce/ }).focus();
   await page.keyboard.press('Delete');
   const dialog = page.getByRole('dialog', { name: 'Supprimer la pièce ?' });
-  await expect(dialog).toContainText('Carrelage : « Pose 1 » est supprimée.');
+  await expect(dialog).toContainText('Carrelage : « Pièce, mur 1 » est supprimée.');
   await dialog.getByRole('button', { name: 'Garder la pièce' }).click();
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
 });
@@ -91,9 +91,9 @@ test('enregistrement refusé : message, puis « Réessayer » enregistre', async
 
   await page.evaluate(() => ((window as unknown as { __failSave: boolean }).__failSave = false));
   await page.getByRole('status').getByRole('button', { name: 'Réessayer' }).click();
-  await expect(wallButton(page, 2, 'Pose 2')).toBeVisible();
+  await expect(wallButton(page, 2, 'Carrelage · Pièce, mur 2')).toBeVisible();
   await page.reload();
-  await expect(wallButton(page, 2, 'Pose 2')).toBeVisible();
+  await expect(wallButton(page, 2, 'Carrelage · Pièce, mur 2')).toBeVisible();
 });
 
 test('bibliothèque : enregistrement refusé signalé, « Réessayer » enregistre', async ({ page }) => {
