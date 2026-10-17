@@ -200,9 +200,14 @@
   }
   .zhead {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: var(--space-2);
+  }
+  /* une liste native garde la largeur de sa plus longue option : on la contraint à sa colonne */
+  .zhead :global(select) {
+    min-width: 0;
+    width: 100%;
   }
   .grid {
     display: grid;

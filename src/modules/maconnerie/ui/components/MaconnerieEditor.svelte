@@ -246,7 +246,7 @@
   }
   .head {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
     gap: var(--space-2);
   }

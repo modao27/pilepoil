@@ -509,6 +509,22 @@ sans source (parpaing plein, brique de cloison, carreau 50 mm, poids béton cell
 - Fait (2026-10-17).
 - Suite : murets multi-matériaux (murets tracés dans le plan, plusieurs matériaux dans un mur).
 
+## N7 — Murets multi-matériaux
+
+Branche `n7-murets` ; règles dans `docs/materiaux/SPEC.md` (§ N7). Décisions du 2026-10-17 : une cloison du plan se
+construit en plaques ou en maçonnerie (même tracé) ; un mur maçonné = un matériau de base et des zones rectangulaires
+d'autres matériaux ; les murs saisis à la main restent à côté du plan.
+
+- Plan : `Partition.construction?: 'masonry'`, choix « Plaques / Maçonnerie » dans le panneau ; la première cloison
+  maçonnée active la maçonnerie ; le module cloisons l'ignore.
+- Maçonnerie schéma 2 (migration 1 → 2) : réglages par cloison (`partitions`), zones (`WallZone`) ; matériau de base
+  par défaut : celui de l'épaisseur de la cloison ; le choisir recopie son épaisseur dans le plan.
+- Moteur : base montée rang par rang autour des portes et des zones, zones dans leur matériau ; alertes de zone.
+- Interface : carte par mur avec élévation, zones ; résultats par pièce, PDF, achats consolidés. Pas de 3D par
+  matériau (la cloison reste dessinée comme un mur).
+- Fini quand : `npm run check`, parité et e2e verts (`tests/unit/maconnerie.test.ts`, `tests/e2e/maconnerie.spec.ts`).
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 
