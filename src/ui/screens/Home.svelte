@@ -1,15 +1,10 @@
 <script lang="ts">
-  import { modules } from '../../modules/registry';
-  import type { Project } from '../../state/model';
+  import ProjectCard from '../components/ProjectCard.svelte';
   import Button from '../components/Button.svelte';
   import EmptyState from '../components/EmptyState.svelte';
   import IconButton from '../components/IconButton.svelte';
   import Screen from '../components/Screen.svelte';
   import { app } from '../lib/app.svelte';
-  import { dateShort } from '../lib/format';
-
-  /** Carte du projet : celle du premier outil activé qui en propose une. */
-  const cardOf = (p: Project) => modules.find((m) => Object.hasOwn(p.modules, m.id) && m.screens.card);
 </script>
 
 <Screen title="Mes projets" brand>
@@ -37,44 +32,13 @@
     </div>
     <ul class="list" aria-label="Projets">
       {#each app.projects as p (p.id)}
-        {@const withCard = cardOf(p)}
-        <li>
-          {#if withCard?.screens.card}
-            {#await withCard.screens.card() then Card}<Card project={p} />{/await}
-          {:else}
-            <a class="plain" href="#/p/{p.id}">
-              <span class="pname">{p.name}</span>
-              <span class="muted"
-                >{p.plan.rooms.length} pièce{p.plan.rooms.length > 1 ? 's' : ''} · modifié {dateShort(
-                  p.updatedAt,
-                )}</span
-              >
-            </a>
-          {/if}
-        </li>
+        <li><ProjectCard project={p} /></li>
       {/each}
     </ul>
   {/if}
 </Screen>
 
 <style>
-  .plain {
-    display: grid;
-    gap: var(--space-1);
-    min-height: var(--touch);
-    padding: var(--space-4);
-    border: 1px solid var(--line);
-    border-radius: var(--r-panel);
-    background: var(--sheet);
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .pname {
-    font-weight: 600;
-  }
-  .muted {
-    color: var(--muted);
-  }
   .first {
     display: grid;
     gap: var(--space-4);

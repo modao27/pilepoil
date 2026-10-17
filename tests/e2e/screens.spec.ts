@@ -94,7 +94,7 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await expect(page.getByRole('heading', { name: 'Revêtements' })).toBeVisible();
   await page.getByRole('link', { name: 'Mes projets' }).click();
   await expect(page.getByRole('link', { name: 'Pièce 288 × 240' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Aperçu de Pièce, mur 1' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Plan de Pièce 288 × 240' })).toBeVisible();
   await check(page);
   await shot(page, info, '30-accueil');
 
