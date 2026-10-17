@@ -278,3 +278,21 @@ export async function openHome(page: Page): Promise<void> {
     .catch(() => undefined);
   await page.getByRole('heading', { name: 'Mes projets' }).waitFor();
 }
+
+/** Valeur d'une préférence enregistrée dans IndexedDB (pour attendre son écriture avant de recharger). */
+export function savedPref(page: Page, key: string): Promise<unknown> {
+  return page.evaluate(
+    (k) =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open('pilepoil');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const req = db.transaction('prefs').objectStore('prefs').get(k);
+          req.onsuccess = () => resolve((req.result as { value?: unknown } | undefined)?.value);
+          req.onerror = () => reject(req.error);
+        };
+      }),
+    key,
+  );
+}

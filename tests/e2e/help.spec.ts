@@ -1,6 +1,6 @@
 /** Aide et prise en main : présentation du premier lancement, page « Comment ça marche », (i) sur les mots du métier. */
 import { expect, test } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, newWall, shot } from './helpers';
+import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, newWall, savedPref, shot } from './helpers';
 
 test('premier lancement : trois écrans, une seule fois, rouvrables depuis l’aide', async ({ page }, info) => {
   await page.goto('/');
@@ -19,6 +19,7 @@ test('premier lancement : trois écrans, une seule fois, rouvrables depuis l’a
   await expect(page.getByRole('dialog', { name: 'Nouveau projet' })).toBeVisible();
 
   // vue une fois : plus de présentation au lancement suivant
+  await expect.poll(() => savedPref(page, 'welcomeSeen')).toBe(true);
   await page.goto('/');
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
@@ -35,6 +36,8 @@ test('premier lancement : trois écrans, une seule fois, rouvrables depuis l’a
 test('passer la présentation suffit à ne plus la revoir', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('dialog').getByRole('button', { name: 'Passer' }).click();
+  // l'écriture est asynchrone : un rechargement trop tôt l'interromprait
+  await expect.poll(() => savedPref(page, 'welcomeSeen')).toBe(true);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
