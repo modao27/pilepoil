@@ -1,11 +1,12 @@
 /** Modules de la boîte à outils, dans l'ordre d'affichage (docs/BOITE.md §2). */
 import { module as carrelage } from './carrelage/index';
 import { module as cloisons } from './cloisons/index';
+import { module as maconnerie } from './maconnerie/index';
 import { module as parquet } from './parquet/index';
 import { module as peinture } from './peinture/index';
 import type { LibraryDefinition, ModuleId, ModuleLogic, ModuleManifest, ToolModule } from './types';
 
-const manifests = [carrelage, parquet, peinture, cloisons] as readonly ModuleManifest[];
+const manifests = [carrelage, parquet, peinture, cloisons, maconnerie] as readonly ModuleManifest[];
 
 const notLoaded = (id: ModuleId) => () => {
   throw new Error(`Module ${id} : logique pas encore chargée (loadModules).`);

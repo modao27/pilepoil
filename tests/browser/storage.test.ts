@@ -70,6 +70,7 @@ describe('base IndexedDB', () => {
     expect(db.version).toBe(DB_VERSION);
     expect([...db.objectStoreNames].sort()).toEqual([
       'boards',
+      'materials',
       'paints',
       'photos',
       'prefs',

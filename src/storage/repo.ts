@@ -67,7 +67,7 @@ export async function deleteProject(db: Db, id: Id): Promise<void> {
 /* ---------- bibliothèques de produits (carreaux, lames, peintures) ---------- */
 
 /** Magasins de bibliothèque : `LibraryDefinition.store` des modules. */
-export const LIBRARY_STORES = ['tiles', 'boards', 'paints', 'systems'] as const;
+export const LIBRARY_STORES = ['tiles', 'boards', 'paints', 'systems', 'materials'] as const;
 export type LibraryStore = (typeof LIBRARY_STORES)[number];
 
 export function libraryStore(store: string): LibraryStore {

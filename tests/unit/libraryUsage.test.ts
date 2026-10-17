@@ -38,7 +38,7 @@ function project(module: string, data: unknown, partitions: Partition[] = []): P
 
 describe('produits utilisés', () => {
   it('chaque bibliothèque dit si un produit sert', () => {
-    expect(libraries.map((l) => l.id).sort()).toEqual(['boards', 'paints', 'systems', 'tiles']);
+    expect(libraries.map((l) => l.id).sort()).toEqual(['boards', 'materials', 'paints', 'systems', 'tiles']);
     for (const l of libraries) expect(typeof l.usedIn).toBe('function');
   });
 
