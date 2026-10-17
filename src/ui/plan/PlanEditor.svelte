@@ -297,8 +297,8 @@
   }
   .float {
     position: absolute;
-    top: var(--space-2);
-    right: var(--space-2);
+    top: var(--space-3);
+    right: var(--space-4);
     border-radius: var(--r-field);
     background: var(--paper);
   }

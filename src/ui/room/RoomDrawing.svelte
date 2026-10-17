@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   /**
    * Dessin d'une pièce pour l'écran Pièce : le sol au centre, chaque mur déplié vers l'extérieur le long de son
    * segment. Les zones sont colorées par pose (motif propre à chaque couleur, lisible sans elle), les parties sans
@@ -63,7 +64,12 @@
     return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
   });
   const font = $derived(size / 18);
-  const box = $derived(boxOf([...room.outline, ...walls.flatMap((w) => w.corners)], font * 2).join(' '));
+  const boxArr = $derived(boxOf([...room.outline, ...walls.flatMap((w) => w.corners)], font * 2));
+  const box = $derived(boxArr.join(' '));
+  /** Largeur affichée du dessin, px : donne la taille d'une unité du dessin à l'écran. */
+  let drawnWidth = $state(0);
+  /** 44 px (cible tactile) exprimés en unités du dessin. */
+  const touchMin = $derived(drawnWidth > 0 ? (48 * boxArr[2]!) / drawnWidth : 0);
 
   const isSel = (s: SurfaceRef) => !!selected && sameSurface(selected, s);
   const label = (s: SurfaceRef, name: string) => {
@@ -85,6 +91,11 @@
   };
 
   let svg: SVGSVGElement;
+  onMount(() => {
+    const ro = new ResizeObserver(() => (drawnWidth = svg.getBoundingClientRect().width));
+    ro.observe(svg);
+    return () => ro.disconnect();
+  });
   /** Toucher sur le sol en mode découpe : point dans le repère de la pièce. */
   function floorDown(e: PointerEvent) {
     if (!cutting) return onselect(floorRef);
@@ -127,6 +138,14 @@
       onkeydown={key(w.ref)}
     >
       <g transform="matrix({w.matrix.join(' ')})">
+        <!-- zone de toucher élargie autour d'un mur fin (44 px mini), invisible -->
+        <rect
+          class="hit"
+          x={-Math.max(0, (touchMin - w.L) / 2)}
+          y={-Math.max(0, (touchMin - w.H) / 2)}
+          width={Math.max(w.L, touchMin)}
+          height={Math.max(w.H, touchMin)}
+        />
         <rect class="bare" x="0" y="0" width={w.L} height={w.H} fill="url(#bare-{uid})" />
         {#each w.zones as zz (zz.z.id)}
           {#each zz.rings as r, k (k)}<path
@@ -193,6 +212,10 @@
     outline: none;
   }
   .bare {
+    stroke: none;
+  }
+  .hit {
+    fill: transparent;
     stroke: none;
   }
   .hatch {

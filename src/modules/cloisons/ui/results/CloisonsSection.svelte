@@ -55,6 +55,12 @@
 <p class="muted">Vérifier la notice du fabricant.</p>
 
 <style>
+  /* cible tactile de 44 px */
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
+  }
   h3 {
     margin: var(--space-3) 0 var(--space-2);
     font-size: var(--fs-md);

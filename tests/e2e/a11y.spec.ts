@@ -1,6 +1,6 @@
 /** Accessibilité et chargement (lot H) : titres de page, h1 des éditeurs, texte agrandi, cibles tactiles. */
 import { expect, test } from '@playwright/test';
-import { createProject, newWall } from './helpers';
+import { createProject, newWall, openRoom } from './helpers';
 
 test('chaque écran a son titre de page, chaque éditeur son titre de niveau 1', async ({ page }) => {
   const id = await createProject(page, { project: 'Maison', name: 'Séjour', size: [400, 300] });
@@ -62,4 +62,16 @@ test('texte à 200 % sur ordinateur : la liste d’achats ne déborde pas', asyn
   await zoomText(page);
   await page.waitForTimeout(200);
   expect(await overflow(page)).toBeLessThanOrEqual(0);
+});
+
+test('écran Pièce : chaque mur, même fin, a une zone de toucher d’au moins 44 px', async ({ page }) => {
+  const id = await createProject(page, { name: 'Pièce', size: [400, 300], shape: 'En L' });
+  await openRoom(page, id);
+  const small = await page.evaluate(() =>
+    [...document.querySelectorAll<SVGGElement>('svg.room g.surface[role=button]')]
+      .map((g) => ({ n: g.getAttribute('aria-label'), r: g.getBoundingClientRect() }))
+      .filter((x) => x.r.width < 43.5 || x.r.height < 43.5)
+      .map((x) => `${x.n} ${Math.round(x.r.width)}×${Math.round(x.r.height)}`),
+  );
+  expect(small, small.join(' ; ')).toEqual([]);
 });

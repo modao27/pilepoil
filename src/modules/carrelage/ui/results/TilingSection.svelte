@@ -107,6 +107,12 @@
 {/if}
 
 <style>
+  /* cible tactile de 44 px */
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
+  }
   .sec {
     display: grid;
     gap: var(--space-2);
