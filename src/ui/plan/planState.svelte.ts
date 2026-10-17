@@ -606,6 +606,18 @@ export class PlanEditorState {
     });
   }
 
+  /** Place un obstacle : coin haut-gauche en (x, y), repère de la pièce. */
+  moveObstacle(roomId: Id, o: Obstacle, x: number, y: number): void {
+    const xs = o.outline.map((p) => p[0]),
+      ys = o.outline.map((p) => p[1]);
+    this.dispatch({
+      type: 'plan/obstacle/update',
+      roomId,
+      obstacleId: o.id,
+      patch: { outline: rectAt(x, y, Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) },
+    });
+  }
+
   /* ---------- passages ---------- */
 
   startLink(from: { room: Id; opening: Id }): void {

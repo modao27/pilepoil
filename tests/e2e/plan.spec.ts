@@ -53,6 +53,11 @@ test('plan : pièce en L avec poteau et porte, seconde pièce reliée par un pas
   await p.getByRole('button', { name: 'Ajouter un obstacle' }).click();
   await expect(p.getByRole('heading', { name: 'Obstacle — Séjour' })).toBeVisible();
   await setNumber(p, 'Largeur', '25');
+  // position en cotes, sans glisser : 120 cm du mur de gauche, 80 cm du mur du haut
+  await setNumber(p, 'Distance au mur de gauche', '120');
+  await setNumber(p, 'Distance au mur du haut', '80');
+  await expect(p.getByLabel('Distance au mur de gauche', { exact: true })).toHaveValue('120');
+  await expect(p.getByLabel('Distance au mur du haut', { exact: true })).toHaveValue('80');
 
   // porte sur le mur 2 (côté droit, x = 6 m)
   await p.getByRole('button', { name: 'Retour à Séjour' }).click();
@@ -99,7 +104,7 @@ test('plan : pièce en L avec poteau et porte, seconde pièce reliée par un pas
   const undo = page.getByRole('button', { name: 'Annuler', exact: true });
   await undo.click();
   await expect(p.getByRole('heading', { name: 'Passage' })).toBeHidden();
-  for (let i = 0; i < 8 && (await undo.isEnabled()); i++) await undo.click();
+  for (let i = 0; i < 12 && (await undo.isEnabled()); i++) await undo.click();
   await expect(undo).toBeDisabled();
   await expect(page.getByRole('application', { name: /0 pièce/ })).toBeVisible();
   const redo = page.getByRole('button', { name: 'Rétablir' });

@@ -75,7 +75,12 @@
   const box = (pts: [number, number][]) => {
     const xs = pts.map((p) => p[0]),
       ys = pts.map((p) => p[1]);
-    return { w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
+    return {
+      x: Math.min(...xs),
+      y: Math.min(...ys),
+      w: Math.max(...xs) - Math.min(...xs),
+      h: Math.max(...ys) - Math.min(...ys),
+    };
   };
 
   function updateOpening(patch: Partial<Omit<WallOpening, 'id'>>, key?: string) {
@@ -399,7 +404,24 @@
       value={b.h}
       onchange={(h) => st.resizeObstacle(room.id, obstacle, b.w, h)}
     />
-    <p class="muted">Glissez l’obstacle pour le placer.</p>
+    {@const rb = box(room.outline)}
+    <NumberField
+      label="Distance au mur de gauche"
+      unit="cm"
+      factor={10}
+      min={0}
+      value={b.x - rb.x}
+      onchange={(d) => st.moveObstacle(room.id, obstacle, rb.x + d, b.y)}
+    />
+    <NumberField
+      label="Distance au mur du haut"
+      unit="cm"
+      factor={10}
+      min={0}
+      value={b.y - rb.y}
+      onchange={(d) => st.moveObstacle(room.id, obstacle, b.x, rb.y + d)}
+    />
+    <p class="muted">Mesurées depuis le rectangle qui entoure la pièce. Vous pouvez aussi glisser l’obstacle.</p>
     <Button
       variant="danger"
       icon="trash"
