@@ -492,6 +492,19 @@ sépare la pièce seulement si elle la traverse, sinon c'est un muret (obstacle)
 - Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/partition-height.spec.ts`, `partitionHeight.test.ts`).
 - Fait (2026-10-17).
 
+## N6 — Matériaux et techniques de pose
+
+Branche `n6-materiaux` ; spécification et relevé dans `docs/materiaux/SPEC.md`. Décisions du 2026-10-17 : valeurs
+affichées « à titre indicatif (estimation) », prix saisis dans le projet, plaque de plâtre hors bibliothèque, fiches
+sans source (parpaing plein, brique de cloison, carreau 50 mm, poids béton cellulaire) créées vides, à compléter plus tard.
+
+- Étape 1 : `Material` et `LayingTechnique`, magasin `materials` (migration), bibliothèque `#/library/materials`,
+  modèles types.
+- Étape 2 : moteur pur dans `core` (éléments, liant, alertes), tests unitaires, `fast-check` et cas chiffrés.
+- Étape 3 : écran de la bibliothèque, technique visible sur la fiche, lignes d'achat consolidées.
+- Fini quand : `npm run check`, parité et e2e verts.
+- Suite : murets multi-matériaux.
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 
