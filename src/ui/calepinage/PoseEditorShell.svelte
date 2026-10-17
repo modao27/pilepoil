@@ -10,6 +10,7 @@
   import { onMount, type Snippet } from 'svelte';
   import BottomSheet from '../components/BottomSheet.svelte';
   import ComputeFailed from '../components/ComputeFailed.svelte';
+  import HelpTip from '../components/HelpTip.svelte';
   import IconButton from '../components/IconButton.svelte';
   import Tabs from '../components/Tabs.svelte';
   import Icon from '../icons/Icon.svelte';
@@ -90,6 +91,7 @@
   <div class="panel">
     {#if failed}<ComputeFailed onretry={() => onretry?.()} />{/if}
     {@render top?.()}
+    <p class="word">Calepinage <HelpTip id="calepinage" /></p>
     <Tabs label="Étapes du calepinage" tabs={[...STEPS]} bind:active={step}>
       {#snippet panel(id)}{@render content(id)}{/snippet}
     </Tabs>
@@ -130,6 +132,13 @@
 </div>
 
 <style>
+  .word {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin: 0;
+    font-weight: 600;
+  }
   .editor {
     display: grid;
     grid-template-rows: auto 1fr;

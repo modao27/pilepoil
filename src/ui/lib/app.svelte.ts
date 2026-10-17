@@ -32,6 +32,8 @@ export type Theme = 'auto' | 'light' | 'dark';
 export class AppState {
   ready = $state(false);
   fatal = $state<string | null>(null);
+  /** Présentation en trois écrans ouverte (premier lancement, ou demandée depuis l'aide). */
+  welcomeOpen = $state(false);
   /** Le worker de calcul est tombé : les calculs ne reviendront pas avant un rechargement. */
   workerDown = $state(false);
   // Données immuables, remplacées à chaque modification : $state.raw évite les proxys, que ni IndexedDB
@@ -79,6 +81,8 @@ export class AppState {
       this.showCutNumbers = (await repo.getPref(this.db, 'showCutNumbers')) ?? true;
       this.wallThickness = (await repo.getPref(this.db, 'wallThickness')) ?? DEFAULT_WALL_THICKNESS;
       applyTheme(this.theme);
+      // premier lancement : la présentation s'ouvre une fois, tant qu'aucun projet n'existe
+      this.welcomeOpen = !(await repo.getPref(this.db, 'welcomeSeen')) && this.projects.length === 0;
       this.ready = true;
     } catch (e) {
       this.fatal =
@@ -86,6 +90,12 @@ export class AppState {
         (e instanceof Error ? e.message : String(e)) +
         ')';
     }
+  }
+
+  /** Ferme la présentation et ne la rouvre plus d'elle-même. */
+  closeWelcome(): void {
+    this.welcomeOpen = false;
+    void repo.setPref(this.db, 'welcomeSeen', true);
   }
 
   /** Recharge bibliothèques et projets depuis la base (après un import, par exemple). */

@@ -428,6 +428,18 @@ Branche `releve-rapide`. Répond à PLAN-01 et PLAN-03 par le geste du métier (
 - Fini quand : `npm run check` et e2e verts (`tests/e2e/survey.spec.ts`).
 - Fait (2026-10-17).
 
+## Aide et prise en main (audit UI/UX)
+
+Branche `aide`. Corrige AIDE-01 (`docs/audit/PROPOSITIONS.md`).
+
+- Présentation en trois écrans au premier lancement (préférence `welcomeSeen`), seulement sur l'accueil vide ou la page
+  d'aide ; rouvrable depuis « Comment ça marche » (`#/aide`).
+- Glossaire (`ui/lib/glossary.ts`) et (i) `HelpTip` sur calepinage, État des lieux / Travaux, surfaces, coupes fines,
+  coupes perdues, chutes.
+- Écarté pour l'instant : projet d'exemple « Maison Dupont » (à faire après les niveaux et les matériaux).
+- Fini quand : `npm run check` et e2e verts (`tests/e2e/help.spec.ts`).
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

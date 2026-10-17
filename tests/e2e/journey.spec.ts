@@ -3,7 +3,15 @@
  * suivre la pose. Écrit pour le téléphone (profil mobile 390 px), vérifié aussi sur ordinateur.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, shot, step, woodFloor } from './helpers';
+import {
+  expectAccessible,
+  expectNoHorizontalScroll,
+  expectTouchTargets,
+  shot,
+  step,
+  woodFloor,
+  openHome,
+} from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -21,7 +29,7 @@ test('parcours : deux pièces, point de Hongrie, achats', async ({ page }, info)
   test.setTimeout(120_000);
 
   // 1. nouveau projet de parquet : on commence par le plan
-  await page.goto('/');
+  await openHome(page);
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
   const first = page.getByRole('dialog', { name: 'Nouveau projet' });
   await setNumber(first, 'Nom du projet', 'Maison');

@@ -80,7 +80,9 @@ export type Pref =
   | { key: 'librarySeeded'; value: string[] }
   /** Modèles types posés, `<bibliothèque>:<modèle>` : chacun une seule fois. */
   | { key: 'templatesSeeded'; value: string[] }
-  | { key: 'wallThickness'; value: number };
+  | { key: 'wallThickness'; value: number }
+  /** La présentation du premier lancement a été vue (ou passée). */
+  | { key: 'welcomeSeen'; value: boolean };
 
 export type PrefKey = Pref['key'];
 export type PrefValue<K extends PrefKey> = Extract<Pref, { key: K }>['value'];

@@ -6,6 +6,7 @@ import {
   expectTouchTargets,
   shot,
   woodFloor,
+  openHome,
 } from './helpers';
 
 async function check(page: Page) {
@@ -16,7 +17,7 @@ async function check(page: Page) {
 
 test('bibliothèque de lames : modèles types, une lame se crée et s’enregistre', async ({ page }, info) => {
   // onglets depuis l'accueil
-  await page.goto('/');
+  await openHome(page);
   await page.getByRole('link', { name: 'Bibliothèques' }).click();
   await expect(page).toHaveURL(/#\/library\/tiles$/);
   await page.getByRole('navigation', { name: 'Bibliothèques' }).getByRole('link', { name: 'Lames' }).click();

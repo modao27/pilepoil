@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, shot } from './helpers';
+import { expectAccessible, expectNoHorizontalScroll, openHome, shot } from './helpers';
 
 test('accueil vide : invitation à créer un projet', async ({ page }, info) => {
-  await page.goto('/');
+  await openHome(page);
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Aucun projet pour l’instant' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Nouveau projet' })).toBeVisible();
@@ -20,7 +20,7 @@ test('page introuvable', async ({ page }) => {
 });
 
 test('nouveau projet : annuler ramène à l’accueil', async ({ page }) => {
-  await page.goto('/');
+  await openHome(page);
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
   await page.getByRole('dialog', { name: 'Nouveau projet' }).getByRole('button', { name: 'Annuler' }).click();
   await expect(page.getByRole('heading', { name: 'Mes projets' })).toBeVisible();

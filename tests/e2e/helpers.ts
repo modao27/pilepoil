@@ -267,3 +267,14 @@ export async function expectNoHorizontalScroll(page: Page): Promise<void> {
   const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(over).toBeLessThanOrEqual(0);
 }
+
+/** Accueil au premier lancement : la présentation s'ouvre ; on la passe (rien si elle n'est pas là). */
+export async function openHome(page: Page): Promise<void> {
+  await page.goto('/');
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Passer' })
+    .click({ timeout: 1500 })
+    .catch(() => undefined);
+  await page.getByRole('heading', { name: 'Mes projets' }).waitFor();
+}

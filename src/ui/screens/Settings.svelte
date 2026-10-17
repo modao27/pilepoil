@@ -138,9 +138,11 @@
     <section aria-labelledby="s-about">
       <h2 id="s-about">À propos</h2>
       <p>
-        PilePoil — boîte à outils de rénovation : plan des pièces, calepinage du carrelage, quantités et liste d’achat.
+        PilePoil — boîte à outils de rénovation : plan des pièces, carrelage, parquet, peinture et cloisons, quantités
+        et liste d’achat.
       </p>
       <p class="muted">Les calculs sont indicatifs ; vérifiez les conseils de pose du fabricant.</p>
+      <p><a href="#/aide">Comment ça marche</a></p>
       <p><a href="#/demo">Voir le système de design</a></p>
     </section>
   </div>

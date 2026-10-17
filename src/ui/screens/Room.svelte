@@ -6,6 +6,7 @@
    * d'une zone de mur, change le revêtement d'une zone, la retire, ouvre son calepinage.
    */
   import { sameSurface, zoneBox, type Pose, type SurfaceRef, type Zone } from '../../core/coverage';
+  import HelpTip from '../components/HelpTip.svelte';
   import type { Point } from '../../core/geometry/types';
   import { snapPoint } from '../../core/plan/snap';
   import { wallLength } from '../../core/plan/walls';
@@ -382,7 +383,9 @@
         {/if}
 
         <section aria-labelledby="h-list">
-          <h2 id="h-list">Sol et murs</h2>
+          <h2 id="h-list" class="with-tip">
+            Sol et murs <HelpTip id="surface" />
+          </h2>
           <ul class="list">
             {#each surfaces as s (s.ref.wall ?? 'sol')}
               {@const zs = zonesOn(project, s.ref)}
@@ -419,6 +422,11 @@
 {/if}
 
 <style>
+  .with-tip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
   .results {
     margin-bottom: var(--space-3);
   }

@@ -6,6 +6,7 @@
    * L'écran ne calcule rien de métier : il demande le calcul au worker et le rapport aux modules.
    */
   import { tick, untrack } from 'svelte';
+  import HelpTip from '../components/HelpTip.svelte';
   import { poseWhere, type Pose } from '../../core/coverage';
   import { poseArea, scopePoses, type ResultScope } from '../../core/coverage/scope';
   import { moduleById, modules } from '../../modules/registry';
@@ -275,6 +276,10 @@
           >{/snippet}
       </EmptyState>
     {:else}
+      <p class="words">
+        Mots utilisés : coupe fine <HelpTip id="coupe-fine" /> coupe perdue <HelpTip id="coupe-perdue" /> chutes
+        <HelpTip id="chutes" />
+      </p>
       <div class="export">
         <Button variant="primary" icon="download" disabled={!ready || status === 'busy'} onclick={download}>
           {scope.kind === 'project'
@@ -461,6 +466,15 @@
 {/if}
 
 <style>
+  .words {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+    margin: 0 0 var(--space-2);
+    color: var(--muted);
+    font-size: var(--fs-sm);
+  }
   .tabbody {
     min-height: 70dvh;
   }

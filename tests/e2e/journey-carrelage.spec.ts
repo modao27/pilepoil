@@ -3,7 +3,16 @@
  * et deux murs → poser du parquet dans une autre pièce du même projet → acheter. Téléphone et ordinateur.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { cover, expectAccessible, expectNoHorizontalScroll, expectTouchTargets, openPose, shot, step } from './helpers';
+import {
+  cover,
+  expectAccessible,
+  expectNoHorizontalScroll,
+  expectTouchTargets,
+  openPose,
+  shot,
+  step,
+  openHome,
+} from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -21,7 +30,7 @@ test('parcours : pièce en L, sol et deux murs carrelés, parquet à côté, ach
   test.setTimeout(120_000);
 
   // 1. projet vide, le plan d'abord : salle de bain en L et chambre
-  await page.goto('/');
+  await openHome(page);
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
   const first = page.getByRole('dialog', { name: 'Nouveau projet' });
   await setNumber(first, 'Nom du projet', 'Appartement');

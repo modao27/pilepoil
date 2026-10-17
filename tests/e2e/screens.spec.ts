@@ -11,6 +11,7 @@ import {
   openPose,
   openRoom,
   shot,
+  openHome,
 } from './helpers';
 
 async function check(page: Page) {
@@ -20,7 +21,7 @@ async function check(page: Page) {
 }
 
 test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, info) => {
-  await page.goto('/');
+  await openHome(page);
   await page.getByRole('link', { name: 'Nouveau projet' }).click();
   // nouveau projet : nom du projet et première pièce, sur le plan
   const dialog = page.getByRole('dialog', { name: 'Nouveau projet' });

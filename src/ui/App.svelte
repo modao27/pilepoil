@@ -3,6 +3,7 @@
   import EmptyState from './components/EmptyState.svelte';
   import Screen from './components/Screen.svelte';
   import ToastHost from './components/ToastHost.svelte';
+  import Welcome from './components/Welcome.svelte';
   import { libraryById, loadModules, moduleById, modulesLoaded } from '../modules/registry';
   import LibraryNav from './components/LibraryNav.svelte';
   import { app } from './lib/app.svelte';
@@ -33,21 +34,23 @@
             ? 'Bibliothèque'
             : r.name === 'settings'
               ? 'Réglages'
-              : r.name === 'import'
-                ? 'Fiche produit'
-                : r.name === 'plan'
-                  ? 'Plan'
-                  : r.name === 'model3d'
-                    ? 'Maquette 3D'
-                    : r.name === 'room'
-                      ? 'Pièce'
-                      : r.name === 'results'
-                        ? 'Résultats'
-                        : r.name === 'shopping'
-                          ? 'Achats'
-                          : r.name === 'module'
-                            ? (moduleById(r.module)?.label ?? 'Outil')
-                            : '';
+              : r.name === 'help'
+                ? 'Comment ça marche'
+                : r.name === 'import'
+                  ? 'Fiche produit'
+                  : r.name === 'plan'
+                    ? 'Plan'
+                    : r.name === 'model3d'
+                      ? 'Maquette 3D'
+                      : r.name === 'room'
+                        ? 'Pièce'
+                        : r.name === 'results'
+                          ? 'Résultats'
+                          : r.name === 'shopping'
+                            ? 'Achats'
+                            : r.name === 'module'
+                              ? (moduleById(r.module)?.label ?? 'Outil')
+                              : '';
     return [screen && proj ? `${screen} — ${proj}` : screen || proj, 'PilePoil'].filter(Boolean).join(' · ');
   });
   $effect(() => {
@@ -142,6 +145,10 @@
         />{/if}{/await}{/key}
 {:else if route.name === 'settings'}
   {#await import('./screens/Settings.svelte') then { default: Settings }}<Settings />{/await}
+{:else if route.name === 'help'}
+  {#await import('./screens/Help.svelte') then { default: Help }}<Help
+      onwelcome={() => (app.welcomeOpen = true)}
+    />{/await}
 {:else if route.name === 'import'}
   {#key route.text}{#await import('./screens/Import.svelte') then { default: Import }}<Import
         text={route.text}
@@ -187,6 +194,8 @@
     <Button variant="primary" onclick={() => location.reload()}>Recharger l’application</Button>
   </div>
 {/if}
+
+<Welcome />
 
 <ToastHost />
 

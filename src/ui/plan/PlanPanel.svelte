@@ -1,6 +1,7 @@
 <script lang="ts">
   /** Réglages de l'élément choisi sur le plan ; sans sélection, liste des pièces et problèmes à corriger. */
   import type { Obstacle, Partition, PartitionOpening, PlanRoom, WallOpening } from '../../core/plan/types';
+  import HelpTip from '../components/HelpTip.svelte';
   import { wallIndex, wallLength } from '../../core/plan/walls';
   import Button from '../components/Button.svelte';
   import Dialog from '../components/Dialog.svelte';
@@ -160,6 +161,9 @@
 <div class="panel">
   {#if st.mode !== 'draw' && st.mode !== 'link'}
     <Segmented label="Calque du plan" value={st.layer} options={LAYERS} onchange={(layer) => st.setLayer(layer)} />
+    <p class="words">
+      État des lieux <HelpTip id="etat-des-lieux" /> Travaux <HelpTip id="travaux" />
+    </p>
   {/if}
   {#if st.mode === 'draw'}
     <h2>Dessiner une pièce</h2>
@@ -630,6 +634,15 @@
 </Dialog>
 
 <style>
+  .words {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--fs-sm);
+  }
   .usage {
     margin: 0;
     padding-left: var(--space-5);
