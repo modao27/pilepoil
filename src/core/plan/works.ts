@@ -59,12 +59,13 @@ export type WorksAction =
   | { type: 'plan/partition/opening/remove'; partitionId: Id; openingId: Id }
   | { type: 'plan/demolition/add'; demolition: Demolition }
   | { type: 'plan/demolition/update'; demolitionId: Id; patch: Patch<Demolition> }
-  | { type: 'plan/demolition/remove'; demolitionId: Id };
+  | { type: 'plan/demolition/remove'; demolitionId: Id }
+  | { type: 'plan/site/room-name'; roomId: Id; name: string };
 
 export type SiteAction = PlanAction | WorksAction;
 
 export const isWorksAction = (a: { type: string }): a is WorksAction =>
-  a.type.startsWith('plan/partition/') || a.type.startsWith('plan/demolition/');
+  a.type.startsWith('plan/partition/') || a.type.startsWith('plan/demolition/') || a.type === 'plan/site/room-name';
 
 /** Réducteur de l'état enregistré : `plan/*` agit sur l'état existant. Renvoie `site` si rien ne change. */
 export function reduceSite(site: Site, a: SiteAction): Site {
@@ -131,6 +132,12 @@ export function reduceSite(site: Site, a: SiteAction): Site {
       );
     case 'plan/demolition/remove':
       return withList(site, 'demolitions', removeById(site.demolitions, a.demolitionId));
+    case 'plan/site/room-name': {
+      const name = a.name.trim();
+      if ((site.names?.[a.roomId] ?? '') === name) return site;
+      const { [a.roomId]: _old, ...rest } = site.names ?? {};
+      return { ...site, names: name ? { ...rest, [a.roomId]: name } : rest };
+    }
   }
 }
 

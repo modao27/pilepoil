@@ -2,6 +2,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { area } from '../../src/core/geometry/polygon';
 import { deriveSite, planAfter } from '../../src/core/plan/derive';
+import { reduceSite } from '../../src/core/plan/works';
 import { facingWalls } from '../../src/core/plan/neighbors';
 import type { Partition, Plan, PlanRoom, Site } from '../../src/core/plan/types';
 import { validatePlan } from '../../src/core/plan/validate';
@@ -52,6 +53,17 @@ describe('cloison', () => {
     const faces = facingWalls(plan).filter((f) => f.a.wall.startsWith('c1:') || f.b.wall.startsWith('c1:'));
     expect(faces).toHaveLength(1);
     expect(deriveSite(s).issues).toEqual([]);
+  });
+
+  it('le nom choisi pour la pièce nouvelle est gardé, une saisie vide le retire', () => {
+    const s = site([room], [cloison('c1', [2000, 0], [2000, 3000])]);
+    const fresh = planAfter(s).rooms.find((r) => r.id !== 'a')!;
+    expect(fresh.name).toBe('Séjour (2)');
+    const named = reduceSite(s, { type: 'plan/site/room-name', roomId: fresh.id, name: ' Salon ' });
+    expect(planAfter(named).rooms.find((r) => r.id === fresh.id)!.name).toBe('Salon');
+    expect(planAfter(named).rooms.find((r) => r.id === 'a')!.name).toBe('Séjour');
+    const cleared = reduceSite(named, { type: 'plan/site/room-name', roomId: fresh.id, name: '  ' });
+    expect(planAfter(cleared).rooms.find((r) => r.id === fresh.id)!.name).toBe('Séjour (2)');
   });
 
   it('une pièce garde l’identité et le nom, l’autre est nouvelle', () => {

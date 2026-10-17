@@ -207,6 +207,7 @@ export interface Site {
   existing: Plan;              // état des lieux relevé (murs verrouillés compris)
   partitions: Partition[];     // cloisons neuves
   demolitions: Demolition[];   // démolitions de murs existants
+  names?: Record<Id, string>;  // noms choisis pour les pièces nées des travaux (facultatif, sans migration)
 }
 
 export interface Partition {

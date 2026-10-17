@@ -359,6 +359,18 @@ Branche `lot-c-achats`. Corrige ACH-01, CAR-01, PAR-01, ACH-02, ROB-03 (`docs/au
 - Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur, parité intacte.
 - Fait (2026-10-17).
 
+## Lot B — Plan précis au doigt (audit UI/UX)
+
+Branche `lot-b-plan`. Corrige PLAN-01, 02, 03, 05, 06, 08, 09, 10 (`docs/audit/PROPOSITIONS.md`).
+
+- Vue figée pendant un glissement, cadrage repris au relâcher ; Suppr avec la confirmation d'une pièce revêtue.
+- Clic sur le fond d'une fenêtre ignoré 300 ms après son ouverture (à confirmer sur téléphone).
+- Obstacle placé en cotes (distance aux murs gauche et haut) ; messages d'erreur propres à chaque cas.
+- Ctrl+Z / Ctrl+Y / + − 0 comme dans le calepinage ; nom d'une petite pièce réduit puis abrégé.
+- Une cloison qui sépare une pièce demande le nom de la nouvelle (`Site.names`, action `plan/site/room-name`).
+- Fini quand : `npm run check` et e2e verts sur téléphone et ordinateur, parité intacte.
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

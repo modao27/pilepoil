@@ -262,8 +262,11 @@ export function derive(site: Site): Derived {
     else if (derivedByFirst.has(r.id)) outRooms.push(...derivedByFirst.get(r.id)!);
   }
 
+  const named = site.names
+    ? outRooms.map((r) => (!rooms.includes(r) && site.names![r.id] ? { ...r, name: site.names![r.id]! } : r))
+    : outRooms;
   const plan: Plan = {
-    rooms: outRooms,
+    rooms: named,
     passages: derivePassages(site, outRooms, partitions, touched, outIssues),
   };
   for (const r of outRooms)

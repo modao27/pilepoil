@@ -10,6 +10,7 @@ propositions. Reste : attendre les choix de l'utilisateur sur `PROPOSITIONS.md` 
 ## Corrections
 - Lot A (branche `lot-a-projets`, 2026-10-17) : PRJ-01, PRJ-02, PRJ-03, UX-04, NOU-01 corrigés.
 - Lot C (branche `lot-c-achats`, 2026-10-17) : ACH-01, CAR-01, PAR-01, ACH-02, ROB-03 corrigés.
+- Lot B (branche `lot-b-plan`, 2026-10-17) : PLAN-01, 02, 03 (à confirmer sur téléphone), 05, 06, 08, 09, 10 corrigés.
 
 ## Étapes
 - [x] 0. Cartographie (routes, actions, implémenté / absent, 89 scénarios, matrice)

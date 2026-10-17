@@ -207,6 +207,31 @@
   {/snippet}
 </Dialog>
 
+<Dialog
+  open={st.namingNew != null}
+  title={st.namingNew && st.namingNew.length > 1 ? 'Nommer les nouvelles pièces' : 'Nommer la nouvelle pièce'}
+  onclose={() => (st.namingNew = null)}
+>
+  <form
+    class="form"
+    onsubmit={(e) => {
+      e.preventDefault();
+      st.nameNewRooms();
+    }}
+  >
+    <p class="muted">
+      La cloison a séparé la pièce en deux. Ce nom se retrouve dans les résultats, les PDF et les achats.
+    </p>
+    {#each st.namingNew ?? [] as r (r.id)}
+      <TextField label="Nom de la pièce" bind:value={r.name} maxlength={40} />
+    {/each}
+  </form>
+  {#snippet actions()}
+    <Button variant="ghost" onclick={() => (st.namingNew = null)}>Garder les noms proposés</Button>
+    <Button variant="primary" onclick={() => st.nameNewRooms()}>Valider</Button>
+  {/snippet}
+</Dialog>
+
 <Dialog open={st.naming} title="Nommer la pièce" onclose={() => (st.naming = false)}>
   <form
     class="form"

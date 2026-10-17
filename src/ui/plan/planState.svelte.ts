@@ -78,6 +78,8 @@ export class PlanEditorState {
   linkFrom = $state.raw<{ room: Id; opening: Id } | null>(null);
   /** Contour dessiné fermé et valide : en attente de son nom. */
   naming = $state(false);
+  /** Pièces nées d'une cloison, en attente de leur nom (proposé : « Séjour (2) »). */
+  namingNew = $state<{ id: Id; name: string }[] | null>(null);
   /** Pièce à supprimer qui porte des revêtements : en attente de confirmation. */
   removing = $state.raw<{ room: PlanRoom; usage: string[] } | null>(null);
   /** Projet neuf (#/new) : rien n'est enregistré tant qu'il n'a pas de pièce (pas de projet vide). */
@@ -277,11 +279,22 @@ export class PlanEditorState {
     };
     this.partitionFrom = null;
     this.mode = 'select';
-    this.commit({ type: 'plan/partition/add', partition });
+    const known = this.doc.plan.rooms.map((r) => r.id);
+    const done = this.commit({ type: 'plan/partition/add', partition });
+    const fresh = this.doc.plan.rooms.filter((r) => !known.includes(r.id));
+    if (done && fresh.length) this.namingNew = fresh.map((r) => ({ id: r.id, name: r.name }));
     // la cloison est choisie même si la confirmation d'une perte de revêtement est en attente
     this.sel = { kind: 'partition', partition: partition.id };
     const issue = this.issuesOf(partition.id).find((i) => i.severity === 'error');
     if (issue) toast(WORKS_TOAST[issue.code] ?? 'Cette cloison est refusée.', { tone: 'error' });
+  }
+
+  /** Valide les noms choisis pour les pièces nées d'une cloison. */
+  nameNewRooms(): void {
+    for (const r of this.namingNew ?? [])
+      if (r.name.trim() !== this.doc.plan.rooms.find((x) => x.id === r.id)?.name)
+        this.dispatch({ type: 'plan/site/room-name', roomId: r.id, name: r.name });
+    this.namingNew = null;
   }
 
   removePartition(id: Id): void {

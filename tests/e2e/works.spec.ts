@@ -58,6 +58,12 @@ test('travaux : verrouiller les murs, tracer une cloison avec une porte, annuler
   const box = (await page.locator('polygon.floor').first().boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.5, box.y + 3);
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height - 3);
+  // la cloison sépare la pièce : la nouvelle pièce se nomme tout de suite
+  const naming = page.getByRole('dialog', { name: 'Nommer la nouvelle pièce' });
+  await expect(naming.getByLabel('Nom de la pièce')).toHaveValue(/\(2\)$/);
+  await naming.getByLabel('Nom de la pièce').fill('Salon');
+  await naming.getByRole('button', { name: 'Valider' }).click();
+  await expect(page.locator('text.name', { hasText: 'Salon' })).toHaveCount(1);
   await expect(p.getByRole('heading', { name: 'Cloison 1' })).toBeVisible();
   await expect(page.getByRole('application', { name: /2 pièces/ })).toBeVisible();
   await expect(p.getByText(/Longueur 400 cm|Longueur 399,9 cm|Longueur 400,1 cm/)).toBeVisible();
@@ -70,22 +76,27 @@ test('travaux : verrouiller les murs, tracer une cloison avec une porte, annuler
   await check(page);
   await shot(page, info, '71-travaux-porte');
 
-  // tout est annulable : porte, puis cloison
+  // tout est annulable : porte, nom, puis cloison
   const undo = page.locator('button[aria-label="Annuler"]');
   await undo.click();
   await expect(page.locator('line.passage')).toHaveCount(0);
+  await undo.click();
+  await expect(page.locator('text.name', { hasText: 'Salon' })).toHaveCount(0);
   await undo.click();
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();
   const redo = page.getByRole('button', { name: 'Rétablir' });
   await redo.click();
   await redo.click();
+  await redo.click();
   await expect(page.getByRole('application', { name: /2 pièces/ })).toBeVisible();
+  await expect(page.locator('text.name', { hasText: 'Salon' })).toHaveCount(1);
 
   // enregistré : retrouvé après rechargement
   await page.reload();
   await layer(page, 'Travaux');
   await expect(p.getByRole('button', { name: /^Cloison 1/ })).toBeVisible();
   await expect(page.getByRole('application', { name: /2 pièces/ })).toBeVisible();
+  await expect(page.locator('text.name', { hasText: 'Salon' })).toHaveCount(1);
   // l'état des lieux n'a pas changé
   await layer(page, 'État des lieux');
   await expect(page.getByRole('application', { name: /1 pièce/ })).toBeVisible();

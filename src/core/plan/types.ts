@@ -73,6 +73,8 @@ export interface Site {
   existing: Plan;
   partitions: Partition[];
   demolitions: Demolition[];
+  /** Noms choisis pour les pièces nées des travaux (clé : identifiant de la pièce dérivée). */
+  names?: Record<Id, string>;
 }
 
 export interface Partition {

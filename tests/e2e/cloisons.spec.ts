@@ -33,6 +33,10 @@ async function houseWithPartition(page: Page): Promise<string> {
   const box = (await page.locator('polygon.floor').first().boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.5, box.y + 3);
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height - 3);
+  await page
+    .getByRole('dialog', { name: 'Nommer la nouvelle pièce' })
+    .getByRole('button', { name: 'Garder les noms proposés' })
+    .click();
   await expect(p.getByRole('heading', { name: 'Cloison 1' })).toBeVisible();
   return id;
 }
