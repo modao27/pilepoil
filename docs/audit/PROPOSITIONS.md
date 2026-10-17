@@ -153,8 +153,8 @@ hauteurs » (N2)** → **N3** → **matériaux et techniques, puis N4**. Sans N2
 | 14 | Doublages et plafonds, ragréage | moyen à fort | L / S à M | Nouveaux métiers, après la consolidation. |
 | 15 | Lot I — Documents | faible | S | À faire au fil des lots. |
 
-Ordre de réalisation proposé : **A → C → B → E → export/import → D → F → H → relevé rapide → aide → G → devis → fiche
-chantier et photos → doublages / plafonds / ragréage**, une phase par branche comme le prévoit `docs/PLAN.md`, chaque
+Ordre de réalisation proposé : **A → C → B → E → export/import → D → F → H → relevé rapide → N1 → N5 → N2 (niveaux et
+hauteurs) → N3 → matériaux et N4 → aide → G → devis → fiche chantier et photos → doublages / plafonds / ragréage**, une phase par branche comme le prévoit `docs/PLAN.md`, chaque
 lot avec ses tests (unitaires et e2e 390 px + ordinateur) et la parité carrelage verte.
 
 À toi de choisir les lots et fonctions à retenir ; rien n'est engagé.
