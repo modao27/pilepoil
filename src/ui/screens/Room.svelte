@@ -9,7 +9,7 @@
   import HelpTip from '../components/HelpTip.svelte';
   import type { Point } from '../../core/geometry/types';
   import { snapPoint } from '../../core/plan/snap';
-  import { wallLength } from '../../core/plan/walls';
+  import { wallIndex, wallLength } from '../../core/plan/walls';
   import { moduleById } from '../../modules/registry';
   import type { ToolModule } from '../../modules/types';
   import { reduceProject, type ProjectAction } from '../../state/project';
@@ -34,7 +34,7 @@
     newPoseAction,
     newPoseOnSpan,
     removeZoneAction,
-    spanAction,
+    areaAction,
     switchAction,
     zonesOn,
   } from '../room/cover';
@@ -146,28 +146,52 @@
     const b = project ? zoneBox(project.plan, z) : null;
     return b ? [b[2], b[3]] : [0, room?.height ?? 0];
   };
+  /** Largeur couverte d'une zone de mur : [bord gauche, bord droit], mm. */
+  const widthOf = (z: Zone): [number, number] => {
+    const b = project ? zoneBox(project.plan, z) : null;
+    return b ? [b[0], b[1]] : [0, wallLen(z)];
+  };
   /** Zones dont la dernière saisie de hauteur est refusée (message sous les champs, effacé dès qu'elle est correcte). */
   let spanErrors = $state<Record<string, string>>({});
-  /** Saisies de hauteur mises en file : chacune part de l'état enregistré par la précédente, jamais d'un état périmé. */
+  /** Saisies de hauteur ou de largeur mises en file : chacune part de l'état enregistré par la précédente. */
   let spanQueue: Promise<void> = Promise.resolve();
-  /** `from` ou `to` : la hauteur modifiée (mm) ; l'autre reste celle de la zone au moment où la saisie est traitée. */
-  function setSpan(z: Zone, change: { from?: number; to?: number }) {
+  /**
+   * Partie du mur couverte par la zone, mm (repère du mur) : `from` / `to` en hauteur depuis le sol, `left` / `right`
+   * en largeur depuis le bord gauche. Seule la valeur modifiée est donnée ; le reste vient de la zone enregistrée.
+   */
+  function setSpan(z: Zone, change: { from?: number; to?: number; left?: number; right?: number }) {
     spanQueue = spanQueue.then(async () => {
       const p = project;
-      if (!p || !room) return;
+      if (!p || !room || z.surface.wall == null) return;
       const now = p.zones.find((x) => x.id === z.id) ?? z;
+      const b = zoneBox(p.plan, now);
+      const [left0, right0] = b ? [b[0], b[1]] : [0, wallLen(z)];
       const [from0, to0] = span(now);
-      const from = change.from ?? from0,
+      const left = change.left ?? left0,
+        right = change.right ?? right0,
+        from = change.from ?? from0,
         to = change.to ?? to0;
-      if (!(to > from)) {
-        spanErrors[z.id] =
-          'Le haut de la zone doit être au-dessus du bas : corrigez l’une des deux hauteurs (rien n’est enregistré tant que c’est incohérent).';
+      if (!(to > from) || !(right > left)) {
+        spanErrors[z.id] = !(to > from)
+          ? 'Le haut de la zone doit être au-dessus du bas : corrigez l’une des deux hauteurs (rien n’est enregistré tant que c’est incohérent).'
+          : 'Le côté droit de la zone doit être à droite du côté gauche : corrigez l’une des deux distances (rien n’est enregistré tant que c’est incohérent).';
         return;
       }
       spanErrors[z.id] = '';
-      await dispatch(spanAction(p, now, from > 0 ? from : null, to < room.height ? Math.min(to, room.height) : null));
+      const length = wallLen(z);
+      await dispatch(
+        areaAction(p, now, {
+          x0: left > 0 ? left : null,
+          x1: right < length ? Math.min(right, length) : null,
+          y0: from > 0 ? from : null,
+          y1: to < room.height ? Math.min(to, room.height) : null,
+        }),
+      );
     });
   }
+
+  /** Longueur du mur d'une zone, mm. */
+  const wallLen = (z: Zone) => (room && z.surface.wall != null ? wallLength(room, wallIndex(room, z.surface.wall)) : 0);
 
   /** Découpe d'une zone de sol : par une ligne (deux points) ou par un contour (points aimantés, refermé). */
   let cutting = $state.raw<{ zone: Zone; mode: 'line' | 'contour'; points: Point[] } | null>(null);
@@ -317,6 +341,7 @@
                     </p>
                     {#if kind === 'wall'}
                       {@const [from, to] = span(z)}
+                      {@const [left, right] = widthOf(z)}
                       <div class="grid">
                         <NumberField
                           label="Depuis le sol"
@@ -335,6 +360,27 @@
                           max={room.height / 10}
                           value={to}
                           onchange={(v) => setSpan(z, { to: v })}
+                        />
+                      </div>
+                      <div class="grid">
+                        <NumberField
+                          label="Depuis le bord gauche"
+                          unit="cm"
+                          factor={10}
+                          min={0}
+                          max={wallLen(z) / 10}
+                          value={left}
+                          hint="Vu de l’intérieur de la pièce."
+                          onchange={(v) => setSpan(z, { left: v })}
+                        />
+                        <NumberField
+                          label="Jusqu’à (largeur)"
+                          unit="cm"
+                          factor={10}
+                          min={1}
+                          max={wallLen(z) / 10}
+                          value={right}
+                          onchange={(v) => setSpan(z, { right: v })}
                         />
                       </div>
                       {#if spanErrors[z.id]}<p class="span-err" role="alert">{spanErrors[z.id]}</p>{/if}

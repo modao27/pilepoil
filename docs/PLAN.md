@@ -440,6 +440,16 @@ Branche `aide`. Corrige AIDE-01 (`docs/audit/PROPOSITIONS.md`).
 - Fini quand : `npm run check` et e2e verts (`tests/e2e/help.spec.ts`).
 - Fait (2026-10-17).
 
+## N1 — Carreler une largeur d'un mur
+
+Branche `n1-largeur-mur` (`docs/audit/PROPOSITIONS.md` §3 bis).
+
+- Une zone de mur peut ne couvrir qu'une largeur : `wallAreaCuts` (`core/coverage/geometry.ts`) pose les quatre coupes du
+  rectangle ; l'écran Pièce règle « Depuis le bord gauche » / « Jusqu'à (largeur) » à côté des hauteurs (saisies en file).
+- Le reste du mur reste « sans revêtement » (pas de « Revêtir le reste » dans N1).
+- Fini quand : `npm run check`, parité et e2e verts (`tests/e2e/wall-width.spec.ts`).
+- Fait (2026-10-17).
+
 ## Décisions en attente
 - Synchronisation entre appareils : hors périmètre pour l'instant, tout reste sur l'appareil.
 

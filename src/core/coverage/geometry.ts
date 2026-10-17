@@ -96,6 +96,34 @@ export function wallSpanCuts(plan: Plan, s: SurfaceRef, from: number | null, to:
   return cuts;
 }
 
+/** Partie d'un mur à couvrir, repère du mur (mm, y vers le haut) : null = jusqu'au bord (gauche, bas, droite, plafond). */
+export interface WallArea {
+  x0?: number | null;
+  x1?: number | null;
+  y0?: number | null;
+  y1?: number | null;
+}
+
+/**
+ * Coupes d'une zone qui ne couvre qu'une partie du mur : un rectangle (largeur et hauteur). Une ligne verticale orientée
+ * vers le haut a son côté 1 à gauche (x plus petit) : `x0` garde la droite (côté −1), `x1` garde la gauche (côté 1).
+ * Aucune coupe pour un bord que la zone atteint.
+ */
+export function wallAreaCuts(plan: Plan, s: SurfaceRef, area: WallArea): Cut[] {
+  const rect = surfacePolygon(plan, s);
+  if (!rect || s.wall == null) return [];
+  const length = Math.max(...rect[0]!.map((p) => p[0]));
+  const ceiling = Math.max(...rect[0]!.map((p) => p[1]));
+  const cuts = wallSpanCuts(plan, s, area.y0 ?? null, area.y1 ?? null);
+  const vertical = (x: number): Cut['line'] => [
+    [x, 0],
+    [x, ceiling],
+  ];
+  if (area.x0 != null && area.x0 > 0.5) cuts.push({ line: vertical(area.x0), side: -1 });
+  if (area.x1 != null && area.x1 < length - 0.5) cuts.push({ line: vertical(area.x1), side: 1 });
+  return cuts;
+}
+
 /** Boîte d'une zone dans le repère de sa surface [xmin, xmax, ymin, ymax] ; null si elle n'existe plus ou est vide. */
 export function zoneBox(
   plan: Plan,

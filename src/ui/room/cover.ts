@@ -12,7 +12,9 @@ import {
   roomGroups,
   wallRuns,
   sameSurface,
+  wallAreaCuts,
   wallSpanCuts,
+  type WallArea,
   zoneBox,
   type CoverageError,
   type Cut,
@@ -179,9 +181,15 @@ export function cutAction(zone: Zone, line: Segment, newId: () => Id): ProjectAc
   return { type: 'zone/cut', zoneId: zone.id, line, newZoneId: newId() };
 }
 
-/** Hauteur d'une zone de mur : de `from` à `to` mm au-dessus du sol (null : sol, plafond). */
+/** Partie d'un mur couverte par une zone, mm (repère du mur) : largeur depuis le bord gauche, hauteur depuis le sol. */
+export function areaAction(p: Project, zone: Zone, area: WallArea): ProjectAction {
+  return { type: 'zone/update', zoneId: zone.id, cuts: wallAreaCuts(p.plan, zone.surface, area) };
+}
+
+/** Hauteur d'une zone de mur : de `from` à `to` mm au-dessus du sol (null : sol, plafond). La largeur est conservée. */
 export function spanAction(p: Project, zone: Zone, from: number | null, to: number | null): ProjectAction {
-  return { type: 'zone/update', zoneId: zone.id, cuts: wallSpanCuts(p.plan, zone.surface, from, to) };
+  const b = zoneBox(p.plan, zone);
+  return areaAction(p, zone, { x0: b?.[0] ?? null, x1: b?.[1] ?? null, y0: from, y1: to });
 }
 
 /**
