@@ -1,5 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, expectTouchTargets, savedProjectNames, shot } from './helpers';
+import {
+  createProject,
+  expectAccessible,
+  expectNoHorizontalScroll,
+  expectTouchTargets,
+  savedProjectNames,
+  shot,
+} from './helpers';
 
 async function check(page: Page) {
   await expectAccessible(page);
@@ -185,4 +192,23 @@ test('plan : pièce posée contre une autre, porte vers la voisine en une action
   await expect(page.getByRole('region', { name: 'Problèmes à corriger' })).toHaveCount(0);
   await check(page);
   await shot(page, info, '67-plan-voisines');
+});
+
+test('plan : glisser un coin suit le doigt, sans emballement du cadrage', async ({ page }) => {
+  await createProject(page, { name: 'Séjour', size: [400, 300] });
+  const plan = page.getByRole('application', { name: /1 pièce/ });
+  const box = (await plan.boundingBox())!;
+  // sélectionner la pièce, puis saisir un coin
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const corner = page.locator('[data-k="point"]').first();
+  const c = (await corner.boundingBox())!;
+  const [x, y] = [c.x + c.width / 2, c.y + c.height / 2];
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 16, y - 10, { steps: 4 });
+  await page.mouse.move(x - 33, y - 21, { steps: 4 });
+  await page.mouse.up();
+  const lengths = (await page.locator('.dim text').allTextContents()).map((t) => parseFloat(t.replace(',', '.')));
+  // tiré vers l'extérieur de 33 × 21 px, le coin avance de moins d'un mètre (avant : 4 m de plus, le cadrage suivait)
+  for (const l of lengths) expect(l).toBeLessThan(520);
 });

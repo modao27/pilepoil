@@ -63,6 +63,8 @@
   let down: { x: number; y: number; target: HTMLElement | null } | null = null;
   let moved = false;
   let gesture = 0;
+  /** Vue figée le temps d'un glissement : sinon le cadrage suit le plan et la conversion écran → plan bouge. */
+  let frozen = false;
 
   const local = (e: PointerEvent): Point => {
     const r = svg.getBoundingClientRect();
@@ -86,6 +88,7 @@
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       pinch = { d: Math.hypot(a!.x - b!.x, a!.y - b!.y), v: view };
+      frozen = false;
       drag = null;
       return;
     }
@@ -131,6 +134,10 @@
     if (!moved && Math.hypot(x - down.x, y - down.y) < 6) return;
     if (!moved) {
       moved = true;
+      if (drag && drag.kind !== 'pan' && !userView) {
+        userView = view;
+        frozen = true;
+      }
       // une pièce, un obstacle ou une ouverture qu'on commence à glisser devient la sélection
       if (drag && drag.kind !== 'pan' && drag.kind !== 'point' && drag.kind !== 'pend') select(data(down.target));
     }
@@ -202,6 +209,11 @@
     if (pointers.size < 2) pinch = null;
     const was = down;
     down = null;
+    if (frozen && !pointers.size) {
+      // fin du glissement : le cadrage automatique reprend
+      userView = null;
+      frozen = false;
+    }
     if (drag?.kind === 'pend' && moved) {
       const from = drag.start,
         now = st.doc;
