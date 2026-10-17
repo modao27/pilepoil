@@ -253,10 +253,10 @@ describe('rapport du parquet', () => {
     expect(rep!.pose).toBe('P');
     expect(rep!.ok).toBe(true);
     expect(rep!.figures.map((f) => f.label)).toEqual([
-      'Lames posées',
+      'Morceaux posés',
       'Lames coupées',
       'Dans les chutes',
-      'Perte de la pose',
+      'Chutes de la pose',
     ]);
     expect(rep!.order[0]).toMatch(/^\d+ paquets? .+ : \d+ lames? \+ \d+ %$/);
     expect(rep!.orderNote).toBeNull();

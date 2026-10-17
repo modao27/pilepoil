@@ -96,7 +96,7 @@
       ? 'Calcul…'
       : result.errors.length
         ? 'Calcul impossible : voir les réglages'
-        : `${ed.result.totals.boards} lames · ${packs} paquet${packs > 1 ? 's' : ''} · perte ${Math.round(ed.result.totals.wastePct)} %`,
+        : `${ed.result.totals.boards} lames · ${packs} paquet${packs > 1 ? 's' : ''} · chutes ${Math.round(ed.result.totals.wastePct)} %`,
   );
   const others = $derived(
     (ed.result?.layouts ?? [])

@@ -148,7 +148,7 @@ export function buildParquetPdf(input: ParquetPdfInput): Blob {
   figures(d, [
     ['Lames utilisées', fr(result.totals.boards)],
     ['Paquets', fr(packs)],
-    ['Perte', `${fr(result.totals.wastePct, 1)} %`],
+    ['Chutes de coupe', `${fr(result.totals.wastePct, 1)} %`],
     ['Lames coupées', fr(result.totals.cuts)],
     ['Coût estimé', cost > 0 ? euro(cost) : '–'],
   ]);

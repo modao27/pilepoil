@@ -195,7 +195,7 @@ describe('module parquet', () => {
 
   it('résumé : lames, surface, perte', () => {
     const r = computeParquet(specOf(project()));
-    expect(parquet.summary(r).text).toMatch(/^\d+ lames, 11,9 m², perte \d+ %$/);
+    expect(parquet.summary(r).text).toMatch(/^\d+ lames, 11,9 m², chutes \d+ %$/);
   });
 
   it('schéma 5 : marge en fraction (migration 4 → 5), pas de migration des données d’avant les poses', () => {

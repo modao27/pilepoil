@@ -62,10 +62,10 @@ export function parquetReport(input: ResultInput<ParquetResult>): PoseReport[] {
       {
         pose: id,
         figures: [
-          { label: 'Lames posées', value: fr(laid.length) },
+          { label: 'Morceaux posés', value: fr(laid.length) },
           { label: 'Lames coupées', value: fr(cut), status: 'cut' },
           { label: 'Dans les chutes', value: fr(reused), status: 'reuse' },
-          { label: 'Perte de la pose', value: `${fr(Math.round(lossPct(lr.pieces, lr.boards) * 10) / 10)} %` },
+          { label: 'Chutes de la pose', value: `${fr(Math.round(lossPct(lr.pieces, lr.boards) * 10) / 10)} %` },
         ],
         order,
         orderNote: poseBeyond(project, id, input.scope) ? 'Pour toute la pose, y compris hors de cette pièce.' : null,

@@ -50,7 +50,7 @@ test('nouveau projet → pièce → poses → résultats → PDF → vue globale
   await page.getByRole('link', { name: 'Résultats de la pièce (3D, PDF)' }).click();
   await expect(page.getByRole('heading', { name: 'Résultats — Cuisine' })).toBeVisible();
   await expect(page.getByRole('article', { name: /^Carrelage · / })).toContainText('Carreaux posés');
-  await expect(page.getByRole('article', { name: /^Parquet · / })).toContainText('Lames posées');
+  await expect(page.getByRole('article', { name: /^Parquet · / })).toContainText('Morceaux posés');
   await expect(page.getByRole('article', { name: /^Parquet · / })).toContainText(/\d+ paquets?/);
   await check(page);
   await shot(page, info, 'N5-resultats-piece');

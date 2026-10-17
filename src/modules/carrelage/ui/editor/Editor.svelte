@@ -73,11 +73,20 @@
 
   const m = $derived(ed.result?.metrics);
   const cost = $derived(ed.result ? projectCost(ed.project, carrelage.tiles, ed.result) : null);
-  const summary = $derived(
-    m
-      ? `${m.order.toLocaleString('fr-FR')} carreaux · ${m.thin} coupe${m.thin > 1 ? 's' : ''} fine${m.thin > 1 ? 's' : ''}${cost && cost.total > 0 ? ' · ' + euros(cost.total) : ''}`
-      : 'Calcul…',
-  );
+  /** Cette pose : carreaux posés et coupes de la surface ouverte (les chutes sont partagées par le projet). */
+  const pose = $derived.by(() => {
+    if (!ed.result) return null;
+    const mine = ed.result.pieces.filter((pc) => pc.surface === ed.surfaceIndex);
+    return { laid: mine.length, cuts: mine.filter((pc) => !pc.full).length, thin: mine.filter((pc) => pc.thin).length };
+  });
+  const boxes = $derived(ed.result ? ed.result.orders.reduce((t, o) => t + o.boxes, 0) : 0);
+  const summary = $derived.by(() => {
+    if (!m || !pose) return 'Calcul…';
+    const plural = (n: number, one: string, many: string) => `${n.toLocaleString('fr-FR')} ${n > 1 ? many : one}`;
+    const thin = pose.thin ? ` dont ${plural(pose.thin, 'fine', 'fines')}` : '';
+    const buy = boxes ? plural(boxes, 'carton', 'cartons') : plural(m.order, 'carreau', 'carreaux');
+    return `Cette pose : ${plural(pose.laid, 'carreau posé', 'carreaux posés')} · ${plural(pose.cuts, 'coupe', 'coupes')}${thin} — À commander, tout le projet : ${buy}${cost && cost.total > 0 ? ' · ' + euros(cost.total) : ''}`;
+  });
 
   onMount(() => {
     const flush = () => void ed.flush();

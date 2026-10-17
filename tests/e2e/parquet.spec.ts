@@ -41,7 +41,7 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   const id = await parquetProject(page);
 
   // R1 dans l'appli : 16 rangs de stratifié 1285 × 192 sur 3984 × 2984
-  const plan = page.getByRole('application', { name: /^Plan des lames : \d+ lames · \d+ paquets · perte \d+ %/ });
+  const plan = page.getByRole('application', { name: /^Plan des lames : \d+ lames · \d+ paquets · chutes \d+ %/ });
   await expect(plan).toBeVisible();
   await expect(page.locator('polygon.piece')).toHaveCount(64);
   const summary = page.getByRole('link', { name: /lames · \d+ paquets/ }).first();

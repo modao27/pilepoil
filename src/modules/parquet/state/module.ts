@@ -172,11 +172,11 @@ export function referenceWall(l: Pick<Layout, 'reference'>, rooms: PlanRoom[]): 
   return u[0] === 0 && u[1] === 0 ? [1, 0] : u;
 }
 
-/** « 52 lames, 11,9 m², perte 7 % » ; alertes : avertissements et erreurs du calcul. */
+/** « 52 lames, 11,9 m², chutes 7 % » ; alertes : avertissements et erreurs du calcul. */
 export function summary(r: ParquetResult): ModuleSummary {
   const fr = (v: number, d = 0) => v.toLocaleString('fr-FR', { maximumFractionDigits: d });
   return {
-    text: `${fr(r.totals.boards)} lame${r.totals.boards > 1 ? 's' : ''}, ${fr(r.totals.area, 1)} m², perte ${fr(r.totals.wastePct)} %`,
+    text: `${fr(r.totals.boards)} lame${r.totals.boards > 1 ? 's' : ''}, ${fr(r.totals.area, 1)} m², chutes ${fr(r.totals.wastePct)} %`,
     alerts: r.layouts.reduce((t, l) => t + l.warnings.length + l.errors.length, 0),
   };
 }
