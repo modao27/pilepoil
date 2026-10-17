@@ -14,9 +14,14 @@
   let dlg: HTMLDialogElement;
   const uid = Math.random().toString(36).slice(2);
 
+  /** Ouverture au toucher : le clic synthétique qui suit tombe sur le fond et ne doit pas fermer la fenêtre. */
+  let openedAt = 0;
+
   $effect(() => {
-    if (open && !dlg.open) dlg.showModal();
-    else if (!open && dlg.open) dlg.close();
+    if (open && !dlg.open) {
+      openedAt = Date.now();
+      dlg.showModal();
+    } else if (!open && dlg.open) dlg.close();
   });
 </script>
 
@@ -28,7 +33,7 @@
     onclose?.();
   }}
   onclick={(e) => {
-    if (e.target === dlg) dlg.close();
+    if (e.target === dlg && Date.now() - openedAt > 300) dlg.close();
   }}
 >
   <div class="inner">
