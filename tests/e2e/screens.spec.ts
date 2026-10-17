@@ -115,6 +115,14 @@ test('créer un mur de bout en bout, le retrouver, le gérer', async ({ page }, 
   await expect(page.getByRole('link', { name: /Crédence cuisine/ })).toHaveCount(1);
   await page.getByRole('status').getByRole('button', { name: 'Annuler' }).click();
   await expect(page.getByRole('link', { name: /Crédence cuisine/ })).toHaveCount(2);
+  // l'annulation est écrite, et une suppression suivie d'un rechargement immédiat l'est aussi
+  await page.reload();
+  await expect(page.getByRole('link', { name: /Crédence cuisine/ })).toHaveCount(2);
+  await page.getByRole('button', { name: 'Actions pour Crédence cuisine (copie)' }).click();
+  await page.getByRole('button', { name: 'Supprimer' }).click();
+  await expect(page.getByRole('status')).toContainText('supprimé');
+  await page.reload();
+  await expect(page.getByRole('link', { name: /Crédence cuisine/ })).toHaveCount(1);
 });
 
 test('bibliothèque : ajouter, modifier, suppression refusée si utilisé', async ({ page }, info) => {

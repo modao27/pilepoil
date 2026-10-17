@@ -48,8 +48,6 @@ export class AppState {
   private batch!: ComputeClient;
   private queue: Promise<unknown> = Promise.resolve();
   private _db!: Db;
-  // eslint-disable-next-line svelte/prefer-svelte-reactivity
-  private pendingDeletes = new Map<Id, ReturnType<typeof setTimeout>>();
 
   async init(): Promise<void> {
     try {
@@ -76,7 +74,7 @@ export class AppState {
   /** Recharge bibliothèques et projets depuis la base (après un import, par exemple). */
   async reload(): Promise<void> {
     await this.loadLibraries();
-    this.projects = (await repo.listProjects(this.db)).filter((p) => !this.pendingDeletes.has(p.id));
+    this.projects = await repo.listProjects(this.db);
   }
 
   /* ---------- projets ---------- */
@@ -153,23 +151,19 @@ export class AppState {
     return (await this.trySaveProject(copy)) ? copy : null;
   }
 
-  /** Suppression annulable pendant quelques secondes. */
-  deleteProject(id: Id): void {
+  /** Suppression écrite tout de suite ; « Annuler » réenregistre le projet. Les photos sont nettoyées après le délai. */
+  async deleteProject(id: Id): Promise<void> {
     const p = this.project(id);
     if (!p) return;
     this.projects = this.projects.filter((x) => x.id !== id);
-    const timer = setTimeout(() => {
-      this.pendingDeletes.delete(id);
-      void repo.deleteProject(this.db, id).then(() => this.collectPhotos());
-    }, 6500);
-    this.pendingDeletes.set(id, timer);
+    await repo.deleteProject(this.db, id);
+    const timer = setTimeout(() => this.collectPhotos(), 6500);
     toast(`Projet « ${p.name} » supprimé.`, {
       action: {
         label: 'Annuler',
         run: () => {
           clearTimeout(timer);
-          this.pendingDeletes.delete(id);
-          this.projects = [p, ...this.projects].sort((a, b) => b.updatedAt - a.updatedAt);
+          void this.trySaveProject(p);
         },
       },
     });
