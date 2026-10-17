@@ -158,3 +158,36 @@ hauteurs) → N3 → matériaux et N4 → aide → G → devis → fiche chantie
 lot avec ses tests (unitaires et e2e 390 px + ordinateur) et la parité carrelage verte.
 
 À toi de choisir les lots et fonctions à retenir ; rien n'est engagé.
+
+## 5. Décisions de l'utilisateur (17 octobre 2026)
+
+Réponses données une à une. Rien n'est encore mis en œuvre ; chaque phase retenue commence par son plan (fichiers, types,
+étapes), à valider avant de coder (`CLAUDE.md`).
+
+**Retenu, dans cet ordre**
+
+| # | Proposition | Effort |
+|---|---|---|
+| 1 | Lot A — Projets fiables | M |
+| 2 | Lot C — Liste d'achat juste | M |
+| 3 | Lot B — Plan précis au doigt | M |
+| 4 | Lot E — Saisie des nombres | M |
+| 5 | Lot D — Données entre onglets et calcul bloqué | M |
+| 6 | Lot F — Lire une pose | S à M |
+| 7 | Lot H — Accessibilité et chargement | S à M |
+| 8 | Relevé rapide sur place | M |
+| 9 | Aide et prise en main | S à M |
+| 10 | N1 — Carreler une largeur d'un mur | S à M |
+| 11 | N5 — Équipements fixes du plan | M |
+| 12 | N2 — Niveaux de sol et hauteurs propres (phase « T1 », spécification d'abord) | L |
+| 13 | N3 — Cloisons de hauteur propre | M |
+| 14 | Bibliothèque de matériaux et techniques de pose (spécification d'abord) | L |
+| 15 | N4 — Murets multi-matériaux | L |
+
+**Plus tard** (restent dans les propositions) : lot G (éditeurs alignés), photos du chantier, fiche chantier imprimable,
+prix fournisseur, doublages et plafonds placo, ragréage et chape.
+
+**Écarté** : exporter / importer un projet, devis client, chantier sur plusieurs jours.
+
+Conséquence de l'écart de l'export : la sauvegarde hors de l'appareil reste absente (le constat reste vrai : rien ne
+quitte l'appareil, voir § 3). Les lots C et A ne dépendent pas de l'export.
