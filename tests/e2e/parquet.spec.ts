@@ -118,7 +118,7 @@ test('parquet : pose droite d’une pièce du plan, résumé, motif annulable, a
   await shot(page, info, '99-parquet-resultats-detail');
   // export PDF
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'PDF du calepinage' }).click();
+  await page.getByRole('button', { name: 'PDF de la pose' }).click();
   expect((await download).suggestedFilename()).toMatch(/^calepinage-.+\.pdf$/);
   await check(page);
   await page.goto(`/#/p/${id}/achats`);

@@ -308,9 +308,9 @@ describe('PDF des résultats', () => {
     });
 
   it('pose : son résumé et les pages de son revêtement seulement', async () => {
-    const pages = await pagesText(build({ kind: 'pose', pose: 'T2' }, 'PDF du calepinage — Séjour, mur 1'));
+    const pages = await pagesText(build({ kind: 'pose', pose: 'T2' }, 'PDF de la pose — Séjour, mur 1'));
     const all = pages.join('\n');
-    expect(pages[0]).toMatch(/PDF du calepinage — Séjour, mur 1/);
+    expect(pages[0]).toMatch(/PDF de la pose — Séjour, mur 1/);
     expect(pages[0]).toMatch(/Carrelage · Pose 2/);
     expect(all).toMatch(/Plan coté — Séjour, mur 1/);
     expect(all).not.toMatch(/Plan coté — Séjour, sol/);

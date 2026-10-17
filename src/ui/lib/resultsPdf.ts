@@ -26,7 +26,7 @@ export interface ResultsPdfInput {
   project: Project;
   libraries: Libraries;
   scope: ResultScope;
-  /** « Dossier du projet », « PDF de la pièce — Cuisine », « PDF du calepinage — Cuisine, sol ». */
+  /** « Dossier du projet », « PDF de la pièce — Cuisine », « PDF de la pose — Cuisine, sol ». */
   title: string;
   /** Revêtements touchés par la portée et calculés. */
   entries: ResultsPdfEntry[];

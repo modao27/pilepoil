@@ -117,7 +117,7 @@ test('export PDF A4 du calepinage : téléchargement et rendu des pages', async 
   await expectAccessible(page);
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'PDF du calepinage' }).click(),
+    page.getByRole('button', { name: 'PDF de la pose' }).click(),
   ]);
   expect(download.suggestedFilename()).toBe('calepinage-piece-300-240-piece-mur-1.pdf');
   await expect(page.getByText('PDF enregistré dans vos téléchargements.')).toBeVisible();

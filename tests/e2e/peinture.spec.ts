@@ -81,7 +81,7 @@ test('peinture : mur entier, réglages, résumé, résultats et achats', async (
   // PDF de la pose
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'PDF du calepinage' }).click(),
+    page.getByRole('button', { name: 'PDF de la pose' }).click(),
   ]);
   expect(
     readFileSync((await download.path())!)

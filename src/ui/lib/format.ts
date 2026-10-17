@@ -10,12 +10,10 @@ export const m2 = (v: number) => `${fr(v, 2)} m²`;
 export const euros = (v: number) => v.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 export const count = (n: number, one: string, many: string) => `${fr(n, 0)} ${n > 1 ? many : one}`;
 
-/** Dimensions d'un carreau « 60 × 30 cm » (entiers en cm, sinon mm). */
+/** Dimensions d'un carreau, toujours en cm : « 60 × 30 cm », « 119,4 × 59,6 cm ». */
 export function tileSize(length: number, width: number, shape: string): string {
-  const unitCm = length % 10 === 0 && width % 10 === 0;
-  const f = (v: number) => (unitCm ? fr(v / 10) : fr(v));
-  const u = unitCm ? 'cm' : 'mm';
-  return shape === 'hex' || shape === 'octo' ? `${f(length)} ${u}` : `${f(length)} × ${f(width)} ${u}`;
+  const f = (v: number) => fr(v / 10);
+  return shape === 'hex' || shape === 'octo' ? `${f(length)} cm` : `${f(length)} × ${f(width)} cm`;
 }
 
 export function dateShort(ms: number): string {

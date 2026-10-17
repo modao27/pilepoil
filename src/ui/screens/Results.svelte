@@ -175,7 +175,7 @@
       ? 'Dossier du projet'
       : scope.kind === 'room'
         ? `PDF de la pièce — ${room?.name ?? ''}`
-        : `PDF du calepinage — ${pose ? where(pose) : ''}`,
+        : `PDF de la pose — ${pose ? where(pose) : ''}`,
   );
   const fileName = $derived.by(() => {
     const p = fileSlug(project?.name ?? '');
@@ -249,7 +249,7 @@
         <li><a href="#/p/{id}">Projet</a></li>
         {#if crumbRoom}<li><a href="#/p/{id}/r/{crumbRoom.id}">{crumbRoom.name}</a></li>{/if}
         {#if pose && poseModule}<li>
-            <a href={poseModule.poseHref?.(id, pose.id)}>{poseModule.label} – {pose.name}</a>
+            <a href={poseModule.poseHref?.(id, pose.id)}>{poseModule.label} · {pose.name}</a>
           </li>{/if}
         <li aria-current="page">Résultats</li>
       </ol>
@@ -273,7 +273,7 @@
             ? 'Dossier du projet (PDF)'
             : scope.kind === 'room'
               ? 'PDF de la pièce'
-              : 'PDF du calepinage'}
+              : 'PDF de la pose'}
         </Button>
         {#if share}<Button icon="share" disabled={!ready || status === 'busy'} onclick={sharePdf}>Partager</Button>{/if}
         {#if scope.kind === 'project'}<Button variant="ghost" href="#/p/{id}/achats">Achats</Button>{/if}
